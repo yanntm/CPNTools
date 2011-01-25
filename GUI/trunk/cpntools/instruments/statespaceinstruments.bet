@@ -1,0 +1,967 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../cpnworkspace';
+
+INCLUDE '../resources/texts/texts';
+INCLUDE '../resources/figures/statespacefigures';
+INCLUDE 'cpninstrument';
+INCLUDE 'creationinstruments';
+INCLUDE '../../cpnet/cpnet';
+INCLUDE '../../document/ml/mlcom';
+INCLUDE '../../document/ml/mlcommands';
+INCLUDE '../../document/ml/mlparse';
+
+BODY 'private/statespaceinstrumentsbody';
+
+
+
+-- CPNWorkSpaceLib: attributes --
+
+StateSpaceCommand: CPNCommand
+  (# TargetType:: CPNSheet;
+     notUndoable::
+       (# do true -> value #);
+     getNet:
+       (# theNet: ^CPNet;
+       do target.content.thePage.net[] -> theNet[];
+       exit theNet[]
+       #);
+     apply::<
+       (# 
+       do (getNet).ML.abortMultiFaseCommands;
+          INNER;
+       #);
+  #);
+
+EnterStateSpaceInstrument: CPNInstrument
+  (#
+     CommandType:: EnterStateSpaceCommand;
+     FigureT:: SSEnterFigure;
+
+     init::
+       (#
+       do 'enter_state_space'->helpname[];
+          ('ogpath','enterss.ogpath') -> options.setAddOptionWithDefault(# OptionType:: FilePathOption(# dname::(# do 'State-space tool location' -> value[]; #); #); #);
+       #);
+
+     ToolTip::
+       (#
+       do NamesEnterStateSpace -> getGlobalNames -> theTip[];
+       #);
+  #);
+
+EnterStateSpaceCommand: StateSpaceCommand
+  (# enterStateSpace: (# <<SLOT EnterStateSpaceCommandEnterStateSpace:DoPart>> #);
+     apply:: (# <<SLOT EnterStateSpaceCommandApply:DoPart>> #);
+  #);
+
+
+CalcStateSpaceInstrument: CPNInstrument
+  (# CommandType:: CalcStateSpaceCommand;
+     FigureT:: SSCalcSSFigure;
+
+     insertIntegerOption:
+       (# theInteger: ^IntegerObject;
+          name: ^Text;
+          defaultId: ^Text;
+          type:< IntegerOption;
+       enter (name[],defaultId[])
+       do (name[],defaultId[]) -> options.setAddOptionWithDefault(# OptionType:: type #);
+       #);
+
+     insertMLCodeOption:
+       (# name: ^Text;
+          defaultId: ^Text;
+          type:< MLCodeOption;
+       enter (name[],defaultId[])
+       do (name[],defaultId[]) -> options.setAddOptionWithDefault(# OptionType:: type; #);
+       #);
+
+     init::
+       (#
+       do 'calculate_state_space' -> helpname[];
+          ('nodesstop','calcss.nodesstop') -> insertIntegerOption;
+          ('arcsstop','calcss.arcsstop') -> insertIntegerOption;
+          ('secsstop','calcss.secsstop') -> insertIntegerOption;
+          ('predicatestop','calcss.predicatestop') -> insertMLCodeOption;
+          ('transinstsbranch','calcss.transinstsbranch') -> insertIntegerOption;
+          ('bindingsbranch','calcss.bindingsbranch') -> insertIntegerOption;
+          ('predicatebranch','calcss.predicatebranch') -> insertMLCodeOption;
+          'predicatestop' -> options.find
+          (# theType:: MLCodeOption;
+          do 'fn _ => false' -> theOption.setDefaultText;
+          #);
+          'predicatebranch' -> options.find
+          (# theType:: MLCodeOption;
+          do 'fn _ => false' -> theOption.setDefaultText;
+          #);
+       #);
+
+     ToolTip::
+       (#
+       do NamesCalcStateSpace -> getGlobalNames -> theTip[];
+       #);
+  #);
+
+CalcStateSpaceCommand: StateSpaceCommand
+  (# error: @boolean;
+     theText: ^Text;
+     stopoptions: ^Text;
+     branchoptions: ^Text;
+
+     relevant::
+       (#
+       do ((target.content.thePage.net.status = compiled) AND
+          target.content.thePage.net.statespaceEntered) -> value;
+       #);
+
+     Apply::<
+       (* Before calculating the statespace, we set the stop and branching
+        * options according to the instrument options to ensure correspondence
+        * between the simulator and the editor.
+        *)
+       (# sheetPage: ^PageInstance;
+       do (if (target.content.thePage.net.status = compiled) then
+              CalcStateSpaceRunning -> 
+              getGlobalNames -> fixedStatus.running;
+              fixedStatus.start;
+              setBusyCursor;
+              L: (#
+                 do target.content[] -> sheetPage[];
+		    false -> error;
+                    (* OGSet.StopOptions {
+                     *  Nodes = nodestop,
+                     *  Arcs = arcsstop,
+                     *  Secs = secsstop,
+                     *  Predicate = predicatestop
+                     * };
+                     *)
+                    &Text[] -> stopoptions[];
+                    'OGSet.StopOptions {' -> stopoptions.putline;
+                    'Nodes = ' -> stopoptions.puttext;
+                    'nodesstop' -> options.lookupinteger -> stopoptions.putint;
+                    ',' -> stopoptions.putline;
+                    'Arcs = ' -> stopoptions.puttext;
+                    'arcsstop' -> options.lookupinteger -> stopoptions.putint;
+                    ',' -> stopoptions.putline;
+                    'Secs = ' -> stopoptions.puttext;
+                    'secsstop' -> options.lookupinteger -> stopoptions.putint;
+                    ',' -> stopoptions.putline;
+                    'Predicate = ' -> stopoptions.puttext;
+                    'predicatestop' -> options.lookuptext -> stopoptions.puttext;
+                    ' };' -> stopoptions.putline;
+                    stopoptions[] -> sheetPage.thePage.net.ML.Evaluate
+                    (#
+                       onMLException::
+                         (#
+                         do CalcStateSpaceErrorStop -> 
+                            getGlobalNames -> theText[];
+                            message[] -> theText.putline;
+                            theText[] -> status.error;
+                            true -> error; (* We cannot leave L here - that would
+                                            * leave a semaphore blocked! *)
+                         #);
+                    #);
+                    (if error then
+                        leave L;
+                    if);
+                    (* OGSet.BranchingOptions {
+                     *  TransInsts = transinstsbranch,
+                     *  Bindings = bindingsbranch,
+                     *  Predicate = predicatebranch
+                     * };
+                     *)
+                    &Text[] -> branchoptions[];
+                    'OGSet.BranchingOptions {' -> branchoptions.putline;
+                    'TransInsts = ' -> branchoptions.puttext;
+                    'transinstsbranch' -> options.lookupinteger -> branchoptions.putint;
+                    ',' -> branchoptions.putline;
+                    'Bindings = ' -> branchoptions.puttext;
+                    'bindingsbranch' -> options.lookupinteger -> branchoptions.putint;
+                    ',' -> branchoptions.putline;
+                    'Predicate = ' -> branchoptions.puttext;
+                    'predicatebranch' -> options.lookuptext -> branchoptions.puttext;
+                    ' };' -> branchoptions.putline;
+                    branchoptions[] -> sheetPage.thePage.net.ML.Evaluate
+                    (#
+                       onMLException::
+                         (#
+                         do CalcStateSpaceErrorBranch -> getGlobalNames -> theText[];
+                            message[] -> theText.putline;
+                            theText[] -> status.error;
+                            true -> error;  (* We cannot leave L here - that would
+                                             * leave a semaphore blocked! *)
+                         #);
+                    #);
+                    (if error then
+                        leave L;
+                    if);
+                    'CalculateOccGraph() handle StopCritSatisfied => (print "Unhandled Exception: StopCritSatisfied\\n"; raise StopCritSatisfied)'
+                      -> sheetPage.thePage.net.ML.evaluate
+                    (#
+                       onMLException::
+                         (#
+                         do (if ('Unhandled Exception: StopCritSatisfied' ->
+                                message.containsSubstring) then
+                                (# pos: @Integer;
+                                do CalcStateSpaceErrorStopCrit -> 
+                                   getGlobalNames -> theText[];
+                                   search:
+                                     (# 
+                                     do message.reset;
+                                        message.length -> pos;
+                                        'Unhandled Exception: StopCritSatisfied' -> 
+                                        message.findText
+                                        (# 
+                                        do (inx - 1) -> pos;
+                                           leave search;
+                                        #);
+                                     #);
+                                   (1, pos) -> message.sub -> theText.putline;
+                                   CalcStateSpaceErrorStopCritTip -> 
+                                   getGlobalNames -> theText.puttext;
+                                   theText[] -> status.warning;
+                                #);
+                             else
+                                CalcStateSpaceErrorCalc -> 
+                                getGlobalNames -> theText[];
+                                message[] -> theText.putline;
+                                theText[] -> status.error;
+                            if);
+                            true -> error; (* We cannot leave L here - that would
+                                                * leave a semaphore blocked! *)
+                         #);
+                    #) -> theText[];
+                    (if error then
+                        leave L;
+                     else
+                        theText[] -> status.message;
+                    if);
+		    CalcStateSpaceDone -> getGlobalNames -> status.message;
+                 #);
+              UnsetBusyCursor;
+              fixedStatus.stop;
+          if);
+       #);
+  #);
+
+CalcSccInstrument: CPNInstrument
+  (# CommandType:: CalcSccCommand;
+     FigureT:: SSCalcSCCFigure;
+
+     init::
+       (#
+       do 'calculate_scc_graph' -> helpname[];
+       #);
+
+     ToolTip::
+       (#
+       do NamesCalcSCCgraph -> getGlobalNames -> theTip[];
+       #);
+  #);
+
+CalcSccCommand: StateSpaceCommand
+  (# 
+     relevant::
+       (#
+       do ((target.content.thePage.net.status = compiled) and target.content.thePage.net.statespaceEntered) -> value;
+       #);
+
+     Apply::<
+       (# sheetPage: ^PageInstance;
+       do (if (target.content.thePage.net.status = compiled) then
+              'Calculating SCC Graph' -> fixedStatus.running;
+	      fixedStatus.start;
+	      setBusyCursor;
+	      target.content[] -> sheetPage[];
+              'CalculateSccGraph()' -> sheetPage.thePage.net.ML.evaluate
+              (#
+                 onMLException::
+                   (#
+                   do 'Error calculating SCC graph' -> status.error;
+                      message[] -> screen.putline;
+                   #);
+              #);
+	      UnsetBusyCursor;
+	      fixedStatus.stop;
+              'SCC graph calculated' -> status.message;
+          if);
+       #);
+  #);
+
+SaveReportInstrument: CPNInstrument
+  (# CommandType:: SaveReportCommand;
+     FigureT:: SSSaveReportFigure;
+
+     insertBooleanOption:
+       (# theBoolean: ^BooleanObject;
+          name: ^Text;
+          defaultId: ^Text;
+       enter (name[],defaultId[])
+       do (name[],defaultId[])->options.setAddOptionWithDefault(# OptionType:: BooleanOption #);
+       #);
+
+     init::
+       (#
+       do 'save_state_space_report' -> helpname[];
+          (* Options to control the amount of information saved in report. *)
+          ('stats','savereport.stats') -> insertBooleanOption;
+          ('intbounds','savereport.intbounds') -> insertBooleanOption;
+          ('multbounds','savereport.multbounds') -> insertBooleanOption;
+          ('homemark','savereport.homemark') -> insertBooleanOption;
+          ('deadmark','savereport.deadmark') -> insertBooleanOption;
+          ('deadTI','savereport.deadti') -> insertBooleanOption;
+          ('liveTI','savereport.liveti') -> insertBooleanOption;
+          ('fairness','savereport.fairness') -> insertBooleanOption;
+       #);
+
+     ToolTip::
+       (#
+       do NamesSaveReport -> getGlobalNames -> theTip[];
+       #);
+
+  #);
+
+SaveReportCommand: StateSpaceCommand
+  (# 
+     saveDialog: widget.fileCreationDialog
+       (#
+       do &text[]->fileName[];
+          NamesSaveReport -> getGlobalNames -> title[];
+          NamesSaveReportFilter  -> getGlobalNames -> filter[];
+       #);
+
+     convertBSlashToSlash:
+       (# theText: ^Text;
+       enter theText[]
+       do theText.reset;
+          '\\' -> theText.find
+          (#
+          do '/' -> theText.T[inx];
+          #);
+       exit theText[]
+       #);
+
+     relevant::
+       (#
+       do ((target.content.thePage.net.status = compiled) and target.content.thePage.net.statespaceEntered) -> value;
+       #);
+
+     apply:: (# <<SLOT SaveReportCommandApply:DoPart>> #);       
+  #);
+
+SStoSimInstrument: CPNInstrument
+  (# CommandType:: SStoSimCommand;
+     FigureT:: SStoSimFigure;
+
+     init::
+       (# theInteger: ^IntegerObject;
+       do 'state_space_to_simulator' -> helpname[];
+          &IntegerObject[] -> theInteger[];
+          1 -> theInteger;
+          ('state','sstosim.state')->options.setAddOptionWithDefault(# OptionType:: IntegerOption #);
+       #);
+
+     ToolTip::
+       (#
+       do NamesSStoSim -> getGlobalNames -> theTip[];
+       #);
+  #);
+
+SStoSimCommand: StateSpaceCommand
+  (# relevant:: (# <<SLOT SStoSimCommandRelevant:doPart>> #);
+     apply::
+       (# sheetPage: ^PageInstance;
+          mlcommand: ^Text;
+          foundEnabled, timeIncreased: @boolean;
+       do (if (target.content.thePage.net.status = compiled) then
+              target.content[] -> sheetPage[];
+              &Text[] -> mlcommand[];
+              'CPN\'OGToSimData.copy ' -> mlcommand.puttext;
+              'state' -> options.lookupinteger -> mlcommand.putint; ';' -> mlcommand.puttext;
+              mlcommand[] -> sheetPage.thePage.net.ML.evaluate
+              (# theMsg: ^Text;
+                 onMLException::
+                   (#
+                   do &Text[] -> theMsg[];
+                      'Error transfering state space state to simulator' -> theMsg.putline;
+                      message.reset;
+                      'Exception' -> message.findText
+                      (#
+                      do (inx,message.length) -> message.sub -> theMsg.putline;
+                      #);
+                      theMsg[] -> status.error;
+                   #);
+              #);
+              (* Markings of places changed - reset the scheduler so that no information about
+               * old enablings/disablings will influence new enabling calculations. *)
+              sheetPage.thePage.net.ML[] -> MLResetScheduler;
+              sheetPage.thePage.net.getAllEnabledTransitions;
+              sheetPage.thePage.net.getAllMarkings;
+              sheetPage.thePage.net.updateStepAndTime;
+          if);
+       #);
+  #);
+
+SimtoSSInstrument: CPNInstrument
+  (# CommandType:: SimtoSSCommand;
+     FigureT:: SimtoSSFigure;
+
+     init::
+       (#
+       do 'simulator_to_state_space' -> helpname[];
+       #);
+
+     ToolTip::
+       (#
+       do NamesSimtoSS -> getGlobalNames -> theTip[];
+       #);
+  #);
+
+SimtoSSCommand: StateSpaceCommand
+  (# 
+     relevant:: (# <<SLOT SimtoSSCommandRelevant:doPart>> #);
+     apply::<
+       (# sheetPage: ^PageInstance;
+       do (if (target.content.thePage.net.status = compiled) then
+	      'Calculating SCC Graph' -> fixedStatus.running;
+	      fixedStatus.start;
+              target.content[] -> sheetPage[];
+              L: (# answer: ^Text;
+                    theMsg: ^Text;
+                 do &Text[] -> answer[];
+                    &Text[] -> theMsg[];
+                    'OGSimStatetoOG()' ->  sheetPage.thePage.net.ML.evaluate
+                    (#
+                       onMLException::
+                         (#
+                         do 'Error transfering simulator state to state space' -> theMsg.putline;
+                            message.reset;
+                            'Exception' -> message.findText
+                            (#
+                            do (inx,message.length) -> message.sub -> theMsg.putline;
+                            #);
+                            theMsg[] -> status.error;
+                            leave L;
+                         #);
+                    #) -> answer[];
+                    answer.reset; (* Set position in text to 0 - otherwise findText will fail *)
+                    'true,' -> answer.findText
+                    (#
+                    do 'Simulator state already in state space with node number: ' -> theMsg.puttext;
+                       inx+4 -> answer.setPos;
+                       answer.getInt (# SyntaxError::(# do true -> continue; #); #) -> theMsg.putint;
+                       fixedStatus.stop;
+                       theMsg[] -> status.warning;
+                    #);
+                    (if theMsg.length = 0 then
+                        answer.reset; (* Set position in text to 0 - otherwise findText will fail *)
+                        'false,' -> answer.findText
+                        (#
+                        do 'Simulator state transfered to state space with node number: ' -> theMsg.puttext;
+                           inx+5 -> answer.setPos;
+                           answer.getInt (# SyntaxError::(# do true -> continue; #); #) -> theMsg.putint;
+                        #);
+                        fixedStatus.stop;
+                        theMsg[] -> status.message;
+                    if);
+                    theMsg[] -> screen.putline;
+                 #);
+          if);
+       #);
+  #);
+
+DisplayNodeInstrument: PageElementInstrument
+  (# PrototypeT:: SSNode;
+     nodeNumber: @IntegerObject;
+     TargetType:: CPNSheet;
+     getPrototype::
+       (# do defaultSSNode[] -> Prototype[] #);
+     
+     init::
+       (#
+       do 'display_state_space_node' -> helpname[];
+          1 -> nodeNumber;
+	  ('nodeNumber','node.nodeNumber') -> options.setAddOptionWithDefault
+          (# OptionType:: IntegerOption(# dname:: (# do 'Node number' -> value[]; #); #); #);
+	  ('width','node.width') -> options.setAddOptionWithDefault;
+	  ('height','node.height') -> options.setAddOptionWithDefault;
+       #);
+
+     ToolTip::
+       (#
+       do NamesDisplayNode -> getGlobalNames -> theTip[];
+       #);
+
+     create::
+       (# list: [1] @Integer;
+	  theNumber: ^IntegerValue;
+	  theNodeList: ^SSNodeList;
+	  MLHelper: ^SSMLHelper;
+	  theSSNode: ^SSNode;
+	  theHandler: ^MLCom;
+	  net: ^CPNet;
+	  inNet: ^SSNodeIDDictionary;
+       do target.content.thePage.net[] -> net[];
+	  (if net.stateSpaceEntered then
+              &SSMLHelper[] -> MLHelper[];
+	      'nodeNumber' -> options.lookupInteger -> list[1];
+	      net.ml[] -> theHandler[];
+	      (theHandler[], list) -> MLHelper.getNodes -> theNodeList[];
+	      (if (not theNodeList.empty) then
+		  (theNodeList.head).elm[] -> theSSNode[];
+		  (context[], at[], getPrototype, theSSNode[], true) -> CreateSSNode;
+	       else
+		  (if MLHelper.ssIsGenerated then
+		      'The node by this number does not exist' -> status.error;
+		   else
+		      'The node by this number is not yet calculated' -> status.error;
+		  if);
+	      if);
+	   else
+	      'State space not entered' -> status.warning;
+	  if);
+	  finish;
+       #);
+     
+     setdefaults::
+       (#
+       do width -> defaultSSNode.width;
+	  height -> defaultSSNode.height;
+	  getPrototype -> theFigure.thePageElement[];
+       #);
+     
+     getDefaults::
+       (#
+       do defaultSSNode.width -> width;
+	  defaultSSNode.height -> height;
+	  getPrototype -> theFigure.thePageElement[];
+       #);
+  #);
+
+DisplaySuccessorsInstrument: FigureTInstrument
+  (# FigureT:: DisplaySuccessorsFigure;
+     TargetType:: SSNode;
+     relevant::
+       (#
+       do NOT target.dead -> value;
+       #);
+     apply:: 
+       (# x, y: @Integer;
+          MLHelper: ^SSMLHelper;
+	  theHandler: ^MLCom;
+	  theNodes: ^SSNodeList;
+	  theArcs: ^SSArcList;
+	  theSSNode: ^SSNode;
+	  theGroupClipping: ^GroupClipping;
+	  com: ^GroupClipCommand;
+
+       do (if (target.getCPNPage).net.stateSpaceEntered then
+              (if NOT target.dead then
+	          target[] -> theSSNode[];
+    	          target.x -> x;
+    	          target.y -> y;
+    	          &SSMLHelper[] -> MLHelper[];
+    	          (target.getCPNPage).net.ml[] -> theHandler[];
+    	          (theHandler[], target.number) -> MLHelper.getSuccessors -> (theArcs[], theNodes[]);
+		  &GroupClipping[] -> theGroupClipping[];
+		  (x, y, true, theNodes[], theArcs[], (theSSNode.getCPNPage), 'Display Successors')
+		     -> insertNodes;
+		     (************history part**********
+		  &GroupClipCommand[] -> com[];
+		  (target.getCPNPage) -> com.prepare;
+		  theGroupClipping[] -> com.apply;
+	  	  ((target.getCPNPage).net[],com[]) -> registerCommand;*)
+               else
+                  'Node belongs to abandoned statespace' -> status.warning;
+              if);
+    	      finish;
+	   else
+	      'State space not entered' -> status.warning;
+	      finish;
+	  if);
+       #);
+     
+     init::
+       (#
+       do 'display_successors' -> helpname[];
+       #);
+     
+     ToolTip::
+       (#
+       do NamesDisplaySuccessors -> getGlobalNames -> theTip[];
+       #);
+  #);
+
+lookup:
+  (# context: ^CPNpage;
+     number: @integer;
+     node: ^SSNode;
+  enter (context[], number)
+  do search: context.scanSSNodes
+     (#
+     do (if not current.dead then
+            (if current.number = number then
+                current[] -> node[];
+                leave search;
+            if);
+        if);
+     #);
+  exit node[]
+  #);
+
+
+CompositeNonCPNCommand: Command
+  (# ChildType:< Command;
+     children: @List(# Element:: ChildType; #);
+     theCommand: ^ChildType;
+     childnumber: @Integer;
+     
+     prepare::<
+       (# do INNER; #);
+     
+     add:
+       (# child: ^ChildType;
+          tmp: ^Text;
+       enter child[]
+       do child[] -> children.append;
+	  child.init;
+	  THIS(CompositeNonCPNCommand)[] -> child.father[];
+       #);
+     
+     apply::
+       (# 
+       do children.scan(#
+          do current.apply;
+	  #);
+       #);
+
+     undo::
+       (# 
+       do children.scan(#
+	  do current.undo;
+	  #);
+       #);
+     
+     redo::
+       (# 
+       do children.scan(#
+          do current.redo;
+	  #);
+       #);
+     
+     init::
+       (# 
+       do children.init;
+       #);
+  #);
+
+insertNodes:
+  (# x, y, dx, dy, space: @Integer;
+     placeToTheRight: @Boolean;
+     theNodeList: ^SSNodeList;
+     theArcList: ^SSArcList;
+     currentPosition: ^Point2D;
+     theDisplayNodeInstrument: ^DisplayNodeInstrument;
+     context: ^cpnpage;
+     theGroup: ^Group;
+     theCommand: ^CompositeNonCPNCommand;
+     theCom: ^createCommand;
+     thePageElement: ^PageElement;
+     historyName: ^Text;
+
+     createNode:
+       (# current: ^SSNode;
+       enter current[]
+       do
+  	  (context[], currentPosition[], theDisplayNodeInstrument.getPrototype, current[], false)
+  	  -> CreateSSNode -> (thePageElement[], theCom[]);
+  	  theCom[] -> theCommand.add;
+  	  x + dx -> x;
+  	  y + dy -> y;
+       #);
+
+  enter (x, y, placeToTheRight, theNodeList[], theArcList[], context[], historyName[])
+  do 'displaynode' -> theInstrumentList.lookup -> theDisplayNodeInstrument[];
+     12 -> space;
+
+     (if placeToTheRight then 1 -> dx; else -1 -> dx; if);
+     (dx * ((theDisplayNodeInstrument.getPrototype).width + (3 * space))) + x -> x;
+     ((theDisplayNodeInstrument.getPrototype).height + space) -> dy;
+     3 * space -> dx;
+
+     &Group[] -> theGroup[];
+     &CompositeNonCPNCommand
+       (# childType:: createCommand;
+          getName:: (# do historyName[] -> name[] #);
+       #)[] -> theCommand[];
+     theCommand.init;
+
+     theNodeList.scan
+     (# found: ^SSNode;
+     do	&Point2D[] -> currentPosition[];
+	x -> currentPosition.x;
+        y -> currentPosition.y;
+        (context[], current.number) -> lookup -> found[];
+        (if found[] = NONE then
+	    current[] -> createNode
+        if);
+     #);
+
+     theArcList.scan
+     (# source: ^SSNode;
+        destination: ^SSNode;
+	succes: @Boolean;
+     do (context[], current.srcNode) -> lookup -> source[];
+	(context[], current.destNode) -> lookup -> destination[];
+	(if source[] <> NONE then
+	    (if destination[] <> NONE then
+		(context[], source[], destination[], NONE, current[], false)
+		-> createSSConnector ->(thePageElement[], theCom[], succes);
+		(if succes then theCom[] -> theCommand.add; if);
+	    if);
+	if);
+     #);
+   (context.net[], theCommand[]) -> registerCommand;
+   exit (theGroup[], theCommand[])
+  #);
+
+DisplayPredecessorsInstrument: FigureTInstrument
+  (# FigureT:: DisplayPredecessorsFigure;
+     
+     TargetType:: SSNode;
+     relevant::
+       (#
+       do NOT target.dead -> value;
+       #);
+     
+     apply:: 
+       (# x, y: @Integer;
+          MLHelper: ^SSMLHelper;
+	  theHandler: ^MLCom;
+	  theNodes: ^SSNodeList;
+	  theArcs: ^SSArcList;
+	  theSSNode: ^SSNode;
+	  
+       do (if (target.getCPNPage).net.stateSpaceEntered then
+    	      target[] -> theSSNode[];
+    	      target.x -> x;
+    	      target.y -> y;
+    	      &SSMLHelper[] -> MLHelper[];
+    	      (target.getCPNPage).net.ml[] -> theHandler[];
+    	      (theHandler[], target.number) -> MLHelper.getPredecessors -> (theArcs[], theNodes[]);
+	      (x, y, false, theNodes[], theArcs[], (theSSNode.getCPNPage), 'Display Predecessors') -> insertNodes;
+    	      finish;
+	      
+	   else
+	      'State space not entered' -> status.warning;
+	      finish;
+	  if);
+	  
+       #);
+     
+     init::
+       (#
+       do 'display_predecessors' -> helpname[];
+       #);
+
+     ToolTip::
+       (#
+       do NamesDisplayPredecessors -> getGlobalNames -> theTip[];
+       #);
+  #);
+
+DisplayPartialSSGraphInstrument: FigureTInstrument
+  (# FigureT:: DisplayPartialSSGraphFigure;
+     TargetType:: AUX;
+
+     insertBooleanOption:
+       (# theBoolean: ^BooleanObject;
+          name: ^Text;
+          defaultId: ^Text;
+       enter (name[],defaultId[])
+       do (name[],defaultId[])->options.setAddOptionWithDefault(# OptionType:: BooleanOption #);
+       #);
+
+     init::
+       (#
+       do 
+          ('Nodes in list','DisplayPartialSGraph.isNodeExpression') -> insertBooleanOption;
+	  'display_partial_state_spa' -> helpname[];
+       #);
+
+     ToolTip::
+       (#
+       do NamesDisplayPartialSSGraph -> getGlobalNames -> theTip[];
+       #);
+
+     Apply::
+       (# MLHelper: ^SSMLHelper;
+	  theHandler: ^MLCom;
+	  theArcs: ^SSArcList;
+	  theNodes: ^SSNodeList;
+	  success: @Boolean;
+	  errorMessage: ^Text;
+          theAUX: ^AUX;
+	  theGroupElementsInstrument: ^GroupElementsInstrument;
+          picker: ^PickInstrument;
+
+       do (if (target.getCPNPage).net.stateSpaceEntered then
+	      &SSMLHelper[] -> MLHelper[];
+    	      (target.getCPNPage).net.ml[] -> theHandler[];
+    	      target[] -> theAUX[];
+    	      (if ('Nodes in list' -> options.lookupBoolean) then              
+    		  (theHandler[], (target.getText)) 
+  		  -> MLHelper.getNodesFromExp 
+  		  -> (theNodes[], errorMessage[], success);
+    		  &SSArcList[] -> theArcs[];
+    		  theArcs.init;
+     	       else
+    		  (theHandler[], target.getText) -> MLHelper.getArcsFromExp ->
+ 		  (theArcs[], theNodes[], errorMessage[], success);
+    	      if);
+    	      (if success then
+    		  &GroupElementsInstrument[] -> theGroupElementsInstrument[];
+    		  (theAux.x, theAux.y, true, theNodes[], theArcs[], (theAUX.getCPNPage), 'Display partial SS Graph') -> insertNodes
+	       else
+		  errorMessage[] -> status.error;
+    	      if);
+	   else
+	      'State space not entered' -> status.warning;
+	  if);
+	  finish;
+       #);
+  #);
+
+SSMLHelper:
+  (# getNodes: CPNMLCommand
+       (# nodeNumbers: [1] @Integer;
+	  nodeList: ^SSNodeList;
+	  nodes: @Integer;
+	  
+	  onError::(# do 'onError' -> debugtemp;#);
+	  
+	  send:: (#<<SLOT SSMLHelperGetNodesSend:doPart>> #);
+	  receive:: (# <<SLOT SSMLHelperGetNodesRecieve:doPart>> #);
+	  
+	  enter nodeNumbers
+	  exit nodeList[]
+       #);
+     
+     
+     getOuts: CPNMLCommand
+       (# nodeNumber: @integer;
+          send:: (# <<SLOT SSMLHelperGetOutsSend:doPart>> #);
+          receive:: (# <<SLOT SSMLHelperGetOutsReceive:doPart>> #);
+       enter nodeNumber
+       #);
+     
+     
+     getSuccessors: CPNMLCommand
+        (# arcList: ^SSArcList;
+	  nodeList: ^SSNodeList;
+	  nodeNumber: @Integer;
+	  send:: (# <<SLOT SSMLHelperGetSuccessorsSend:doPart>> #);
+	  receive:: (# do (nodeNumber, bis[]) -> getSuccessorsOrPredecessorsRecieve -> (arcList[], nodeList[])#);
+	  enter nodeNumber
+	  do;
+	  exit (arcList[], nodeList[])
+       #);
+     
+     getPredecessors: CPNMLCommand
+       (# arcList: ^SSArcList;
+	  nodeList: ^SSNodeList;
+	  nodeNumber: @Integer;
+	  send:: (# <<SLOT SSMLHelperGetPredecessorsSend:doPart>> #);
+	  receive:: (# do (nodeNumber, bis[]) -> getSuccessorsOrPredecessorsRecieve -> (arcList[], nodeList[])#);
+          enter (nodeNumber)
+	  do;
+	  exit (arcList[], nodeList[])
+       #);
+     
+     getSuccessorsOrPredecessorsRecieve:
+       (# arcList: ^SSArcList;
+	  nodeList: ^SSNodeList;
+	  nodeNumber: @Integer;
+	  bis: ^MLBIS;
+       enter (nodeNumber, bis[])
+          <<SLOT SSMLHelperGetSuccessorsOrPredecessorsRecieve:doPart>>
+	  exit (arcList[], nodeList[])
+       #);
+     
+     ssIsGenerated: CPNMLCommand
+       (# isGenerated: @boolean;
+	  send:: (# <<SLOT SSMLHelperSSIsGeneratedSend:doPart>> #);
+	  receive:: (# <<SLOT SSMLHelperSSIsGeneratedReceive:doPart>> #);
+       do;
+       exit isGenerated
+       #);
+
+     getArcsFromExp: CPNMLCommand
+       (# mlExp: ^Text;
+	  errorMessage: ^Text;
+	  arcList: ^SSArcList;
+	  nodeList: ^SSNodeList;
+	  success: @Boolean;
+	  send:: (# <<SLOT SSMLHelperGetArcsFromExpSend:doPart>> #);
+	  receive:: (# <<SLOT SSMLHelperGetArcsFromExpReceive:doPart>> #);
+       enter mlExp[]
+       do;
+       exit (arcList[], nodeList[], errorMessage[], success)
+       #);
+
+     getNodesFromExp: CPNMLCommand
+       (# mlExp: ^Text;
+	  errorMessage: ^Text;
+	  nodeList: ^SSNodeList;
+	  success: @Boolean;
+	  send:: (# <<SLOT SSMLHelperGetNodesFromExpSend:doPart>> #);
+	  receive:: (# <<SLOT SSMLHelperGetNodesFromExpReceive:doPart>> #);
+       enter mlExp[]
+       do;
+       exit (nodeList[], errorMessage[], success)
+       #);
+
+     getArcWithML:
+       (# bis: ^MLBIS;
+	  theArc: ^SSArc;
+	  exists: @Boolean;
+       enter bis[]
+       <<SLOT SSMLHelperGetArcWithML:doPart>>
+       exit (theArc[], exists)	  
+       #);
+
+     getNodeWithML:
+       (# bis: ^MLBIS;
+	  theNode: ^SSNode;
+	  exists, ssGenerated: @Boolean;
+       enter (bis[], ssGenerated)
+       <<SLOT SSMLHelperGetNodeWithML:doPart>>
+       exit (theNode[], exists)
+       #);
+  #);
+
+
