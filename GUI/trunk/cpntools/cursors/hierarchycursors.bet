@@ -1,0 +1,118 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '~beta/postwimp/workspace';
+INCLUDE 'creationcursors';
+INCLUDE 'portcursors';
+
+-- workspacelib: attributes --
+
+DrawArrow:
+  (# 
+  do glPushMatrix;
+     (* Draw line *)
+     GL_LINES -> glBegin;
+     (-15, 0) -> glVertex2i;
+     (15, 0) -> glVertex2i;
+     glEnd;
+     (-20.0, 0.0, 0.0) -> glTranslated;
+     (* Draw first arrowhead *)
+     glPushMatrix;
+     (180.0, 0.0, 0.0, 1.0) -> glRotated;
+     (-15, 0 ,0) -> glTranslated;
+     (1.5, 1.5, 1.5) -> glScaled;
+     GL_POLYGON -> glBegin;
+     (5, 5) -> glVertex2i;
+     (15, 0) -> glVertex2i;
+     (5, -5) -> glVertex2i;
+     glEnd;
+     glPopMatrix;
+     glPopMatrix;
+  #);
+
+DrawTab:
+  (# 
+  do glPushMatrix;
+     GL_POLYGON -> glBegin;
+     (0, 0) -> glVertex2i;
+     (5, -10) -> glVertex2i;
+     (20, -10) -> glVertex2i;
+     (25, 0) -> glVertex2i;
+     glEnd;
+     glPopMatrix;
+  #);
+
+DrawTabOutline:
+  (# 
+  do glPushMatrix;
+     GL_LINE_BIT -> glPushAttrib;
+     2 -> glLineWidth;
+     GL_LINE_LOOP -> glBegin;
+     (0, 0) -> glVertex2i;
+     (5, -10) -> glVertex2i;
+     (20, -10) -> glVertex2i;
+     (25, 0) -> glVertex2i;
+     glEnd;
+     glPopAttrib;
+     glPopMatrix;
+  #);
+
+AssignFusionCursor: PortCursor
+  (# fusionName: ^text;
+     
+     displayOpaque::
+       (# h, w: @integer;
+       do fusionName[] -> arial.measureText -> (w, h);
+          fusionName[] -> t.puttext;
+       #);
+  #);
+
+
+(* Port socket assignment cursor *)
+
+DrawPort:
+  (# 
+  do glPushMatrix;
+     GL_POLYGON -> glBegin;
+     (0, 0) -> glVertex2i;
+     (5, -10) -> glVertex2i;
+     (20, -10) -> glVertex2i;
+     (25, 0) -> glVertex2i;
+     glEnd;
+     glPopMatrix;
+  #);
+
+DrawSocket:
+  (# 
+  do glPushMatrix;
+     GL_POLYGON -> glBegin;
+     (0, 0) -> glVertex2i;
+     (5, -10) -> glVertex2i;
+     (20, -10) -> glVertex2i;
+     (25, 0) -> glVertex2i;
+     glEnd;
+     glPopMatrix;
+  #);
+
