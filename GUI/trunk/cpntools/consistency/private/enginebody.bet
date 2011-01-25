@@ -1,0 +1,127 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../engine';
+
+INCLUDE '../../../cpnet/test/consistency/placetest';
+INCLUDE '../../../cpnet/test/consistency/decltest';
+INCLUDE '../../../cpnet/test/consistency/transitiontest';
+INCLUDE '../../../cpnet/test/consistency/placeinstancetest';
+INCLUDE '../../../cpnet/test/consistency/transitioninstancetest';
+INCLUDE '../../../cpnet/test/consistency/cpnpagetest';
+INCLUDE '../../../cpnet/test/consistency/pageinstancetest';
+INCLUDE '../../../cpnet/test/consistency/pageelementtest';
+INCLUDE '../../../cpnet/test/consistency/cpnettest';
+INCLUDE '../../../cpnet/test/consistency/observertest';
+INCLUDE '../../../cpnet/test/consistency/porttypetest';
+INCLUDE '../../../cpnet/test/consistency/nodetest';
+INCLUDE '../../../cpnet/test/consistency/guidelinetest';
+INCLUDE '../../../test/consistency/notifiertest';
+
+INCLUDE '../../cpnworkspace';
+INCLUDE '../../instruments/cpnoption';
+INCLUDE '../../relfile';
+
+--bodyConsistencyEngineinit: doPart--
+do &TextList[] -> errors[];
+   errors.init;
+   ObjectPool.get(# Type::OptionList; #) -> globals[];
+   &OptionList[] -> cons[];
+   cons.init;
+   (NamesGlobalOptionsConsistency -> getGlobalNames, cons[]) -> globals.setAddOption(# OptionType:: OptionListOption; #);
+   globals.changed;
+   
+   (*- Add Consistency checks here -*)
+   
+   &PlaceTest[] -> add;
+   &DeclTest[] -> add;
+   &TransitionTest[] -> add;
+   &PlaceInstanceTest[] -> add;
+   &TransitionInstanceTest[] -> add;
+   &CPNPageTest[] -> add;
+   &PageInstanceTest[] -> add;
+   &PageElementTest[] -> add;
+   &CPNetTest[] -> add;
+   &PortTypeTest[] -> add;
+   &ChildFatherRelationTest[] -> add;
+   &NodeTest[] -> add;
+   &GuideLineTest[] -> add;
+   INNER;
+   
+--bodyConsistencyEngineConsistencyExceptionbody: doPart--
+do (# asCPNWorkspace: ^CPNWorkspace;
+      out: ^CPNWorkspace.SaveFile;
+   do this(WorkSpace)[] -> asCPNWorkspace[];
+      'Consistency error see report' -> asCPNWorkspace.status.warning;
+      &asCPNWorkspace.SaveFile[] -> out[];
+      'consistency.log' -> temporaryFile -> out.name;
+      out.openWrite;
+      'Consistency report follows:' -> debugConsistency;
+      'Consistency report follows:\n' -> out.putline;;
+      errors.scan(# 
+                 do ' - %s ' -> debugConsistency(# do current[] -> s; #); 
+                    ' - %s \n' -> out.putformat(# do current[] -> s; #);
+                 #);
+      'End of report [%i entries]' -> debugConsistency(# do errors.size -> i; #);
+      'End of report [%i entries]\n' -> out.putformat(# do errors.size -> i; #);
+      out.close;
+   #);
+   INNER;
+   
+--bodyHistoryObserverinit: doPart--
+do getCommandManager -> manager[];
+   getConsistencyEngine -> theConsistencyEngine[];
+   this(Notifier)[] -> manager.attach;
+   (# globals: ^OptionList;
+      cons: ^OptionList;
+   do ObjectPool.get(# Type::OptionList; #) -> globals[];
+      NamesGlobalOptionsConsistency -> getGlobalNames -> globals.lookupOption(# theType::OptionListOption #) -> cons[];
+      
+      &BooleanOption[] -> theOption[];
+      NamesGlobalOptionsConsistencyHistory -> getGlobalNames -> theOption.name;
+      &BooleanObject[] -> theOption.value;
+      true -> (theOption.value).value;
+      theOption[] -> cons.register;
+      
+      cons.changed;
+      globals.changed;
+   #);
+   
+--bodyNowOptionObserverinit: doPart--
+do getConsistencyEngine -> theConsistencyEngine[];
+   (# globals: ^OptionList;
+      cons: ^OptionList;
+   do ObjectPool.get(# Type::OptionList; #) -> globals[];
+      NamesGlobalOptionsConsistency -> getGlobalNames -> globals.lookupOption(# theType::OptionListOption #) -> cons[];
+      
+      &BooleanOption[] -> theOption[];
+      NamesGlobalOptionsConsistencyNow -> getGlobalNames -> theOption.name;
+      &BooleanObject[] -> theOption.value;
+      theOption[] -> cons.register;
+      
+      cons.changed;
+      globals.changed;
+   #);
+   this(Notifier)[] -> theOption.attach;
