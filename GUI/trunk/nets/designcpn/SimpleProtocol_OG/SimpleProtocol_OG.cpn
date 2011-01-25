@@ -1,0 +1,3052 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE workspaceElements PUBLIC "-//CPN//DTD CPNXML 1.0//EN" "http://www.daimi.au.dk/~cpntools/bin/DTD/2/cpn.dtd">
+<workspaceElements>
+<generator tool="Converter" version="0" format="2"/>
+<cpnet>
+<globbox>
+<errordecl>color INT = int; 
+color DATA = string; 
+color INTxDATA = product INT * DATA;
+color E = with e;
+var n, k : INT;
+var p,str : DATA;
+val stop = "########";
+
+color BOOL = bool;
+var Ok : BOOL;
+
+
+
+</errordecl>
+</globbox>
+<page id="id123">
+  <pageattr name="Queries2"/>
+  <mult insts="0"/>
+  <modeattr siminc="false" observe="false" propocc="false" interact="false" execcode="false"/>
+  <winattr open="false" width="554" height="475" xpos="213" ypos="233"/>
+  <lineattr type="solid" thick="0" colour="black"/>
+  <fillattr colour="White" pattern="Solid" filled="false"/>
+  <posattr x="0.00000" y="-0.00000"/>
+  <box h="256.11666" w="193.32222"/>
+  
+
+  
+  <aux id="id124">
+<posattr x="-38.10000" y="88.37083"/>
+<fillattr colour="White" pattern="Solid" filled="false"/>
+<lineattr type="solid" thick="0" colour="black"/>
+<textattr font="courier" size="12" just="left" colour="black" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+<label h="43.74238" w="102.65541"/>
+<text>let
+		fun Mark_NextSend(n) =
+       ms_to_col(Mark.Top'NextSend 1 n)
+in
+  PredAllArcs(fn a =&gt;
+       Mark_NextSend(DestNode(a)) &lt;
+       Mark_NextSend(SourceNode(a)))
+end; </text>
+</aux>
+
+
+  
+  <aux id="id99">
+<posattr x="-34.21944" y="7.76111"/>
+<fillattr colour="White" pattern="Solid" filled="false"/>
+<lineattr type="solid" thick="0" colour="black"/>
+<textattr font="courier" size="12" just="left" colour="black" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+<label h="54.32604" w="109.71111"/>
+<text>let
+		fun Mark_NextSend(n) =
+       ms_to_col(Mark.Top'NextSend 1 n);
+		fun Mark_NextRec(n) =
+       ms_to_col(Mark.Top'NextRec 1 n)
+in
+  remdupl(
+  EvalAllNodes(fn n =&gt;
+       Mark_NextRec(n) - Mark_NextSend(n)))
+end; </text>
+</aux>
+
+
+  
+  <aux id="id435">
+    <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+    <lineattr type="solid" thick="0" colour="black"/>
+    <fillattr colour="White" pattern="Solid" filled="false"/>
+    <posattr x="-56.79722" y="116.59305"/>
+    <textattr font="helvetica" size="12" just="left" colour="black" bold="true" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+    <label/>
+    <layering type="copy"/>
+    
+    <text>Is NextSend Ever Decreased?</text>
+  </aux>
+
+
+  
+  <aux id="id434">
+    <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+    <lineattr type="solid" thick="0" colour="black"/>
+    <fillattr colour="White" pattern="Solid" filled="false"/>
+    <posattr x="-56.97361" y="45.68472"/>
+    <textattr font="helvetica" size="12" just="left" colour="black" bold="true" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+    <label/>
+    <layering type="copy"/>
+    
+    <text>Difference Between Counters</text>
+  </aux>
+
+  
+</page>
+<page id="id298">
+  <pageattr name="OG_First"/>
+  <mult insts="0"/>
+  <modeattr siminc="false" observe="false" propocc="false" interact="false" execcode="false"/>
+  <winattr open="false" width="575" height="770" xpos="250" ypos="120"/>
+  <lineattr type="solid" thick="0" colour="black"/>
+  <fillattr colour="White" pattern="Solid" filled="false"/>
+  <posattr x="0.00000" y="-0.00000"/>
+  <box h="256.11666" w="193.32222"/>
+  
+
+  
+  <aux id="id91">
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="2" colour="red"/>
+    <fillattr colour="white" pattern="solid" filled="false"/>
+    <posattr x="-32.10278" y="98.77778"/>
+    <textattr font="courier" size="10" just="centered" colour="red" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+    <box h="12.34722" w="12.34722"/>
+    <layering type="copy"/>
+    
+
+    
+    <aux-std id="id107">
+      <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+      <lineattr type="solid" thick="1" colour="red"/>
+      <fillattr colour="white" pattern="solid" filled="false"/>
+      <posattr x="-56.26805" y="98.60139"/>
+      <textattr font="courier" size="10" just="left" colour="red" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <box h="15.52188" w="32.10264"/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1482.95442" voffset="-180.67928"/>
+      
+      <text>NextSend: 1`1
+NextRec: 1`1
+Received: 1`""
+</text>
+    </aux-std>
+    <text>1 
+1:1</text>
+  </aux>
+
+
+  
+  <aux id="id94">
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="1" colour="red"/>
+    <fillattr colour="white" pattern="solid" filled="false"/>
+    <posattr x="-32.10278" y="69.85000"/>
+    <textattr font="courier" size="10" just="centered" colour="red" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+    <box h="12.34722" w="12.34722"/>
+    <layering type="copy"/>
+    
+
+    
+    <aux-std id="id93">
+      <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+      <lineattr type="solid" thick="1" colour="red"/>
+      <fillattr colour="white" pattern="solid" filled="false"/>
+      <posattr x="-61.55961" y="69.32083"/>
+      <textattr font="courier" size="10" just="left" colour="red" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <box h="20.10816" w="42.68574"/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1482.95442" voffset="-180.67928"/>
+      
+      <text>NextSend: 1`1
+NextRec: 1`1
+A: 1`(1,"Modellin")
+Received: 1`""
+</text>
+    </aux-std>
+    <text>2 
+1:2</text>
+  </aux>
+
+
+  
+  <aux id="id86">
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="1" colour="red"/>
+    <fillattr colour="white" pattern="solid" filled="false"/>
+    <posattr x="-32.10278" y="40.92222"/>
+    <textattr font="courier" size="10" just="centered" colour="red" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+    <box h="12.34722" w="12.34722"/>
+    <layering type="copy"/>
+    
+
+    
+    <aux-std id="id51">
+      <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+      <lineattr type="solid" thick="1" colour="red"/>
+      <fillattr colour="white" pattern="solid" filled="false"/>
+      <posattr x="-61.55959" y="40.04028"/>
+      <textattr font="courier" size="10" just="left" colour="red" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <box h="20.10816" w="42.68571"/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1482.95442" voffset="-180.67928"/>
+      
+      <text>NextSend: 1`1
+NextRec: 1`1
+B: 1`(1,"Modellin")
+Received: 1`""
+</text>
+    </aux-std>
+    <text>3 
+1:1</text>
+  </aux>
+
+
+  
+  <aux id="id604">
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="1" colour="red"/>
+    <fillattr colour="white" pattern="solid" filled="false"/>
+    <posattr x="-32.10278" y="7.05556"/>
+    <textattr font="courier" size="10" just="centered" colour="red" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+    <box h="12.34722" w="12.34722"/>
+    <layering type="copy"/>
+    
+
+    
+    <aux-std id="id404">
+      <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+      <lineattr type="solid" thick="1" colour="red"/>
+      <fillattr colour="white" pattern="solid" filled="false"/>
+      <posattr x="-64.73443" y="6.17361"/>
+      <textattr font="courier" size="10" just="left" colour="red" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <box h="20.10816" w="49.03538"/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1482.95442" voffset="-180.67928"/>
+      
+      <text>NextSend: 1`1
+NextRec: 1`2
+C: 1`2
+Received: 1`"Modellin"
+</text>
+    </aux-std>
+    <text>4 
+2:2</text>
+  </aux>
+
+
+  
+  <aux id="id82">
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="1" colour="red"/>
+    <fillattr colour="white" pattern="solid" filled="false"/>
+    <posattr x="46.91944" y="-23.28333"/>
+    <textattr font="courier" size="10" just="centered" colour="red" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+    <box h="12.34722" w="12.34722"/>
+    <layering type="copy"/>
+    
+
+    
+    <aux-std id="id83">
+      <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+      <lineattr type="solid" thick="1" colour="red"/>
+      <fillattr colour="white" pattern="solid" filled="false"/>
+      <posattr x="14.64028" y="-23.10694"/>
+      <textattr font="courier" size="10" just="left" colour="red" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <box h="15.52188" w="49.03609"/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1482.95442" voffset="-180.67928"/>
+      
+      <text>NextSend: 1`1
+NextRec: 1`2
+Received: 1`"Modellin"
+</text>
+    </aux-std>
+    <text>5 
+2:1</text>
+  </aux>
+
+
+  
+  <aux id="id92">
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="1" colour="red"/>
+    <fillattr colour="white" pattern="solid" filled="false"/>
+    <posattr x="-32.10278" y="-23.28333"/>
+    <textattr font="courier" size="10" just="centered" colour="red" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+    <box h="12.34722" w="12.34722"/>
+    <layering type="copy"/>
+    
+
+    
+    <aux-std id="id90">
+      <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+      <lineattr type="solid" thick="1" colour="red"/>
+      <fillattr colour="white" pattern="solid" filled="false"/>
+      <posattr x="-64.73479" y="-24.16528"/>
+      <textattr font="courier" size="10" just="left" colour="red" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <box h="20.10816" w="49.03609"/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1482.95442" voffset="-180.67928"/>
+      
+      <text>NextSend: 1`1
+NextRec: 1`2
+D: 1`2
+Received: 1`"Modellin"
+</text>
+    </aux-std>
+    <text>6 
+1:1</text>
+  </aux>
+
+
+  
+  <aux id="id505">
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="1" colour="red"/>
+    <fillattr colour="white" pattern="solid" filled="false"/>
+    <posattr x="-32.10278" y="-57.15000"/>
+    <textattr font="courier" size="10" just="centered" colour="red" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+    <box h="12.34722" w="12.34722"/>
+    <layering type="copy"/>
+    
+
+    
+    <aux-std id="id80">
+      <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+      <lineattr type="solid" thick="1" colour="red"/>
+      <fillattr colour="white" pattern="solid" filled="false"/>
+      <posattr x="-64.73479" y="-58.03194"/>
+      <textattr font="courier" size="10" just="left" colour="red" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <box h="15.52188" w="49.03609"/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1482.95442" voffset="-180.67928"/>
+      
+      <text>NextSend: 1`2
+NextRec: 1`2
+Received: 1`"Modellin"
+</text>
+    </aux-std>
+    <text>8 
+2:1</text>
+  </aux>
+
+
+  
+  <aux id="id81">
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="1" colour="red"/>
+    <fillattr colour="white" pattern="solid" filled="false"/>
+    <posattr x="46.91944" y="-57.15000"/>
+    <textattr font="courier" size="10" just="centered" colour="red" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+    <box h="12.34722" w="12.34722"/>
+    <layering type="copy"/>
+    
+
+    
+    <aux-std id="id4">
+      <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+      <lineattr type="solid" thick="1" colour="red"/>
+      <fillattr colour="white" pattern="solid" filled="false"/>
+      <posattr x="14.64028" y="-59.09028"/>
+      <textattr font="courier" size="10" just="left" colour="red" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <box h="20.10816" w="49.03609"/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1482.95442" voffset="-180.67928"/>
+      
+      <text>NextSend: 1`1
+NextRec: 1`2
+A: 1`(1,"Modellin")
+Received: 1`"Modellin"
+</text>
+    </aux-std>
+    <text>7 
+1:2</text>
+  </aux>
+
+
+  
+  <aux id="id78">
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="1" colour="red"/>
+    <fillattr colour="white" pattern="solid" filled="false"/>
+    <posattr x="-32.10278" y="-96.66111"/>
+    <textattr font="courier" size="10" just="centered" colour="red" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+    <box h="12.34722" w="12.34722"/>
+    <layering type="copy"/>
+    
+
+    
+    <aux-std id="id64">
+      <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+      <lineattr type="solid" thick="1" colour="red"/>
+      <fillattr colour="white" pattern="solid" filled="false"/>
+      <posattr x="-64.73479" y="-97.19028"/>
+      <textattr font="courier" size="10" just="left" colour="red" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <box h="20.10816" w="49.03609"/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1482.95442" voffset="-180.67928"/>
+      
+      <text>NextSend: 1`2
+NextRec: 1`2
+A: 1`(2,"g and An")
+Received: 1`"Modellin"
+</text>
+    </aux-std>
+    <text>10 
+1:2</text>
+  </aux>
+
+
+  
+  <aux id="id75">
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="1" colour="red"/>
+    <fillattr colour="white" pattern="solid" filled="false"/>
+    <posattr x="46.91944" y="-96.66111"/>
+    <textattr font="courier" size="10" just="centered" colour="red" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+    <box h="12.34722" w="12.34722"/>
+    <layering type="copy"/>
+    
+
+    
+    <aux-std id="id74">
+      <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+      <lineattr type="solid" thick="1" colour="red"/>
+      <fillattr colour="white" pattern="solid" filled="false"/>
+      <posattr x="14.64028" y="-97.89583"/>
+      <textattr font="courier" size="10" just="left" colour="red" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <box h="20.10816" w="49.03609"/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1482.95442" voffset="-180.67928"/>
+      
+      <text>NextSend: 1`1
+NextRec: 1`2
+B: 1`(1,"Modellin")
+Received: 1`"Modellin"
+</text>
+    </aux-std>
+    <text>9 
+1:1</text>
+  </aux>
+
+
+  
+  <aux id="id72">
+    <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+    <lineattr type="solid" thick="0" colour="teal"/>
+    <fillattr colour="white" pattern="solid" filled="false"/>
+    <posattr x="-24.87083" y="117.65139"/>
+    <textattr font="helvetica" size="18" just="left" colour="teal" bold="true" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+    <label/>
+    <layering type="copy"/>
+    
+    <text>Occurrence Graph - First Part (Limit=1)</text>
+  </aux>
+
+  
+
+  
+  <aux-conn id="id70" orientation="1to2">
+    <connattr hdwidth="4" hdheight="8" txtwidth="64" txtheight="32"/>
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="1" colour="blue"/>
+    <fillattr colour="blue" pattern="solid" filled="false"/>
+    
+    <layering type="copy"/>
+    <node1 idref="id91"/>
+    <node2 idref="id94"/>
+
+    
+    <aux-std id="id88">
+      <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+      <lineattr type="solid" thick="1" colour="blue"/>
+      <fillattr colour="white" pattern="solid" filled="false"/>
+      <posattr x="-17.28611" y="85.37222"/>
+      <textattr font="courier" size="10" just="left" colour="blue" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <box h="10.93610" w="40.56933"/>
+      <layering type="copy"/>
+      <regattr colorap="false" sizewp="true" hoffset="0.00075" voffset="0.00000"/>
+      
+      <text>SendPack: {p="Modellin",n=1}</text>
+    </aux-std>
+    
+  </aux-conn>
+
+
+  
+  <aux-conn id="id57" orientation="1to2">
+    <connattr hdwidth="4" hdheight="8" txtwidth="64" txtheight="32"/>
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="1" colour="fucia"/>
+    <fillattr colour="fucia" pattern="solid" filled="false"/>
+    <bendpoint serial="2">
+<textattr colour="Black" bold="false"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<fillattr colour="White" pattern="Solid"/>
+<posattr x="22.57778" y="69.85000"/>
+</bendpoint>
+<bendpoint serial="1">
+<textattr colour="Black" bold="false"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<fillattr colour="White" pattern="Solid"/>
+<posattr x="22.57778" y="98.77778"/>
+</bendpoint>
+    <layering type="copy"/>
+    <node1 idref="id94"/>
+    <node2 idref="id91"/>
+
+    
+    <aux-std id="id63">
+      <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+      <lineattr type="solid" thick="1" colour="fucia"/>
+      <fillattr colour="white" pattern="solid" filled="false"/>
+      <posattr x="34.92500" y="85.37222"/>
+      <textattr font="courier" size="10" just="left" colour="fucia" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <box h="10.93602" w="59.61909"/>
+      <layering type="copy"/>
+      <regattr colorap="false" sizewp="true" hoffset="0.00061" voffset="0.00000"/>
+      
+      <text>TranPack: {p="Modellin",n=1,Ok=false}</text>
+    </aux-std>
+    
+  </aux-conn>
+
+
+  
+  <aux-conn id="id60" orientation="1to2">
+    <connattr hdwidth="4" hdheight="8" txtwidth="64" txtheight="32"/>
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="1" colour="blue"/>
+    <fillattr colour="blue" pattern="solid" filled="false"/>
+    
+    <layering type="copy"/>
+    <node1 idref="id94"/>
+    <node2 idref="id86"/>
+
+    
+    <aux-std id="id71">
+      <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+      <lineattr type="solid" thick="1" colour="blue"/>
+      <fillattr colour="white" pattern="solid" filled="false"/>
+      <posattr x="-8.81952" y="56.79722"/>
+      <textattr font="courier" size="10" just="left" colour="blue" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <box h="10.93602" w="57.50250"/>
+      <layering type="copy"/>
+      <regattr colorap="false" sizewp="true" hoffset="0.00065" voffset="0.00000"/>
+      
+      <text>TranPack: {p="Modellin",n=1,Ok=true}</text>
+    </aux-std>
+    
+  </aux-conn>
+
+
+  
+  <aux-conn id="id67" orientation="1to2">
+    <connattr hdwidth="4" hdheight="8" txtwidth="64" txtheight="32"/>
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="1" colour="blue"/>
+    <fillattr colour="blue" pattern="solid" filled="false"/>
+    
+    <layering type="copy"/>
+    <node1 idref="id86"/>
+    <node2 idref="id604"/>
+
+    
+    <aux-std id="id324">
+      <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+      <lineattr type="solid" thick="1" colour="blue"/>
+      <fillattr colour="white" pattern="solid" filled="false"/>
+      <posattr x="-14.11116" y="25.57639"/>
+      <textattr font="courier" size="10" just="left" colour="blue" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <box h="15.52210" w="46.91899"/>
+      <layering type="copy"/>
+      <regattr colorap="false" sizewp="true" hoffset="0.00072" voffset="0.00000"/>
+      
+      <text>RecPack: {str="",p="Modellin",
+n=1,k=1}</text>
+    </aux-std>
+    
+  </aux-conn>
+
+
+  
+  <aux-conn id="id62" orientation="1to2">
+    <connattr hdwidth="4" hdheight="8" txtwidth="64" txtheight="32"/>
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="1" colour="fucia"/>
+    <fillattr colour="fucia" pattern="solid" filled="false"/>
+    <bendpoint serial="2">
+<textattr colour="Black" bold="false"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<fillattr colour="White" pattern="Solid"/>
+<posattr x="-26.10556" y="3.17500"/>
+</bendpoint>
+<bendpoint serial="1">
+<textattr colour="Black" bold="false"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<fillattr colour="White" pattern="Solid"/>
+<posattr x="46.91944" y="3.17500"/>
+</bendpoint>
+    <layering type="copy"/>
+    <node1 idref="id604"/>
+    <node2 idref="id82"/>
+
+    
+    <aux-std id="id50">
+      <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+      <lineattr type="solid" thick="1" colour="fucia"/>
+      <fillattr colour="white" pattern="solid" filled="false"/>
+      <posattr x="42.68611" y="-6.35000"/>
+      <textattr font="courier" size="10" just="left" colour="fucia" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <box h="10.93602" w="32.10237"/>
+      <layering type="copy"/>
+      <regattr colorap="false" sizewp="true" hoffset="0.00067" voffset="0.00000"/>
+      
+      <text>TranAck: {n=2,Ok=false}</text>
+    </aux-std>
+    
+  </aux-conn>
+
+
+  
+  <aux-conn id="id56" orientation="1to2">
+    <connattr hdwidth="4" hdheight="8" txtwidth="64" txtheight="32"/>
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="1" colour="blue"/>
+    <fillattr colour="blue" pattern="solid" filled="false"/>
+    
+    <layering type="copy"/>
+    <node1 idref="id604"/>
+    <node2 idref="id92"/>
+
+    
+    <aux-std id="id264">
+      <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+      <lineattr type="solid" thick="1" colour="blue"/>
+      <fillattr colour="white" pattern="solid" filled="false"/>
+      <posattr x="-22.57787" y="-7.05556"/>
+      <textattr font="courier" size="10" just="left" colour="blue" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <box h="10.93602" w="29.98579"/>
+      <layering type="copy"/>
+      <regattr colorap="false" sizewp="true" hoffset="0.00060" voffset="0.00000"/>
+      
+      <text>TranAck: {n=2,Ok=true}</text>
+    </aux-std>
+    
+  </aux-conn>
+
+
+  
+  <aux-conn id="id69" orientation="1to2">
+    <connattr hdwidth="4" hdheight="8" txtwidth="64" txtheight="32"/>
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="1" colour="blue"/>
+    <fillattr colour="blue" pattern="solid" filled="false"/>
+    
+    <layering type="copy"/>
+    <node1 idref="id92"/>
+    <node2 idref="id505"/>
+
+    
+    <aux-std id="id59">
+      <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+      <lineattr type="solid" thick="1" colour="blue"/>
+      <fillattr colour="white" pattern="solid" filled="false"/>
+      <posattr x="-26.81130" y="-39.51111"/>
+      <textattr font="courier" size="10" just="left" colour="blue" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <box h="10.93602" w="21.51893"/>
+      <layering type="copy"/>
+      <regattr colorap="false" sizewp="true" hoffset="0.00074" voffset="0.00000"/>
+      
+      <text>RecAck: {n=2,k=1}</text>
+    </aux-std>
+    
+  </aux-conn>
+
+
+  
+  <aux-conn id="id256" orientation="1to2">
+    <connattr hdwidth="4" hdheight="8" txtwidth="64" txtheight="32"/>
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="1" colour="blue"/>
+    <fillattr colour="blue" pattern="solid" filled="false"/>
+    
+    <layering type="copy"/>
+    <node1 idref="id82"/>
+    <node2 idref="id81"/>
+
+    
+    <aux-std id="id594">
+      <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+      <lineattr type="solid" thick="1" colour="blue"/>
+      <fillattr colour="white" pattern="solid" filled="false"/>
+      <posattr x="38.45285" y="-39.33472"/>
+      <textattr font="courier" size="10" just="left" colour="blue" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <box h="10.93611" w="40.56889"/>
+      <layering type="copy"/>
+      <regattr colorap="false" sizewp="true" hoffset="0.00276" voffset="0.00000"/>
+      
+      <text>SendPack: {p="Modellin",n=1}</text>
+    </aux-std>
+    
+  </aux-conn>
+
+
+  
+  <aux-conn id="id278" orientation="1to2">
+    <connattr hdwidth="4" hdheight="8" txtwidth="64" txtheight="32"/>
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="1" colour="blue"/>
+    <fillattr colour="blue" pattern="solid" filled="false"/>
+    
+    <layering type="copy"/>
+    <node1 idref="id505"/>
+    <node2 idref="id78"/>
+
+    
+    <aux-std id="id58">
+      <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+      <lineattr type="solid" thick="1" colour="blue"/>
+      <fillattr colour="white" pattern="solid" filled="false"/>
+      <posattr x="-42.15694" y="-76.55278"/>
+      <textattr font="courier" size="10" just="left" colour="blue" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <box h="10.93605" w="40.56889"/>
+      <layering type="copy"/>
+      <regattr colorap="false" sizewp="true" hoffset="0.00299" voffset="0.00000"/>
+      
+      <text>SendPack:
+{p="g and An",n=2}</text>
+    </aux-std>
+    
+  </aux-conn>
+
+
+  
+  <aux-conn id="id370" orientation="1to2">
+    <connattr hdwidth="4" hdheight="8" txtwidth="64" txtheight="32"/>
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="1" colour="fucia"/>
+    <fillattr colour="fucia" pattern="solid" filled="false"/>
+    <bendpoint serial="2">
+<textattr colour="Black" bold="false"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<fillattr colour="White" pattern="Solid"/>
+<posattr x="63.50000" y="-57.15000"/>
+</bendpoint>
+<bendpoint serial="1">
+<textattr colour="Black" bold="false"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<fillattr colour="White" pattern="Solid"/>
+<posattr x="63.50000" y="-23.28333"/>
+</bendpoint>
+    <layering type="copy"/>
+    <node1 idref="id81"/>
+    <node2 idref="id82"/>
+    
+  </aux-conn>
+
+
+  
+  <aux-conn id="id585" orientation="1to2">
+    <connattr hdwidth="4" hdheight="8" txtwidth="64" txtheight="32"/>
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="1" colour="blue"/>
+    <fillattr colour="blue" pattern="solid" filled="false"/>
+    
+    <layering type="copy"/>
+    <node1 idref="id81"/>
+    <node2 idref="id75"/>
+
+    
+    <aux-std id="id603">
+      <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+      <lineattr type="solid" thick="1" colour="blue"/>
+      <fillattr colour="white" pattern="solid" filled="false"/>
+      <posattr x="29.98616" y="-76.55278"/>
+      <textattr font="courier" size="10" just="left" colour="blue" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <box h="10.93579" w="57.50227"/>
+      <layering type="copy"/>
+      <regattr colorap="false" sizewp="true" hoffset="0.00630" voffset="0.00000"/>
+      
+      <text>TranPack: {p="Modellin",n=1,Ok=true}</text>
+    </aux-std>
+    
+  </aux-conn>
+
+
+  
+  <aux-conn id="id399" orientation="1to2">
+    <connattr hdwidth="4" hdheight="8" txtwidth="64" txtheight="32"/>
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="1" colour="blue"/>
+    <fillattr colour="blue" pattern="solid" filled="false"/>
+    <bendpoint serial="2">
+<textattr colour="Black" bold="false"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<fillattr colour="White" pattern="Solid"/>
+<posattr x="69.14444" y="-96.66111"/>
+</bendpoint>
+<bendpoint serial="1">
+<textattr colour="Black" bold="false"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<fillattr colour="White" pattern="Solid"/>
+<posattr x="69.14444" y="7.05556"/>
+</bendpoint>
+    <layering type="copy"/>
+    <node1 idref="id75"/>
+    <node2 idref="id604"/>
+
+    
+    <aux-std id="id601">
+      <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+      <lineattr type="solid" thick="1" colour="blue"/>
+      <fillattr colour="white" pattern="solid" filled="false"/>
+      <posattr x="40.21661" y="13.05278"/>
+      <textattr font="courier" size="10" just="left" colour="blue" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <box h="15.52215" w="46.91899"/>
+      <layering type="copy"/>
+      <regattr colorap="false" sizewp="true" hoffset="0.00430" voffset="0.00000"/>
+      
+      <text>RecPack:
+{str="Modellin",
+p="Modellin",n=1,k=2}</text>
+    </aux-std>
+    
+  </aux-conn>
+
+
+  
+  <aux-conn id="id597" orientation="1to2">
+    <connattr hdwidth="4" hdheight="8" txtwidth="64" txtheight="32"/>
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="1" colour="fucia"/>
+    <fillattr colour="fucia" pattern="solid" filled="false"/>
+    <bendpoint serial="2">
+<textattr colour="Black" bold="false"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<fillattr colour="White" pattern="Solid"/>
+<posattr x="-15.87500" y="-96.66111"/>
+</bendpoint>
+<bendpoint serial="1">
+<textattr colour="Black" bold="false"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<fillattr colour="White" pattern="Solid"/>
+<posattr x="-15.87500" y="-57.15000"/>
+</bendpoint>
+    <layering type="copy"/>
+    <node1 idref="id78"/>
+    <node2 idref="id505"/>
+    
+  </aux-conn>
+
+</page>
+<page id="id346">
+  <pageattr name="Top"/>
+  <mult insts="1"/>
+  <modeattr siminc="false" observe="false" propocc="false" interact="false" execcode="false"/>
+  <winattr open="true" width="553" height="654" xpos="281" ypos="114"/>
+  <lineattr type="solid" thick="0" colour="black"/>
+  <fillattr colour="White" pattern="Solid" filled="false"/>
+  <posattr x="0.00000" y="-0.00000"/>
+  <box h="274.10833" w="188.38333"/>
+  
+
+  
+  
+
+
+  
+  <trans id="id317">
+<posattr x="-70.37917" y="85.37222"/>
+<fillattr colour="white" pattern="solid" filled="false"/>
+<lineattr type="solid" thick="2" colour="navy"/>
+<textattr font="helvetica" size="12" just="centered" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+<text>Send
+Packet - SendPack</text>
+<box h="13.40496" w="21.87130"/>
+</trans>
+
+
+  
+  <trans id="id344">
+<posattr x="-3.52778" y="85.37222"/>
+<fillattr colour="white" pattern="solid" filled="false"/>
+<lineattr type="solid" thick="2" colour="teal"/>
+<textattr font="helvetica" size="12" just="centered" colour="teal" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+<text>Transmit
+Packet - TranPack</text>
+<box h="13.40496" w="21.87130"/>
+</trans>
+
+
+  
+  <trans id="id251">
+<posattr x="64.91111" y="53.97500"/>
+<fillattr colour="white" pattern="solid" filled="false"/>
+<lineattr type="solid" thick="2" colour="navy"/>
+<textattr font="helvetica" size="12" just="centered" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+<text>Receive
+Packet - RecPack</text>
+<box h="13.40514" w="21.87163"/>
+</trans>
+
+
+  
+  <trans id="id330">
+<posattr x="-70.37917" y="24.69444"/>
+<fillattr colour="white" pattern="solid" filled="false"/>
+<lineattr type="solid" thick="2" colour="navy"/>
+<textattr font="helvetica" size="12" just="centered" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+<text>Receive
+Acknow. - RecAck</text>
+<box h="13.40514" w="21.87163"/>
+</trans>
+
+
+  
+  <trans id="id314">
+<posattr x="-3.52778" y="24.69444"/>
+<fillattr colour="white" pattern="solid" filled="false"/>
+<lineattr type="solid" thick="2" colour="teal"/>
+<textattr font="helvetica" size="12" just="centered" colour="teal" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+<text>Transmit
+Acknow. - TranAck</text>
+<box h="13.40514" w="21.87163"/>
+</trans>
+
+
+  
+  <aux id="id18">
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="0" colour="blue"/>
+    <fillattr colour="White" pattern="Solid" filled="false"/>
+    <posattr x="-38.10000" y="48.85972"/>
+    <line points="(-38.10000,98.07222)(-38.10000,-0.35278)"/>
+    <layering type="copy"/>
+    
+    
+  </aux>
+
+
+  
+  <place id="id323">
+<posattr x="-70.37917" y="116.41666"/>
+<fillattr colour="white" pattern="solid" filled="false"/>
+<lineattr type="solid" thick="1" colour="navy"/>
+<textattr font="helvetica" size="12" just="centered" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+<text>Send</text>
+<ellipse h="8.46659" w="19.40276"/>
+<type id="id20">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="navy"/>
+      <fillattr colour="White" pattern="Solid" filled="false"/>
+      <posattr x="-78.16233" y="124.13368"/>
+      <textattr font="helvetica" size="9" just="left" colour="navy" bold="false" italic="true" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1485.62316" voffset="-180.67928"/>
+      
+      <text>INTxDATA</text>
+    </type>
+<initmark id="id341">
+      <flags mask="false" omit="true" nobound="true" nosizing="true" visible="false"/>
+      <lineattr type="solid" thick="0" colour="navy"/>
+      <fillattr colour="White" pattern="Solid" filled="false"/>
+      <posattr x="-42.44358" y="112.18333"/>
+      <textattr font="helvetica" size="9" just="left" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1485.62316" voffset="-180.67928"/>
+      
+      <text>1`(1,"Modellin")++
+1`(2,"g and An")++
+1`(3,"alysis##")++
+1`(4,"########")</text>
+    </initmark>
+</place>
+
+
+  
+  <place id="id34">
+<posattr x="-70.37917" y="55.03333"/>
+<fillattr colour="white" pattern="solid" filled="false"/>
+<lineattr type="solid" thick="1" colour="navy"/>
+<textattr font="helvetica" size="12" just="centered" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+<text>NextSend</text>
+<ellipse h="8.46659" w="26.10526"/>
+<type id="id320">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="navy"/>
+      <fillattr colour="White" pattern="Solid" filled="false"/>
+      <posattr x="-82.70165" y="50.57951"/>
+      <textattr font="helvetica" size="9" just="left" colour="navy" bold="false" italic="true" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1485.62316" voffset="-180.67928"/>
+      
+      <text>INT</text>
+    </type>
+<initmark id="id22">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="navy"/>
+      <fillattr colour="White" pattern="Solid" filled="false"/>
+      <posattr x="-82.91380" y="59.57535"/>
+      <textattr font="helvetica" size="9" just="left" colour="navy" bold="false" italic="false" underlin="true" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1485.62316" voffset="-180.67928"/>
+      
+      <text>1</text>
+    </initmark>
+</place>
+
+
+  
+  <place id="id21">
+<posattr x="-37.92361" y="24.69444"/>
+<fillattr colour="white" pattern="solid" filled="false"/>
+<lineattr type="solid" thick="2" colour="navy"/>
+<textattr font="helvetica" size="12" just="centered" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+<text>D</text>
+<ellipse h="8.46662" w="8.46665"/>
+<type id="id25">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="navy"/>
+      <fillattr colour="white" pattern="solid" filled="false"/>
+      <posattr x="-38.60831" y="18.12394"/>
+      <textattr font="helvetica" size="9" just="left" colour="navy" bold="false" italic="true" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1485.62316" voffset="-180.67928"/>
+      
+      <text>INT</text>
+    </type>
+</place>
+
+
+  
+  <place id="id36">
+<posattr x="-37.92361" y="85.37222"/>
+<fillattr colour="white" pattern="solid" filled="false"/>
+<lineattr type="solid" thick="2" colour="navy"/>
+<textattr font="helvetica" size="12" just="centered" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+<text>A</text>
+<ellipse h="8.46662" w="8.46665"/>
+<type id="id38">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="navy"/>
+      <fillattr colour="white" pattern="solid" filled="false"/>
+      <posattr x="-37.48383" y="92.20727"/>
+      <textattr font="helvetica" size="9" just="left" colour="navy" bold="false" italic="true" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1485.62316" voffset="-180.67928"/>
+      
+      <text>INTxDATA</text>
+    </type>
+</place>
+
+
+  
+  <aux id="id27">
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="0" colour="blue"/>
+    <fillattr colour="White" pattern="Solid" filled="false"/>
+    <posattr x="27.95764" y="48.85972"/>
+    <line points="(41.09861,98.07222)(41.09861,72.49583)(14.81667,65.79305)(14.81667,44.45000)(41.09861,36.33611)(41.09861,-0.35278)"/>
+    <layering type="copy"/>
+    
+    
+  </aux>
+
+
+  
+  <place id="id32">
+<posattr x="64.55833" y="116.41666"/>
+<fillattr colour="white" pattern="solid" filled="false"/>
+<lineattr type="solid" thick="1" colour="navy"/>
+<textattr font="helvetica" size="12" just="centered" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+<text>Received</text>
+<ellipse h="8.46659" w="22.22483"/>
+<type id="id6">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="navy"/>
+      <fillattr colour="White" pattern="Solid" filled="false"/>
+      <posattr x="54.93480" y="110.55173"/>
+      <textattr font="helvetica" size="9" just="left" colour="navy" bold="false" italic="true" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1485.62316" voffset="-180.67928"/>
+      
+      <text>DATA</text>
+    </type>
+<initmark id="id118">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="navy"/>
+      <fillattr colour="White" pattern="Solid" filled="false"/>
+      <posattr x="51.81424" y="120.07673"/>
+      <textattr font="helvetica" size="9" just="left" colour="navy" bold="false" italic="false" underlin="true" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1485.62316" voffset="-180.67928"/>
+      
+      <text>""</text>
+    </initmark>
+</place>
+
+
+  
+  <place id="id311">
+<posattr x="32.27917" y="55.03333"/>
+<fillattr colour="white" pattern="solid" filled="false"/>
+<lineattr type="solid" thick="1" colour="navy"/>
+<textattr font="helvetica" size="12" just="centered" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+<text>NextRec</text>
+<ellipse h="8.46659" w="23.63590"/>
+<type id="id47">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="navy"/>
+      <fillattr colour="White" pattern="Solid" filled="false"/>
+      <posattr x="23.25213" y="49.34479"/>
+      <textattr font="helvetica" size="9" just="left" colour="navy" bold="false" italic="true" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1485.62316" voffset="-180.67928"/>
+      
+      <text>INT</text>
+    </type>
+<initmark id="id48">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="navy"/>
+      <fillattr colour="White" pattern="Solid" filled="false"/>
+      <posattr x="22.24217" y="60.45729"/>
+      <textattr font="helvetica" size="9" just="left" colour="navy" bold="false" italic="false" underlin="true" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1485.62316" voffset="-180.67928"/>
+      
+      <text>1</text>
+    </initmark>
+</place>
+
+
+  
+  <place id="id299">
+<posattr x="41.27500" y="85.37222"/>
+<fillattr colour="white" pattern="solid" filled="false"/>
+<lineattr type="solid" thick="2" colour="navy"/>
+<textattr font="helvetica" size="12" just="centered" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+<text>B</text>
+<ellipse h="8.46662" w="8.46665"/>
+<type id="id270">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="navy"/>
+      <fillattr colour="white" pattern="solid" filled="false"/>
+      <posattr x="41.53839" y="92.20727"/>
+      <textattr font="helvetica" size="9" just="left" colour="navy" bold="false" italic="true" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1485.62316" voffset="-180.67928"/>
+      
+      <text>INTxDATA</text>
+    </type>
+</place>
+
+
+  
+  <place id="id293">
+<posattr x="41.27500" y="24.69444"/>
+<fillattr colour="white" pattern="solid" filled="false"/>
+<lineattr type="solid" thick="2" colour="navy"/>
+<textattr font="helvetica" size="12" just="centered" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+<text>C</text>
+<ellipse h="8.46662" w="8.46665"/>
+<type id="id289">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="navy"/>
+      <fillattr colour="white" pattern="solid" filled="false"/>
+      <posattr x="40.23752" y="18.12394"/>
+      <textattr font="helvetica" size="9" just="left" colour="navy" bold="false" italic="true" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1485.62316" voffset="-180.67928"/>
+      
+      <text>INT</text>
+    </type>
+</place>
+
+
+  
+  <aux id="id316">
+    <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+    <lineattr type="solid" thick="0" colour="navy"/>
+    <fillattr colour="White" pattern="Solid" filled="false"/>
+    <posattr x="-69.32083" y="1.23472"/>
+    <textattr font="helvetica" size="14" just="left" colour="navy" bold="true" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+    <label/>
+    <layering type="copy"/>
+    
+    <text>Sender</text>
+  </aux>
+
+
+  
+  <aux id="id518">
+    <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+    <lineattr type="solid" thick="0" colour="teal"/>
+    <fillattr colour="White" pattern="Solid" filled="false"/>
+    <posattr x="4.23333" y="1.23472"/>
+    <textattr font="helvetica" size="14" just="left" colour="teal" bold="true" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+    <label/>
+    <layering type="copy"/>
+    
+    <text>Network</text>
+  </aux>
+
+
+  
+  <aux id="id512">
+    <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+    <lineattr type="solid" thick="0" colour="navy"/>
+    <fillattr colour="White" pattern="Solid" filled="false"/>
+    <posattr x="65.79305" y="1.23472"/>
+    <textattr font="helvetica" size="14" just="left" colour="navy" bold="true" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+    <label/>
+    <layering type="copy"/>
+    
+    <text>Receiver</text>
+  </aux>
+
+
+  
+  <aux id="id532">
+    <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+    <lineattr type="solid" thick="0" colour="navy"/>
+    <fillattr colour="White" pattern="Solid" filled="false"/>
+    <posattr x="-44.09725" y="-71.96667"/>
+    <textattr font="helvetica" size="32" just="left" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+    <label/>
+    <layering type="copy"/>
+    
+    <text>Simple Protocol</text>
+  </aux>
+
+
+  
+  <place id="id516">
+<posattr x="-39.15833" y="55.03333"/>
+<fillattr colour="white" pattern="solid" filled="false"/>
+<lineattr type="solid" thick="1" colour="green"/>
+<textattr font="helvetica" size="12" just="centered" colour="green" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+<text>Limit
+</text>
+<ellipse h="8.46667" w="14.11110"/>
+<type id="id521">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="green"/>
+      <fillattr colour="white" pattern="solid" filled="false"/>
+      <posattr x="-49.53218" y="52.34326"/>
+      <textattr font="helvetica" size="9" just="left" colour="green" bold="false" italic="true" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1485.62316" voffset="-180.67928"/>
+      
+      <text>E</text>
+    </type>
+<initmark id="id460">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="green"/>
+      <fillattr colour="White" pattern="Solid" filled="false"/>
+      <posattr x="-50.69234" y="58.34070"/>
+      <textattr font="helvetica" size="9" just="left" colour="green" bold="false" italic="false" underlin="true" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1485.62316" voffset="-180.67928"/>
+      
+      <text>2`e</text>
+    </initmark>
+</place>
+
+  
+
+  
+  <arc id="id328" orientation="ttop">
+<fillattr colour="navy" pattern="solid" filled="false"/>
+<lineattr type="solid" thick="2" colour="navy"/>
+<transend idref="id317"/>
+<placeend idref="id36"/>
+<annot id="id511">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="navy"/>
+      <fillattr colour="White" pattern="Solid" filled="false"/>
+      <posattr x="-50.40312" y="88.37083"/>
+      <textattr font="helvetica" size="9" just="left" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="-180.67958" voffset="0.00000"/>
+      
+      <text>(n,p)</text>
+    </annot>
+</arc>
+
+
+  
+  <arc id="id97" orientation="ptot">
+<fillattr colour="teal" pattern="solid" filled="false"/>
+<lineattr type="solid" thick="2" colour="teal"/>
+<transend idref="id344"/>
+<placeend idref="id36"/>
+<annot id="id504">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="teal"/>
+      <fillattr colour="White" pattern="Solid" filled="false"/>
+      <posattr x="-25.09132" y="88.37083"/>
+      <textattr font="helvetica" size="9" just="left" colour="teal" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="-180.67958" voffset="0.00000"/>
+      
+      <text>(n,p)</text>
+    </annot>
+</arc>
+
+
+  
+  <arc id="id497" orientation="ttop">
+<fillattr colour="teal" pattern="solid" filled="false"/>
+<lineattr type="solid" thick="2" colour="teal"/>
+<transend idref="id344"/>
+<placeend idref="id299"/>
+<annot id="id491">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="teal"/>
+      <fillattr colour="White" pattern="Solid" filled="false"/>
+      <posattr x="22.15885" y="92.16319"/>
+      <textattr font="helvetica" size="9" just="left" colour="teal" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="-180.67958" voffset="0.00000"/>
+      
+      <text>if Ok
+then 1`(n,p)
+else empty</text>
+    </annot>
+</arc>
+
+
+  
+  <arc id="id488" orientation="bothdir">
+<fillattr colour="navy" pattern="solid" filled="false"/>
+<lineattr type="solid" thick="0" colour="navy"/>
+<transend idref="id317"/>
+<placeend idref="id323"/>
+<annot id="id490">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="navy"/>
+      <fillattr colour="White" pattern="Solid" filled="false"/>
+      <posattr x="-74.56840" y="102.83472"/>
+      <textattr font="helvetica" size="9" just="left" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="-180.67958" voffset="0.00000"/>
+      
+      <text>(n,p)</text>
+    </annot>
+</arc>
+
+
+  
+  <arc id="id476" orientation="ptot">
+<fillattr colour="navy" pattern="solid" filled="false"/>
+<lineattr type="solid" thick="2" colour="navy"/>
+<transend idref="id251" endpoint="id14"/>
+<placeend idref="id299"/>
+<annot id="id479">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="navy"/>
+      <fillattr colour="White" pattern="Solid" filled="false"/>
+      <posattr x="54.37187" y="88.37072"/>
+      <textattr font="helvetica" size="9" just="left" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="-180.67958" voffset="0.00000"/>
+      
+      <text>(n,p)</text>
+    </annot>
+<bendpoint serial="1">
+<textattr colour="Black" bold="false"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<fillattr colour="White" pattern="Solid"/>
+<posattr x="62.44167" y="85.37222"/>
+</bendpoint>
+</arc>
+
+
+  
+  <arc id="id470" orientation="ttop">
+<fillattr colour="navy" pattern="solid" filled="false"/>
+<lineattr type="solid" thick="0" colour="navy"/>
+<transend idref="id251" endpoint="id2"/>
+<placeend idref="id32" endpoint="id37"/>
+<annot id="id480">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="navy"/>
+      <fillattr colour="White" pattern="Solid" filled="false"/>
+      <posattr x="80.58767" y="91.43872"/>
+      <textattr font="helvetica" size="9" just="left" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="-180.67958" voffset="0.00000"/>
+      
+      <text>if n=k
+andalso
+p&lt;&gt;stop
+then str^p
+else str</text>
+    </annot>
+</arc>
+
+
+  
+  <arc id="id462" orientation="ttop">
+<fillattr colour="navy" pattern="solid" filled="false"/>
+<lineattr type="solid" thick="2" colour="navy"/>
+<transend idref="id251" endpoint="id343"/>
+<placeend idref="id293"/>
+<annot id="id472">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="navy"/>
+      <fillattr colour="White" pattern="Solid" filled="false"/>
+      <posattr x="72.16510" y="33.80798"/>
+      <textattr font="helvetica" size="9" just="left" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="-180.67958" voffset="0.00000"/>
+      
+      <text>if n=k
+then k+1
+else k</text>
+    </annot>
+<bendpoint serial="1">
+<textattr colour="Black" bold="false"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<fillattr colour="White" pattern="Solid"/>
+<posattr x="62.44167" y="24.69444"/>
+</bendpoint>
+</arc>
+
+
+  
+  <arc id="id266" orientation="ptot">
+<fillattr colour="teal" pattern="solid" filled="false"/>
+<lineattr type="solid" thick="2" colour="teal"/>
+<transend idref="id314"/>
+<placeend idref="id293"/>
+<annot id="id522">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="teal"/>
+      <fillattr colour="White" pattern="Solid" filled="false"/>
+      <posattr x="24.09913" y="22.04861"/>
+      <textattr font="helvetica" size="9" just="left" colour="teal" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="-180.67958" voffset="0.00000"/>
+      
+      <text>n</text>
+    </annot>
+</arc>
+
+
+  
+  <arc id="id190" orientation="ptot">
+<fillattr colour="navy" pattern="solid" filled="false"/>
+<lineattr type="solid" thick="0" colour="navy"/>
+<transend idref="id251"/>
+<placeend idref="id311"/>
+<annot id="id267">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="navy"/>
+      <fillattr colour="White" pattern="Solid" filled="false"/>
+      <posattr x="46.56667" y="63.67639"/>
+      <textattr font="helvetica" size="9" just="left" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="-180.67958" voffset="0.00000"/>
+      
+      <text>k</text>
+    </annot>
+<bendpoint serial="1">
+<textattr colour="Black" bold="false"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<fillattr colour="White" pattern="Solid"/>
+<posattr x="46.03750" y="60.67778"/>
+</bendpoint>
+</arc>
+
+
+  
+  <arc id="id286" orientation="ttop">
+<fillattr colour="navy" pattern="solid" filled="false"/>
+<lineattr type="solid" thick="0" colour="navy"/>
+<transend idref="id251"/>
+<placeend idref="id311"/>
+<annot id="id128">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="navy"/>
+      <fillattr colour="White" pattern="Solid" filled="false"/>
+      <posattr x="50.73385" y="44.00903"/>
+      <textattr font="helvetica" size="9" just="left" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="-180.67958" voffset="0.00000"/>
+      
+      <text>if n=k
+then k+1
+else k</text>
+    </annot>
+<bendpoint serial="1">
+<textattr colour="Black" bold="false"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<fillattr colour="White" pattern="Solid"/>
+<posattr x="46.74305" y="50.44722"/>
+</bendpoint>
+</arc>
+
+
+  
+  <arc id="id259" orientation="ttop">
+<fillattr colour="teal" pattern="solid" filled="false"/>
+<lineattr type="solid" thick="2" colour="teal"/>
+<transend idref="id314"/>
+<placeend idref="id21"/>
+<annot id="id262">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="teal"/>
+      <fillattr colour="White" pattern="Solid" filled="false"/>
+      <posattr x="-20.41701" y="17.55069"/>
+      <textattr font="helvetica" size="9" just="left" colour="teal" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="-180.67958" voffset="0.00000"/>
+      
+      <text>if Ok
+then 1`n
+else empty</text>
+    </annot>
+</arc>
+
+
+  
+  <arc id="id135" orientation="ptot">
+<fillattr colour="navy" pattern="solid" filled="false"/>
+<lineattr type="solid" thick="2" colour="navy"/>
+<transend idref="id330"/>
+<placeend idref="id21"/>
+<annot id="id116">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="navy"/>
+      <fillattr colour="White" pattern="Solid" filled="false"/>
+      <posattr x="-48.92587" y="22.04861"/>
+      <textattr font="helvetica" size="9" just="left" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="-180.67958" voffset="0.00000"/>
+      
+      <text>n</text>
+    </annot>
+</arc>
+
+
+  
+  <arc id="id274" orientation="ptot">
+<fillattr colour="navy" pattern="solid" filled="false"/>
+<lineattr type="solid" thick="0" colour="navy"/>
+<transend idref="id330"/>
+<placeend idref="id34"/>
+<annot id="id281">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="navy"/>
+      <fillattr colour="White" pattern="Solid" filled="false"/>
+      <posattr x="-74.87708" y="41.45139"/>
+      <textattr font="helvetica" size="9" just="left" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="-180.67958" voffset="0.00000"/>
+      
+      <text>k</text>
+    </annot>
+<bendpoint serial="1">
+<textattr colour="Black" bold="false"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<fillattr colour="White" pattern="Solid"/>
+<posattr x="-73.90694" y="42.68611"/>
+</bendpoint>
+</arc>
+
+
+  
+  <arc id="id133" orientation="ttop">
+<fillattr colour="navy" pattern="solid" filled="false"/>
+<lineattr type="solid" thick="0" colour="navy"/>
+<transend idref="id330"/>
+<placeend idref="id34"/>
+<annot id="id137">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="navy"/>
+      <fillattr colour="White" pattern="Solid" filled="false"/>
+      <posattr x="-64.27170" y="41.45139"/>
+      <textattr font="helvetica" size="9" just="left" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="-180.67958" voffset="0.00000"/>
+      
+      <text>n</text>
+    </annot>
+<bendpoint serial="1">
+<textattr colour="Black" bold="false"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<fillattr colour="White" pattern="Solid"/>
+<posattr x="-66.67500" y="39.86389"/>
+</bendpoint>
+</arc>
+
+
+  
+  <arc id="id134" orientation="ptot">
+<fillattr colour="navy" pattern="solid" filled="false"/>
+<lineattr type="solid" thick="0" colour="navy"/>
+<transend idref="id317"/>
+<placeend idref="id34"/>
+<annot id="id151">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="navy"/>
+      <fillattr colour="White" pattern="Solid" filled="false"/>
+      <posattr x="-75.38420" y="69.67361"/>
+      <textattr font="helvetica" size="9" just="left" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="-180.67958" voffset="0.00000"/>
+      
+      <text>n</text>
+    </annot>
+<bendpoint serial="1">
+<textattr colour="Black" bold="false"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<fillattr colour="White" pattern="Solid"/>
+<posattr x="-74.43611" y="68.61528"/>
+</bendpoint>
+</arc>
+
+
+  
+  <arc id="id260" orientation="ttop">
+<fillattr colour="navy" pattern="solid" filled="false"/>
+<lineattr type="solid" thick="0" colour="navy"/>
+<transend idref="id317"/>
+<placeend idref="id34"/>
+<annot id="id129">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="navy"/>
+      <fillattr colour="White" pattern="Solid" filled="false"/>
+      <posattr x="-64.27170" y="69.67361"/>
+      <textattr font="helvetica" size="9" just="left" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="-180.67958" voffset="0.00000"/>
+      
+      <text>n</text>
+    </annot>
+<bendpoint serial="1">
+<textattr colour="Black" bold="false"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<fillattr colour="White" pattern="Solid"/>
+<posattr x="-66.85139" y="68.61528"/>
+</bendpoint>
+</arc>
+
+
+  
+  <arc id="id144" orientation="ptot">
+<fillattr colour="navy" pattern="solid" filled="false"/>
+<lineattr type="solid" thick="0" colour="navy"/>
+<transend idref="id251" endpoint="id182"/>
+<placeend idref="id32" endpoint="id295"/>
+<annot id="id236">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="navy"/>
+      <fillattr colour="White" pattern="Solid" filled="false"/>
+      <posattr x="65.68467" y="91.72215"/>
+      <textattr font="helvetica" size="9" just="left" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="-180.67958" voffset="0.00000"/>
+      
+      <text>str</text>
+    </annot>
+</arc>
+
+
+  
+  <arc id="id168" orientation="ptot">
+<fillattr colour="green" pattern="solid" filled="false"/>
+<lineattr type="solid" thick="0" colour="green"/>
+<transend idref="id317"/>
+<placeend idref="id516"/>
+<annot id="id139">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="green"/>
+      <fillattr colour="White" pattern="Solid" filled="false"/>
+      <posattr x="-51.15278" y="70.90833"/>
+      <textattr font="helvetica" size="9" just="left" colour="green" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="-180.67958" voffset="0.00000"/>
+      
+      <text>e</text>
+    </annot>
+</arc>
+
+
+  
+  <arc id="id164" orientation="ttop">
+<fillattr colour="green" pattern="solid" filled="false"/>
+<lineattr type="solid" thick="0" colour="green"/>
+<transend idref="id344"/>
+<placeend idref="id516"/>
+<annot id="id162">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="green"/>
+      <fillattr colour="white" pattern="solid" filled="false"/>
+      <posattr x="-23.79045" y="71.17292"/>
+      <textattr font="helvetica" size="9" just="left" colour="green" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="-180.67958" voffset="0.00000"/>
+      
+      <text>if Ok
+then empty
+else 1`e</text>
+    </annot>
+</arc>
+
+
+  
+  <arc id="id173" orientation="ttop">
+<fillattr colour="green" pattern="solid" filled="false"/>
+<lineattr type="solid" thick="0" colour="green"/>
+<transend idref="id330"/>
+<placeend idref="id516"/>
+<annot id="id172">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="green"/>
+      <fillattr colour="White" pattern="Solid" filled="false"/>
+      <posattr x="-51.15278" y="40.56944"/>
+      <textattr font="helvetica" size="9" just="left" colour="green" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="-180.67958" voffset="0.00000"/>
+      
+      <text>e</text>
+    </annot>
+</arc>
+
+
+  
+  <arc id="id181" orientation="ttop">
+<fillattr colour="green" pattern="solid" filled="false"/>
+<lineattr type="solid" thick="0" colour="green"/>
+<transend idref="id314"/>
+<placeend idref="id516"/>
+<annot id="id167">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="green"/>
+      <fillattr colour="white" pattern="solid" filled="false"/>
+      <posattr x="-24.49601" y="39.42292"/>
+      <textattr font="helvetica" size="9" just="left" colour="green" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="-180.67958" voffset="0.00000"/>
+      
+      <text>if Ok
+then empty
+else 1`e</text>
+    </annot>
+</arc>
+
+</page>
+<page id="id371">
+  <pageattr name="Options"/>
+  <mult insts="0"/>
+  <modeattr siminc="false" observe="false" propocc="false" interact="false" execcode="false"/>
+  <winattr open="false" width="533" height="587" xpos="245" ypos="157"/>
+  <lineattr type="solid" thick="0" colour="black"/>
+  <fillattr colour="White" pattern="Solid" filled="false"/>
+  <posattr x="0.00000" y="-0.00000"/>
+  <box h="256.11666" w="193.32222"/>
+  
+
+  
+  <aux id="id390">
+<posattr x="-18.69722" y="72.14305"/>
+<fillattr colour="White" pattern="Solid" filled="false"/>
+<lineattr type="solid" thick="0" colour="black"/>
+<textattr font="courier" size="12" just="left" colour="black" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+<label h="71.60971" w="124.52775"/>
+<text>(* Remove Instances *)
+OGSet.StringRepOptions'PI(
+fn (CPN'page, CPN'place, CPN'inst) =&gt; CPN'place);
+
+OGSet.StringRepOptions'TI(
+fn (CPN'page, CPN'trans, CPN'inst) =&gt; CPN'trans);
+
+(* Remove Empty Places *)
+OGSet.StringRepOptions'Mark(
+fn (CPN'PI, CPN'mark) =&gt;
+if CPN'mark="empty" orelse CPN'mark="tempty"
+then ""
+else CPN'PI^": "^CPN'mark^"\n");
+</text>
+</aux>
+
+
+  
+  <aux id="id358">
+    <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+    <lineattr type="solid" thick="0" colour="black"/>
+    <fillattr colour="White" pattern="Solid" filled="false"/>
+    <posattr x="-26.28194" y="115.18194"/>
+    <textattr font="helvetica" size="12" just="left" colour="black" bold="true" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+    <label/>
+    <layering type="copy"/>
+    
+    <text>Place Instances, Transition Instances and Markings</text>
+  </aux>
+
+
+  
+  <aux id="id362">
+    <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+    <lineattr type="solid" thick="0" colour="black"/>
+    <fillattr colour="White" pattern="Solid" filled="false"/>
+    <posattr x="-51.85833" y="20.99028"/>
+    <textattr font="helvetica" size="12" just="left" colour="black" bold="true" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+    <label/>
+    <layering type="copy"/>
+    
+    <text>Node and Arc Descriptors</text>
+  </aux>
+
+
+  
+  <aux id="id382">
+<posattr x="-17.81528" y="-17.28611"/>
+<fillattr colour="White" pattern="Solid" filled="false"/>
+<lineattr type="solid" thick="0" colour="black"/>
+<textattr font="courier" size="12" just="left" colour="black" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+<label h="65.78988" w="122.94179"/>
+<text>OGSet.NodeDescriptorOptions(
+      fn (CPN'n:Node) =&gt;
+      (st_Mark.Top'NextSend 1 CPN'n)^
+      (st_Mark.Top'NextRec 1 CPN'n)^
+      (st_Mark.Top'A 1 CPN'n)^
+      (st_Mark.Top'B 1 CPN'n)^
+      (st_Mark.Top'C 1 CPN'n)^
+      (st_Mark.Top'D 1 CPN'n)^
+      (st_Mark.Top'Received 1 CPN'n));
+
+OGSet.ArcDescriptorOptions(fn (CPN'a:Arc) =&gt;
+(st_BE(ArcToBE CPN'a)));</text>
+</aux>
+
+  
+</page>
+<page id="id419">
+  <pageattr name="OG_NextS"/>
+  <mult insts="0"/>
+  <modeattr siminc="false" observe="false" propocc="false" interact="false" execcode="false"/>
+  <winattr open="false" width="575" height="770" xpos="250" ypos="120"/>
+  <lineattr type="solid" thick="0" colour="black"/>
+  <fillattr colour="White" pattern="Solid" filled="false"/>
+  <posattr x="0.00000" y="-0.00000"/>
+  <box h="256.11666" w="193.32222"/>
+  
+
+  
+  <aux id="id439">
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="1" colour="red"/>
+    <fillattr colour="white" pattern="solid" filled="false"/>
+    <posattr x="-9.17222" y="-58.91389"/>
+    <textattr font="courier" size="10" just="centered" colour="red" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+    <box h="12.34722" w="12.34722"/>
+    <layering type="copy"/>
+    
+
+    
+    <aux-std id="id425">
+      <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+      <lineattr type="solid" thick="1" colour="red"/>
+      <fillattr colour="white" pattern="solid" filled="false"/>
+      <posattr x="26.98750" y="-61.73611"/>
+      <textattr font="courier" size="10" just="left" colour="red" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <box h="29.28038" w="49.03592"/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1482.95442" voffset="-180.67928"/>
+      
+      <text>NextSend: 1`4
+NextRec: 1`5
+B: 1`(4,"########")
+D: 1`3
+Received: 1`"Modelling and Analysis##"
+</text>
+    </aux-std>
+    <text>368 
+2:2</text>
+  </aux>
+
+
+  
+  <aux id="id432">
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="1" colour="red"/>
+    <fillattr colour="white" pattern="solid" filled="false"/>
+    <posattr x="-9.17222" y="-94.19167"/>
+    <textattr font="courier" size="10" just="centered" colour="red" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+    <box h="12.34722" w="12.34722"/>
+    <layering type="copy"/>
+    
+
+    
+    <aux-std id="id424">
+      <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+      <lineattr type="solid" thick="1" colour="red"/>
+      <fillattr colour="white" pattern="solid" filled="false"/>
+      <posattr x="26.98750" y="-91.89861"/>
+      <textattr font="courier" size="10" just="left" colour="red" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <box h="24.69411" w="49.03596"/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1482.95442" voffset="-180.67928"/>
+      
+      <text>NextSend: 1`3
+NextRec: 1`5
+B: 1`(4,"########")
+Received: 1`"Modelling and Analysis##"
+</text>
+    </aux-std>
+    <text>385 
+4:2</text>
+  </aux>
+
+
+  
+  <aux id="id430">
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="1" colour="red"/>
+    <fillattr colour="white" pattern="solid" filled="false"/>
+    <posattr x="20.46111" y="-21.51944"/>
+    <textattr font="courier" size="10" just="centered" colour="red" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+    <box h="12.34722" w="12.34722"/>
+    <layering type="copy"/>
+    
+    <text>347 
+2:3</text>
+  </aux>
+
+
+  
+  <aux id="id423">
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="1" colour="red"/>
+    <fillattr colour="white" pattern="solid" filled="false"/>
+    <posattr x="-38.80555" y="-21.51944"/>
+    <textattr font="courier" size="10" just="centered" colour="red" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+    <box h="12.34722" w="12.34722"/>
+    <layering type="copy"/>
+    
+    <text>351 
+1:3</text>
+  </aux>
+
+
+  
+  <aux id="id428">
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="1" colour="red"/>
+    <fillattr colour="white" pattern="solid" filled="false"/>
+    <posattr x="-38.80555" y="12.70000"/>
+    <textattr font="courier" size="10" just="centered" colour="red" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+    <box h="12.34722" w="12.34722"/>
+    <layering type="copy"/>
+    
+    <text>320 
+1:4</text>
+  </aux>
+
+
+  
+  <aux id="id422">
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="1" colour="red"/>
+    <fillattr colour="white" pattern="solid" filled="false"/>
+    <posattr x="20.46111" y="12.70000"/>
+    <textattr font="courier" size="10" just="centered" colour="red" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+    <box h="12.34722" w="12.34722"/>
+    <layering type="copy"/>
+    
+    <text>316 
+3:2</text>
+  </aux>
+
+
+  
+  <aux id="id417">
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="1" colour="red"/>
+    <fillattr colour="white" pattern="solid" filled="false"/>
+    <posattr x="20.46111" y="46.91944"/>
+    <textattr font="courier" size="10" just="centered" colour="red" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+    <box h="12.34722" w="12.34722"/>
+    <layering type="copy"/>
+    
+    <text>281 
+3:3</text>
+  </aux>
+
+
+  
+  <aux id="id416">
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="1" colour="red"/>
+    <fillattr colour="white" pattern="solid" filled="false"/>
+    <posattr x="-38.80555" y="46.91944"/>
+    <textattr font="courier" size="10" just="centered" colour="red" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+    <box h="12.34722" w="12.34722"/>
+    <layering type="copy"/>
+    
+    <text>284 
+2:3</text>
+  </aux>
+
+
+  
+  <aux id="id421">
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="1" colour="red"/>
+    <fillattr colour="white" pattern="solid" filled="false"/>
+    <posattr x="-38.80555" y="81.13889"/>
+    <textattr font="courier" size="10" just="centered" colour="red" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+    <box h="12.34722" w="12.34722"/>
+    <layering type="copy"/>
+    
+
+    
+    <aux-std id="id401">
+      <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+      <lineattr type="solid" thick="1" colour="red"/>
+      <fillattr colour="white" pattern="solid" filled="false"/>
+      <posattr x="-1.94028" y="86.43055"/>
+      <textattr font="courier" size="10" just="left" colour="red" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <box h="24.69415" w="49.03599"/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1482.95442" voffset="-180.67928"/>
+      
+      <text>NextSend: 1`4
+NextRec: 1`5
+C: 1`3++ 1`5
+Received: 1`"Modelling and Analysis##"
+</text>
+    </aux-std>
+    <text>249 
+2:4</text>
+  </aux>
+
+
+  
+  <aux id="id426">
+    <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+    <lineattr type="solid" thick="0" colour="teal"/>
+    <fillattr colour="white" pattern="solid" filled="false"/>
+    <posattr x="-8.11389" y="114.82916"/>
+    <textattr font="helvetica" size="18" just="left" colour="teal" bold="true" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+    <label/>
+    <layering type="copy"/>
+    
+    <text>Occurrence Graph - Decrease Next Send (Limit=2)</text>
+  </aux>
+
+  
+
+  
+  <aux-conn id="id427" orientation="1to2">
+    <connattr hdwidth="4" hdheight="8" txtwidth="64" txtheight="32"/>
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="1" colour="blue"/>
+    <fillattr colour="blue" pattern="solid" filled="false"/>
+    
+    <layering type="copy"/>
+    <node1 idref="id439"/>
+    <node2 idref="id432"/>
+
+    
+    <aux-std id="id410">
+      <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+      <lineattr type="solid" thick="1" colour="blue"/>
+      <fillattr colour="white" pattern="solid" filled="false"/>
+      <posattr x="-13.05278" y="-74.61250"/>
+      <textattr font="courier" size="10" just="left" colour="blue" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <box h="10.93602" w="21.51893"/>
+      <layering type="copy"/>
+      <regattr colorap="false" sizewp="true" hoffset="0.00460" voffset="0.00000"/>
+      
+      <text>RecAck: {n=3,k=4}</text>
+    </aux-std>
+    
+  </aux-conn>
+
+
+  
+  <aux-conn id="id55" orientation="1to2">
+    <connattr hdwidth="4" hdheight="8" txtwidth="64" txtheight="32"/>
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="1" colour="blue"/>
+    <fillattr colour="blue" pattern="solid" filled="false"/>
+    
+    <layering type="copy"/>
+    <node1 idref="id430"/>
+    <node2 idref="id439"/>
+
+    
+    <aux-std id="id412">
+      <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+      <lineattr type="solid" thick="1" colour="blue"/>
+      <fillattr colour="white" pattern="solid" filled="false"/>
+      <posattr x="30.16250" y="-36.51250"/>
+      <textattr font="courier" size="10" just="left" colour="blue" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <box h="10.93606" w="57.50211"/>
+      <layering type="copy"/>
+      <regattr colorap="false" sizewp="true" hoffset="0.00059" voffset="0.00000"/>
+      
+      <text>TranPack: {p="########",n=4,Ok=true}</text>
+    </aux-std>
+    
+  </aux-conn>
+
+
+  
+  <aux-conn id="id413" orientation="1to2">
+    <connattr hdwidth="4" hdheight="8" txtwidth="64" txtheight="32"/>
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="1" colour="blue"/>
+    <fillattr colour="blue" pattern="solid" filled="false"/>
+    
+    <layering type="copy"/>
+    <node1 idref="id423"/>
+    <node2 idref="id439"/>
+
+    
+    <aux-std id="id98">
+      <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+      <lineattr type="solid" thick="1" colour="blue"/>
+      <fillattr colour="white" pattern="solid" filled="false"/>
+      <posattr x="-28.75139" y="-36.51250"/>
+      <textattr font="courier" size="10" just="left" colour="blue" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <box h="10.93602" w="29.98579"/>
+      <layering type="copy"/>
+      <regattr colorap="false" sizewp="true" hoffset="0.00445" voffset="0.00000"/>
+      
+      <text>TranAck: {n=3,Ok=true}</text>
+    </aux-std>
+    
+  </aux-conn>
+
+
+  
+  <aux-conn id="id395" orientation="1to2">
+    <connattr hdwidth="4" hdheight="8" txtwidth="64" txtheight="32"/>
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="1" colour="blue"/>
+    <fillattr colour="blue" pattern="solid" filled="false"/>
+    
+    <layering type="copy"/>
+    <node1 idref="id428"/>
+    <node2 idref="id423"/>
+
+    
+    <aux-std id="id409">
+      <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+      <lineattr type="solid" thick="1" colour="blue"/>
+      <fillattr colour="white" pattern="solid" filled="false"/>
+      <posattr x="-55.91528" y="-2.64583"/>
+      <textattr font="courier" size="10" just="left" colour="blue" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <box h="10.93605" w="57.50175"/>
+      <layering type="copy"/>
+      <regattr colorap="false" sizewp="true" hoffset="0.00425" voffset="0.00000"/>
+      
+      <text>TranPack: {p="########",n=4,Ok=true}</text>
+    </aux-std>
+    
+  </aux-conn>
+
+
+  
+  <aux-conn id="id402" orientation="1to2">
+    <connattr hdwidth="4" hdheight="8" txtwidth="64" txtheight="32"/>
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="1" colour="blue"/>
+    <fillattr colour="blue" pattern="solid" filled="false"/>
+    
+    <layering type="copy"/>
+    <node1 idref="id422"/>
+    <node2 idref="id430"/>
+
+    
+    <aux-std id="id400">
+      <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+      <lineattr type="solid" thick="1" colour="blue"/>
+      <fillattr colour="white" pattern="solid" filled="false"/>
+      <posattr x="29.80972" y="-2.64583"/>
+      <textattr font="courier" size="10" just="left" colour="blue" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <box h="10.93609" w="40.56910"/>
+      <layering type="copy"/>
+      <regattr colorap="false" sizewp="true" hoffset="0.00433" voffset="0.00000"/>
+      
+      <text>SendPack: {p="########",n=4}</text>
+    </aux-std>
+    
+  </aux-conn>
+
+
+  
+  <aux-conn id="id386" orientation="1to2">
+    <connattr hdwidth="4" hdheight="8" txtwidth="64" txtheight="32"/>
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="1" colour="blue"/>
+    <fillattr colour="blue" pattern="solid" filled="false"/>
+    
+    <layering type="copy"/>
+    <node1 idref="id428"/>
+    <node2 idref="id430"/>
+
+    
+    <aux-std id="id397">
+      <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+      <lineattr type="solid" thick="1" colour="blue"/>
+      <fillattr colour="white" pattern="solid" filled="false"/>
+      <posattr x="-8.81944" y="-2.64583"/>
+      <textattr font="courier" size="10" just="left" colour="blue" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <box h="10.93602" w="29.98579"/>
+      <layering type="copy"/>
+      <regattr colorap="false" sizewp="true" hoffset="0.00416" voffset="0.00000"/>
+      
+      <text>TranAck: {n=3,Ok=true}</text>
+    </aux-std>
+    
+  </aux-conn>
+
+
+  
+  <aux-conn id="id393" orientation="1to2">
+    <connattr hdwidth="4" hdheight="8" txtwidth="64" txtheight="32"/>
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="1" colour="fucia"/>
+    <fillattr colour="fucia" pattern="solid" filled="false"/>
+    
+    <layering type="copy"/>
+    <node1 idref="id417"/>
+    <node2 idref="id422"/>
+
+    
+    <aux-std id="id396">
+      <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+      <lineattr type="solid" thick="1" colour="fucia"/>
+      <fillattr colour="white" pattern="solid" filled="false"/>
+      <posattr x="31.04444" y="31.39722"/>
+      <textattr font="courier" size="10" just="left" colour="fucia" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <box h="10.93602" w="32.10237"/>
+      <layering type="copy"/>
+      <regattr colorap="false" sizewp="true" hoffset="0.00423" voffset="0.00000"/>
+      
+      <text>TranAck: {n=5,Ok=false}</text>
+    </aux-std>
+    
+  </aux-conn>
+
+
+  
+  <aux-conn id="id389" orientation="1to2">
+    <connattr hdwidth="4" hdheight="8" txtwidth="64" txtheight="32"/>
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="1" colour="blue"/>
+    <fillattr colour="blue" pattern="solid" filled="false"/>
+    
+    <layering type="copy"/>
+    <node1 idref="id416"/>
+    <node2 idref="id422"/>
+
+    
+    <aux-std id="id384">
+      <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+      <lineattr type="solid" thick="1" colour="blue"/>
+      <fillattr colour="white" pattern="solid" filled="false"/>
+      <posattr x="-8.81944" y="31.39722"/>
+      <textattr font="courier" size="10" just="left" colour="blue" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <box h="10.93602" w="29.98579"/>
+      <layering type="copy"/>
+      <regattr colorap="false" sizewp="true" hoffset="0.00419" voffset="0.00000"/>
+      
+      <text>TranAck: {n=3,Ok=true}</text>
+    </aux-std>
+    
+  </aux-conn>
+
+
+  
+  <aux-conn id="id408" orientation="1to2">
+    <connattr hdwidth="4" hdheight="8" txtwidth="64" txtheight="32"/>
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="1" colour="blue"/>
+    <fillattr colour="blue" pattern="solid" filled="false"/>
+    
+    <layering type="copy"/>
+    <node1 idref="id416"/>
+    <node2 idref="id428"/>
+
+    
+    <aux-std id="id387">
+      <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+      <lineattr type="solid" thick="1" colour="blue"/>
+      <fillattr colour="white" pattern="solid" filled="false"/>
+      <posattr x="-52.38785" y="32.27917"/>
+      <textattr font="courier" size="10" just="left" colour="blue" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <box h="10.93597" w="40.56913"/>
+      <layering type="copy"/>
+      <regattr colorap="false" sizewp="true" hoffset="0.00439" voffset="0.00000"/>
+      
+      <text>SendPack: {p="########",n=4}</text>
+    </aux-std>
+    
+  </aux-conn>
+
+
+  
+  <aux-conn id="id375" orientation="1to2">
+    <connattr hdwidth="4" hdheight="8" txtwidth="64" txtheight="32"/>
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="1" colour="blue"/>
+    <fillattr colour="blue" pattern="solid" filled="false"/>
+    
+    <layering type="copy"/>
+    <node1 idref="id421"/>
+    <node2 idref="id417"/>
+
+    
+    <aux-std id="id385">
+      <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+      <lineattr type="solid" thick="1" colour="blue"/>
+      <fillattr colour="white" pattern="solid" filled="false"/>
+      <posattr x="-8.81944" y="63.85278"/>
+      <textattr font="courier" size="10" just="left" colour="blue" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <box h="10.93602" w="29.98579"/>
+      <layering type="copy"/>
+      <regattr colorap="false" sizewp="true" hoffset="0.00404" voffset="0.00000"/>
+      
+      <text>TranAck: {n=3,Ok=true}</text>
+    </aux-std>
+    
+  </aux-conn>
+
+
+  
+  <aux-conn id="id380" orientation="1to2">
+    <connattr hdwidth="4" hdheight="8" txtwidth="64" txtheight="32"/>
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="1" colour="fucia"/>
+    <fillattr colour="fucia" pattern="solid" filled="false"/>
+    
+    <layering type="copy"/>
+    <node1 idref="id421"/>
+    <node2 idref="id416"/>
+
+    
+    <aux-std id="id374">
+      <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+      <lineattr type="solid" thick="1" colour="fucia"/>
+      <fillattr colour="white" pattern="solid" filled="false"/>
+      <posattr x="-48.15448" y="65.61667"/>
+      <textattr font="courier" size="10" just="left" colour="fucia" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <box h="10.93602" w="32.10237"/>
+      <layering type="copy"/>
+      <regattr colorap="false" sizewp="true" hoffset="0.00409" voffset="0.00000"/>
+      
+      <text>TranAck: {n=5,Ok=false}</text>
+    </aux-std>
+    
+  </aux-conn>
+
+</page>
+<page id="id442">
+  <pageattr name="Queries1"/>
+  <mult insts="0"/>
+  <modeattr siminc="false" observe="false" propocc="false" interact="false" execcode="false"/>
+  <winattr open="false" width="475" height="335" xpos="240" ypos="277"/>
+  <lineattr type="solid" thick="0" colour="black"/>
+  <fillattr colour="White" pattern="Solid" filled="false"/>
+  <posattr x="0.00000" y="-0.00000"/>
+  <box h="256.11666" w="193.32222"/>
+  
+
+  
+  <aux id="id536">
+<posattr x="-43.39167" y="55.20972"/>
+<fillattr colour="White" pattern="Solid" filled="false"/>
+<lineattr type="solid" thick="0" colour="black"/>
+<textattr font="courier" size="12" just="left" colour="black" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+<label h="8.11311" w="86.07778"/>
+<text>length(ArcsInPath(1,235));</text>
+</aux>
+
+
+  
+  <aux id="id117">
+    <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+    <lineattr type="solid" thick="0" colour="black"/>
+    <fillattr colour="White" pattern="Solid" filled="false"/>
+    <posattr x="-59.79583" y="65.44028"/>
+    <textattr font="helvetica" size="12" just="left" colour="black" bold="true" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+    <label/>
+    <layering type="copy"/>
+    
+    <text>Length of Shortest Path</text>
+  </aux>
+
+
+  
+  <aux id="id113">
+    <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+    <lineattr type="solid" thick="0" colour="black"/>
+    <fillattr colour="White" pattern="Solid" filled="false"/>
+    <posattr x="-70.37917" y="114.82916"/>
+    <textattr font="helvetica" size="12" just="left" colour="black" bold="true" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+    <label/>
+    <layering type="copy"/>
+    
+    <text>Partial Correct</text>
+  </aux>
+
+
+  
+  <aux id="id26">
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="1" colour="red"/>
+    <fillattr colour="white" pattern="solid" filled="false"/>
+    <posattr x="-64.55833" y="85.72500"/>
+    <textattr font="courier" size="10" just="centered" colour="red" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+    <box h="12.34722" w="12.34722"/>
+    <layering type="copy"/>
+    
+
+    
+    <aux-std id="id534">
+      <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+      <lineattr type="solid" thick="1" colour="red"/>
+      <fillattr colour="white" pattern="solid" filled="false"/>
+      <posattr x="-13.93472" y="97.19028"/>
+      <textattr font="courier" size="10" just="left" colour="red" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <box h="15.52188" w="82.90165"/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1482.95442" voffset="-180.67928"/>
+      
+      <text>NextSend: 1`5
+NextRec: 1`5
+Received: 1`"Modelling and Analysis##"
+</text>
+    </aux-std>
+    <text>235 
+12:0</text>
+  </aux>
+
+  
+</page>
+<page id="id580">
+  <pageattr name="OG_Last"/>
+  <mult insts="0"/>
+  <modeattr siminc="false" observe="false" propocc="false" interact="false" execcode="false"/>
+  <winattr open="false" width="575" height="770" xpos="250" ypos="120"/>
+  <lineattr type="solid" thick="0" colour="black"/>
+  <fillattr colour="White" pattern="Solid" filled="false"/>
+  <posattr x="0.00000" y="-0.00000"/>
+  <box h="256.11666" w="193.32222"/>
+  
+
+  
+  <aux id="id592">
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="2" colour="red"/>
+    <fillattr colour="white" pattern="solid" filled="false"/>
+    <posattr x="-23.28333" y="-55.73889"/>
+    <textattr font="courier" size="10" just="centered" colour="red" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+    <box h="12.34722" w="12.34722"/>
+    <layering type="copy"/>
+    
+
+    
+    <aux-std id="id588">
+      <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+      <lineattr type="solid" thick="1" colour="red"/>
+      <fillattr colour="white" pattern="solid" filled="false"/>
+      <posattr x="-59.44283" y="-56.09167"/>
+      <textattr font="courier" size="10" just="left" colour="red" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <box h="20.10811" w="49.03564"/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1482.95442" voffset="-180.67928"/>
+      
+      <text>NextSend: 1`5
+NextRec: 1`5
+Received: 1`"Modelling
+and Analysis##"
+</text>
+    </aux-std>
+    <text>32 
+1:0</text>
+  </aux>
+
+
+  
+  <aux id="id589">
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="1" colour="red"/>
+    <fillattr colour="white" pattern="solid" filled="false"/>
+    <posattr x="-23.28333" y="-20.81389"/>
+    <textattr font="courier" size="10" just="centered" colour="red" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+    <box h="12.34722" w="12.34722"/>
+    <layering type="copy"/>
+    
+
+    
+    <aux-std id="id599">
+      <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+      <lineattr type="solid" thick="1" colour="red"/>
+      <fillattr colour="white" pattern="solid" filled="false"/>
+      <posattr x="-59.44283" y="-20.99028"/>
+      <textattr font="courier" size="10" just="left" colour="red" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <box h="24.69409" w="49.03564"/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1482.95442" voffset="-180.67928"/>
+      
+      <text>NextSend: 1`4
+NextRec: 1`5
+D: 1`5
+Received: 1`"Modelling
+and Analysis##"
+</text>
+    </aux-std>
+    <text>30 
+1:1</text>
+  </aux>
+
+
+  
+  <aux id="id584">
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="1" colour="red"/>
+    <fillattr colour="white" pattern="solid" filled="false"/>
+    <posattr x="-23.28333" y="14.11111"/>
+    <textattr font="courier" size="10" just="centered" colour="red" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+    <box h="12.34722" w="12.34722"/>
+    <layering type="copy"/>
+    
+
+    
+    <aux-std id="id587">
+      <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+      <lineattr type="solid" thick="1" colour="red"/>
+      <fillattr colour="white" pattern="solid" filled="false"/>
+      <posattr x="-59.44283" y="14.28750"/>
+      <textattr font="courier" size="10" just="left" colour="red" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <box h="24.69429" w="49.03564"/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1482.95442" voffset="-180.67928"/>
+      
+      <text>NextSend: 1`4
+NextRec: 1`5
+C: 1`5
+Received: 1`"Modelling
+and Analysis##"
+</text>
+    </aux-std>
+    <text>28 
+2:2</text>
+  </aux>
+
+
+  
+  <aux id="id579">
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="1" colour="red"/>
+    <fillattr colour="white" pattern="solid" filled="false"/>
+    <posattr x="-23.28333" y="53.26944"/>
+    <textattr font="courier" size="10" just="centered" colour="red" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+    <box h="12.34722" w="12.34722"/>
+    <layering type="copy"/>
+    
+
+    
+    <aux-std id="id581">
+      <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+      <lineattr type="solid" thick="1" colour="red"/>
+      <fillattr colour="white" pattern="solid" filled="false"/>
+      <posattr x="-59.44283" y="52.56389"/>
+      <textattr font="courier" size="10" just="left" colour="red" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <box h="24.69430" w="49.03564"/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1482.95442" voffset="-180.67928"/>
+      
+      <text>NextSend: 1`4
+NextRec: 1`4
+B: 1`(4,"########")
+Received: 1`"Modelling
+and Analysis##"
+</text>
+    </aux-std>
+    <text>27 
+1:1</text>
+  </aux>
+
+
+  
+  <aux id="id575">
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="1" colour="red"/>
+    <fillattr colour="white" pattern="solid" filled="false"/>
+    <posattr x="54.32778" y="-100.18889"/>
+    <textattr font="courier" size="10" just="centered" colour="red" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+    <box h="12.34722" w="12.34722"/>
+    <layering type="copy"/>
+    
+
+    
+    <aux-std id="id578">
+      <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+      <lineattr type="solid" thick="1" colour="red"/>
+      <fillattr colour="white" pattern="solid" filled="false"/>
+      <posattr x="21.69583" y="-99.65972"/>
+      <textattr font="courier" size="10" just="left" colour="red" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <box h="24.69444" w="49.03609"/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1482.95442" voffset="-180.67928"/>
+      
+      <text>NextSend: 1`4
+NextRec: 1`5
+B: 1`(4,"########")
+Received: 1`"Modelling
+and Analysis##"
+</text>
+    </aux-std>
+    <text>33 
+1:1</text>
+  </aux>
+
+
+  
+  <aux id="id574">
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="1" colour="red"/>
+    <fillattr colour="white" pattern="solid" filled="false"/>
+    <posattr x="-23.28333" y="88.19444"/>
+    <textattr font="courier" size="10" just="centered" colour="red" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+    <box h="12.34722" w="12.34722"/>
+    <layering type="copy"/>
+    
+
+    
+    <aux-std id="id568">
+      <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+      <lineattr type="solid" thick="1" colour="red"/>
+      <fillattr colour="white" pattern="solid" filled="false"/>
+      <posattr x="-59.44305" y="86.95972"/>
+      <textattr font="courier" size="10" just="left" colour="red" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <box h="24.69444" w="49.03609"/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1482.95442" voffset="-180.67928"/>
+      
+      <text>NextSend: 1`4
+NextRec: 1`4
+A: 1`(4,"########")
+Received: 1`"Modelling
+and Analysis##"
+</text>
+    </aux-std>
+    <text>26 
+1:2</text>
+  </aux>
+
+
+  
+  <aux id="id562">
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="1" colour="red"/>
+    <fillattr colour="white" pattern="solid" filled="false"/>
+    <posattr x="54.32778" y="-62.44167"/>
+    <textattr font="courier" size="10" just="centered" colour="red" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+    <box h="12.34722" w="12.34722"/>
+    <layering type="copy"/>
+    
+
+    
+    <aux-std id="id572">
+      <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+      <lineattr type="solid" thick="1" colour="red"/>
+      <fillattr colour="white" pattern="solid" filled="false"/>
+      <posattr x="20.28472" y="-58.73750"/>
+      <textattr font="courier" size="10" just="left" colour="red" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <box h="24.69444" w="49.03609"/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1482.95442" voffset="-180.67928"/>
+      
+      <text>NextSend: 1`4
+NextRec: 1`5
+A: 1`(4,"########")
+Received: 1`"Modelling
+and Analysis##"
+</text>
+    </aux-std>
+    <text>31 
+1:2</text>
+  </aux>
+
+
+  
+  <aux id="id576">
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="1" colour="red"/>
+    <fillattr colour="white" pattern="solid" filled="false"/>
+    <posattr x="54.32778" y="-20.81389"/>
+    <textattr font="courier" size="10" just="centered" colour="red" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+    <box h="12.34722" w="12.34722"/>
+    <layering type="copy"/>
+    
+
+    
+    <aux-std id="id569">
+      <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+      <lineattr type="solid" thick="1" colour="red"/>
+      <fillattr colour="white" pattern="solid" filled="false"/>
+      <posattr x="20.99028" y="-21.34306"/>
+      <textattr font="courier" size="10" just="left" colour="red" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <box h="20.10816" w="49.03609"/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1482.95442" voffset="-180.67928"/>
+      
+      <text>NextSend: 1`4
+NextRec: 1`5
+Received: 1`"Modelling
+and Analysis##"
+</text>
+    </aux-std>
+    <text>29 
+2:1</text>
+  </aux>
+
+
+  
+  <aux id="id556">
+    <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+    <lineattr type="solid" thick="0" colour="teal"/>
+    <fillattr colour="white" pattern="solid" filled="false"/>
+    <posattr x="-24.34167" y="118.00416"/>
+    <textattr font="helvetica" size="18" just="left" colour="teal" bold="true" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+    <label/>
+    <layering type="copy"/>
+    
+    <text>Occurrence Graph - Last Part (Limit=1)</text>
+  </aux>
+
+  
+
+  
+  <aux-conn id="id570" orientation="1to2">
+    <connattr hdwidth="4" hdheight="8" txtwidth="64" txtheight="32"/>
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="1" colour="blue"/>
+    <fillattr colour="blue" pattern="solid" filled="false"/>
+    
+    <layering type="copy"/>
+    <node1 idref="id589"/>
+    <node2 idref="id592"/>
+
+    
+    <aux-std id="id561">
+      <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+      <lineattr type="solid" thick="1" colour="blue"/>
+      <fillattr colour="white" pattern="solid" filled="false"/>
+      <posattr x="-21.16672" y="-37.92361"/>
+      <textattr font="courier" size="10" just="left" colour="blue" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <box h="10.93602" w="21.51893"/>
+      <layering type="copy"/>
+      <regattr colorap="false" sizewp="true" hoffset="0.00614" voffset="0.00000"/>
+      
+      <text>RecAck: {n=5,k=4}</text>
+    </aux-std>
+    
+  </aux-conn>
+
+
+  
+  <aux-conn id="id563" orientation="1to2">
+    <connattr hdwidth="4" hdheight="8" txtwidth="64" txtheight="32"/>
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="1" colour="blue"/>
+    <fillattr colour="blue" pattern="solid" filled="false"/>
+    
+    <layering type="copy"/>
+    <node1 idref="id584"/>
+    <node2 idref="id589"/>
+
+    
+    <aux-std id="id552">
+      <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+      <lineattr type="solid" thick="1" colour="blue"/>
+      <fillattr colour="white" pattern="solid" filled="false"/>
+      <posattr x="-16.93329" y="-2.99861"/>
+      <textattr font="courier" size="10" just="left" colour="blue" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <box h="10.93602" w="29.98579"/>
+      <layering type="copy"/>
+      <regattr colorap="false" sizewp="true" hoffset="0.00606" voffset="0.00000"/>
+      
+      <text>TranAck: {n=5,Ok=true}</text>
+    </aux-std>
+    
+  </aux-conn>
+
+
+  
+  <aux-conn id="id565" orientation="1to2">
+    <connattr hdwidth="4" hdheight="8" txtwidth="64" txtheight="32"/>
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="1" colour="blue"/>
+    <fillattr colour="blue" pattern="solid" filled="false"/>
+    
+    <layering type="copy"/>
+    <node1 idref="id579"/>
+    <node2 idref="id584"/>
+
+    
+    <aux-std id="id555">
+      <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+      <lineattr type="solid" thick="1" colour="blue"/>
+      <fillattr colour="white" pattern="solid" filled="false"/>
+      <posattr x="-8.46683" y="34.57222"/>
+      <textattr font="courier" size="10" just="left" colour="blue" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <box h="20.10804" w="46.91871"/>
+      <layering type="copy"/>
+      <regattr colorap="false" sizewp="true" hoffset="0.00608" voffset="0.00000"/>
+      
+      <text>RecPack:
+{str="Modelling
+and Analysis##",
+p="########",n=4,k=4}</text>
+    </aux-std>
+    
+  </aux-conn>
+
+
+  
+  <aux-conn id="id557" orientation="1to2">
+    <connattr hdwidth="4" hdheight="8" txtwidth="64" txtheight="32"/>
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="1" colour="blue"/>
+    <fillattr colour="blue" pattern="solid" filled="false"/>
+    <bendpoint serial="2">
+<textattr colour="Black" bold="false"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<fillattr colour="White" pattern="Solid"/>
+<posattr x="78.31667" y="-100.18889"/>
+</bendpoint>
+<bendpoint serial="1">
+<textattr colour="Black" bold="false"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<fillattr colour="White" pattern="Solid"/>
+<posattr x="78.31667" y="14.11111"/>
+</bendpoint>
+    <layering type="copy"/>
+    <node1 idref="id575"/>
+    <node2 idref="id584"/>
+
+    
+    <aux-std id="id543">
+      <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+      <lineattr type="solid" thick="1" colour="blue"/>
+      <fillattr colour="white" pattern="solid" filled="false"/>
+      <posattr x="49.21266" y="21.69583"/>
+      <textattr font="courier" size="10" just="left" colour="blue" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <box h="20.10819" w="46.91871"/>
+      <layering type="copy"/>
+      <regattr colorap="false" sizewp="true" hoffset="0.00600" voffset="0.00000"/>
+      
+      <text>RecPack:
+{str="Modelling
+and Analysis##",
+p="########",n=4,k=5}</text>
+    </aux-std>
+    
+  </aux-conn>
+
+
+  
+  <aux-conn id="id559" orientation="1to2">
+    <connattr hdwidth="4" hdheight="8" txtwidth="64" txtheight="32"/>
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="1" colour="blue"/>
+    <fillattr colour="blue" pattern="solid" filled="false"/>
+    
+    <layering type="copy"/>
+    <node1 idref="id574"/>
+    <node2 idref="id579"/>
+
+    
+    <aux-std id="id549">
+      <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+      <lineattr type="solid" thick="1" colour="blue"/>
+      <fillattr colour="white" pattern="solid" filled="false"/>
+      <posattr x="-15.87491" y="72.31944"/>
+      <textattr font="courier" size="10" just="left" colour="blue" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <box h="15.52219" w="32.10255"/>
+      <layering type="copy"/>
+      <regattr colorap="false" sizewp="true" hoffset="0.00602" voffset="0.00000"/>
+      
+      <text>TranPack: {p="########",
+n=4,Ok=true}</text>
+    </aux-std>
+    
+  </aux-conn>
+
+
+  
+  <aux-conn id="id553" orientation="1to2">
+    <connattr hdwidth="4" hdheight="8" txtwidth="64" txtheight="32"/>
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="1" colour="blue"/>
+    <fillattr colour="blue" pattern="solid" filled="false"/>
+    
+    <layering type="copy"/>
+    <node1 idref="id562"/>
+    <node2 idref="id575"/>
+
+    
+    <aux-std id="id537">
+      <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+      <lineattr type="solid" thick="1" colour="blue"/>
+      <fillattr colour="white" pattern="solid" filled="false"/>
+      <posattr x="33.69035" y="-79.55139"/>
+      <textattr font="courier" size="10" just="left" colour="blue" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <box h="10.93597" w="57.50175"/>
+      <layering type="copy"/>
+      <regattr colorap="false" sizewp="true" hoffset="0.00595" voffset="0.00000"/>
+      
+      <text>TranPack:
+{p="########",n=4,Ok=true}</text>
+    </aux-std>
+    
+  </aux-conn>
+
+
+  
+  <aux-conn id="id546" orientation="1to2">
+    <connattr hdwidth="4" hdheight="8" txtwidth="64" txtheight="32"/>
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="1" colour="blue"/>
+    <fillattr colour="blue" pattern="solid" filled="false"/>
+    
+    <layering type="copy"/>
+    <node1 idref="id576"/>
+    <node2 idref="id562"/>
+
+    
+    <aux-std id="id548">
+      <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+      <lineattr type="solid" thick="1" colour="blue"/>
+      <fillattr colour="white" pattern="solid" filled="false"/>
+      <posattr x="40.21667" y="-38.45278"/>
+      <textattr font="courier" size="10" just="left" colour="blue" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <box h="10.93594" w="40.56850"/>
+      <layering type="copy"/>
+      <regattr colorap="false" sizewp="true" hoffset="0.00588" voffset="0.00000"/>
+      
+      <text>SendPack:
+{p="########",n=4}</text>
+    </aux-std>
+    
+  </aux-conn>
+
+
+  
+  <aux-conn id="id545" orientation="1to2">
+    <connattr hdwidth="4" hdheight="8" txtwidth="64" txtheight="32"/>
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="1" colour="fucia"/>
+    <fillattr colour="fucia" pattern="solid" filled="false"/>
+    <bendpoint serial="2">
+<textattr colour="Black" bold="false"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<fillattr colour="White" pattern="Solid"/>
+<posattr x="-17.28611" y="9.17222"/>
+</bendpoint>
+<bendpoint serial="1">
+<textattr colour="Black" bold="false"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<fillattr colour="White" pattern="Solid"/>
+<posattr x="54.32778" y="9.17222"/>
+</bendpoint>
+    <layering type="copy"/>
+    <node1 idref="id584"/>
+    <node2 idref="id576"/>
+
+    
+    <aux-std id="id342">
+      <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+      <lineattr type="solid" thick="1" colour="fucia"/>
+      <fillattr colour="white" pattern="solid" filled="false"/>
+      <posattr x="51.32917" y="-1.76389"/>
+      <textattr font="courier" size="10" just="left" colour="fucia" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <box h="10.93602" w="32.10237"/>
+      <layering type="copy"/>
+      <regattr colorap="false" sizewp="true" hoffset="0.00587" voffset="0.00000"/>
+      
+      <text>TranAck: {n=5,Ok=false}</text>
+    </aux-std>
+    
+  </aux-conn>
+
+
+  
+  <aux-conn id="id542" orientation="1to2">
+    <connattr hdwidth="4" hdheight="8" txtwidth="64" txtheight="32"/>
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="1" colour="fucia"/>
+    <fillattr colour="fucia" pattern="solid" filled="false"/>
+    <bendpoint serial="2">
+<textattr colour="Black" bold="false"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<fillattr colour="White" pattern="Solid"/>
+<posattr x="71.61389" y="-62.44167"/>
+</bendpoint>
+<bendpoint serial="1">
+<textattr colour="Black" bold="false"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<fillattr colour="White" pattern="Solid"/>
+<posattr x="71.61389" y="-20.81389"/>
+</bendpoint>
+    <layering type="copy"/>
+    <node1 idref="id562"/>
+    <node2 idref="id576"/>
+    
+  </aux-conn>
+
+</page>
+</cpnet>
+</workspaceElements>
