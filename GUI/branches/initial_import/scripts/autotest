@@ -1,0 +1,23 @@
+#!/bin/bash
+
+> autotest.out
+
+DIR="$( pwd )"
+
+### Please note: We assume no directories have space in their names!
+
+function escape() {
+	echo $* | sed -e "s/[.]/\[.\]/g" -e "s/\\\\/\\\\\\\\/g" | sed -e "s/\//\\\\\//g"
+}
+
+for suite in $( find | grep -i "/test/unit/[^./]*[.]bet$" | sed -e "s/\/test\/unit\/[^.]*[.]bet$//g" | uniq ); do
+	echo "cd $suite/test/unit/" >> autotest.out
+	echo "suite $( echo $suite | sed -e "s/^[.]\///g" -e "s/\//_/g" )" >> autotest.out
+	echo "rm -Rf *.exe *.a2s *.ast *.astL nti_ms/ *.out *.dump >> /dev/null 2>&1" >> autotest.out
+	for test in $( find | grep "^$suite/test/unit/[^./]*[.]bet$" | sed -e "s/^$( escape "$suite/test/unit/" )\([^.]*\)[.]bet$/\1/" ); do
+		echo "test \"Compiling $test\" beta -qw --mute $test" >> autotest.out
+		echo "test \"Running $test\" ./$test" >> autotest.out
+	done
+	echo "rm -Rf *.exe *.a2s *.ast *.astL nti_ms/ >> /dev/null 2>&1" >> autotest.out
+	echo "cd \"$DIR\"" >> autotest.out
+done

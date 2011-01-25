@@ -1,0 +1,200 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '~beta/postwimp/workspace';
+
+INCLUDE '~beta/containers/hashTable';
+INCLUDE '~beta/basiclib/file';
+
+INCLUDE '../../debug';
+INCLUDE '../../relfile';
+
+INCLUDE 'texts_menues'
+	'texts_instruments'
+	'texts_wselements'
+	'texts_tooltips'
+	'texts_errors';
+
+(* Usage:
+ * Include 'cpn2000/cpntools/resource/texts/texts'
+ *)
+-- Workspacelib: attributes --
+GlobalNamesList: hashTable
+  (# 
+     IndexedText:
+       (# index: @Integer;
+          elm: ^Text;
+       enter (elm[],index)
+       exit (elm[],index)
+       #);
+     element:: IndexedText;
+     hashFunction:: (# do e.index -> value; #);
+     rangeInitial:: (# do 257 -> value; #);
+     put:
+       (# index: @Integer;
+          data: ^Text;
+          elm: ^IndexedText;
+       enter (data[],index)
+       do &IndexedText[] -> elm[];
+          (data[],index) -> elm;
+          elm[] -> insert;
+       #);
+     get:
+       (# index: @Integer;
+          data: ^Text;
+          elm: ^IndexedText;
+       enter index
+       do find (# predicate:: (# do (current.index = index) -> value; #); #)-> elm[];
+          (if elm[] <> NONE then
+              elm.elm[] -> data[];
+           else
+              NONE -> data[];
+          if);
+       exit data[]
+       #);
+  #);
+     
+getGlobalNames:
+  (# index: @Integer;
+     theList: ^GlobalNamesList;
+     theText: ^Text;
+  enter index
+  do Objectpool.get(# type:: GlobalNamesList; init:: obj.init; #) -> theList[];
+     index -> theList.get -> theText[];
+     (if theText[] = NONE then
+         1 -> theList.get -> theText[];
+         (if theText[] = NONE then
+             'what now???' -> theText[];
+         if);
+     if);
+  exit theText.copy
+  #);
+
+setGlobalNames:
+  (# filename: ^Text;
+     theList: ^GlobalNamesList;
+     theFile: ^File;
+     theText,number,data: ^Text;
+     theChar: @char;
+     index,line: @integer;
+  enter filename[]
+  do Objectpool.get(# type:: GlobalNamesList; init:: obj.init; #) -> theList[];
+     &File
+     (# NoSuchFileError::(# 
+                         do 'Error opening language file, "%s".' -> userinfo
+                            (# do filename[] -> s; #);
+                            'File Not found.' -> userinfo;
+                            widget.terminate;
+                            stop;
+                         #);
+        AccessError::(# 
+                     do 'Error opening language file, "%s".' -> userinfo
+                        (# do filename[] -> s; #);
+                        'Access denied.' -> userinfo;
+                        widget.terminate;
+                        stop;
+                     #);
+        OtherError::(# 
+                    do 'Error opening language file, "%s".' -> userinfo
+                       (# do filename[] -> s; #);
+                       'Unknown error' -> userinfo;
+                       widget.terminate;
+                       stop;
+                    #);
+        ReadError::(# 
+                   do 'Error opening language file, "%s".' -> userinfo
+                      (# do filename[] -> s; #);
+                      'File not readable.' -> userinfo;
+                      widget.terminate;
+                      stop;
+                   #);
+     #)[] -> theFile[];
+     filename[] -> relativeFile -> theFile.name;
+     theFile.openRead;
+     0 -> line;
+     loop
+     (# until:: theFile.eos;
+     do line + 1 -> line;
+        theFile.GetLine -> theText[];
+        theText.reset;
+        (if not theText.eos then
+            theText.get -> theChar;
+            (if not (theChar = '#') then
+                theText.reset;
+                &Text[] -> number[];
+                theText.scan
+                (# while:: (# do ((ch <> ':') and not theText.eos) -> value; #);
+                do ch -> number.put;
+                #);
+                number.asInt
+                (# syntaxError:: 
+                     (# 
+                     do 'Unrecognised line in language file: %s, line: %i "%s".' ->userinfo
+                        (# 
+                        do filename[] -> s; 
+                           line -> i; 
+                           theText[] ->s; 
+                        #);
+                        'Number parsing error' -> userinfo;
+                        widget.terminate;
+                        stop;
+                     #);
+                #) -> index;
+                (if not theText.eos then
+                    &Text[] -> data[];
+                    theText.get;
+                    theText.scan
+                    (# 
+                    do (if (ch = '\\') then
+                           (if getPeek
+                            // 'n' then
+                               '\n' -> data.put;
+                            // '\'' then
+                               '\'' -> data.put;
+                            else
+                               getPeek -> data.put;
+                           if);
+                           getCh;
+                        else
+                           ch -> data.put; 
+                       if);
+                    #);
+                    (data[],index) -> theList.put;
+                 else
+                    'Unrecognised line in language file: %s, line: %i "%s".' ->userinfo
+                    (# 
+                    do theFile.name -> s; 
+                       line -> i; 
+                       theText[] ->s; 
+                    #);
+                    'Unexpected end of string' -> userinfo;
+                    widget.terminate;
+                    stop;
+                if);
+            if);
+        if);
+     #);
+     theFile.close;
+  #);

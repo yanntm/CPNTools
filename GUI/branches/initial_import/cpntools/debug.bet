@@ -1,0 +1,171 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '~beta/basiclib/betaenv';
+INCLUDE '~beta/basiclib/formatio';
+INCLUDE '~beta/sysutils/objinterface';
+
+-- lib: Attributes --
+
+debugging:(# exit false #);
+(* Use to switch all debug off, only for releases, please keep as is *)
+
+internal: (# exit false #);
+
+build: (# exit '3.0.2' #);
+(* Use to specify build number, please keep as is *)
+
+version: (# exit '3.0.2' #);
+(* Use to specify version, please keep as is *)
+
+titlebar: (# exit '(Version 3.0.2, January 2011)' #);
+(* Use to specify version, please keep as is *)
+
+toolname: (# exit 'CPN Tools' #);
+(* Use to specify name, please keep as is *)
+
+xmlformat: (# exit 6 #);
+(* Use to specify the format, please keep as is *)
+
+emit_structured_inscriptions: (# exit false #);
+(* Set to true to save structured inscriptions in classic CPN xml 
+ * see bug #1310 *)
+
+debugInfo: putFormat
+  (# debugme:< booleanObject;
+     prefix:^text;
+     doDebug:< booleanValue (# do debugme -> value; INNER; #);
+  do (if doDebug then
+         INNER;
+         prefix[]->puttext; ': '->puttext;
+         (if NOT formatStr.empty then
+             '\n'->formatStr.append;
+     if);
+      else
+         ''->formatStr[];
+     if);
+  #);
+
+debugBase: debugInfo (# doDebug:: (# do value AND debugging -> value; #); do INNER; #);
+debugInternal: debugInfo (# doDebug:: (# do value AND internal -> value; #); do INNER; #);
+
+debugEnabled:
+(# debugger: ##debugInfo;
+   d: ^debugBase;
+   enter debugger##
+   do &debugger[] -> d[];
+   exit d.debugme
+#);
+
+assert: debugInfo
+  (# mustBeTrue: @boolean;
+     doDebug:: (# do (NOT mustBeTrue) AND internal -> value; #);
+     crashOnFailure:< falseObject;
+     dumpStackOnFailure:<
+       (# value: @boolean;
+       do true -> value;
+          INNER;
+       exit value
+       #);
+     recover:< object;
+     msg: ^Text;
+  enter mustBeTrue
+  do 'Assertion failed' -> prefix[];
+     &Text[] -> msg[];
+     (if ((THIS(assert)[] -> getOrigin -> getOrigin) = NONE) then
+         'You have written assert and not assert(# #): '-> msg.puttext;
+      else
+         THIS(assert)[] -> getOrigin -> getOrigin -> getPatternName -> msg.puttext;
+         '.' -> msg.puttext;
+         THIS(assert)[] -> getOrigin -> getPatternName -> msg.puttext;
+         ': ' -> msg.puttext;
+     if);
+         msg[] -> putline;
+     INNER;
+  #);
+
+(* Sorry folks, we have to put the INNER, or we won't be able to
+ use the putFormat functionality *)
+debug: debugBase (# debugme:: falseObject; do INNER; #);
+debugLoad: debugBase (# debugme:: falseObject; do 'Load' -> prefix[]; INNER; #);
+debugLoadVisual: debugBase (# debugme:: falseObject; do 'LoadVisual' -> prefix[]; INNER; #);
+debugpostProcessing: debugBase (# debugme:: falseObject; do 'postProcessing' -> prefix[]; INNER; #);
+debugTraceID: debugBase (# debugme::falseObject; do 'TraceID' -> prefix[]; INNER; #);
+debugTraceXML: debugBase (# debugme::falseObject; do 'TraceXML' -> prefix[]; INNER; #);
+debugWorkspace: debugBase (# debugme::falseObject; do 'Workspace' -> prefix[]; INNER; #);
+debugTraceNotification: debugBase (# debugme::falseObject; do 'TraceNotification' -> prefix[]; INNER; #);
+debugFramework: debugBase (# debugme::falseObject; do 'Framework' -> prefix[]; INNER; #);
+debugTraceSave: debugBase (# debugme::falseObject; do 'TraceSave' -> prefix[]; INNER; #);
+debugTraceAdd: debugBase (# debugme::falseObject; do 'TraceAdd' -> prefix[]; INNER; #);
+debugTraceSelect: debugBase (# debugme::falseObject; do 'TraceSelect' -> prefix[]; INNER; #);
+debugTraceOver: debugBase (# debugme::falseObject; do 'TraceOver' -> prefix[]; INNER; #);
+debugCPNet: debugBase (# debugme::falseObject; do 'CPNet' -> prefix[]; INNER; #);
+debugCheckerLoop: debugBase (# debugme::falseObject; do 'Checker' -> prefix[]; INNER; #);
+debugCPNetConc: debugBase (# debugme::falseObject; do 'CPNet (Conc)' -> prefix[]; INNER; #);
+debugCommon: debugBase (# debugme::falseObject; do 'Common' -> prefix[]; INNER; #);
+debugSave: debugBase (# debugme::falseObject; do 'Save' -> prefix[]; INNER; #);
+debugInstrument: debugBase (# debugme::falseObject; do 'Instrument' -> prefix[]; INNER; #);
+debugLoadInstrument: debugBase (# debugme::falseObject; do 'LoadInstrument' -> prefix[]; INNER; #);
+debugSaveInstrument: debugBase (# debugme::falseObject; do 'SaveInstrument' -> prefix[]; INNER; #);
+debugHierarchy: debugBase (# debugme::falseObject; do 'Hierarchy' -> prefix[]; INNER; #);
+debugMLCom: debugBase (# debugme::falseObject; do 'MLCom' -> prefix[]; INNER; #);
+debugAST: debugBase (# debugme::falseobject; do 'AST' -> prefix[]; INNER; #);
+debugUITK: debugBase (# debugme::falseObject; do 'UITK' -> prefix[]; INNER; #);
+debugDocument: debugBase (# debugme::falseObject; do 'Document' -> prefix[]; INNER; #);
+debugCom: debugBase (# debugme::falseObject; do 'BETA<->COM' -> prefix[]; INNER; #);
+debugBinder: debugBase (# debugme::falseObject; do 'Binder' -> prefix[]; INNER; #);
+debugClone: debugBase (# debugme::falseObject; do 'Clone' -> prefix[]; INNER; #);
+debugIndex: debugBase (# debugme::falseObject; do 'Index' ->prefix[]; INNER; #);
+debugSheet: debugBase (# debugme::falseObject; do 'Sheet' ->prefix[]; INNER; #); 
+debugTemp: debugBase (# debugme::falseObject; do 'Temp' ->prefix[]; INNER; #); 
+debugGroup: debugBase (# debugme::falseObject; do 'Group' ->prefix[]; INNER; #); 
+debugFusion: debugBase (# debugme::falseObject; do 'Fusion' ->prefix[]; INNER; #); 
+debugPansheet: debugBase (# debugme::falseObject; do 'Pansheet' ->prefix[]; INNER; #); 
+debugFactory: debugBase (# debugme::falseObject; do 'Factory' ->prefix[]; INNER; #); 
+debugElements: debugBase (# debugme::falseObject; do 'Elements' ->prefix[]; INNER; #); 
+debugXML: debugBase (# debugme::falseObject; do 'XML' ->prefix[]; INNER; #); 
+debugSetCommand: debugBase (# debugme::falseObject; do 'SetCommand' ->prefix[]; INNER; #); 
+debugInteriorNode: debugBase (# debugme::falseObject; do 'InteriorNode' ->prefix[]; INNER; #); 
+debugNetNode: debugBase (# debugme::falseObject; do 'NetNode' ->prefix[]; INNER; #); 
+debugFigure: debugBase (# debugme::falseObject; do 'Figure' ->prefix[]; INNER; #); 
+debugIcon: debugBase (# debugme::falseObject; do 'Icon' ->prefix[]; INNER; #);
+debugStepCommand: debugBase (# debugme::falseObject; do 'StepCommand' ->prefix[]; INNER; #); 
+debugCompositeCommand: debugBase (# debugme::falseObject; do 'CompositeCommand' ->prefix[]; INNER; #); 
+debugOnChanged: debugBase (# debugme::falseObject; do 'onChanged' ->prefix[]; INNER; #); 
+debugTextEdit: debugBase (# debugme::falseObject; do 'TextEdit' ->prefix[]; INNER; #); 
+debugConsistency: debugInternal (# debugme::falseObject; do 'Consistency' ->prefix[]; INNER; #); 
+debugMove: debugBase (# debugme::falseObject; do 'Move' ->prefix[]; INNER; #); 
+debugMLInit: debugBase (# debugme::falseObject; do 'DebugMLInit' ->prefix[]; INNER; #);
+debugMonitor: debugBase (# debugme::falseObject; do 'Monitor' -> prefix[]; INNER; #);
+debugFlatten: debugBase (# debugme::falseObject; do 'Flatten' -> prefix[]; INNER; #);
+FIXME: debugBase (# debugme::falseObject; do 'FIXME' ->prefix[]; INNER; #); 
+TODO: debugBase (# debugme::falseObject; do 'TODO' ->prefix[]; INNER; #); 
+debugSyntaxCheck: debugBase(# debugme::falseObject; do 'SyntaxCheck' -> prefix[]; INNER; #);
+debugAttachmentPoints: debugBase(# debugme::falseObject; do 'AttachmentPoints' -> prefix[]; INNER; #);
+debugCommunication: debugBase(# debugme::falseObject; do 'COMM' -> prefix[]; INNER; #);
+
+(* Set to false to remove info to user, e.g. usage. Isn't removed by 'debugging' *)
+userinfo: debugInfo (# debugme::trueObject; do 'INFO' -> prefix[]; INNER; #);
+

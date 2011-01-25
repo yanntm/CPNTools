@@ -1,0 +1,581 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '~beta/postwimp/workspace';
+
+INCLUDE '../../cpnet/xmlutilities';
+INCLUDE '~beta/postwimp/collections/map';
+INCLUDE '~beta/sysutils/pathhandler';
+INCLUDE '../resources/texts/texts';
+
+BODY 'private/cpnoptionbody.bet';
+
+-- Workspacelib: attributes --
+Defaults: TextHashMap(# #);
+
+getDefaults: ObjectPool.get
+  (# Type:: Defaults;
+     init:: (# do obj.init; #);
+  #);
+
+putDefaultValue:
+  (# theId: ^Text;
+     theValue: ^Object;
+  enter (theId[],theValue[])
+  do (theId[], theValue[]) -> (getDefaults).associate;
+  #);
+
+getDefaultValue: 
+  (# theId: ^Text;
+     theValue: ^Object;
+  enter theId[]
+  do theId[] -> (getDefaults).lookup -> theValue[];
+  exit theValue[]
+  #);
+
+Option: Notifier
+  (# private: @<<SLOT OptionPrivate: descriptor>>;
+     valueType:< Object;
+     theValue: ^valueType;
+     theName: ^text;
+     (* primarily used in the renewal of commands *)
+     temporary:< booleanValue;
+     invisible:< booleanObject;
+     showme: booleanObject (# do (NOT invisible) AND (NOT temporary) -> value; #);
+
+     displayName:
+       (# name: ^text;
+       do dname -> name[];
+          (if name[] = NONE then
+              theName[] -> name[];
+          if);
+       exit name[] 
+       #);
+     dname:< (# value: ^text; do INNER; exit value[] #);
+     
+     clone:<
+       (# theType:< Option;
+          new: ^theType;
+          newType: ##Option;
+          newValue: ^valueType;
+       do THIS(Option)##->newType##;
+          &newType[]->new[];
+          new.init;
+          (if theName[]<>NONE then
+              theName.copy->new.theName[];
+          if);
+          (if theValue[]<>NONE then
+              &valueType[]->newValue[];
+              INNER;
+          if);
+          newValue[]->new.theValue[];
+       exit new[]
+       #);
+     
+     name:
+       (#
+       enter (# enter theName[] do changed #)
+       exit theName[]
+       #);
+
+     value:
+       (#
+       enter 
+          (# newValue: ^ValueType; 
+          enter newValue[] 
+          do newValue[] -> cloneValue -> theValue[];
+             changed; 
+          #)
+       exit theValue[]
+       #);
+     
+     setDefaultId:
+       (# theId: ^Text;
+       enter theId[]
+       <<SLOT OptionSetDefaultId: doPart>>
+       #);
+     
+     setToDefault:<
+       (# theDefaultValue: ^ValueType;
+       <<SLOT OptionSetToDefault: doPart>>
+       #);
+     
+     getDefault:<
+       (# defaultValue: ^ValueType;
+          tmpValue: ^Object;
+       <<SLOT OptionGetDefault: doPart>>
+       exit defaultValue[]
+       #);
+     
+     cloneValue:<
+       (# val: ^ValueType;
+          new: ^ValueType;
+       enter val[]
+       do INNER;
+          (if new[] = NONE then
+              val[] -> new[];
+          if);
+       exit new[]
+       #);
+     
+     onChanged::<
+       (# 
+       do observers.scan
+          (# 
+          do THIS(Option)[] -> current.changed;
+          #);
+          INNER;
+       #);
+
+     init:< (# do INNER; #);
+  #);
+
+HandOption: Option
+  (# ValueType::Hand;
+     clone:: (# do theValue[] -> newValue[]; #);
+  #);
+IntegerOption: Option 
+  (# valueType:: IntegerObject; 
+     clone::(# do theValue->newValue; #);
+     cloneValue:: (# 
+                  do &IntegerObject[] -> new[];
+                     val -> new;
+                  #);
+  #);
+BooleanOption: Option 
+  (# valueType:: BooleanObject; 
+     clone::(# do theValue->newValue; #); 
+     cloneValue:: (# 
+                  do &BooleanObject[] -> new[];
+                     val -> new;
+                  #);
+                     
+  #);
+RealOption: Option 
+  (# valueType:: RealObject; 
+     clone::(# do theValue->newValue; #); 
+  #);
+TextOption: Option 
+  (# valueType:: text; 
+     clone::(# do theValue.copy ->newValue[]; #); 
+     cloneValue:: (# do val.copy -> new[]; #);
+                     
+  #);
+FolderPathOption: TextOption (# #);
+FilePathOption: TextOption
+  (# 
+     getDefault::
+       (# do
+          (* The relative path to the template is collected from defaults.xml *)
+          defaultValue[] -> relativefile -> defaultValue[];
+          theIndex.changed;   
+       #);
+     onChanged::
+       (# do
+          theIndex.changed;
+       #)
+  #);
+XMLOption: Option
+  (# valueType:: theXML.Element;
+     clone::(# do theValue.clone -> newValue[] #);
+  #);
+MLCodeOption: TextOption
+  (# defaultText: ^Text;
+     
+     getDefaultText:
+       (# 
+       exit defaultText[]
+       #);
+     
+     setDefaultText:
+       (# 
+       enter defaultText[]
+       #);
+     
+     shortName: (# exit theName[] #);
+  #);
+ColorOption: Option 
+  (# valueType:: Color; 
+     clone::(# do theValue.rgb->newValue; #); 
+  #);
+
+XYPos: Object
+  (# x,y: @real; 
+     XY: (# enter (x, y) exit (x, y) #);
+  enter (x,y)
+  exit(x,y)
+  #);
+
+PositionOption: Option
+  (# ValueType:: XYPos (# #);
+     clone::(# do theValue -> newValue; #);
+     init::(# do &ValueType[] -> theValue[]; #);
+  #);
+OptionListOption: Option
+  (# ValueType::OptionList;
+     clone::(# do theValue.clone -> newValue[]; #);
+  #);
+
+OptionList: Notifier
+  (# options: @List
+       (# Element:: Option;
+       #);
+     add:< 
+       (# elm: ^Option;
+       enter elm[]
+       do THIS(Element)[] -> elm.father[];
+          elm[] -> options.append;
+          elm[] -> added;
+          INNER;
+       #);
+     remove:< 
+       (# elm: ^Option;
+       enter elm[]
+       do INNER;
+          elm[] -> options.at -> options.delete;
+          NONE -> elm.father[];
+          elm[] -> removed;
+       #);
+
+     
+     size: (# exit options.size #);
+     initialized: @boolean;
+     
+     operation:
+       (#
+       do (if NOT initialized then
+              init;
+              true -> initialized;
+          if);
+          INNER;
+       #);
+
+     clone:< operation
+       (# theOL: ^OptionList;
+       do &OptionList[] -> theOL[];
+          theOL.init;
+          options.scan
+          (# 
+          do current.clone -> theOL.register;
+          #);
+          INNER;
+       exit theOL[]
+       #);
+     
+     find: operation
+       (# name: ^Text;
+          theType:< Option;
+          theOption: ^theType;
+       enter name[]
+       do search: options.scan
+            (# ol: ^OptionList;
+            do (if current.name -> name.equal then
+                   current[] -> theOption[];
+                   leave search;
+               if);
+               (if current## <= OptionListOption## then
+                   current.value -> ol[];
+                   (if ol[] <> NONE then
+                       name[] -> ol.find -> theOption[];
+                       (if theOption[] <> NONE then
+                           leave search;
+                       if);
+                   if);
+               if);
+            #);
+          INNER;
+       exit theOption[]
+       #);
+     
+     lookupOption: operation
+       (# name:^text;
+          theType:< Option;
+          theOption: ^theType;
+          theValue: ^theOption.valueType;
+       enter name[]
+       do search: options.scan
+            (# ol: ^OptionList;
+            do (if (current.name->name.equal) AND (current##<=theType##) then
+                   current[]->theOption[];
+                   leave search;
+               if);
+            #);
+          INNER;
+          (if theOption[]<>NONE then
+              theOption.value->theValue[];
+          if);
+       exit theValue[]
+       #);
+
+     setOption: operation
+       (# theName: ^text;
+          valueType:< Object;
+          theValue: ^valueType;
+          theOption: ^Option;
+       enter (theName[], theValue[])
+       do search: options.scan
+            (# 
+            do 
+               (if (current.name->theName.equal) then
+                   (if theValue[] <> NONE then
+                       (if current.valueType##<=theValue## then
+                           current[]->theOption[];
+                           leave search;
+                       if);
+                    else
+                       (if current.valueType## <= valueType## then
+                           current[] -> theOption[];
+                           leave search;
+                       if);
+                   if);
+                if);
+            #);
+          INNER;
+          (if theOption[]<>NONE then
+              theValue[]->theOption.value;
+              theOption.changed;
+              theOption[] -> changed;
+          if);
+       #);
+     
+     setAddOptionWithDefault: operation
+       (# OptionType:< Option;
+          theName: ^Text;
+          theDefaultId: ^Text;
+       enter (theName[], theDefaultId[])
+       do (# theOption: ^OptionType;
+             theValue: ^Object;
+          do theName[] -> find -> theOption[];
+             (if theOption[] = NONE then
+                 &OptionType[] -> theOption[];
+                 theName[]->theOption.name;
+                 theOption[]->register;
+             if);
+             theDefaultId[] -> theOption.setDefaultId;
+             theOption.getDefault -> theValue[];
+             (if theValue[] <> NONE then
+                 (theName[], theValue[]) -> setOption;
+                 (theName[], theDefaultId[]) -> setDefault;
+              else
+                 'Failed to add option with default' -> FIXME;
+             if);
+          #);
+       #);
+     
+     setDefault: operation
+       (# theName: ^Text;
+          theDefaultId: ^Text;
+          theDefaultValue: ^Object;
+          theOption: ^Option;
+       enter (theName[], theDefaultId[])
+       do theDefaultId[] -> getDefaultValue -> theDefaultValue[];
+          (if theDefaultValue[] <> NONE then
+              search: options.scan
+                (# 
+                do (if (current.name->theName.equal) then
+                       (if current.valueType## <= theDefaultValue## then
+                           current[] -> theOption[];
+                           leave search;
+                       if);
+                   if);
+                #);
+              (if theOption[] <> NONE then
+                  theDefaultId[] -> theOption.setDefaultId;
+               else
+                  'Failed to set default value for option %s: Option not found' -> FIXME(# do theName[] -> s; #);
+              if);
+           else
+              'Failed to set default value for option %s: id %s not found' -> FIXME (# do theName[] -> s; theDefaultId[] -> s; #);
+          if);
+       #);
+
+     setAddOption: setOption
+       (# OptionType:< Option;
+          newOption: @OptionType;
+          valueType:: newOption.valueType;
+       do (if theOption[]=NONE then
+              newOption.init;
+              theName[]->newOption.name;
+              newOption[]->register;
+              newOption[]->theOption[];
+          if);
+       #);
+     
+     scanOptionsRecursively:
+       (# 
+          current: ^Option;
+       do (# opts: @List(# element:: Option; #);
+          do options.scan
+             (#
+             do current[] -> opts.append;
+             #);
+             whileLoop: loop
+               (# while:: (# do not (opts.empty) -> value; #);
+               do (opts.head -> opts.delete).elm[] -> current[];
+               (if current## <= OptionListOption## then
+                   current[] -> QUA
+                   (# as:: OptionListOption;
+                      theList: ^OptionList;
+                   do current.value -> theList[];
+                      theList.options.scan
+                      (#
+                      do current[] -> opts.append;
+                      #);
+                   #);
+                else
+                   INNER scanOptionsRecursively;
+               if);
+               #);
+          #);
+       #);
+     
+     setOptionRecursively:
+       (# theName: ^text;
+          valueType:< Object;
+          theValue: ^valueType;
+          theOption: ^Option;
+       enter (theName[], theValue[])
+       do search: scanOptionsRecursively
+            (# 
+            do 
+               (if (current.name->theName.equal) then
+                   (if theValue[] <> NONE then
+                       (if current.valueType##<=theValue## then
+                           current[]->theOption[];
+                           leave search;
+                       if);
+                    else
+                       (if current.valueType## <= valueType## then
+                           current[] -> theOption[];
+                           leave search;
+                       if);
+                   if);
+                if);
+            #);
+          INNER;
+          (if theOption[]<>NONE then
+              theValue[]->theOption.value;
+              theOption.changed;
+              theOption[] -> changed;
+           else
+              'Failed to set option: %s\n' -> debugTemp(# do theName[] -> s; #);
+          if);
+       #);
+     
+     lookupIntegerObject: lookupOption (# theType:: IntegerOption; #);
+     lookupBooleanObject: lookupOption (# theType:: BooleanOption; #);
+     lookupRealObject: lookupOption (# theType:: RealOption; #);
+     lookupText: lookupOption (# theType:: TextOption; #);
+     lookupColor: lookupOption (# theType:: ColorOption; #);
+     lookupXML: lookupOption (# theType:: XMLOption; #);
+     
+     lookupinteger: operation
+       (# name: ^text;
+          theInteger: ^IntegerObject;
+          value: @integer;
+       enter name[]
+       do name[]->lookupIntegerObject -> theInteger[];
+          (if theInteger[]=NONE then
+              0->Value;
+           else
+              theInteger->value;
+          if);
+       exit value
+       #);
+
+     lookupboolean: operation
+       (# name: ^text;
+          theBoolean: ^BooleanObject;
+          value: @boolean;
+       enter name[]
+       do name[]->lookupBooleanObject -> theBoolean[];
+          (if theBoolean[]=NONE then
+              false->Value;
+           else
+              theBoolean->value;
+          if);
+       exit value
+       #);
+
+     lookupreal: operation
+       (# name: ^text;
+          theReal: ^RealObject;
+          value: @real;
+       enter name[]
+       do name[]->lookupRealObject -> theReal[];
+          (if theReal[]=NONE then
+              0.0->Value;
+           else
+              theReal->value;
+          if);
+       exit value
+       #);
+
+     setIntegerObject: setOption (# valueType:: IntegerObject; #);
+     setBooleanObject: setOption (# valueType:: BooleanObject; #);
+     setRealObject: setOption (# valueType:: RealObject; #);
+     setText: setOption (# valueType:: text; #);
+     setColor: setOption (# valueType:: Color; #);
+
+     setinteger: operation
+       (# theName: ^text;
+          theValue: @integer;
+          theInteger: @IntegerObject;
+       enter (theName[], theValue)
+       do theValue->theInteger;
+          (theName[], theInteger[]) -> setIntegerObject;
+       #);
+
+     setboolean: operation
+       (# theName: ^text;
+          theValue: @boolean;
+          theBoolean: @BooleanObject;
+       enter (theName[], theValue)
+       do theValue->theBoolean;
+          (theName[], theBoolean[]) -> setBooleanObject;
+       #);
+
+     setreal: operation
+       (# theName: ^text;
+          theValue: @real;
+          theReal: @RealObject;
+       enter (theName[], theValue)
+       do theValue->theReal;
+          (theName[], theReal[]) -> setRealObject;
+       #);
+
+     register: operation
+       (# theOption: ^Option;
+       enter theOption[]
+       do (if theOption[]<>NONE then
+              theOption[]->add;
+          if);
+       #);
+     
+     clear: operation
+       (#
+       do options.clear;;
+       #);
+  #);

@@ -1,0 +1,425 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '~beta/postwimp/workspace';
+
+INCLUDE 'standardfigures';
+INCLUDE 'figure';
+
+-- workspacelib: attributes --
+
+SetPortFigure: Figure
+  (# useDefaultHotspot::(# do true -> value; #);
+     theTextItem: ^TextItem;
+     PortType: ^Text;
+     theEllipse: ^Ellipse;
+     theArrow: ^Line;
+     theRect: ^Rect;
+     theCompletestyle: ^Completestyle; 
+     
+     init::
+       (# theStyle: ^CompositeStyle;
+          theStrokeStyle: ^StrokeStyle;
+          theStrokeWidthStyle: ^StrokeWidthStyle;
+          RectColor: ^Color;  
+          point: ^Point2d;
+          w, h: @real;
+       do &Ellipse[] -> theEllipse[];
+          &CompositeStyle[] -> theStyle[] -> theEllipse.theStyle[];
+          black[] -> StrokeStyle -> theStyle.add;
+          white[] -> FillStyle -> theStyle.add;
+          theEllipse[]->add;
+          (12,10) -> (theEllipse.width, theEllipse.height);
+          (0,0) -> (theEllipse.x, theEllipse.y);
+          &Line[] -> theArrow[];
+          theArrow[]->add;
+          &PointList[]->theArrow.points[];
+          (for 2 repeat &Point2d[]->point[]->theArrow.points.append; for);     
+          &Completestyle[]->theCompletestyle[];
+          0.7->theCompletestyle.arrowHeadSize;
+          (Black[],NONE,1,ARROW_END)->theCompletestyle;
+          theCompletestyle[]->theArrow.theStyle[];
+          1->theArrow.points.get->point[];
+          (7,0)->point;          
+          2->theArrow.points.get->point[];
+          (20,0)->point; 
+          
+          &TextItem[] -> theTextItem[];
+          
+          &Rect[] -> theRect[];
+          &CompositeStyle[] -> theStyle[] -> theRect.theStyle[];
+          blueish[] -> StrokeStyle -> theStyle.add;
+          lightblueish[] -> RectColor[];
+          RectColor.lighten -> FillStyle -> theStyle.add;
+          theRect[] -> add;
+          (if theTextItem.content[] <> NONE then
+              theTextItem.content[] -> arial.measureText -> (w, h);
+              (w + 5, h/2 + 5) -> (theRect.width, theRect.height);
+           else 
+              14 -> theRect.width;
+              9 -> theRect.height;
+          if);
+          (7,-14) -> (theRect.x, theRect.y);
+          
+          blueish[] -> StrokeStyle -> theTextItem.theStyle[];
+          theTextItem[] -> add;
+          (0,-10) -> (theTextItem.x, theTextItem.y);
+       #);
+     
+     update::
+       (# w, h: @real;
+       do PortType[] -> theTextItem.content[];
+          (if theTextItem.content[] <> NONE then
+              theTextItem.content[] -> arial.measureText -> (w, h);
+              (w + 5, h/2 + 5) -> (theRect.width, theRect.height);
+           else 
+              14 -> theRect.width;
+              9 -> theRect.height;
+          if);
+          (if true 
+           // ('In' -> PortType.equal) then
+              0.7->theCompletestyle.arrowHeadSize;
+              (Black[],NONE,1,ARROW_END)->theCompletestyle;
+           // ('Out' -> PortType.equal) then
+              0.7->theCompletestyle.arrowHeadSize;
+              (Black[],NONE,1,ARROW_START)->theCompletestyle;
+           // ('I/O' -> PortType.equal) then
+              0.5->theCompletestyle.arrowHeadSize;
+              (Black[],NONE,1,ARROW_BOTH)->theCompletestyle;
+          if);
+       #);
+     
+     onchanged::
+       (# 
+       do 'porttype' -> options.lookupText -> PortType[];
+       #);
+  #);
+
+FusionFigure: Figure
+  (# useDefaultHotspot::(# do true -> value; #);
+     theTextItem: ^TextItem;
+     fusionName: ^Text;
+     ellipse1, ellipse2, ellipse3: @Ellipse;
+     theRect: ^Rect;
+     
+     init::
+       (# theStyle: ^CompositeStyle;
+          theStyle1: ^CompositeStyle;
+          theStrokeStyle1: ^StrokeStyle;
+          theFillStyle1: ^FillStyle;
+          theStyle2: ^CompositeStyle;
+          theStrokeStyle2: ^StrokeStyle;
+          theStyle3: ^CompositeStyle;
+          theStrokeStyle3: ^StrokeStyle;
+          theStrokeWidthStyle: ^StrokeWidthStyle;
+          RectColor: ^Color;  
+         
+       do &TextItem[] -> theTextItem[];
+          
+          &Rect[] -> theRect[];
+          &CompositeStyle[] -> theStyle[] -> theRect.theStyle[];
+          blueish[] -> StrokeStyle -> theStyle.add;
+          lightblueish[] -> RectColor[];
+          RectColor.lighten -> FillStyle -> theStyle.add;
+          theRect[] -> add;
+          
+          blueish[] -> StrokeStyle -> theTextItem.theStyle[];
+          theTextItem[] -> add;
+          
+          &CompositeStyle[] -> theStyle1[] -> ellipse1.theStyle[];
+          &StrokeStyle[] -> theStrokeStyle1[];
+          &StrokeWidthStyle[] -> theStrokeWidthStyle[];
+          black[] -> theStrokeStyle1.stroke[];
+          1 -> theStrokeWidthStyle.strokeWidth;
+          &FillStyle[] -> theFillStyle1[];
+          white[] -> theFillStyle1.fill[];
+          theStrokeStyle1[] -> theStyle1.add;
+          theFillStyle1[] -> theStyle1.add;
+          theStrokeWidthStyle[] -> theStyle1.add;
+          &CompositeStyle[] -> theStyle2[] -> ellipse2.theStyle[];
+          &StrokeStyle[] -> theStrokeStyle2[];
+          gray7[] -> theStrokeStyle2.stroke[];
+          theStrokeStyle2[] -> theStyle2.add;
+          theStrokeWidthStyle[] -> theStyle2.add;
+          &CompositeStyle[] -> theStyle3[] -> ellipse3.theStyle[];
+          &StrokeStyle[] -> theStrokeStyle3[];
+          gray7[] -> theStrokeStyle3.stroke[];
+          theStrokeStyle3[] -> theStyle3.add;
+          theStrokeWidthStyle[] -> theStyle3.add;
+          
+          ellipse2[]->add;
+          ellipse3[]->add;
+          (* Add this last so it partly covers the others *)
+          ellipse1[]->add; 
+          Layout;
+       #);
+     
+     Layout:
+       (# w, h: @real;
+       do (-20, -13) -> (theTextItem.x, theTextItem.y);
+          (14,11) -> (ellipse1.width, ellipse1.height);
+          (14,11) -> (ellipse2.width, ellipse2.height);
+          (14,11) -> (ellipse3.width, ellipse3.height);
+          (0,0) -> (ellipse1.x, ellipse1.y);
+          (4,4) -> (ellipse2.x, ellipse2.y);
+          (8,8) -> (ellipse3.x, ellipse3.y);
+          
+          (if theTextItem.content[] <> NONE then
+              theTextItem.content[] -> arial.measureText -> (w, h);
+              (w + 5, h/2 + 5) -> (theRect.width, theRect.height);
+           else 
+              (14,9) -> (theRect.width,theRect.height);
+          if);
+          (0,-16) -> (theRect.x, theRect.y);
+          
+       #);
+     
+     update::
+       (# w, h: @real;
+       do fusionName[] -> theTextItem.content[];
+          (if theTextItem.content[] <> NONE then
+              theTextItem.content[] -> arial.measureText -> (w, h);
+              (w + 5, h/2 + 5) -> (theRect.width, theRect.height);
+              theTextItem.changed;
+           else 
+              (14,9) -> (theRect.width,theRect.height);
+          if);
+       #);
+     
+     onchanged::
+       (# 
+       do 'fusionname' -> options.lookupText -> fusionName[];
+       #);
+  #);
+
+MoveToSubpageFigure: Figure
+  (# theMoveToSubpageFigure: ^Composite;
+     theTransitionWithArcsFigure: ^TransitionWithArcsFigure;
+     theFilledNetFigure: ^FilledNetfigure;
+     theArrowFigure: ^ArrowFigure;
+     
+     theTextItem: ^TextItem;
+     
+     init::
+       (# 
+       do &TextItem[] -> theTextItem[];
+          &Composite[]->theMoveToSubpageFigure[];
+          &TransitionWithArcsFigure[] -> theTransitionWithArcsFigure[];
+          &FilledNetfigure[]->theFilledNetFigure[];
+          &ArrowFigure[]->theArrowFigure[];
+          
+          (20,14) -> theTransitionWithArcsFigure.init;
+          (18,12)->theFilledNetFigure.init;
+          theArrowFigure.init;
+          
+          (2,0) -> (theTransitionWithArcsFigure.x, theTransitionWithArcsFigure.y);
+          (-14,-18)->(theArrowFigure.x,theArrowFigure.y);
+          (-30,-30)->(theFilledNetFigure.x,theFilledNetFigure.y);
+          
+          theTransitionWithArcsFigure[] -> theMoveToSubpageFigure.add;
+          theFilledNetFigure[]->theMoveToSubpageFigure.add;
+          theArrowFigure[]->theMoveToSubpageFigure.add;
+          theMoveToSubpageFigure[]->add;
+       #);
+     
+  #);
+
+FlattenFigure: Figure
+  (# theMoveToSubpageFigure: ^Composite;
+     theTransitionWithArcsFigure: ^TransitionWithArcsFigure;
+     theFilledNetFigure: ^FilledNetfigure;
+     theArrowFigure: ^FromTopLeftArrowFigure;
+          
+     init::
+       (# 
+       do &Composite[]->theMoveToSubpageFigure[];
+          &TransitionWithArcsFigure[] -> theTransitionWithArcsFigure[];
+          &FilledNetfigure[]->theFilledNetFigure[];
+          &FromTopLeftArrowFigure[]->theArrowFigure[];
+          
+          (20,14) -> theTransitionWithArcsFigure.init;
+          (18,12)->theFilledNetFigure.init;
+          theArrowFigure.init;
+          
+          (2,0) -> (theTransitionWithArcsFigure.x, theTransitionWithArcsFigure.y);
+          (-14,-18)->(theArrowFigure.x,theArrowFigure.y);
+          (-30,-30)->(theFilledNetFigure.x,theFilledNetFigure.y);
+          
+          theTransitionWithArcsFigure[] -> theMoveToSubpageFigure.add;
+          theFilledNetFigure[]->theMoveToSubpageFigure.add;
+          theArrowFigure[]->theMoveToSubpageFigure.add;
+          theMoveToSubpageFigure[]->add;
+       #);
+     
+  #);
+
+AssignPortSocketFigure: Figure
+  (# useDefaultHotspot::(# do false -> value; #);
+     portEllipse, socketEllipse: ^Ellipse;
+     portTypeLabel: ^Rect;
+     portTextItem, socketTextItem: ^TextItem;
+     line1, line2: ^Line;
+     thePhase: @integer;
+     
+     init::
+       (# theStyle: ^CompositeStyle;
+          theStrokeStyle: ^StrokeStyle;
+          theStrokeWidthStyle: ^StrokeWidthStyle;
+          RectColor: ^Color;  
+          point: ^Point2d;
+       do &Ellipse[] -> portEllipse[];
+          &CompositeStyle[] -> theStyle[] -> portEllipse.theStyle[];
+          black[] -> StrokeStyle -> theStyle.add;
+          white[] -> FillStyle -> theStyle.add;
+          portEllipse[] -> add;
+          &TextItem[] -> portTextItem[];
+          'P' -> portTextItem.content[];
+          portTextItem[] -> add;
+          
+          &Ellipse[] -> socketEllipse[];
+          &CompositeStyle[] -> theStyle[] -> socketEllipse.theStyle[];
+          black[] -> StrokeStyle -> theStyle.add;
+          white[] -> FillStyle -> theStyle.add;
+          socketEllipse[] -> add;
+          &TextItem[] -> socketTextItem[];
+          'S' -> socketTextItem.content[];
+          socketTextItem[] -> add;
+          
+          &Rect[] -> portTypeLabel[];
+          &CompositeStyle[] -> theStyle[] -> portTypeLabel.theStyle[];
+          blueish[] -> StrokeStyle -> theStyle.add;
+          lightblueish[] -> RectColor[];
+          RectColor.lighten -> FillStyle -> theStyle.add;
+          portTypeLabel[] -> add;
+          
+          
+          &Line[] -> line1[];
+          line1[] -> add;
+          &PointList[] -> line1.points[];
+          (for 2 repeat &Point2d[]->point[]->line1.points.append; for);     
+          &Line[] -> line2[];
+          line2[] -> add;
+          &PointList[] -> line2.points[];
+          (for 2 repeat &Point2d[]->point[]->line2.points.append; for);     
+          (0,0) -> Layout;
+       #);
+     
+     Layout:
+       (# point: ^Point2d;
+          offsetx, offsety: @integer;
+       enter (offsetx, offsety)
+       do (18,15) -> (portEllipse.width, portEllipse.height);
+          (0+offsetx,0+offsety) -> (portEllipse.x, portEllipse.y);
+          (-4+offsetx,3+offsety) -> (portTextItem.x, portTextItem.y);
+          
+          (18,15) -> (socketEllipse.width, socketEllipse.height);
+          (-20+offsetx,-25+offsety) -> (socketEllipse.x, socketEllipse.y);
+          (-24+offsetx,-21+offsety) -> (socketTextItem.x, socketTextItem.y);
+          
+          1->line1.points.get->point[];
+          (-13+offsetx,-14+offsety)->point;          
+          2->line1.points.get->point[];
+          (-9+offsetx,-10+offsety)->point; 
+          
+          1->line2.points.get->point[];
+          (-10+offsetx,-16+offsety)->point;          
+          2->line2.points.get->point[];
+          (-6+offsetx,-12+offsety)->point; 
+          
+          (10,5) -> (portTypeLabel.width, portTypeLabel.height);
+          (7+offsetx,-14+offsety) -> (portTypeLabel.x, portTypeLabel.y);
+       #);
+     
+     update::
+       (# 
+       do (if thePhase=0 then
+              (0,0) -> Layout;
+           else 
+              (20,25) -> Layout;
+          if);
+       #);
+     
+     onchanged::
+       (# phasekey: ^Text;
+       do update; 
+       #);
+  #);
+
+SetSubpageFigure: Figure
+  (# theSetSubpageFigure: ^Composite;
+     theTransitionWithArcsFigure: ^TransitionWithArcsFigure;
+     theFilledNetFigure: ^FilledNetfigure;
+     theAssignFigure: ^AssignFigure;
+     thePhase: @integer;
+     
+     init::
+       (# 
+       do &Composite[]->theSetSubpageFigure[];
+          &TransitionWithArcsFigure[] -> theTransitionWithArcsFigure[];
+          &FilledNetfigure[]->theFilledNetFigure[];
+          &AssignFigure[]->theAssignFigure[];
+          
+          (20,14) -> theTransitionWithArcsFigure.init;
+          (10,10) -> theAssignFigure.init;
+          (18,12)->theFilledNetFigure.init;
+          
+          theTransitionWithArcsFigure[] -> theSetSubpageFigure.add;
+          theFilledNetFigure[]->theSetSubpageFigure.add;
+          theAssignFigure[]->theSetSubpageFigure.add;
+          theSetSubpageFigure[]->add;
+          
+          (0,0) -> Layout;
+       #);
+     
+     Layout:
+       (# offsetx, offsety: @integer;
+       enter (offsetx, offsety)
+       do (0+offsetx,0+offsety) -> (theTransitionWithArcsFigure.x, theTransitionWithArcsFigure.y);
+          (-6+offsetx,0+offsety)->(theAssignFigure.x,theAssignFigure.y);
+          (-28+offsetx,-24+offsety)->(theFilledNetFigure.x,theFilledNetFigure.y);
+       #);
+     
+     update::
+       (# debugStr: ^Text;
+       do (if debugging then
+              &Text[] -> debugStr[];
+              'phase is ' -> debugStr.puttext;
+              thePhase -> debugStr.putint;
+              debugStr[] -> debugIcon;
+          if);
+          (if thePhase=0 then
+              (0,0) -> Layout;
+           else 
+              (28,24) -> Layout;
+          if);
+       #);
+     
+     onchanged::
+       (# phasekey: ^Text;
+       do 'phasekey' -> options.lookupInteger -> thePhase;
+          update;
+       #);
+  #);
+

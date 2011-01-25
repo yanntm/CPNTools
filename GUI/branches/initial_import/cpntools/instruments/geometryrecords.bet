@@ -1,0 +1,235 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../cpnworkspace';
+INCLUDE '../../cpnet/cpnet';
+
+-- CPNWorkSpaceLib: Attributes --
+GeometryRecord:
+  (# Element:< Object;
+     elm: ^Element;
+     init:<
+       (#
+       enter elm[]
+       do INNER;
+       #);
+     forward:< (# do INNER; #);
+     backward:< (# do INNER; #);
+     getName:<
+       (# name: ^Text;
+       do '' -> name[];
+          INNER;
+          (if ('' -> name.equal) then
+              (if (elm[] <> NONE) then
+                  elm[] -> getpatternname -> name[];
+               else
+                  '*NONE*' -> name[];
+              if);
+          if);
+          exit name[]
+       #);
+  #);
+
+PageElementGeometryRecord: GeometryRecord
+  (# Element::< PageElement;
+     dx, dy: @Real;
+     bguides, aguides: ^GuideLineList;
+       init::<
+       (# 
+       enter (dx, dy, bguides[], aguides[])
+       do 'Move %s (%s) from (%f,%f) by (%f,%f), from %i guides to %i guides'
+            -> debugMove
+          (# 
+          do elm[] -> getpatternname -> s;
+             elm.ID[] -> s;
+             elm.x -> f;
+             elm.y -> f;
+             dx -> f;
+             dy -> f;
+             bguides.size -> i;
+             aguides.size -> i;
+          #);          
+          INNER;
+       #);
+     forward::<
+       (# 
+       do bguides.scan(# do elm[] -> current.removeGuideElement; #);
+          elm.x + dx -> elm.x;
+          elm.y + dy -> elm.y;
+          aguides.scan(# do elm[] -> current.addGuideElement; #);
+          INNER;
+          elm.changed;
+          'Did delta(%f,%f), result: (%f,%f)'
+            -> debugMove
+          (# 
+             do dx -> f;
+             dy -> f;
+             elm.x -> f;
+             elm.y -> f;
+          #);
+       #);
+     backward::<
+       (# 
+       do aguides.scan(# do elm[] -> current.removeGuideElement; #);
+          elm.x - dx -> elm.x;
+          elm.y - dy -> elm.y;
+          bguides.scan(# do elm[] -> current.addGuideElement; #);
+          INNER;
+          elm.changed;
+          'Undid delta(%f,%f), result: (%f,%f)'
+            -> debugMove
+          (# 
+             do dx -> f;
+             dy -> f;
+             elm.x -> f;
+             elm.y -> f;
+          #);
+       #);
+  #);
+
+NodeGeometryRecord: GeometryRecord
+  (# Element::< Node;
+     new_width, new_height: @Real;
+     old_width, old_height: @Real;
+     resizeX: @Real;
+     resizeY: @Real;
+       init::<
+       (# 
+       enter (new_width, new_height)
+       do 'Resize %s (%s) from (%f,%f) to (%f,%f)'
+            -> debugMove
+          (# 
+          do elm[] -> getpatternname -> s;
+             elm.ID[] -> s;
+             elm.width -> f;
+             elm.height -> f;
+             new_width -> f;
+             new_height -> f;
+          #);
+          elm.width -> old_width;
+          elm.height -> old_height;
+          (new_width - old_width)/2 -> resizeX;
+          (new_height - old_height)/2 -> resizeY;
+          INNER;
+       #);
+     updateInscriptions:
+       (# inscriptions: ^InscriptionList;
+       enter inscriptions[]
+       do inscriptions.scan
+          (# 
+          do (if current.dx<0 then
+                 current.dx-resizeX -> current.dx;
+              else
+                 current.dx+resizeX -> current.dx;
+             if);
+             (if current.dy<0 then
+                 current.dy-resizeY -> current.dy;
+              else
+                 current.dy+resizeY -> current.dy;
+             if);  
+          #);
+       #);
+     forward::<
+       (# 
+       do new_width -> elm.width;
+          new_height -> elm.height;          
+          elm.getInscriptions -> updateInscriptions;
+          INNER;
+          elm.changed;
+       #);
+     backward::<
+       (# 
+       do 
+          old_width -> elm.width;
+          old_height -> elm.height;
+          -resizeX -> resizeX;
+          -resizeY -> resizeY;
+          elm.getInscriptions -> updateInscriptions;
+          -resizeX -> resizeX;
+          -resizeY -> resizeY;
+          INNER;
+          elm.changed;
+       #);
+  #);
+
+AuxGeometryRecord: GeometryRecord
+  (# Element::< Aux;
+     new_width, new_height: @Real;
+     old_width, old_height: @Real;
+       init::<
+       (# 
+       enter (new_width, new_height)
+       do 'Resize %s (%s) from (%f,%f) to (%f,%f)'
+            -> debugMove
+          (# 
+          do elm[] -> getpatternname -> s;
+             elm.ID[] -> s;
+             elm.theShape.width -> f;
+             elm.theShape.height -> f;
+             new_width -> f;
+             new_height -> f;
+          #);
+          elm.theShape.width -> old_width;
+          elm.theShape.height -> old_height;
+          INNER;
+       #);
+     forward::<
+       (# 
+       do new_width -> elm.theShape.width;
+          new_height -> elm.theShape.height;
+          INNER;
+          elm.changed;
+       #);
+     backward::<
+       (# 
+       do old_width -> elm.theShape.width;
+          old_height -> elm.theShape.height;
+          INNER;
+          elm.changed;
+       #);
+  #);
+PageGeometryRecord: GeometryRecord
+  (# Element:: CPNPage;
+     storage: @List
+       (# Element:: GeometryRecord;
+       #);
+     add:
+       (# theGeometryRecord: ^GeometryRecord;
+       enter theGeometryRecord[]
+       do theGeometryRecord[] -> storage.append;
+       #);
+     forward:: (# do storage.scan(# do current.forward; #); #);
+     backward:: (# do storage.scan(# do current.backward; #); #);
+     getName::
+       (# 
+       do (if NOT (storage.empty) then
+              L: storage.scan(# do current.getName -> name.append; leave L; #);
+              (if (storage.size > 1) then
+                  '...' -> name.append;
+              if);
+          if);
+       #);
+  #);
+

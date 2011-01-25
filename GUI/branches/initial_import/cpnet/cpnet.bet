@@ -1,0 +1,5269 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '~beta/postwimp/workspace';
+INCLUDE '~beta/containers/sets';
+INCLUDE '~beta/containers/dictionary';
+INCLUDE '~beta/containers/arrayContainer';
+INCLUDE '~beta/basiclib/pcre';
+INCLUDE '~beta/basiclib/directory';
+INCLUDE '~beta/basiclib/random';
+INCLUDE '~beta/process/processmanager';
+INCLUDE '../document/ml/mlcom';
+INCLUDE '../document/ml/mlcommands';
+INCLUDE '../document/ml/mlparse';
+INCLUDE '../cpntools/wselements/cpntoken';
+INCLUDE '../cpntools/wselements/bindingindex';
+
+INCLUDE 'cpnetutilities';
+INCLUDE 'highlightable';
+INCLUDE 'snapable';
+INCLUDE 'mlreserved';
+INCLUDE '../cpntools/debug';
+INCLUDE '../cpntools/resources/texts/texts';
+INCLUDE '../cpntools/resources/default-values';
+INCLUDE 'xmlutilities';
+INCLUDE 'private/xmlgetdata';
+INCLUDE '~beta/basiclib/binfile';
+INCLUDE '~beta/sysutils/pathhandler';
+INCLUDE '../cpntools/instruments/cpnoption';
+
+INCLUDE 'referencetable';
+INCLUDE 'scrolling';
+
+INCLUDE '../cpntools/wselements/statusbubble';
+
+INCLUDE 'properties';
+
+INCLUDE '../cpntools/resources/figures/standardfigures.bet';
+
+BODY 'private/cpnetmlbody';
+BODY 'private/cpnetloadsave';
+BODY 'private/cpnetbody';
+BODY 'private/cpnetAUXbody';
+BODY 'private/cpnetNodebody';
+BODY 'private/cpnetinstancebody';
+BODY 'private/cpnetregionelementbody';
+BODY 'private/cpnetinscriptionbody';
+BODY 'private/cpnetdeclarationbody';
+BODY 'private/cpnetsimulationitembody';
+BODY 'private/cpnetabstracttransitiondialogbody';
+BODY 'private/cpnetbindingdialogbody';
+BODY 'private/cpnetportsocketdialogbody';
+BODY 'private/cpnetcpnpagebody';
+BODY 'private/guidelinebody';
+BODY 'private/cpnetgroup';
+BODY 'private/cpnetplacebody';
+BODY 'private/cpnetarcbody';
+BODY 'private/cpnettransitionbody';
+BODY 'private/cpnetglobalsbody';
+BODY 'private/cpnetmonitorbody';
+BODY 'private/cpnetmonitorblockbody';
+BODY 'private/cpnetmonitormlcommandsbody';
+BODY 'private/cpnetregistercommandbody';
+
+-- textLib: Attributes --
+
+isAllWhitespace: booleanValue 
+  (# 
+  do reset;
+     scanWhitespace;
+     eos -> value;
+  #);
+trim:
+  (# str: ^Text;
+     i,k: @integer;
+  <<SLOT CPNetTrim:doPart>>
+  exit str[]
+  #);
+containsSubstring: booleanValue
+  (# substring: ^Text;
+  enter substring[]
+  <<SLOT CPNetContainsSubstring:doPart>>
+  #);
+isUpperCaseLetter:
+  (# 
+  exit not (('A' -> greater) or ('[' -> less))
+  #);
+isLowerCaseLetter:
+  (# 
+  exit not (('a' -> greater) or ('{' -> less))
+  #);
+isDigit:
+  (# 
+  exit not ( ('0' -> greater) or (':' -> less))
+  #);
+
+isMLNameChar:
+  (# 
+  exit (isUpperCaseLetter or 
+     isLowerCaseLetter or          
+     isDigit or
+     ('_' -> ((1,1) -> sub).equal) or
+     ('\'' -> ((1,1) -> sub).equal) or
+     (' ' -> ((1,1) -> sub).equal))
+  #);
+
+getMLName:
+  (# mlName: ^Text;
+  <<SLOT mlGetMLName:doPart>>
+  exit mlName[]
+  #);
+
+isLegalMLIdentifier:
+  (#  beginsWithLetter:
+       (# 
+       exit isLowerCaseLetter or isUpperCaseLetter
+       #);
+  exit beginsWithLetter
+  #);
+isLegalMLName: hasIllegalContent
+  (# illegal::
+       (# 
+       do not current.isMLNameChar -> value; 
+       #);
+  do (if legal then
+         isUpperCaseLetter or isLowerCaseLetter -> legal;
+     if);
+  #);
+hasIllegalContent:
+  (# legal: @boolean;
+     illegal:< (# value: @boolean; current: ^Text; enter current[] do INNER; exit value#);
+  <<SLOT mlHasIllegalContent:doPart>>
+  exit legal     
+  #);
+isLegalFileName: hasIllegalContent
+  (# illegal::
+       (# 
+       do not (current.isDigit or current.isLowerCaseLetter or current.isUpperCaseLetter
+          or ('_' -> ((1,1) -> current.sub).equal) or ('-' -> ((1,1) -> current.sub).equal)
+          or (' ' -> ((1,1) -> current.sub).equal)) -> value;
+       #);
+  #);
+isAsciiOne: hasIllegalContent
+  (# illegal::
+       (# 
+       do ('~' -> current.less)-> value;
+       #);
+  #);
+
+
+-- Workspacelib: Attributes --
+
+PageElementReferenceTable: ReferenceTable
+  (# 
+     targetType::< PageElement;
+  #);
+
+CPNPageReferenceTable: ReferenceTable
+  (# 
+     targetType::< CPNPage;
+  #);
+
+AssignmentList: List (# Element:: Assignment #);
+
+
+normal_delta: (# exit false #);
+
+NodeList: List (# Element:: CPNNode; #);
+SSNodeList: List(# Element:: SSNode; #);
+TransitionList: List (# Element:: Transition; #);
+TransitionInstanceList: List (# Element:: TransitionInstance; #);
+PlaceList: smartList (# ElementType:: Place; #);
+GuidelineList: List (# Element:: Guideline; #);
+AuxList: List (# Element:: Aux; #);
+GroupList: List (# Element:: Group #);
+PageList: List (# Element:: CPNPage; #);
+CPNPageList: List (# Element:: CPNPage; #);
+ArcList: List (# Element:: Arc; #);
+SSArcList: List (# Element:: SSArc; #);
+InscriptionList: List (# Element:: Inscription; #);
+DeclList: List (# Element:: Decl; #);
+OptionSmartList: Smartlist (# ElementType:: Option; #);
+BooleanOptionSmartList: SmartList (# ElementType:: BooleanOption; #);
+
+TransitionInstanceSequence: Sequence (# Element:: TransitionInstance; #);
+
+PageElementList: SmartList 
+  (# ElementType:: PageElement; 
+     clone: 
+       (# thePageElementList: ^PageElementList; 
+          keepSubPages: @boolean;
+       enter keepSubPages
+       <<SLOT PageElementListClone:doPart>> 
+       exit thePageElementList[]
+       #);
+     calcAvgXY: (# c: ^Point2D <<SLOT PageElementListCalcAvgXY:doPart>> exit c #);
+     scanTransitions:
+       (# current: ^Transition;
+       <<SLOT PageElementListScanTransitions:doPart>> 
+       #);
+     scanPlaces:
+       (# current: ^Place;
+       <<SLOT PageElementListScanPlaces:doPart>>
+       #);
+     scanFusionPlaces:
+       (# current: ^Place;
+       <<SLOT PageElementListScanFusionPlaces:doPart>>
+       #);
+     scanSubstitutionTransitions:
+       (# current: ^Transition;
+       <<SLOT PageElementListScanSubstitutionTransitions:doPart>>
+       #);
+     scanArcs:
+       (# current: ^Arc;
+       <<SLOT PageElementListScanArcs:DoPart>>
+       #);
+     scanSSArcs:
+       (# current: ^SSArc;
+       <<SLOT PageElementListScanSSArcs:DoPart>>
+       #);
+     scanNodes:
+       (# current: ^Node;
+       <<SLOT PageElementListScanNodes:DoPart>>
+       #);
+     scanSSNodes:
+       (# current: ^SSNode;
+       <<SLOT PageElementListScanSSNodes:DoPart>>
+       #);
+     setCPNPage:
+       (# theCPNPage: ^CPNPage;
+       enter theCPNPage[]
+       <<SLOT PageElementListSetCPNPage:DoPart>>
+       #);
+  #);
+HierarchyInfoList: List (# Element:: HierarchyInfo; #);
+HighlightableList: List (# Element:: Highlightable; #);
+PageInstanceList: List (# Element:: PageInstance #);
+NodeInstanceList: List (# Element:: NodeInstance; #);
+PlaceInstanceList: List (# Element:: PlaceInstance #);
+FusionSetList: List (# Element:: FusionSet #);
+DeclarationList: List (# Element:: Declaration; #);
+GuideLineSnapable: PageElement (* bodies in AUXBody and GuidelineBody for now *)
+  (#
+     private:@<<SLOT GuideLineSnapablePrivate:descriptor>>;
+
+     getGuideline: 
+       (# theGuideLine: ^Guideline; 
+       <<SLOT GuideLineSnapableGetGuideline:doPart>>
+       exit theGuideLine[] 
+       #);
+
+     snap::< 
+       (# newx, newy: @real;
+          xDistance, yDistance: @real;
+          snappedx: @boolean;
+          snappedy: @boolean;
+       <<SLOT GuideLineSnapableSnap:doPart>> 
+       #);
+
+
+     delete::< (# <<SLOT GuidelineSnapableDelete:doPart>> #); 
+  #);
+
+Aux: GuideLineSnapable
+  (#
+     setText:
+       (# theText: ^Text;
+      ls: ^LabelShape;
+       enter theText[]
+       <<SLOT AuxSetText: doPart>>
+       #);
+
+     getText:
+       (# theText: ^Text;
+       <<SLOT AuxGetText: doPart>>
+       exit theText[]
+       #); 
+
+     editable:: (# do (theShape## <= LabelShape##) -> value; #);
+
+     resizable:
+       (# value: @Boolean;
+       do ((theShape## <= BoxShape##) OR (theShape## <= EllipseShape##))
+            -> value; 
+       exit value
+       #);
+     
+     menuName::<
+       (# 
+       do NamesPageMenuAux -> getGlobalNames -> txt[];
+          INNER;
+       #);
+
+
+     allowReturn::<
+       (# 
+       <<SLOT auxallowreturn:dopart>>
+       #);
+
+     getTextItem::< (# <<SLOT auxgettextitem:dopart>> #);
+
+     clone::< 
+       (# Type::< Aux;
+       <<SLOT AuxClone:doPart>>
+       #);
+
+     Shape: 
+       (# width, height: @Real;
+          snaplist: ^Pointlist;
+          snap:<
+            (# dx,dy : @Real;
+               snappedDistance: @Real;
+               oldX,oldY: @Real; 
+               sAbs: @fabs; (* we use abs a lot *)
+               collectSnapList:< 
+                 (# 
+                 <<SLOT AuxShapeSnapCollectSnap:dopart>>   
+                 #);
+            <<SLOT AuxShapeSnap:doPart>>
+            exit (dy, dx)
+            #);
+          thePath: ^Text;
+          openname: ^text;
+          points: ^PointList;
+          getAnchors:<  
+            (# a, b: @Real;
+               anchors: ^PointList;
+            <<SLOT auxshapegetanchors:dopart>>   
+            exit anchors[]   
+            #);
+          makeShape:< 
+            (# ItemType:< Item;
+               theItem: ^ItemType;
+               theStyle: ^BasicStyle;
+            <<SLOT AuxShapemakeShape:doPart>>
+            exit theItem[]
+            #);
+          getThePage:
+            (# 
+            exit this(Aux).getCPNPage
+            #);
+       #);
+     bounds::< 
+       (#
+       <<SLOT auxbounds:dopart>>
+       #); 
+
+
+     LineShape: Shape
+       (# 
+
+          makeShape::< 
+            (# ItemType:: Line;
+            <<SLOT auxLineMake:dopart>>   
+            #);
+       #);
+
+     BoxShape: Shape
+       (# makeShape::< 
+            (# ItemType:: Rect;
+            <<SLOT AuxBoxShapemakeShape:doPart>>
+            #);
+          getAnchors::<
+            (# 
+            <<SLOT auxboxgetanchors:dopart>>   
+            #);
+          snap::<
+            (# collectSnapList:: 
+                 (##);
+            #);
+       #);
+
+     EllipseShape: Shape
+       (# makeShape::< 
+            (# ItemType:: Ellipse;
+            <<SLOT AuxEllipseShapemakeShape:doPart>>
+            #);
+          getAnchors::<
+            (# add: 
+                 (# degree: @Real;
+                 enter degree
+                 <<SLOT auxellipsegetanchorsadd:dopart>>   
+                 #);
+            <<SLOT auxellipsegetanchors:dopart>>
+            #);
+       #);
+
+     LabelShape: Shape
+       (# label: ^myTextItem;
+          myTextItem: TextItem
+            (# onChanged::<
+                 (# theList: ^PageElementList;
+                 <<SLOT auxlabelmyText:dopart>>
+                 #);
+            #);
+          makeShape::< 
+            (# ItemType:: Composite;
+            <<SLOT AuxLabelShapemakeShape:doPart>>
+            #);
+       #);
+
+     theShape: ^Shape;
+
+     
+     makeShape:< 
+       (# theItem: ^Item;
+       <<SLOT AuxmakeShape:doPart>>
+       exit theItem[]
+       #);
+
+     update::< (# <<SLOT AUXUpdate:doPart>> #);
+     
+     onTextUpdated::
+       (# 
+       do removeSpeechBubble;
+       #);
+     
+     removeSpeechBubble:
+       (# (* To delete the speechbubble from an Eval *) 
+       <<SLOT AuxRemoveSpeechBubble: doPart>>
+       
+       #);  
+
+     delete::<
+       (# 
+       do removeSpeechBubble;
+          this(Aux)[] -> (getCPNPage).removeAux;
+       #);
+     getStyle::
+       (#
+       <<SLOT AuxGetStyle: doPart>>
+       #);
+     setStyle::
+       (#
+       <<SLOT AuxSetStyle: doPart>>
+       #);
+  #);
+
+CPNetIDDictionary: NotifierIdDictionary (# Element:: CPNet; #);
+CPNPageIDDictionary: NotifierIdDictionary (# Element:: CPNPage; #);
+PageInstanceIdDictionary: NotifierIdDictionary (# Element:: PageInstance; #);
+PlaceInstanceIDDictionary: NotifierIdDictionary (# Element:: PlaceInstance; #);
+TransitionInstanceIDDictionary: NotifierIdDictionary (# Element:: TransitionInstance; #);
+ArcInstanceIDDictionary: NotifierIdDictionary (# Element:: ArcInstance; #);
+PlaceIDDictionary: NotifierIdDictionary (# Element::Place; #);
+PageElementIDDictionary: NotifierIDDictionary 
+  (# Element::< PageElement; 
+  #);
+PageElementListIDDictionary: IdDictionary (# Element:: PageElementList; #);
+FusionSetIDDictionary: IdDictionary (# Element:: FusionSet; #);
+TransitionIDDictionary: IdDictionary (# Element::Transition; #);
+ArcIDDictionary: IdDictionary (# Element::Arc; #);
+BendpointListIDDictionary: IdDictionary (# Element:: BendpointList; #);
+AuxIDDictionary: IdDictionary (# Element:: Aux; #);
+SSNodeIDDictionary: IdDictionary (# Element:: SSNode; #);
+SSArcIDDictionary: IdDictionary (# Element:: SSArc; #);
+NodeIDDictionary: IDDictionary (# Element:: Node; #);
+NodeInstanceIDDictionary: IDDictionary (# Element:: NodeInstance; #);
+DeclIDDictionary: IdDictionary (# Element:: Decl; #);
+HighlightableIDDictionary: IdDictionary (# Element:: Highlightable; #);
+GroupTabIDDictionary: IdDictionary (# Element:: GroupTab; #);
+GroupIDDictionary: IdDictionary (# Element:: Group; #);
+AbstractMonitorIDDictionary: IdDictionary (# Element::< AbstractMonitor; #);
+MonitorIDDictionary: AbstractMonitorIDDictionary (# Element:: Monitor; #);
+DeclarationIDDictionary: IdDictionary (# Element:: Declaration; #);
+OptionIDDictionary: IdDictionary (# Element:: Option; #);
+
+page_type: (# exit 0 #);
+place_type: (# exit 1 #);
+trans_type: (# exit 2 #);
+checkName:
+  (* Checks if the name is unique, when all spaces are
+   * converted to _.
+   *)
+  (# theName: ^Text;
+     thePage: ^CPNPage;
+     errorMsg: ^Text;
+     type: @integer; 
+     onError:< 
+       (# msg: ^text;
+       enter msg[]
+       do INNER;
+       #);
+  enter (theName[],thePage[],type)
+  <<SLOT CheckName:doPart>>   
+  exit theName[]
+  #);
+
+CPNet: Highlightable
+  (# private: @<<SLOT CPNetPrivate:descriptor>>;
+     topCPNPageStatusChanged:
+       (# from, to: @integer;
+       enter (from, to)
+       <<SLOT CPNetTopCPNPageStatusChanged:DoPart>>
+       #);
+     instanceRootsStatusChanged:
+       (# from, to: @integer;
+       enter (from, to)
+       <<SLOT CPNetInstanceRootsStatusChanged:DoPart>>
+       #);
+     getCurrentHighlight:: (# <<SLOT CPNetGetCurrentHighlight:DoPart>> #);
+     allCPNPagesHasValidNames: BooleanValue
+       (# 
+       do 
+       #);
+     isHierarchical:
+       (# result: @boolean;
+       do false -> result;
+          lookForSubTransitions:scanCPNPages
+          (# 
+          do current.scanSubstitutionTransitions
+             (# 
+             do true -> result;
+                leave lookForSubTransitions;
+             #);
+          #);
+       exit result
+       #);
+     stepAndTimeNotifier: @Notifier;
+     currentStep: @integer;
+     currentTime: ^Text;
+     reestablishMarking: BooleanValue
+       (# <<SLOT CPnetReestablishMarking:doPart>> #);
+     simulationOptions: (* These should be moved to cpnetmlbody, should they be saved? /mw *)
+       @(#
+     	   pause_before: @boolean;
+	   pause_after: @boolean;
+	   pause_show: @boolean;
+	   report_trans: @boolean;
+	   report_binds: @boolean;
+	   show_marking: @boolean;
+	   show_enabling: @boolean;
+	   until_step: ^text;
+	   add_step: ^text;
+	   until_time: ^text;
+	   add_time: ^text;
+	   pause_cont: ^text;
+	   report_func: ^text;
+        do (true,true,'','','','','','') ->
+	   (show_marking,show_enabling, until_step, add_step, until_time,
+	   add_time, pause_cont, report_func);
+        #);
+
+     getSimulationOptions:
+       (# exit (simulationOptions.pause_before,
+          simulationOptions.pause_after,
+          simulationOptions.pause_show,
+          simulationOptions.report_trans,
+          simulationOptions.report_binds,
+          simulationOptions.show_marking,
+          simulationOptions.show_enabling,
+          simulationOptions.until_step[],
+          simulationOptions.add_step[],
+          simulationOptions.until_time[],
+          simulationOptions.add_time[],
+          simulationOptions.pause_cont[],
+          simulationOptions.report_func[])
+       #);
+
+     setSimulationOptions:
+       (# (* Do NOT call before ML is started! *)
+       enter (simulationOptions.pause_before,
+          simulationOptions.pause_after,
+          simulationOptions.pause_show,
+          simulationOptions.report_trans,
+          simulationOptions.report_binds,
+          simulationOptions.show_marking,
+          simulationOptions.show_enabling,
+          simulationOptions.until_step[],
+          simulationOptions.add_step[],
+          simulationOptions.until_time[],
+          simulationOptions.add_time[],
+          simulationOptions.pause_cont[],
+          simulationOptions.report_func[])
+       <<SLOT CPNetSetSimulationOptions:DoPart>>       
+       #);
+
+     setReportOptions:
+       (#
+       enter (simulationOptions.report_trans, simulationOptions.report_binds)
+       do setSimulationOptions;
+       #);
+     knownFusionSets: @FusionSetIDDictionary;
+     statespaceEntered: @boolean;
+     stateSpaceNumber: @Integer;
+     ignoreStateSpaceExit: @boolean;
+     options: @OptionList;
+     (* The ElementDictionary is gone *)
+     onRemoved:: (# <<SLOT CPNetonRemoved:doPart>> #);
+     (* Needed for runtime errors, see bug #578 *)
+     runtimeErrorElements: @HighlightableList;
+     (* We wanna know where we are working *)
+     path: ^text;
+     
+     (* we dont wanna scan the ENTIRE net to delete a PNG... *)
+     ActivePNG: @Dictionary
+       (# (* is the path of the image... *)
+          key::text; 
+          (* is the link counter *)
+          element::integerobject; 
+          keyEqual:: (# do left[] -> right.equalNCS -> value; #);
+          hashFunction::< (# do k.length -> value; #);
+       #);
+     
+     (* Used to check that names are unique *)
+     checkNames: @boolean;
+     pageNames: @NameTable;
+     
+     fusionSets: @Dictionary
+       (# key::text;
+          element::FusionSet;
+          keyEqual:: (# <<SLOT CPNetFusionSetsKeyEqual:DoPart>> #);
+          hashFunction::< (# <<SLOT CPNetFusionSetsHashFunction:DoPart>> #);
+       #);
+     
+     highestNumber: @Integer;
+     newFusionName:
+       (# fusionName: ^text;
+       <<SLOT CPNetnewFusionName:doPart>>   
+       exit fusionName[]
+       #);
+     
+     updateStepAndTime: 
+       (# 
+       <<SLOT XMLupdateStepAndTIme:dopart>>  
+       #);
+     increaseModelTime:
+       (# timeIncreased: @boolean;
+       <<SLOT cpnetIncreaseModelTime:dopart>>            
+       exit timeIncreased
+       #);
+     checkpointDelta: @integer;
+     NetCmdManager: @CommandManager;
+     
+     (* When closing a net, we need to hide all the error
+      * messages first.      
+      *)
+     hideAllErrorMsg: (# <<SLOT CPNetHideAllErrorMsg:DoPart>> #);
+     addInstanceRoot:
+       (# theInstanceRoot: ^PageInstance;
+       enter theInstanceRoot[]
+       <<SLOT CPNetAddInstanceRoot:doPart>>        
+       #);
+     removeInstanceRoot:
+       (# theInstanceRoot: ^PageInstance;
+       enter theInstanceRoot[]
+       <<SLOT CPNetRemoveInstanceRoot:doPart>>        
+       #);
+     scanInstanceRoots:
+       (# current: ^PageInstance;
+       <<SLOT CPNetScanInstanceRoots:doPart>>
+       #);
+     attachToInstanceRoots:
+       (# theEntity: ^Entity;
+       enter theEntity[]
+       <<SLOT CPNetAttachToInstanceRoots:doPart>>
+       #);
+     getOutputDir:
+       (# outputDir: ^Text;
+       <<SLOT CPNetGetOutputDir:DoPart>>
+       exit outputDir[]
+       #);
+     getSimreportOptions:
+       (# simreportOptions: ^OptionList;
+       <<SLOT CPNetGetSimreportOptions:DoPart>>
+       exit simreportOptions[]
+       #);
+     getRepreportOptions:
+       (# repreportOptions: ^OptionList;
+       <<SLOT CPNetGetRepreportOptions:DoPart>>
+       exit repreportOptions[]
+       #);     
+     localsim: @boolean;
+     image: ^Text;
+     host: ^Text;
+     port: @integer;
+     bindingDialogToReset: ^BindingDialog; (*Make more general if needed*);
+     ML: @MLCom 
+       (# dispatch::
+            (# tlist: ^TransitionList;
+               plist: ^PlaceList;
+               tag: @integer;
+               resp: @integer;
+               ntrans, nplace: @integer;
+               step: ^Text;
+               time: ^Text;
+               d: @real;
+            do bis.reset;
+               &TransitionList[] -> tlist[];
+               &PlaceList[] -> plist[];
+               bis.getInt -> tag;
+               bis.getInt -> resp;
+               bis.getInt -> ntrans;
+               bis.getInt -> nplace;
+               bis.getString -> step[];
+               bis.getString -> time[];
+               step.reset;
+               step.getInt -> currentStep;
+               time[] -> currentTime[];
+               stepAndTimeNotifier.changed;
+               (for ntrans repeat
+                    (# enabled: @boolean;
+                       i: @integer;
+                       id: ^Text;
+                       trans: ^TransitionInstance;
+                    do bis.getBool -> enabled;
+                       bis.getInt -> i;
+                       bis.getString -> id[];
+                       
+                       (i, id[]) -> lookupTransitionInstance -> trans[];
+                       (if trans[] <> NONE then
+                           enabled -> trans.setEnabled;
+                       if);
+                    #);
+               for);
+               (for nplace repeat
+                    (# i: @integer;
+                       id: ^Text;
+                       size: @integer;
+                       marking: ^Text;
+                       inst: ^PlaceInstance;
+                    do bis.getInt -> i;
+                       bis.getInt -> size;
+                       bis.getString -> id[];
+                       bis.getString -> marking[];
+                       (i, id[]) -> lookupPlaceInstance -> inst[];
+                       (if inst[] <> NONE then
+                           (marking[], size) -> inst.marking;
+                       if);
+                    #)
+               for);
+               
+               &MLBis[] -> reply[];
+               5 -> reply.opcode;
+               1 -> reply.putInt;
+               resp / 1000 -> d;
+               d -> sleep;
+            #);
+          abortMultiFaseCommands::
+            (# 
+            do
+               (if bindingDialogToReset[] <> NONE then
+                   (if debugging then
+                       'Aborting multifasecommand' -> debugCPNet;
+                   if);
+                   bindingDialogToReset.clear;
+               if);
+            #);          
+          daemon: @process;
+          CommandType::CPNMLCommand;
+          onError:: (# <<SLOT mlOnError:dopart>> #);
+          onInternalError:: (# <<SLOT MLOnInternalError:DoPart>> #);
+          doReceive:: (# <<SLOT CPNetMLDoReceive:DoPart>> #);
+       #);
+     getAllEnabledTransitions: 
+       (# tlist: ^TransitionList;
+          foundEnabled: @boolean;
+       <<SLOT mlGetAllEnabledTransitions:doPart>>
+       exit foundEnabled
+       #);     
+     getAllMarkings: 
+       (# plist: ^PlaceList;
+       <<SLOT mlGetAllMarkings:doPart>>   
+       #);     
+     onSemanticChanged:: (# <<SLOT CPNetonSemanticChanged:dopart>> #);
+     regenerateTransition: 
+       (# theTransition: ^Transition;
+       enter theTransition[]
+       <<SLOT CPNetRegenerateTransition:DoPart>>
+       #);
+     MLCheckerThread: @|System
+       (# private:@<<SLOT CPNetMLCheckerThreadPrivate:Descriptor>>; 
+          
+          stop: (# <<SLOT CPNetMLCheckerThreadStop: doPart>> #);
+          (* de/activates the checker thread *)
+          resume: (# <<SLOT CPNetMLCheckerThreadResume:DoPart>> #);
+          flattenPageInstances: 
+            (# thePageInstances: ^PageInstanceList;
+            <<SLOT mlCheckerThreadflattenPageInstances:doPart>>      
+            exit thePageInstances[]
+            #);          
+          reserved: ^MLReserved;
+          addMonitorError:
+            (# theMonitor: ^Monitor;
+               errorMsg, what: ^Text
+            enter (theMonitor[], errorMsg[], what[])
+            <<SLOT MLCheckerThreadAddMonitorError:DoPart>>
+            #);
+          MLSetMonitorOrder: CPNMLCommand
+            (# send:: (# <<SLOT MLSetMonitorOrderSend:DoPart>> #);
+               receive:: (# <<SLOT MLSetMonitorReceive:DoPart>> #);
+               onError:: (# <<SLOT MLSetMonitorOrderOnError:DoPart>> #);               
+            #);
+          MLGenerateMonitorTemplateCode: CPNMLCommand
+            (# send:: (# <<SLOT MLGenerateMonitorTemplateCodeSend:DoPart>> #);
+               receive:: (# <<SLOT MLGenerateMonitorTemplateCodeReceive:DoPart>> #);
+               onError:: (# <<SLOT MLGenerateMonitorTemplateCodeOnError:DoPart>> #);
+               theMonitor: ^Monitor;
+            enter theMonitor[]
+            #);
+          MLReceiveMonitorDependenciesAndOverwrites:
+            (# theMonitor: ^Monitor;
+               dependencies, overwrites: @integer;
+               bis: ^MLBIS;
+            enter (theMonitor[], dependencies, overwrites, bis[])
+            <<SLOT MLReceiveMonitorDependenciesAndOverwrites:DoPart>>
+            #);
+          MLSyntaxCheckAndGenerateMonitor: CPNMLCommand
+            (# send:: (# <<SLOT MLSyntaxCheckAndGenerateMonitorSend:DoPart>> #);
+               receive:: (# <<SLOT MLSyntaxCheckAndGenerateMonitorReceive:DoPart>> #);
+               onError:: (# <<SLOT MLSyntaxCheckAndGenerateMonitorOnError:DoPart>> #);
+               theMonitor: ^Monitor;
+            enter theMonitor[]
+            #);
+          MLCreateSingleNodeMonitor: CPNMLCommand
+            (# getSubCommand:< IntegerObject;
+               dependOnTransitions:< BooleanObject;
+               getErrorMsg:<
+                 (# msg: ^Text;
+                 do inner;
+                 exit msg[]
+                 #);
+               send:: (# <<SLOT MLCreateSingleNodeMonitorSend:DoPart>> #);
+               receive:: (# <<SLOT MLCreateSingleNodeMonitorReceive:DoPart>> #);
+               onError:: (# <<SLOT MLCreateSingleNodeMonitorOnError:DoPart>> #);
+               theMonitor: ^Monitor;
+            enter theMonitor[]
+            #);
+          MLCreateMarkingSizeMonitor: MLCreateSingleNodeMonitor
+            (# getSubCommand:: (# do 20 -> value; #);
+               dependOnTransitions:: TrueObject;
+               getErrorMsg:: (# do ErrorMLCreateMarkingSizeMonitor -> getGlobalNames -> msg[]; #);
+            #);
+          MLCreateListLengthDataCollectionMonitor: MLCreateSingleNodeMonitor
+            (# getSubCommand:: (# do 21 -> value; #);
+               dependOnTransitions:: TrueObject;
+               getErrorMsg:: (# do ErrorMLCreateListLengthDataCollectionMonitor -> getGlobalNames -> msg[]; #);
+            #);
+          MLCreateCountTransitionOccurrenceDataCollectionMonitor: MLCreateSingleNodeMonitor
+            (# getSubCommand:: (# do 22 -> value; #);
+               dependOnTransitions:: FalseObject;
+               getErrorMsg:: (# do ErrorMLCreateCountTransitionOccurrenceDataCollectionMonitor -> getGlobalNames -> msg[]; #);
+            #);
+          MLCreatePlaceContentBreakpointMonitor: MLCreateSingleNodeMonitor
+            (# getSubCommand:: (# do 40 -> value; #);
+               dependOnTransitions:: FalseObject;
+               getErrorMsg:: (# do ErrorMLCreatePlaceContentBreakpointMonitor -> getGlobalNames -> msg[]; #);
+            #);
+          MLCreateTransitionEnabledBreakpointMonitor: MLCreateSingleNodeMonitor
+            (# getSubCommand:: (# do 41 -> value; #);
+               dependOnTransitions:: FalseObject;
+               getErrorMsg:: (# do ErrorMLCreateTransitionEnabledBreakpointMonitor -> getGlobalNames -> msg[]; #);
+            #);
+          MLSetModelNameDirAndOutput: CPNMLCommand
+            (# send:: (# <<SLOT MLSetModelNameDirAndOutputSend:DoPart>> #);
+               receive:: (# <<SLOT MLSetModelNameDirAndOutputReceive:DoPart>> #);
+               onError:: (# <<SLOT MLSetModelNameDirAndOutputOnError:DoPart>> #);
+            #);
+          MLSetSimReportOptions: CPNMLCommand
+            (# send:: (# <<SLOT MLSetSimReportOptionsSend:DoPart>> #);
+               receive:: (# <<SLOT MLSetSimReportOptionsReceive:DoPart>> #);
+               onError:: (# <<SLOT MLSetSimReportOptionsOnError:DoPart>> #);
+            #);
+          MLSetRepReportOptions: CPNMLCommand
+            (# send:: (# <<SLOT MLSetRepReportOptionsSend:DoPart>> #);
+               receive:: (# <<SLOT MLSetRepReportOptionsReceive:DoPart>> #);
+               onError:: (# <<SLOT MLSetRepReportOptionsOnError:DoPart>> #);               
+            #);
+          MLRemoveMonitor: CPNMLCommand
+            (# send:: (# <<SLOT MLRemoveMonitorSend:DoPart>> #);
+               receive:: (# <<SLOT MLRemoveMonitorReceive:DoPart>> #);
+               onError:: (# <<SLOT MLRemoveMonitorOnError:DoPart>> #);
+               theMonitor: ^Monitor;
+            enter theMonitor[]
+            #);
+          MLToggleEnablingForMonitor: CPNMLCommand
+            (# send:: (# <<SLOT MLToggleEnablingForMonitorSend:DoPart>> #);
+               receive:: (# <<SLOT MLToggleEnablingForMonitorReceive:DoPart>> #);
+               onError:: (# <<SLOT MLToggleEnablingForMonitorOnError:DoPart>> #);
+               theMonitor: ^Monitor;
+            enter theMonitor[]
+            #);
+       <<SLOT CPNetMLCheckerThread:DoPart>>
+       #);
+     withLock: (# <<SLOT mlwithLock:doPart>> #);     
+     (* Moved from CPNPage *)     
+     SetGlobalBox: 
+       (# newGlobals: ^Globals
+       enter newGlobals[]
+       <<SLOT CPNetSetGlobalBox:doPart>>
+       #);     
+     theGlobals: ^Globals;
+     theGlobalMonitor: ^MonitorBlock;
+     addMonitorToDeletionList:
+       (# theMonitor: ^Monitor;
+       enter theMonitor[]
+       <<SLOT CPNetAddMonitorToDeletionList:DoPart>>
+       #);
+     removeMonitor:
+       (# theMonitor: ^Monitor;
+       enter theMonitor[]
+       <<SLOT CPNetRemoveMonitor:DoPart>>
+       #);
+     toggleMonitorEnabled:
+       (# theMonitor: ^Monitor;
+       enter theMonitor[]
+       <<SLOT CPNetToggleMonitorEnabled:DoPart>>
+       #);
+     scanColorNamesAlphabetically: 
+       (# current, prefix: ^Text;          
+       enter prefix[]
+       <<SLOT CPNetScanColorNamesAlphabetically:doPart>>
+       #);
+     getColorNamesAlphabetically: 
+       (# prefix: ^Text;          
+          colorNames: ^SortedTextSequence;
+       enter prefix[]
+       <<SLOT CPNetGetColorNamesAlphabetically:doPart>>
+       exit colorNames[]
+       #);     
+     name: 
+       (# 
+       enter theName[]
+       exit theName[]
+       #);
+     mlInitialized: @boolean;
+     initML: 
+       (# host: ^Text;
+          port: @Integer;
+          user: ^Text;
+          password: ^Text;
+          path: ^Text;
+          image: ^Text;
+          daemon: @process;
+          allreadyRetried: @boolean;
+          isRealTimeStamp: @boolean;
+       enter (host[], port, user[], password[], path[], image[], isRealTimeStamp, localsim)
+       <<SLOT mlCPNetInitML:doPart>>
+       #);
+     
+     GetEnabledTransitionInstances: CPNMLCommand
+       (# tlist: ^TransitionList;
+          count: @Integer;
+          foundEnabled: @boolean;
+          theTransitionInstance: ^TransitionInstance;
+          lst: @List (# Element:: TransitionInstance; #);
+          opcode:< IntegerObject;          
+          Send:: (# <<SLOT mlCPNetGetEnabledSend:doPart>> #);
+          receiveAbortable:: TrueObject;
+          receiveAborted:: (# <<SLOT CPNetGetEnabledTransitionInstancesReceiveAborted:DoPart>> #);
+          onError:: (# <<SLOT mlCPNetGetEnabledError:doPart>> #);          
+       enter tlist[]
+       exit foundEnabled
+       #);
+     GetEnabledTransitions: getEnabledTransitionInstances
+       (# opcode::< (# do 35 -> value; INNER; #);
+          Receive:: (# <<SLOT mlCPNetGetEnabledReceive:doPart>> #);
+        #);
+     GetEnabledTransitionsNoScheduler: getEnabledTransitions
+       (# opcode:: (# do 36 -> value; #);
+        #);
+     getPreEnabledTransitions: getEnabledTransitionInstances
+       (# opcode:: (# do 36 -> value; #);
+          Receive:: (# <<SLOT mlCPNetGetPreEnabledReceive:doPart>> #);
+        #);
+     getMarkings: 
+       (# plist: ^PlaceList;
+       enter plist[]
+       <<SLOT mlCPNetGetMarkings:DoPart>>
+       #);
+     
+     GetMarkingsOnPlaceInstances: CPNMLCommand
+       (# thePlaceInstanceList: ^PlaceInstanceList;
+          Send:: (# <<SLOT mlCPNetGetMarkingsOnPlaceInstancesSend:DoPart>> #);
+          Receive:: (# <<SLOT mlCPNetGetMarkingsOnPlaceInstancesReceive:DoPart>> #);
+          receiveAbortable:: TrueObject;
+          receiveAborted:: (# <<SLOT CPNetGetMarkingsOnPlaceInstancesReceiveAborted:DoPart>> #);
+          onError:: (# <<SLOT mlCPNetGetMarkingsOnPlaceInstancesError:DoPart>> #);
+       enter thePlaceInstanceList[]
+       #);
+     
+     setStopCriteria: 
+       (# AdditionalSteps, AbsoluteSteps: @Integer;
+       enter (AdditionalSteps, AbsoluteSteps)
+       <<SLOT mlCPNetSetStopCriteria:doPart>>
+       #);
+     getRandomPage: 
+       (# pageList: @List(# Element:: CPNpage; #);
+          thePage: ^CPNPage;
+          chosen,count: @Integer;
+       <<SLOT CPNetgetRandomPage:doPart>>
+       exit thePage[]
+       #);
+     findPage: 
+       (# thePage: ^CPNPage;
+          name: ^Text;
+       enter name[]
+       <<SLOT CPNetfindPage:doPart>>
+       exit thePage[]
+       #);
+     scanCPNPages:
+       (# current: ^CPNPage;
+       <<SLOT CPNetScanCPNPages:doPart>>
+       #);
+     lookupFusionSet: lookup (# Element:: FusionSet; <<SLOT CPNetLookupFusionSet:doPart>> #);
+     scanFusionSets:
+       (# current: ^FusionSet;
+       <<SLOT CPNetScanFusionSets:doPart>>
+       #);
+     lookupCPNPage:
+       (# id: ^Text;
+          theCPNPage: ^CPNPage;
+       enter id[]
+       <<SLOT CPNetlookupCPNPage:doPart>>
+       exit theCPNPage[]
+       #);
+     lookupPageInstance: lookup (# Element:: PageInstance; <<SLOT CPNetLookupPageInstance:DoPart>> #);
+     lookupPageElement: lookup (# ELement:: PageElement; <<SLOT CPNetLookupPageElement:DoPart>> #);
+     lookupTransitionInstance: 
+       (# transitionId: ^Text;
+          instanceNumber: @integer;
+          result: ^TransitionInstance;           
+       enter (instanceNumber, transitionId[])
+       <<SLOT CPNetLookupTransitionInstance:DoPart>> 
+       exit result[]   
+       #);
+     lookupPlaceInstance:
+       (# id: ^Text;
+          instanceNumber: @integer;
+          result: ^PlaceInstance;
+       enter (instanceNumber, id[])
+       <<SLOT CPNetLookupPlaceInstance:doPart>>
+       exit result[]
+       #);
+     addCPNPage:
+       (# theCPNPage: ^CPNPage;
+       enter theCPNPage[]
+       <<SLOT CPNetAddCPNPage:doPart>>
+       #);
+     removeCPNPage:
+       (# theCPNPage: ^CPNPage;
+       enter theCPNPage[]
+       <<SLOT CPNetRemoveCPNPage:doPart>>
+       #);
+     addGlobalGroup:
+       (# theGroup: ^Group;
+       enter theGroup[]
+       <<SLOT CPNetAddGlobalGroup:DoPart>>
+       #);
+     removeGlobalGroup:
+       (# theGroup: ^Group;
+       enter theGroup[]
+       <<SLOT CPNetRemoveGlobalGroup:DoPart>>
+       #);
+     scanGlobalGroups:
+       (# current: ^Group;
+       <<SLOT CPNetScanGlobalGroups:DoPart>>
+       #);
+     getNewGroupName:
+       (# name: ^Text;
+       <<SLOT CPNetGetNewGroupName:DoPart>>
+       exit name[]
+       #);
+     addFusionSet:
+       (# theFusionSet: ^FusionSet;
+       enter theFusionSet[]
+       <<SLOT CPNetAddFusionSet:doPart>>
+       #);
+     removeFusionSet:
+       (# theFusionSet: ^FusionSet;
+       enter theFusionSet[]
+       <<SLOT CPNetRemoveFusionSet:doPart>>
+       #);
+     
+     init:: 
+       (# 
+       <<SLOT CPNetinit:doPart>>
+       #);
+     
+     status: @
+       (# st: @integer;
+       enter (# 
+             enter st
+             #)
+       exit st
+       #);
+     
+     commandApplied:
+       (# 
+       <<SLOT CPNetCommandApplied: doPart>>
+       #);
+     
+     commandRedone:
+       (#
+       <<SLOT CPNetCommandRedone: doPart>>
+       #);
+     
+     commandUndone:
+       (#
+       <<SLOT CPNetCommandUndone: doPart>>
+       #);
+
+     modifiedSinceSave:
+       (# modified: @boolean;
+       <<SLOT CPNetModifiedSinceSave: doPart>>
+       exit modified
+       #);
+     
+     saved:
+       (#
+       <<SLOT CPNetSaved: doPart>>
+       #);
+     
+     autoSaved:
+       (#
+       <<SLOT CPNetAutoSaved: doPart>>
+       #);
+     
+     statusMonitor:
+       (# 
+       <<SLOT CPNNetstatusMonitor:doPart>>   
+       #);
+     
+     changeStatus: statusMonitor
+       (# from, to: @integer;
+       enter (from, to)
+       <<SLOT CPNNetchangeStatus:doPart>>
+       #);
+     
+     theName: ^Text;
+     lastLegalName: ^Text;
+     onAdded:: (# <<SLOT CPNetOnAdded:DoPart>> #);
+     onChanged:: (# <<SLOT CPNetOnChanged:DoPart>> #);
+  #);
+
+Autosave:
+  (# theNet: ^CPNet;
+     myError:<
+       (# msg: ^Text;
+       enter msg[]
+       do INNER myError;
+       #);
+  enter theNet[]
+  <<SLOT Autosave: doPart>>
+  #);
+
+DeleteAutosave:
+  (# theNet: ^CPNet;
+  enter theNet[]
+  <<SLOT DeleteAutosave: doPart>>
+  #);
+
+
+SaveNet:
+  (# theNet: ^CPNet;
+     savename: ^Text;
+     
+     (* The error message given is suitable for displaying to the user *)
+     myError:< 
+       (# msg: ^Text;
+       enter msg[]
+       do INNER; 
+       #);
+     
+     (* Set this to override the path on disk where the net is saved. *)
+     diskPath:<
+       (# value: ^Text;
+       do INNER;
+       exit value[]
+       #);
+     
+     (* When markNetSaved is true, an eventual autosave file will be deleted, and
+      * the net will be marked as not containing any unsaved changes.
+      *)
+     markNetSaved:< booleanObject
+       (#
+       do true -> value;
+          INNER;
+       #);
+     <<SLOT SaveNetAttributes:attributes>>     
+  enter theNet[]
+  <<SLOT SaveNet: doPart>>
+  exit savename[]
+  #);
+
+CPNPage: Highlightable
+  (# private: @<<SLOT CPNPagePrivate:Descriptor>>;
+     setSubpagesHalo:
+       (# halo: ^Color;
+       enter halo[]
+       <<SLOT CPNPageSetSubpagesHalo:DoPart>>
+       #);
+     getSubpagesHalo:
+       (# halo: ^Color;
+       <<SLOT CPNPageGetSubpagesHalo:DoPart>>
+       exit halo[]          
+       #);
+     toString:
+       (# str: ^Text;
+       <<SLOT CPNPageToString:doPart>>
+       exit str[]
+       #);
+     nodesStatusToString:
+       (# str: ^Text;
+       <<SLOT CPNPageNodesStatusToString:DoPart>>           
+       exit str[]
+       #);     
+     subpagesStatusToString:
+       (# str: ^Text;
+       <<SLOT CPNPageSubpagesStatusToString:DoPart>>           
+       exit str[]
+       #);          
+     lookupPlace: Lookup (# Element:: Place <<SLOT CPNPageLookupPlace:doPart>> #);
+     lookupTransition: Lookup (# Element:: Transition <<SLOT CPNPageLookupTransition:doPart>> #);
+     lookupArc: Lookup (# Element:: Arc <<SLOT CPNPageLookupArc:doPart>> #);
+     lookupSSNode: Lookup (# Element:: SSNode <<SLOT CPNPageLookupSSNode:doPart>> #);
+     lookupPageElement: Lookup (# Element:: PageElement <<SLOT CPNPageLookupPageElement:doPart>> #);
+     lookupTopCPNPage: Lookup (# Element:: CPNPage <<SLOT CPNPageLookupTopCPNPage:doPart>> #);
+     lookupInstance: Lookup (# Element:: PageInstance <<SLOT CPNPageLookupInstance:doPart>> #);
+     scanNotifiers: 
+       (# current: ^Notifier; 
+       <<SLOT CPNPageScanNotifiers:doPart>>  
+       #);
+     scanTransitions: 
+       (# current: ^Transition;
+       <<SLOT CPNPageScanTransitions:doPart>>
+       #);
+     scanSubstitutionTransitions: 
+       (# current: ^Transition;
+       <<SLOT CPNPageScanSubstitutionTransitions:doPart>>
+       #);
+     scanSubpages:
+       (# current: ^CPNPage;
+       <<SLOT CPNPageScanSubpages:doPart>>         
+       #);
+     scanSubpageTree:
+       (# current: ^CPNPage;
+       <<SLOT CPNPageScanSubpageTree:doPart>>
+       #);
+     scanPlaces: 
+       (# current: ^Place;  
+       <<SLOT CPNPageScanPlaces:doPart>>
+       #);
+     scanSSNodes:
+       (# current: ^SSNode;
+       <<SLOT CPNPageScanSSNodes:doPart>>
+       #);
+     scanSSArcs:
+       (# current: ^SSArc;
+       <<SLOT CPNPageScanSSArcs:doPart>>
+       #);
+     scanFusionPlaces:
+       (# current: ^Place;
+       <<SLOT CPNPageScanFusionPlaces:doPart>>
+       #);
+     scanArcs: 
+       (# current: ^Arc;    
+       <<SLOT CPNPageScanArcs:doPart>>
+       #);
+     scanGuidelines:
+       (# current: ^Guideline;
+       <<SLOT CPNPageScanGuidelines:doPart>>
+       #);    
+     scanHorizontalGuidelines:
+       (# current: ^HorizontalGuideline;
+       <<SLOT CPNPageScanHorizontalGuidelines:doPart>>
+       #);    
+     scanVerticalGuidelines:
+       (# current: ^VerticalGuideline;
+       <<SLOT CPNPageScanVerticalGuidelines:doPart>>
+       #);    
+     scanPageElements: 
+       (# current: ^PageElement; 
+       <<SLOT CPNPageScanPageElements:doPart>>   
+       #);
+     scanAuxs:
+       (# current: ^Aux; 
+       <<SLOT CPNPageScanAuxs:doPart>>   
+       #);
+     scanGroups:
+       (# current: ^Group; 
+       <<SLOT CPNPageScanGroups:doPart>>             
+       #);     
+     scanNodes:
+       (# current: ^Node;
+       <<SLOT CPNPageScanNodes:doPart>>             
+       #);
+     scanInstances:
+       (# current: ^PageInstance;
+       <<SLOT CPNPageScanPageInstances:doPart>>             
+       #);
+     scanTopCPNPages:
+       (# current: ^CPNPage;
+       <<SLOT CPNPageScanTopCPNPages:doPart>>
+       #);
+     addTransition:
+       (# theTransition: ^Transition;
+       enter theTransition[]
+       <<SLOT CPNPageAddTransition:doPart>>
+       #);
+     addPlace:
+       (# thePlace: ^Place;
+       enter thePlace[]
+       <<SLOT CPNPageAddPlace:doPart>>
+       #);
+     addArc:
+       (# theArc: ^Arc;
+       enter theArc[]
+       <<SLOT CPNPageAddArc:doPart>>          
+       #);
+     addGuideline:
+       (# theGuideline: ^Guideline;
+       enter theGuideline[]
+       <<SLOT CPNPageAddGuideline:doPart>>          
+       #);
+     addAux:
+       (# theAux: ^Aux;
+       enter theAux[]
+       <<SLOT CPNPageAddAux:doPart>>          
+       #);
+     addSSNode:
+       (# theSSNode: ^SSNode;
+      succes: @Boolean
+       enter theSSNode[]
+       <<SLOT CPNPageAddSSNode:doPart>>
+       exit succes
+       #);
+     addSSArc:
+       (# theSSArc: ^SSArc;
+       enter theSSArc[]
+       <<SLOT CPNPageAddSSArc:doPart>>          
+       #);
+     addGroup:
+       (# theGroup: ^Group;
+       enter theGroup[]
+       <<SLOT CPNPageAddGroup:doPart>>          
+       #);
+     addPageElement:
+       (# thePageElement: ^PageElement;
+       enter thePageElement[]
+       <<SLOT CPNPageAddPageElement:doPart>>          
+       #);
+     addTopCPNPage:
+       (# theCPNPage: ^CPNPage;
+       enter theCPNPage[]
+       <<SLOT CPNPageAddTopCPNPage:doPart>>
+       #);
+     addPageInstance:
+       (# thePageInstance: ^PageInstance;
+       enter thePageInstance[]
+       <<SLOT CPNPageAddPageInstance:doPart>>
+       #);
+     removeTransition:
+       (# theTransition: ^Transition;
+       enter theTransition[]
+       <<SLOT CPNPageRemoveTransition:doPart>>
+       #);
+     removePlace:
+       (# thePlace: ^Place;
+       enter thePlace[]
+       <<SLOT CPNPageRemovePlace:doPart>>
+       #);
+     removeArc:
+       (# theArc: ^Arc;
+       enter theArc[]
+       <<SLOT CPNPageRemoveArc:doPart>>       
+       #);
+     removeGuideline:
+       (# theGuideline: ^Guideline;
+       enter theGuideline[]
+       <<SLOT CPNPageRemoveGuideline:doPart>>       
+       #);
+     removeGroup:
+       (# theGroup: ^Group;
+       enter theGroup[]
+       <<SLOT CPNPageRemoveGroup:doPart>>
+       #);
+     removeAux:
+       (# theAux: ^Aux;
+       enter theAux[]
+       <<SLOT CPNPageRemoveAux:doPart>>
+       #);
+     removeSSNode:
+       (# theSSNode: ^SSNode;
+       enter theSSNode[]
+       <<SLOT CPNPageRemoveSSNode:doPart>>
+       #);
+     removeSSArc:
+       (# theSSArc: ^SSArc;
+       enter theSSArc[]
+       <<SLOT CPNPageRemoveSSArc:doPart>>
+       #);
+     removePageElement:
+       (# thePageElement: ^PageElement;
+       enter thePageElement[]
+       <<SLOT CPNPageRemovePageElement:doPart>>
+       #);
+     removeTopCPNPage:
+       (# theCPNPage: ^CPNPage;
+       enter theCPNPage[]
+       <<SLOT CPNPageRemoveTopCPNPage:doPart>>
+       #);
+     removePageInstance:
+       (# thePageInstance: ^PageInstance;
+       enter thePageInstance[]
+       <<SLOT CPNPageRemovePageInstance:doPart>>
+       #);
+     numberOfTransitions: 
+       (# count: @integer;
+       <<SLOT CPNPageNumberOfTransitions:doPart>>
+       exit count          
+       #);
+     numberOfNodes: IntegerValue
+       (# <<SLOT CPNPageNumberOfNodes:doPart>> #);
+     numberOfInstances:
+       (# count: @integer;
+       <<SLOT CPNPageNumberOfInstances:doPart>>   
+       exit count
+       #);
+     allPageInstancesUnderSameTransition: BooleanValue
+       (# <<SLOT CPNPageAllPageInstancesUnderSameTransition:doPart>> #);
+     
+     net: ^CPNet;
+     setNet:
+       (# 
+       enter net[]
+       <<SLOT CPNPageSetNet:doPart>>
+       #);
+     (* Reference to the net this(CPNPage) belongs to *)
+     
+     (* Used to check that names are unique *)
+     placeNames: @NameTable;
+     transitionNames: @NameTable;     
+     status: @
+       (# st: @integer;
+       enter (# enter st #)
+       exit st
+       #);
+     statusMonitor: (# <<SLOT CPNPagestatusMonitor:doPart>> #);     
+     changeStatus: statusMonitor
+       (# from, to: @integer;
+       enter (from, to)
+       <<SLOT CPNPagechangeStatus:doPart>>
+       #);     
+     checkedName: ^Text;     
+     namestatus: @
+       (# s: @integer;
+       enter (# enter s #)
+       exit s
+       #);     
+     changeNameStatus: statusMonitor
+       (# from, to: @integer;
+       enter (from,to)
+       <<SLOT CPNPageChangeNameStatus:DoPart>>
+       #);     
+     subpageStatusChanged:
+       (# from, to: @integer;
+       enter (from, to)
+       <<SLOT CPNPageSubpageStatusChanged:doPart>>
+       #);
+     setSubpage:
+       (# theSubpage: ^CPNPage;
+       enter theSubpage[]
+       <<SLOT CPNPageSetSubpage:DoPart>>
+       #);
+     removeSubpage:
+       (# theSubpage: ^CPNPage;
+       enter theSubpage[]
+       <<SLOT CPNPageRemoveSubpage:DoPart>>
+       #);     
+     getNodesStatus: IntegerValue
+       (# <<SLOT CPNPageGetNodesStatus:doPart>> #);
+     getSubpagesStatus: IntegerValue
+       (# <<SLOT CPNPageGetSubpagesStatus:doPart>> #);
+     getNodesAndSubpagesStatus: IntegerValue
+       (# <<SLOT CPNPageGetNodesAndSubpagesStatus:doPart>> #);
+     being_checked: 
+       (# exit (status=unchecked) or (status=checking) #);
+     being_compiled: 
+       (# exit (status=checked) or (status=compiling) #);
+     has_error: 
+       (# exit status=incorrect #);
+     name_error:
+       (# exit namestatus=incorrect #);
+     nodeChangedStatus:
+       (# from, to: @integer;
+       enter (from, to)
+       <<SLOT CPNPageNodeChangedStatus:doPart>> 
+       #);
+     all: @Group (# all:: (# do true -> value #); #);
+     setSelectedGroup:
+       (# selected: ^Group;
+       enter selected[]
+       <<SLOT CPNPageSetSelectedGroup:DoPart>>
+       #);
+     getSelectedGroup:
+       (# selected: ^Group;
+       <<SLOT CPNPageGetSelectedGroup:DoPart>>
+       exit selected[]
+       #);
+     getCurrentHighlight:: (# <<SLOT CPNPageGetCurrentHighlight:doPart>> #);
+     getCurrentHighlightOfSubpageTree: 
+       (# currentHighlight: ^Color;
+       <<SLOT CPNPageGetCurrentHighlightOfSubpageTree:DoPart>> 
+       exit currentHighlight[]
+       #);
+     getCurrentHighlightOfNodesAndSubpageTree: 
+       (# currentHighlight: ^Color;
+       <<SLOT CPNPageGetCurrentHighlightOfNodesAndSubpageTree:DoPart>> 
+       exit currentHighlight[]
+       #);
+     Clone:: 
+       (# Type:: CpnPage;
+          keepInstances: @boolean;
+       enter keepInstances
+       <<SLOT CPNPageClone:doPart>>
+       #);
+     cloneAndGetAssociations:
+       (# keepInstances: @boolean;
+          new: ^CPNPage;
+          associations: ^PageElementIDDictionary
+       enter keepInstances
+       <<SLOT CPNPageCloneAndGetAssociations:doPart>>
+       exit (new[],associations[])
+       #);
+     
+     onSemanticChanged:: 
+       (# 
+       <<SLOT CPNpageonSemChanges:dopart>>   
+       #);
+     onSyntaxError: 
+       (# 
+       do (checking,incorrect) -> changeStatus;
+       #);     
+     nameChanged:
+       (# foundAnother: @boolean;
+       <<SLOT CPNpagenameChanged:doPart>>
+       #);
+     
+     onTextUpdated::< 
+       (# 
+       <<SLOT CPNpageonTextUpdated:doPart>>
+       #);
+     
+     hideAllErrorMsg: 
+       (# 
+       <<SLOT CPNpageHideAllError:dopart>>
+       #);
+     
+     showAllErrorMsg: 
+       (# 
+       <<SLOT CPNpageShowAllError:dopart>>   
+       #);
+     
+     getRandomInstance: 
+       (* Returns a reference to a random instance of this page,
+        * that contains enabled transitions.
+        *)
+       (# theInstance: ^PageInstance;
+       <<SLOT CPNPagegetRandomInstance:doPart>>
+       exit theInstance[]
+       #);
+     
+     getPageInstance: 
+       (* Returns a reference to a page instance given an instance id. *)
+       (# id: ^Text;
+          instance: ^PageInstance;
+       enter id[]
+       <<SLOT CPNPagegetPageInstance:doPart>>
+       exit instance[]
+       #);
+     
+     createPageInstance: 
+       (* Creates a new instance of this page and any subpages. *)
+       (# theSuperPageInstance, instance: ^PageInstance;
+          theSubTrans: ^Transition;
+       enter (theSuperPageInstance[],theSubTrans[])
+       <<SLOT CPNPagecreatePageInstance:doPart>>
+       exit instance[]
+       #);
+     
+     (* Private *)     
+     nofnodes: @integer;
+     nofsuper: @(# v:@Integer
+                enter (# enter v do (if debugging then '%i -> nofsuper in CPNPage %s.' -> debugLoad(# do v -> i; id[] -> s; #); if); #)
+                exit v
+                #);
+     nofgroups: @integer;
+     
+     calculateMaxNoOfSuperPages:
+       (# maxNoOfSuperPages: @integer;
+          currentNoOfSuperPages: @integer;
+       <<SLOT CPNPagecalculateMaxNoOfSuperPages:doPart>>
+       exit maxNoOfSuperPages
+       #);
+     prime: ^PageInstance;
+     isPrime: BooleanValue (# <<SLOT CPNPageIsPrime:doPart>> #);
+     removeSuper: (# <<SLOT CPNPageremoveSuper:doPart>> #);
+     
+     addSuper: (# <<SLOT CPNPageaddSuper:doPart>> #);
+     numberOfTimesThisPageBeenChecked: @integer; (* for debugging /krell *)
+     syntaxCheck: CPNMLCommand
+       (# Send:: 
+            (# count: @integer;
+               fusionSets: @List (# Element:: FusionSet #);               
+               initializeMessage: 
+                 (# <<SLOT mlCPNPageCheckPageSendInitializeMessage:doPart>> #);
+               sendCheckedFusionSets:
+                 (# <<SLOT mlCPNPageCheckPageSendsendCheckedFusionSets:doPart>> #);
+               sendCheckedTransitions:
+                 (# <<SLOT mlCPNPageCheckPageSendsendCheckedTransitions:doPart>> #);
+               sendUncheckedPlaces:
+                 (# <<SLOT mlCPNPageCheckPageSendsendUncheckedPlaces:doPart>> #);
+               sendUncheckedFusionPlaces:
+                 (# <<SLOT mlCPNPageCheckPageSendsendUncheckedFusionPlaces:doPart>> #);
+               sendUncheckedSubstitutionTransitions:
+                 (# <<SLOT mlCPNPageCheckPageSendsendNumberOfUncheckedSubstitutionTransitions:doPart>> #);
+               sendUncheckedTransitions:
+                 (# <<SLOT mlCPNPageCheckPageSendsendUncheckedTransitions:doPart>> #);
+            <<SLOT mlCPNPageCheckPageSend:doPart>>
+            #);
+          Receive:: (# <<SLOT CPNPageSyntaxCheckReceive:DoPart>> #);
+          receiveAbortable:: TrueObject;
+          receiveAborted:: (# <<SLOT CPNPageSyntaxCheckReceiveAborted:DoPart>> #);
+          onError:: 
+            (# 
+            <<SLOT mlCPNPageCheckError:DoPart>>
+            #);
+          
+          names: ^TextList;
+       enter names[]
+          (* ML-engine puts stuff on dmoEval when syntaxchecking.
+           * When clearDmoEval is true the dmoEval socket gets
+           * cleared when done.
+           *)
+       do true -> clearDmoEval;
+       #);
+     
+     init::
+       (# theNet: ^CPNet;
+       enter theNet[]
+       <<SLOT CPNPageinit:doPart>> 
+       #);
+     
+     onAdded:: (# <<SLOT CPNPageonAdded:doPart>> #);     
+     onRemoved:: (# <<SLOT CPNPageonRemoved:doPart>> #);
+     
+     containsSubpage:
+       (# page: ^pageInstance; 
+          result: @boolean;
+       enter page[]
+       <<SLOT CPNPagecontainsSubpage:doPart>>   
+       exit result
+       #);
+
+     (*just used to give the new groups different names*)
+     getNewGroupName:
+       (# 
+          name: ^Text;
+       <<SLOT CPNPagegetNewGroupName:doPart>>
+       exit name[]
+       #);
+     
+     name: 
+       (# set: 
+            (# newName: ^Text; 
+            enter newName[]
+            do newName.copy -> theName[];
+            #);
+       enter set
+       exit theName[]
+       #);
+     
+     
+     
+     bounds: 
+       (# xmax, xmin, ymax, ymin: @real;
+       <<SLOT CPNPagebounds:doPart>>
+       exit (xmin, xmax, ymin, ymax)
+       #);
+     
+     print: 
+       (# xmin, xmax, ymin, ymax: @Real;
+          left: (# exit 13 #);
+          top: (# exit 13 #);
+          printer: @visitor
+            (# Type:: PageElement;
+               forEach:: 
+                 (# presentation: ^Item;
+                 <<SLOT CPNPageprintprinterforeach:doPart>>
+                 #);
+            #);
+          translate: 
+            (# theItem: ^Item;
+               dx, dy: @Real;
+            enter (theItem[], dx, dy)
+            <<SLOT CPNPageprinttranslate:doPart>>
+            #);
+          output: @fileObject;
+          Canonify: 
+            (# name: ^Text;
+               canon: ^Text;
+            enter name[]
+            <<SLOT CPNPageprintCanonify:doPart>>
+            exit canon[]
+            #);
+       <<SLOT CPNPageprint:doPart>>
+       #);
+     theName: ^Text;
+     onChanged:: (# <<SLOT CPNPageOnChanged:doPart>> #);
+     semanticChangedOnCPNPageGraph:
+       (# <<SLOT CPNPageSemanticChangedOnCPNPageGraph:doPart>> #);
+     hasInTopCPNPageTree: BooleanValue
+       (# theCPNPage: ^CPNPage;
+       enter theCPNPage[]
+       <<SLOT CPNPageHasInTopCPNPageTree:doPart>>
+       #);
+  #);
+
+MLCreateInstances: CPNMLCommand
+  (# Send:: 
+       (# 
+       <<SLOT mlCreateInstancesSend:DoPart>>
+       #);
+     Receive:: 
+       (# num_pages: @integer;
+          cur_page_id: ^Text;
+          num_instances_cur_page: @integer;
+          cur_page_has_super_node: @boolean;
+          super_page_id: ^Text;
+          subst_node_id: ^Text;
+          super_page_inst: @integer;
+          thePage: ^CPNPage;
+       <<SLOT mlCreateInstancesReceive:DoPart>>
+       #);
+     
+     onError:: 
+       (# 
+       <<SLOT mlCreateInstancesError:DoPart>>
+       #);
+     
+     net: ^CPNet;
+  enter net[]
+  #);
+
+PageInstance: Highlightable
+  (# private: @<<SLOT PageInstancePrivate:descriptor>>;     
+     toString: 
+       (# str: ^Text;
+       <<SLOT PageInstanceToString:doPart>>
+       exit str[]
+       #);
+     onChanged:: (# <<SLOT PageInstanceOnChanged:doPart>> #);
+     notMLInstance: @boolean;
+     MLInstanceNumber: 
+       (# 
+          setMLInstanceNumber: 
+            (# newMLInstanceNumber: @integer;
+            enter newMlInstanceNumber
+            do newMLInstanceNumber -> theMLInstanceNumber;
+               changed;
+            #);
+       enter setMLInstanceNumber
+       exit theMLInstanceNumber
+       #);
+     getName:
+       (# 
+       exit thePage.theName.copy
+       #);
+     updateInstanceTree:
+       (# 
+       <<SLOT PageInstanceupdateInstanceTree:doPart>>
+       #);     
+     lookupTransitionInstance: lookUp
+       (# Element:: TransitionInstance;
+       <<SLOT PageInstanceLookupTransitionInstance:DoPart>>
+       #);     
+     lookupPlaceInstance: lookup
+       (# Element:: PlaceInstance;
+       <<SLOT PageInstanceLookupPlaceInstance:doPart>>
+       #);
+     lookupArcInstance: lookup
+       (# Element:: ArcInstance;
+       <<SLOT PageInstanceLookupArcInstance:doPart>>
+       #);     
+     lookupNodeInstance: lookup
+       (# Element:: NodeInstance;
+       <<SLOT PageInstanceLookupNodeInstance:DoPart>>
+       #);
+     containsSubpage:
+       (# page: ^PageInstance; result:@boolean;
+       enter page[]
+       <<SLOT PageInstancecontainsSubpage:doPart>>
+       exit result
+       #);
+     addSubpageInstance:
+       (# theSubpageInstance: ^PageInstance;
+       enter theSubpageInstance[]
+       <<SLOT PageInstanceAddSubpageInstance:doPart>>
+       #);
+     removeSubpageInstance:
+       (# theSubpageInstance: ^PageInstance;
+       enter theSubpageInstance[]
+       <<SLOT PageInstanceRemoveSubpageInstance:doPart>>
+       #);
+     attachSubpageInstances:
+       (# theNotifier: ^Notifier;
+       enter theNotifier[]
+       <<SLOT PageInstanceAttachSubpageInstances:DoPart>>
+       #);
+     scanSubpageInstances:
+       (# current: ^PageInstance;
+       <<SLOT PageInstanceScanSubpageInstances:doPart>>
+       #);
+     scanSubpageInstanceTree:
+       (# current: ^PageInstance;
+       <<SLOT PageInstanceScanSubpageInstanceTree:DoPart>>
+       #);
+     scanPlaceInstances:
+       (# current: ^PlaceInstance;
+       <<SLOT PageInstanceScanPlaceInstances:doPart>>
+       #);
+     scanTransitionInstances:
+       (# current: ^TransitionInstance;
+       <<SLOT PageInstanceScanTransitionInstances:doPart>>
+       #);
+     getCurrentHighlight::
+       (# <<SLOT PageInstancegetCurrentHighlight:doPart>> #);
+     getCurrentHighlightOfSubpageTree:
+       (# currentHighlight: ^color
+         <<SLOT PageInstanceGetCurrentHighlightOfSubpageTree:DoPart>> 
+       exit currentHighlight[]
+       #);
+     getCurrentHighlightOfNodesAndSubpageTree:
+       (# currentHighlight: ^color
+         <<SLOT PageInstanceGetCurrentHighlightOfNodesAndSubpageTree:DoPart>> 
+       exit currentHighlight[]
+       #);
+     setSuperpageInstance:
+       (# superpageInstance: ^PageInstance;
+       enter superpageInstance[]          
+       <<SLOT PageInstanceSetSuperpageInstance:DoPart>>
+       #);
+     getSuperpageInstance:
+       (# superpageInstance: ^PageInstance;
+       <<SLOT PageInstanceGetSuperpageInstance:DoPart>>
+       exit superpageInstance[]          
+       #);
+     thePage: ^CPNPage;
+     theTransition: ^Transition; (* the transition with this pageinstance as subpage *)
+     theMLinstancenumber: @integer;
+     MLinstances: @integer;
+     (* cacheEnabled: @Integer; (\* 0=not computed, 1=enabled transition, 2=no enabled transition *\) *)
+     hasEnabledTransitions: BooleanValue
+       (# <<SLOT PageInstanceHasEnabledTransitions:doPart>> #);
+     fireRandomTransition: 
+       (# enabledList: @Sequence(# Element:: transitionInstance #);
+          chosen: @Integer;
+          theTransitionInstance: ^TransitionInstance;
+       <<SLOT mlPageInstFireRandom:doPart>>         
+       exit theTransitionInstance[]
+       #);     
+     addTransition: 
+       (# t: ^Transition;
+          ti: ^TransitionInstance;
+       enter t[]
+       <<SLOT PageinstanceaddTransition:doPart>>
+       #);
+     removeTransition: 
+       (# t: ^Transition;
+       enter t[]
+       <<SLOT PageinstanceremoveTransition:doPart>>
+       #);
+     addPlace: 
+       (# p: ^Place;
+          pi: ^PlaceInstance;
+       enter p[]
+       <<SLOT PageinstanceaddPlace:doPart>>
+       #);
+     removePlace: 
+       (# p: ^Place;
+       enter p[]
+       <<SLOT PageinstanceremovePlace:doPart>>
+       #); 
+     addArc:
+       (# theArc: ^Arc;
+          theArcInstance: ^ArcInstance;
+       enter theArc[]
+       <<SLOT PageInstanceAddArc:DoPart>>
+       #);
+     removeArc:
+       (# theArc: ^Arc;
+       enter theArc[]
+       <<SLOT PageInstanceRemoveArc:DoPart>>
+       #);
+     init:: 
+       (# superPageInstance: ^PageInstance;
+       enter superPageInstance[]
+       <<SLOT Pageinstanceinit:doPart>>
+       #);     
+     delete: (# <<SLOT Pageinstancedelete:doPart>> #);
+     nodeChangedStatus:
+       (# from, to: @integer;
+       enter (from, to)
+       <<SLOT PageInstanceNodeChangedStatus:DoPart>> 
+       #);
+     subpageInstanceStatusChanged:
+       (# from, to: @integer;
+       enter (from, to)
+       <<SLOT PageInstanceSubpageInstanceStatusChanged:DoPart>>
+       #);
+     getNodesStatus: IntegerValue
+       (# <<SLOT PageInstanceGetNodesStatus:DoPart>> #);
+     getSubpagesStatus: IntegerValue
+       (# <<SLOT PageInstanceGetSubpagesStatus:DoPart>> #);
+     getNodesAndSubpagesStatus: IntegerValue
+       (# <<SLOT PageInstanceGetNodesAndSubpagesStatus:DoPart>> #);
+     nodeStatusToString:
+       (# str: ^Text;
+       <<SLOT PageInstanceNodeStatusToString:DoPart>> 
+       exit str[]
+       #);
+     subpageInstancesStatusToString:
+       (# str: ^Text;
+       <<SLOT PageInstanceSubpageInstancesStatusToString:DoPart>> 
+       exit str[]
+       #);
+  #);
+
+GroupTab: Tab
+  (# fatherType:: Sheet;
+     private: @<<SLOT GroupTabPrivate: descriptor >>;
+     setGroup:
+       (# theGroup: ^Group;
+       enter theGroup[]
+       <<SLOT GroupTabSetGroup: doPart>>
+       #);
+     getGroup: 
+       (# theGroup: ^Group; 
+       <<SLOT GroupTabGetGroup: doPart>> 
+       exit theGroup[]
+       #);
+     editable::
+       (#
+       <<SLOT GroupTabEditable: doPart>>
+       #);
+     getCPNPage: 
+       (# thePage: ^CPNPage;
+       <<SLOT GroupTabGetCPNPage:doPart>>
+       exit thePage[]
+       #);
+     
+     update:: (# <<SLOT GroupTabUpdate:DoPart>> #);
+     init:: (# <<SLOT GroupTabinit:doPart>> #);
+  #);
+
+Group: Entity
+  (# private:@<<SLOT GroupPrivate:Descriptor>>;
+     containsSSElement:
+       (# result: @Boolean;
+       <<SLOT GroupContainsSSElement:DoPart>>
+       exit result
+       #);
+     setCPNPage: 
+       (# theCPNPage: ^CPNPage;
+       enter theCPNPage[]
+       <<SLOT GroupSetCPNPage:doPart>>
+       #);
+     getCPNPage: 
+       (# theCPNPage: ^CPNPage;
+       <<SLOT GroupGetCPNPage:doPart>>
+       exit theCPNPage[]
+       #);
+     setCPNet:
+       (# theCPNet: ^CPNet;
+       enter theCPNet[]
+       <<SLOT GroupSetCPNet:DoPart>>
+       #);
+     getCPNet:
+       (# theCPNet: ^CPNet;
+       <<SLOT GroupGetCPNet:DoPart>>
+       exit theCPNet[]
+       #);
+     IsGlobal: 
+       (# value: @boolean;
+       <<SLOT GroupIsGlobal:doPart>>
+       exit value
+       #);
+     all:< BooleanValue;
+     scanElements:
+       (# current: ^PageElement;
+       <<SLOT GroupScanElements:doPart>>
+       #);
+     scanNodes:
+       (# current: ^Node;
+       <<SLOT GroupScanNodes:DoPart>>
+       #);
+     scanNodeInstances:
+       (# current: ^NodeInstance;
+       <<SLOT GroupScanNodeInstances:DoPart>>
+       #);
+     numberOfElements: IntegerValue (# <<SLOT GroupNumberOfElements:DoPart>> #);
+     firstElement:
+       (# thePageElement: ^PageElement;
+       <<SLOT GroupFirstElement:DoPart>>
+       exit thePageElement[]
+       #);
+     isMember: BooleanValue
+       (# thePageElement: ^PageElement;
+       enter thePageElement[]          
+       <<SLOT GroupIsMember:doPart>>
+       #);
+     hasHierarchyInfo: booleanValue
+       (# aPageElement: ^PageElement;
+       enter aPageElement[]
+       <<SLOT GroupHasHierarchyInfo:doPart>>
+       #);
+
+     delete: (# <<SLOT Groupdelete:doPart>> #);
+     
+     name: 
+       (# 
+       enter (# enter theName[] do changed #)
+       exit theName[]
+       #);
+     addElement:
+       (# elm: ^PageElement;
+          theList: ^PageElementList;
+       enter elm[]
+       <<SLOT GroupAddElement:doPart>>
+       #);
+     removeElement:
+       (# elm: ^PageElement;
+          theList: ^PageElementList;
+       enter elm[]
+       <<SLOT GroupRemoveElement:doPart>>
+       #);
+     clone:: 
+       (# Type:: Group;
+       <<SLOT Groupclone:doPart>>
+       #);
+     cloneGroupElements:
+       (# keepInstances: @boolean;
+          groupElements: ^PageElementList;
+       enter keepInstances
+       <<SLOT GroupCloneGroupElements:DoPart>> 
+       exit groupElements[]          
+       #);
+     onSelect: 
+       (# theCPNPage: ^CPNPage;
+       enter theCPNPage[]
+       <<SLOT GrouponSelect:doPart>> 
+       #);     
+     onChanged:: (# <<SLOT GrouponChanged:doPart>> #);     
+     present: 
+       (# theSheet: ^Sheet;
+          theTab: ^GroupTab;
+       enter theSheet[]
+       <<SLOT GroupPresent:DoPart>>         
+       exit theTab[]
+       #);     
+     init:: 
+       (#
+       <<SLOT GroupInit:doPart>> 
+       #);     
+     theName: ^text;
+  #);
+
+
+SimulationItem: Snapable
+  (# instance: ^PlaceInstance;
+     hiliteStyle: ^Style;
+     loliteStyle: ^Style;
+     init::< (# <<SLOT SimulationItemInit:DoPart>> #);
+     onClicked:<
+       (# do INNER #);
+     update::<
+       (# <<SLOT SimulationItemUpdate:doPart>>#);
+  #);
+
+Token: SimulationItem
+  (# thePlace: ^Place;
+     tok: ^cpntoken;
+     init:: (# <<SLOT TokenInit: doPart >> #);
+     
+     deltaToPosition:
+       (# <<SLOT TokenDeltaToPosition: doPart>> #);
+     positionToDelta::
+       (# <<SLOT TokenPositionToDelta: doPart>> #);
+     changePosition:
+       (#
+       enter (x, y)
+       <<SLOT TokenChangePosition: doPart>>
+       #);
+     snap::
+       (# <<SLOT TokenSnap: doPart>> #);
+     getAnchors::
+       (# <<SLOT TokenGetAnchors:doPart>> #);
+     onClicked:: (# <<SLOT TokenonClicked:doPart>> #);
+     delete: (# <<SLOT Tokendelete:doPart>> #);
+     update:: (# <<SLOT Tokenupdate:doPart>> #);
+     onChanged:: (# <<SLOT TokenonChanged:doPart>> #);
+  #);
+
+PlaceMarking: SimulationItem
+  (# ti: @textitem;
+     box: @rect;
+     boxshadow: @rect;
+     listener: @ScrollListener
+       (# scrollUp:: (# <<SLOT PlaceMarkingListenerScrollUp:DoPart>> #);
+          scrollDown:: (# <<SLOT PlaceMarkingListenerScrollDown:DoPart>> #);            
+       #);
+     init::< 
+       (# cs: ^CompositeStyle;
+       <<SLOT PlaceMarkinginit:doPart>>
+       #);
+     
+     delete: (# <<SLOT PlaceMarkingdelete:doPart>> #);
+     
+     update:: 
+       (# xmin,xmax,ymin,ymax, w, h: @Real;
+          thePlace: ^Place;
+       <<SLOT PlaceMarkingupdate:doPart>>
+       #);
+     onChanged:: (# <<SLOT PlaceMarkingonChanged:doPart>> #);
+     
+     getTextItem::
+       (#
+       do ti[] -> theTextItem[];
+       #);
+     
+     bounds::
+       (# <<SLOT PlaceMarkingBounds: doPart>> #);
+     
+     snap::
+       (#
+       <<SLOT PlaceMarkingSnap: doPart>>
+       #);
+     
+     positionToDelta::
+       (# <<SLOT PlaceMarkingPositionToDelta:doPart>> #);
+     
+     onTextUpdated::
+       (# whiteSpace: @boolean;
+       <<SLOT PlaceMarkingOnTextUpdated:doPart>>
+       #);
+     onFocusLost:: (# <<SLOT PlaceMarkingonFocusLost:doPart>> #);
+     allowReturn:: TrueObject;
+  #);
+
+AbstractTransitionInstanceDialog:snapable
+  (# theTransitionInstance: ^TransitionInstance;
+     onClicked:< (# do INNER; #);
+     getPrintablePart:<
+       (# printablePart: ^Composite;
+       <<SLOT AbstractTransitionInstanceDialogGetPrintablePart:doPart>>    
+       exit printablePart[]
+       #);
+     getCPNet:<
+       (# net: ^CPNet;
+       do INNER;
+       exit net[]
+       #);
+     delta:
+       (#
+       enter setDelta
+       exit getDelta
+       #);
+     setDelta:<
+       (# value: @Point2d;
+       enter value
+       do INNER;
+       #);
+     getDelta:<
+       (# value: @Point2d;
+       do INNER;
+       exit value
+       #);
+  #);
+BindingDialog: AbstractTransitionInstanceDialog
+  (# private: @<<SLOT BindingDialogPrivate:descriptor>>;
+     
+     setDelta::
+       (#
+       do value -> theTransitionInstance.theTransition.deltaPositionOfBindingIndex;
+          theTransitionInstance.theTransition.changed;
+       #);
+     getDelta::
+       (#
+       do theTransitionInstance.theTransition.deltaPositionOfBindingIndex -> value;
+       exit value
+       #);
+     getCPNet::
+       (#
+       do theTransitionInstance.net -> net[];
+       #);
+     
+     manualBindingStarted: @boolean;
+     isBindingDone:
+       (# answer: @boolean;
+       <<SLOT BindingDialogIsBindingDone:doPart>>
+       exit answer
+       #);
+     showPossibleBindings: 
+       (# status: ^Workspace.statusbubble;
+          fixedStatus: ^Workspace.fixedStatusBubble;
+          ilist: ^IntObjSequence;
+          slist: ^TextSequence;
+          succes: @boolean;
+       <<SLOT BindingDialogShowPossibleBindings:doPart>> 
+       #);
+     fireWithCurrentChoices: 
+       (# foundEnabled, timeIncreased: @boolean;
+          bindings: ^IntObjList;
+          fixedStatus: ^Workspace.fixedStatusBubble;
+       <<SLOT BindingDialogFireWithCurrentChoices:doPart>> 
+       #);
+     getPrintablePart::
+       (#
+       <<SLOT BindingDialogGetPrintablePart:doPart>>    
+       #);
+     clear: (# <<SLOT BindingDialogClear:doPart>> #);
+     init:: (# <<SLOT BindingDialogInit:doPart>> #);
+     update:: (# <<SLOT BindingDialogUpdate:doPart>> #);
+     onClicked:: (# <<SLOT BindingDialogOnClicked:doPart>> #);
+  #);
+PortSocketDialog: AbstractTransitionInstanceDialog
+  (# private: @<<SLOT PortSocketDialogPrivate:descriptor>>;
+     
+     setDelta::
+       (#
+       do value -> theTransitionInstance.theTransition.deltaPositionOfBindingIndex;
+          theTransitionInstance.theTransition.changed;
+       #);
+     getDelta::
+       (#
+       do theTransitionInstance.theTransition.deltaPositionOfBindingIndex -> value;
+       exit value
+       #);
+     getCPNet::
+       (#
+       do theTransitionInstance.net -> net[];
+       #);
+     showAssignments: (# <<SLOT PortSocketDialogShowAssignments:doPart>> #);
+     getPossiblePorts: 
+       (# theSocket: ^Place;
+          possiblePorts: ^PlaceList;
+          useNameAsCriteria: @boolean;
+       enter (theSocket[],useNameAsCriteria)
+       <<SLOT PortSocketDialogGetPossiblePorts:doPart>>
+       exit possiblePorts[]
+       #);
+     getPrintablePart::
+       (#
+       <<SLOT PortSocketDialogGetPrintablePart:doPart>>    
+       #);
+     onSemanticChanged: (# <<SLOT PortSocketDialogOnSemanticChanged:doPart>> #);
+     clear: (# <<SLOT PortSocketDialogClear:doPart>>#);
+     init:: (# <<SLOT PortSocketDialogInit:dopart>> #);
+     update:: (# <<SLOT PortSocketDialogUpdate:doPart>> #);
+     onClicked:: (# <<SLOT PortSocketDialogOnClicked:doPart>> #);
+  #);
+
+NodeInstance: Highlightable
+  (# private: @<<SLOT NodeInstancePrivate:Descriptor>>;
+     status:< IntegerValue;
+     thePageInstance: ^PageInstance;
+     delete:< (# <<SLOT NodeInstanceDelete:DoPart>> #);
+     getNode:< 
+       (# theNode: ^Node;
+       do inner;
+       exit theNode[]
+       #);
+     addMonitor:<
+       (# theMonitor: ^Monitor;
+       enter theMonitor[]
+       <<SLOT NodeInstanceAddMonitor:DoPart>>
+       #);
+     removeMonitor:<
+       (# theMonitor: ^Monitor;
+       enter theMonitor[]
+       <<SLOT NodeInstanceRemoveMonitor:DoPart>>
+       #);
+     scanMonitors:
+       (# current: ^Monitor;
+       <<SLOT NodeInstanceScanMonitors:DoPart>>
+       #);
+     getLongName:
+       (# str: ^Text;
+       <<SLOT NodeInstanceGetLongName:DoPart>>
+       exit str[]
+       #);
+     update::< (# <<SLOT NodeInstanceUpdate:doPart>> #);
+     bounds::< (# <<SLOT NodeInstanceBounds:doPart>> #);
+     init::< (# <<SLOT NodeInstanceInit:DoPart>> #);
+  #);
+
+PlaceInstance: NodeInstance
+  (# private: @<<SLOT PlaceInstancePrivate:Descriptor>>;
+     init:: (# <<SLOT PlaceInstanceInit:DoPart>> #);
+     thePlace: ^Place;
+     getNode:: (# do thePlace[] -> theNode[] #);
+     theMarking: ^Text;
+     theToken: ^Token;
+     thePlacemarking: ^PlaceMarking;
+     allwaysShowMarking: @boolean;
+     markingVisible:
+       (# value: @boolean;
+       <<SLOT PlaceInstanceMarkingVisible:doPart>> 
+       exit value
+       #);
+     hidemarkings: 
+       (# 
+       enter (# enter (thePlace.hidemarkings) do thePlace.changed; #)
+       exit (thePlace.hidemarkings)
+       #);
+     numTokens: @Integer;
+     setAssignedError: 
+       (# newValue: @boolean; 
+       enter newValue
+       <<SLOT PlaceInstanceSetAssignedError:DoPart>>
+       #);
+     unassigned: BooleanValue
+       (# <<SLOT PlaceInstanceUnassigned:DoPart>> #);
+     canBeCheckedForCurrentMarking: @boolean;
+     deleted: @boolean;
+     namestatus: @integer;
+     currentMarkingError: @boolean;
+     marking:
+       (#
+       enter (# enter (theMarking[], numTokens) do changed; #)
+       exit theMarking[]
+       #);
+     changeCurrentMarking:
+       (# 
+       enter theMarking[]
+       <<SLOT PlaceInstancechangeCurrentMarking:doPart>>
+       #);
+     clearTokens: (# <<SLOT PlaceInstanceClearTokens:doPart>> #);
+     getToken:
+       (#
+       <<SLOT PlaceInstanceGetToken:doPart>>
+       exit theToken[]
+       #);
+     getPlaceMarking:
+       (#
+       <<SLOT PlaceInstanceGetPlaceMarking:doPart>>
+       exit thePlaceMarking[]
+       #);
+     getCurrentHighlight:: (# <<SLOT PlaceInstanceGetCurrentHighlight:doPart>> #);
+     onChanged:: (# <<SLOT PlaceInstanceonChanged:doPart>> #);     
+     delete:: (# <<SLOT PlaceInstancedelete:doPart>> #);     
+     update:: (# <<SLOT PlaceInstanceupdate:doPart>> #);
+     scanPlaceInstanceGroup:
+       (# current: ^PlaceInstance;
+       <<SLOT PlaceInstancescanPlaceInstanceGroup:doPart>>
+       #);  
+     scanPorts:
+       (# thePortInstance: ^PlaceInstance;
+       <<SLOT PlaceInstancescanPorts:doPart>>
+       #);
+     scanSockets:
+       (# theSocketInstance: ^PlaceInstance;
+       <<SLOT PlaceInstancescanSockets:doPart>>
+       #);
+     scanSurroundingTransitionInstances: 
+       (# current: ^TransitionInstance;
+       <<SLOT PlaceInstanceScanSurroundingTransitionInstances:DoPart>>
+       #);
+     status:: (# <<SLOT PlaceInstanceStatus:DoPart>> #);
+  #);
+
+TransitionInstance: NodeInstance
+  (# private: @<<SLOT TransitionInstancePrivate:Descriptor>>;
+     init:: (# <<SLOT TransitionInstanceInit:doPart>> #);     
+     theTransition: ^Transition;
+     getNode:: (# do theTransition[] -> theNode[]; #);
+     theBindingDialog: ^BindingDialog;
+     thePortSocketDialog: ^PortSocketDialog;
+     theSubpageInstance: ^PageInstance;     
+     canBeCheckedForEnabling: @boolean;
+     justFiredWithManualBinding: @boolean;
+     
+     removeMonitor:: (# <<SLOT TransitionInstanceRemoveMonitor:doPart>> #);
+     addMonitor:: (# <<SLOT TransitionInstanceAddMonitor:doPart>> #);
+     toString:
+       (# str: ^Text;
+       <<SLOT TransitionInstanceToString:doPart>>
+       exit str[]
+       #);
+     checkIfCanBeCheckedForEnabling:
+       (# 
+       <<SLOT TransitionInstancecheckIfCanBeCheckedForEnabling:doPart>>
+       exit canBeCheckedForEnabling
+       #);
+     enabled: BooleanValue
+       (# <<SLOT TransitionInstanceEnabled:DoPart>> #);
+     simulationError: BooleanValue
+       (# <<SLOT TransitionInstanceSimulationError:DoPart>> #);
+     net:
+       (# theNet: ^CPNet;
+       <<SLOT TransitionInstanceNet:DoPart>>
+       exit theNet[]
+       #);
+     setEnabled:
+       (# en: @boolean;
+       enter en
+       <<SLOT TransitionInstanceSetEnabled:DoPart>>       
+       #);
+     setPreEnabled:
+       (# en: @boolean;
+       enter en
+       <<SLOT TransitionInstanceSetPreEnabled:DoPart>>       
+       #);
+     setSimulationError:
+       (# error: @boolean;
+       enter error
+       <<SLOT TransitionInstanceSetSimulationError:DoPart>>
+       #);
+     onChanged:: (# do update; #);     
+     getMarkingsOfSurroundingPIGs: 
+       (# <<SLOT TransitionInstancegetMarkingsOfSurroundingPIGs:doPart>> #);
+     scanSurroundingPlaceInstances:
+       (# current: ^PlaceInstance;
+       <<SLOT TransitionInstanceScanSurroundingPlaceInstances:DoPart>>
+       #);
+     getCurrentHighlight:: (# <<SLOT TransitionInstanceGetCurrentHighlight:DoPart>> #);
+     update:: (# <<SLOT TransitionInstanceupdate:doPart>> #);
+     delete:: (# <<SLOT TransitionInstancedelete:doPart>> #);
+     status:: (# <<SLOT TransitionInstanceStatus:DoPart>> #);
+     fireTransition: CPNMLCommand
+       (# errorOccured: @boolean;
+          status: ^workspace.statusbubble;
+          Send:: (# <<SLOT mlTransInstFireSend:DoPart>> #);
+          
+          Receive:: 
+            (# tmp: ^Text;
+            <<SLOT mlTransInstFireReceive:DoPart>> 
+            #);
+          
+          onError:: 
+            (# 
+            <<SLOT mlTransInstFireError:DoPart>> 
+            #);
+          
+          exit errorOccured
+       #);
+     getPossibleBindings: CPNMLCommand
+       (# ilist: ^IntObjSequence;
+          slist: ^TextSequence;
+          succes: @boolean;
+          send:: (# <<SLOT mlTransInstBindManuallyGetBindingsSend:doPart>> #);
+          receive:: 
+            (# noOfIntElm, noOfStringElm, noOfVarsInThisGroup: @integer;
+               calcNoOfStringElmInThisGroup: @boolean;
+               current: ^IntegerObject;
+            <<SLOT mlTransInstBindManuallyGetBindingsReceive:doPart>> 
+            #);
+       exit (succes,ilist[],slist[])
+       #);
+     fireTransitionWithThisBinding: CPNMLCommand
+       (# chosenBindings: ^IntObjList;
+          send:: (# <<SLOT mlTransInstFireManBoundSend:doPart>> #);
+          receive:: (# tmp: ^Text; <<SLOT mlTransInstFireManBoundReceive:doPart>>  #);               
+       enter chosenBindings[]
+       #);
+     abortManualBinding: CPNMLCommand
+       (# send:: (# <<SLOT mlTransInstAbortManualBindingSend:doPart>> #);
+          receive:: (# tmp: ^Text <<SLOT mlTransInstAbortManualBindingReceive:doPart>>  #);  
+       #);
+  #);
+
+ArcInstance: NodeInstance
+  (# private: @<<SLOT ArcInstancePrivate:Descriptor>>;
+     theArc: ^Arc;
+     thePageInstance: ^PageInstance;
+     init:: (# <<SLOT ArcInstanceInit:DoPart>> #);
+     update:: (# <<SLOT ArcInstanceUpdate:DoPart>> #);
+     delete:: (# <<SLOT ArcInstanceDelete:DoPart>> #);
+     status:: (# <<SLOT ArcInstanceStatus:DoPart>> #);
+     getCurrentHighlight:: (# <<SLOT ArcInstanceGetCurrentHighlight:DoPart>> #);
+     setSimulationError: 
+       (# error: @boolean;
+       enter error
+       <<SLOT ArcInstanceSetSimulationError:DoPart>>
+       #);
+     onChanged:: (# <<SLOT ArcInstanceOnChanged:DoPart>> #);
+  #);
+
+PageElement: Snapable
+  (# private: @<<SLOT PageElementPrivate:descriptor>>;
+     ignore: @boolean;
+     toString:<
+       (# str: ^text;
+       do &Text[] -> str[];
+          inner;
+       exit str[]
+       #);
+
+     menuName:<
+       (# txt: ^Text;
+       do NamesPageMenuElement -> getGlobalNames -> txt[];
+          INNER;
+       exit txt[]
+       #);
+     getElementsToAddToGroupWithThisElement:<
+       (# theElements: ^PageElementList;
+          theGroup: ^Group;
+       enter theGroup[]
+       do &PageElementList[] -> theElements[];
+          (getInscriptions).scan
+          (# 
+          do current[] -> theElements.append;
+          #);
+          INNER;
+       exit theElements[]
+       #);
+     
+     fadeError:
+       (#
+       <<SLOT PageElementFadeError:doPart>>
+       #);
+     updateError:
+       (#
+       <<SLOT PageElementUpdateError:doPart>>
+       #);
+     hideError:
+       (# 
+       <<SLOT PageElementHideError:doPart>>
+       #);
+     showError:
+       (# 
+       do (if qerror[] <> NONE then
+              qerror.show;
+          if);
+       #);
+     
+     lineColor: ^Color;
+     fillColor: ^Color;
+     textColor: ^Color;
+     bold: @boolean;
+     fillpattern: ^Text;
+     (* bold and fillpattern are not used *)
+     filled: @boolean;
+     (* is the pageelement filled or not *)
+     linetype: ^Text;
+     strokeWidth: @Real;
+     
+     setCPNPage:<
+       (# theCPNPage: ^CPNPage;
+       enter theCPNPage[]
+       <<SLOT PageElementSetCPNPage:doPart>>
+       #);
+     getCPNPage:<
+       (# theCPNPage: ^CPNPage;
+       <<SLOT PageElementGetCPNPage:doPart>>
+       exit theCPNPage[]
+       #);
+     getCPNet:
+       (# theCPNet: ^CPNet;
+       <<SLOT PageElementGetCPNet:DoPart>>
+       exit theCPNet[]
+       #);
+     net:
+       (# theNet: ^CPNet;
+       <<SLOT PageElementNet: doPart>>
+       exit theNet[]
+       #);
+     PositionForSave:<
+       (# xx, yy: @real;
+       <<SLOT PageElementPositionForSave: doPart>>
+       exit (xx, yy)
+       #);
+     
+     
+     
+     SetColor:< 
+       (# newColor: ^Color;
+       enter newColor[]   
+       <<SLOT PageElementSetColor:doPart>>
+       #);
+     
+     GetColor:< 
+       (# theColor: ^Color;
+       <<SLOT PageElementGetColor:doPart>>
+       exit theColor[]
+       #);
+     
+     SetFill:<
+       (# fill: @Boolean;
+       enter filled
+       <<SLOT PageElementSetFill:doPart>>
+       #);
+     
+     GetInscriptions:< 
+       (# theList: ^InscriptionList;
+       <<SLOT PageElementGetInscriptions:doPart>>
+       exit theList[]
+       #);
+     
+     GetHierarchyInfos:<
+       (# theList: ^HierarchyInfoList;
+       <<SLOT PageElementGetHierarchyInfos:doPart>>
+       exit theList[]
+       #);
+     getRegions::<
+       (# <<SLOT PageElementGetRegions:doPart>> #);
+     GetSlaves:< 
+       (# theList: ^PageElementList;
+       <<SLOT PageElementGetSlaves:doPart>>
+       exit theList[]
+       #);    
+     print:< 
+       (# ItemType:< Item;
+          theItem: ^ItemType;
+       <<SLOT PageElementprint:doPart>>
+       exit theItem[]
+       #);
+     
+     
+     lolite::< 
+       (# 
+       <<SLOT PageElementlolite:doPart>>
+       #);
+     
+     hilite::< 
+       (# 
+       <<SLOT PageElementhilite:doPart>>
+       #);
+
+     isLolited: booleanValue 
+       (# <<SLOT PageElementisLolited:doPart>> #);
+     
+     clone::< 
+       (# Type::< PageElement;
+       <<SLOT PageElementclone:doPart>>
+       #);
+     
+     init::< (# <<SLOT PageElementinit:doPart>> #);
+     
+     deleteFromPage:< (# <<SLOT PageElementDeleteFromPage:doPart>> #);
+     delete:< (# <<SLOT PageElementdelete:doPart>> #);
+     
+     intersect:< 
+       (# x, y: @real;
+          p: ^Point2d;
+          q: ^Point2d;
+       enter (x, y)
+       do (x,y) -> MakePoint -> q[];
+          INNER;
+       exit q[]
+       #);
+     
+     bounds::< (# <<SLOT PageElementBounds:doPart>> #);
+
+     recursiveBounds: 
+       (# boundX1,boundY1,boundX2,boundY2: @Real;
+       <<SLOT PageELementrecursiveBounds:doPart>>
+       exit(boundX1,boundX2,boundY1,boundY2)
+       #);
+     
+     onChanged::< (# <<SLOT PageELementonChanged:doPart>> #);
+     
+     makeShape:< 
+       (# ItemType:< Item;
+          theItem: ^ItemType;
+          theStyle: ^CompleteStyle;
+          thePatternStyle: ^PatternStyle;
+          theItemStyle: ^CompositeStyle;
+       <<SLOT PageElementmakeShape:doPart>>
+       exit theItem[]
+       #);
+     
+     update::< (# <<SLOT PageElementupdate:doPart>> #);
+     
+     fileid: ^Text;
+     
+     startMove:< (# do INNER #);
+     stopMove:< (# do INNER #);
+     
+     startTextEditor:<
+       (# target: ^PageElement;
+       <<SLOT PageElementStartTextEditor: doPart>>
+       #);
+     getStyle:<
+       (# style: ^Properties;
+       do &Properties[] -> style[];
+          INNER
+       exit style[]
+       #);
+     setStyle:<
+       (# style: ^Properties;
+       enter style[]
+       do INNER
+       #);
+  #);
+scale:
+  (# in: @real;
+     out: @real;
+  enter in
+  do (if doscale then
+     in * cpnet_scale_factor -> out;
+      else
+         in -> out;
+     if);
+  exit out
+  #);
+
+unscale:
+  (# in: @real;
+     out: @real;
+  enter in
+  do in -> out;
+  exit out
+  #);
+
+Node: GuideLineSnapable
+  (# private: @<<SLOT NodePrivate:Descriptor>>;
+     
+     width: 
+       (# theWidth: @real;
+       enter (#
+             enter theWidth
+             <<SLOT NodeWidthSet: doPart>>
+             #)
+       <<SLOT NodeWidthGet: doPart>>
+       exit theWidth
+       #);
+     height: 
+       (# theHeight: @real;
+       enter (#
+             enter theHeight
+             <<SLOT NodeHeightSet: doPart>>
+             #)
+       <<SLOT NodeHeightGet: doPart>>
+       exit theHeight
+       #);
+     
+     theName: ^Text;
+     getNameWithNoWS:
+       (# name: ^Text;
+       <<SLOT NodeGetNameWithNoWS:DoPart>>
+       exit name[]
+       #);
+     allowReturn::trueObject;
+     label: ^TextItem;
+     addArc:<
+       (# theArc: ^Arc;
+       enter theArc[]
+       <<SLOT NodeAddArc:DoPart>>
+       #);
+     removeArc:<
+       (# theArc: ^Arc;
+       enter theArc[]
+       <<SLOT NodeRemoveArc:DoPart>>
+       #);     
+     scanArcs: 
+       (# current: ^Arc;
+       <<SLOT NodeScanArcs:doPart>>
+       #);
+     hasArcs: BooleanValue (# <<SLOT NodeHasArcs:DoPart>> #); 
+     scanNodeInstances:
+       (# current: ^NodeInstance;
+       <<SLOT NodeScanNodeInstances:DoPart>>
+       #);
+     scanSurroundingNodes:
+       (# current: ^Node;
+       <<SLOT NodeScanSurroundingNodes:DoPart>>
+       #);
+     SetColor::< 
+       (# theList: ^PageElementList; 
+       <<SLOT NodeSetColor:doPart>>
+       #);
+
+     
+     delete::< (# <<SLOT Nodedelete:doPart>> #);
+
+     Clone::< (# Type::< Node; <<SLOT NodeClone:doPart>> #);
+     
+     onSemanticChanged::< (# <<SLOT NodeonSemanticChanged:doPart>> #);
+     
+     nameChanged:
+       (# table: ^NameTable;
+       enter table[]
+       <<SLOT NodenameChanged:doPart>>
+       #);     
+     uses: @List (# element:: Decl; #);     
+     clearDependencies: (# <<SLOT NodeClearDependencies:DoPart>> #);     
+     status: @
+       (# s: @integer;
+       enter s 
+       exit s
+       #);
+     
+     statusMonitor:(# <<SLOT NodeStatusMonitor:doPart>> #);
+     
+     changeStatus:< statusMonitor
+       (# from, to, old_status: @integer;
+       enter (from, to)
+       <<SLOT NodeChangeStatus:doPart>>
+       #);
+     
+     checkedName: ^Text;
+     namestatus: @
+       (# status,newStatus: @integer;
+       enter (# enter newStatus <<SLOT NodeNameStatus:DoPart>> #)
+       exit status
+       #);
+     changeNameStatus: statusMonitor
+       (# from, to: @integer;
+       enter (from,to)
+       <<SLOT NodeChangeNameStatus:doPart>>
+       #);
+     
+     being_checked: 
+       (# exit (status=unchecked) or (status=checking) #);
+     being_compiled: 
+       (# exit (status=checked) or (status=compiling) #);
+     has_error: 
+       (# exit status=incorrect #);
+     name_error:
+       (# exit namestatus=incorrect #);
+     
+     onSyntaxError:< 
+       (# error: ^Text;
+       enter error[]
+       <<SLOT NodeonSyntaxError:doPart>>
+       #);
+     snapTo::
+       (# getWidth:: (# do width -> value; #);
+          getHeight:: (# do height -> value; #);
+       #);
+     getAnchors::< (# a, b: @Real; <<SLOT NodegetAnchors:doPart>> #);
+     makeShape::< (# <<SLOT NodemakeShape:doPart>> #);
+     
+     
+     presentAnchors: (# <<SLOT NodepresentAnchors:doPart>> #);
+     
+     makeLabel:< 
+       (# theTextItem: ^TextItem;
+          w, h: @Real;
+       <<SLOT NodemakeLabel:doPart>>
+       exit theTextItem[]
+       #);
+     
+     print::< 
+       (# ItemType:: Composite;
+       <<SLOT Nodeprint:doPart>>
+       #);
+     
+     update::< (# w, h: @Real; <<SLOT Nodeupdate:doPart>> #);
+     init::< (# <<SLOT Nodeinit:doPart>> #);
+     intersect::< (# <<SLOT NodeIntersect:doPart>> #);
+     bounds:: (# <<SLOT NodeBounds:doPart>> #);
+     getTextItem:: (# <<SLOT NodegetTextItem:doPart>> #);
+     onChanged::< (# <<SLOT NodeonChanged:doPart>> #);
+     onAdded::< (# <<SLOT NodeonAdded:doPart>> #);
+     
+     formatInscriptions: (# <<SLOT NodeformatInscriptions:doPart>> #);
+     formatHierarchyInfos: (# <<SLOT NodeformatHierarchyInfos:doPart>> #);
+     
+     snap::< 
+       (# snapList: ^PointList;
+          collectSnapList:<
+            (# 
+            <<SLOT NodeSnapCollectSnapList:doPart>>
+            #);
+       <<SLOT Nodesnap:doPart>>
+       #);     
+     getCurrentHighlight::< (# <<SLOT NodeGetCurrentHighlight:doPart>> #);
+     getStyle::<
+       (#
+       <<SLOT NodeGetStyle: doPart>>
+       #);
+     setStyle::<
+       (#
+       <<SLOT NodeSetStyle: doPart>>
+       #);
+
+     getIntersect:<
+       (# line: ^GeomLine;
+          intersect: ^Point2d;
+       enter line[]
+       do INNER;
+       exit intersect[]
+       #);
+     
+     layoutAttachmentPoints:<
+       (# getSourcePoint:<
+            (# theArc: ^Arc;
+               theSource: ^Point2d;
+            enter theArc[]
+            do INNER;
+            exit theSource[]
+            #);
+          setIncidentPoint:<
+            (# theIncidentPoint: ^Point2d;
+               theArc: ^Arc;
+            enter (theArc[],theIncidentPoint[])
+            do INNER;
+            #);
+          isArcLeftOfParallelArc:<
+            (# first,second: ^Arc;
+               result: @boolean;
+            enter (first[],second[])
+            do INNER;
+            exit result
+            #);
+       <<SLOT NodeLayoutAttachmentPoints: doPart>>
+       #);
+  #);
+
+Assignment: Element
+  (# private: @(# Port: ^Place; Socket: ^Place; SubTransition: ^Transition #);
+     init:
+       (# port, socket: ^Place;
+          subtransition: ^Transition;
+       enter (port[], socket[], subtransition[])
+       <<SLOT AssignmentInit:doPart>>
+       #);
+     toString:
+       (# str, port, socket, subtransition: ^Text;
+       <<SLOT AssignmentToString: doPart>>
+       exit str[]
+       #);
+     getPort: (# exit private.port[] #);     
+     getSocket: (# exit private.socket[] #);     
+     getSubTransition: (# exit private.subtransition[] #);     
+     delete: (# <<SLOT AssignmentDelete:doPart>> #);
+  #);
+
+Transition: CPNNode
+  (# private: @<<SLOT TransitionPrivate:Descriptor>>;
+     init:: (# <<SLOT TransitionInit:DoPart>> #);
+     error: ^Text;
+     editable:: (# do true->value; #);
+     setTransActionSyntaxError: 
+       (# error: @boolean;
+       enter error
+       <<SLOT TransitionSetTransActionSyntaxError:DoPart>>
+       #);
+
+     toString:: (# do 'Transition: %s ' -> str.putFormat (# do thename.copy -> s#); #);
+     
+     setCPNPage:: (# <<SLOT TransitionSetCPNPage:doPart>> #);
+     
+     deltaPositionOfBindingIndex: @
+       (# d: @Point2d;
+       enter (# enter d #)
+       exit (d.x, d.y)
+       #);
+     
+     getElementsToAddToGroupWithThisElement::
+       (# 
+       <<SLOT TransitionGetElementsToAddToGroupWithThisElement: doPart>>
+       #);
+     
+     scanInstances:
+       (# current: ^TransitionInstance;
+       <<SLOT TransitionScanInstances:doPart>>
+       #);
+     scanSubpageInstances:
+       (# theSubpageInstance: ^PageInstance;
+       <<SLOT TransitionScanSubpageInstances:doPart>>
+       #);
+     scanSurroundingPlaces:
+       (# current: ^Place;
+       <<SLOT TransitionScanSurroundingPlaces:DoPart>>          
+       #);
+     changeStatus:: (# <<SLOT TransitionChangeStatus:doPart>> #);
+     
+     menuName::<
+       (# 
+       do NamesPageMenuTransition -> getGlobalNames -> txt[];
+          INNER;
+       #);
+     
+     (* get all the elements that should be deleted together with this transition *)
+     getSlaves::< (# <<SLOT TransitiongetSlaves:doPart>> #); 
+     getInscriptions:: (# <<SLOT TransitionGetInscriptions:doPart>> #);
+     getHierarchyinfos:: (# <<SLOT TransitionGetHierarchyInfos:doPart>> #);
+     
+     getAnchors:: (# <<SLOT TransitiongetAnchors:doPart>> #);
+     
+     deleteFromPage:: (# do this(Transition)[] -> (getCPNPage).removeTransition; #);
+     delete:: (# <<SLOT Transitiondelete:doPart>> #);
+     
+     Clone::< (# Type:: Transition; <<SLOT TransitionClone:doPart>> #);     
+     next:: (# <<SLOT Transitionnext:doPart>> #);     
+
+     onTextUpdated:: (# <<SLOT TransitiononTextUpdated:doPart>> #); 
+     onFocusLost::< (# do INNER; #); 
+     onSemanticChanged:: (# <<SLOT TransitiononSemanticChanged:doPart>> #); 
+     onSyntaxError:: (# <<SLOT mlTransSyntaxError:doPart>> #); 
+     onChanged:: (# <<SLOT TransitiononChanged:doPart>> #);
+     
+     localCheck: 
+       (# names: ^TextList;
+       enter names[] 
+       <<SLOT TransitionlocalCheck:doPart>> 
+       #); 
+     
+     update:: (# do updateError; #);
+     
+     isSubstitutionTransition:
+       (# result: @boolean;
+       do (getSubpage <> NONE) -> result;
+       exit result
+       #);
+     isChannelTransition:
+       (# result: @boolean;
+       do ((getTransChannel <> NONE) and (NOT (getTransChannel).isDefaultInscription)) -> result;
+       exit result
+       #);
+     isRegularTransition:
+       (# result: @boolean;
+       do ((NOT isSubstitutionTransition) and (NOT isChannelTransition)) -> result;
+       exit result
+       #);
+     getTransGuard: 
+       (# theTransGuard: ^TransGuard;
+       <<SLOT TransitionGetTransGuard:doPart>>
+       exit theTransGuard[]
+       #);     
+     getTransTime: 
+       (# theTransTime: ^TransTime;
+       <<SLOT TransitionGetTransTime:doPart>>
+       exit theTransTime[]
+       #);     
+     getTransAction: 
+       (# theTransAction: ^TransAction;
+       <<SLOT TransitionGetTransAction:doPart>>
+       exit theTransAction[]
+       #);     
+     getTransChannel: 
+       (# theTransChannel: ^TransChannel;
+       <<SLOT TransitionGetTransChannel:doPart>>
+       exit theTransChannel[]
+       #);     
+     getTransPriority: 
+       (# theTransPriority: ^TransPriority;
+       <<SLOT TransitionGetTransPriority:doPart>>
+       exit theTransPriority[]
+       #);     
+     getSubPageInfo: 
+       (# theSubPageInfo: ^SubPageInfo;
+       <<SLOT TransitiongetSubPageInfo:dopart>>
+       exit theSubPageInfo[]
+       #);     
+     getSubpage:
+       (# theSubpage: ^CPNPage;
+       <<SLOT TransitionGetSubpage:doPart>>
+       exit theSubpage[]
+       #);
+     setSubPageInfo:
+       (# theSubPageInfo: ^SubPageInfo;
+       enter theSubPageInfo[]
+       <<SLOT TransitionSetSubPageInfo:doPart>>
+       #);
+     setTransGuard: 
+       (# theTransGuard: ^TransGuard;
+       enter theTransGuard[]
+       <<SLOT TransitionSetTransGuard:dopart>>
+       #);     
+     setTransTime: 
+       (# theTransTime: ^TransTime;
+       enter theTransTime[]
+       <<SLOT TransitionSetTransTime:dopart>>
+       #);     
+     setTransAction: 
+       (# theTransAction: ^TransAction;
+       enter theTransAction[]
+       <<SLOT TransitionSetTransAction:dopart>>
+       #);   
+     setTransChannel: 
+       (# theTransChannel: ^TransChannel;
+       enter theTransChannel[]
+       <<SLOT TransitionSetTransChannel:dopart>>
+       #);   
+     setTransPriority: 
+       (# theTransPriority: ^TransPriority;
+       enter theTransPriority[]
+       <<SLOT TransitionSetTransPriority:dopart>>
+       #);   
+     setSubpage:
+       (# theSubpage: ^CPNPage;
+       enter theSubpage[]
+       <<SLOT TransitionSetSubpage:doPart>>
+       #);
+     createSubPageInfo: 
+       (# theSubPageInfo: ^SubPageInfo;
+          cpnml: ^Text;
+       enter cpnml[]
+       <<SLOT TransitioncreateSubPageInfo:dopart>>
+       exit theSubPageInfo[]
+       #);
+     hasSubpageInfo: BooleanValue
+       (# <<SLOT TransitionHasSubpageInfo:doPart>> #);
+     isSubstituationTransition: BooleanValue
+       (# <<SLOT TransitionIsSubstituationTransition:doPart>> #);
+     SocketPlaces: @List
+       (# Element:: Assignment;
+          equal::< (* must have this to prevent duplicates, #1064*)
+            (# 
+            do ((left.getPort).id[] -> (right.getPort).id.equal) and
+               ((left.getSocket).id[] -> (right.getSocket).id.equal)-> value; 
+            #);
+       #);
+     RemovePortSocketAssignment:
+       (# A: ^Assignment;
+       enter A[]
+       <<SLOT TransitionRemovePortSocketAssignment:dopart>>
+       #);
+     
+     AddPortSocketAssignment:
+       (# port, socket: ^Place;
+          A: ^Assignment;          
+       enter (port[], socket[])
+       <<SLOT TransitionAddPortSocketAssignment: dopart>>
+       #);
+     
+     SetPortSocketPair: 
+       (# P1, P2: ^Place;
+       enter (P1[], P2[])
+       <<SLOT TransitionSetPortSocketPair: dopart>>
+       #);
+     
+     Intersect:: 
+       (# w, h,  x0, y0: @Real;
+          pos: ^Point2d;
+       <<SLOT TransitionIntersect: dopart>>
+       #);
+     makeShape:: 
+       (# ItemType:: Composite;
+       <<SLOT TransitionMakeShape:DoPart>>
+       #);
+     getIntersect:: 
+       (# <<SLOT TransitionGetIntersect:doPart>> #);
+     snap:: 
+       (# collectSnapList:: 
+            (# 
+            do scanArcs
+               (#
+               do 
+                  (if (current.points[] <> NONE) AND (current.points.size>2) then
+                      2 -> current.points.get -> snaplist.append;
+                   else
+                      (current.placeEnd.x,current.placeEnd.y)->MakePoint->snaplist.append;
+                  if);
+               #);
+            #);
+       #);
+     layoutAttachmentPoints::
+       (# getSourcePoint::
+            (#
+            <<SLOT TransitionGetSourcePoint: doPart>>
+            #);
+          setIncidentPoint::
+            (#
+            <<SLOT TransitionSetIncidentPoint: doPart>>
+            #);
+          isArcLeftOfParallelArc::
+            (#
+            do first.getOrder > second.getOrder -> result;
+            #);
+       #);
+     isExplicit: BooleanValue
+       (# <<SLOT TransitionIsExplicit:DoPart>> #);
+     setExplicit:
+       (# explicit: @boolean;
+       enter explicit
+       <<SLOT TransitionSetImplicit:DoPart>>
+       #);
+  #);
+
+
+FusionSet: Notifier
+  (# private:@<<SLOT FusionSetPrivate:descriptor>>;
+     net: ^CPNet;
+     propagatingChanges: @Boolean;
+
+     init::< 
+       (# thePlaceList: ^PlaceList;
+       enter thePlaceList[]
+       <<SLOT FusionSetInit:doPart>>
+       #);
+     size: IntegerValue (# <<SLOT FusionSetSize:doPart>> #);
+     has: booleanValue
+       (# thePlace: ^Place;
+       enter thePlace[]
+       <<SLOT FusionSetHas:doPart>>
+       #);
+     setName:
+       (# theName: ^Text;
+       enter theName[]
+       <<SLOT FusionSetSetName:doPart>>
+       #);
+     getName: 
+       (# theName: ^Text;
+       <<SLOT FusionSetGetName:doPart>>
+       exit theName[] 
+       #);
+     setPlaceType:
+       (# thePlaceType: ^PlaceType;
+       enter thePlaceType[]
+       <<SLOT FusionSetSetPlaceType:doPart>>
+       #);
+     getPlaceType:
+       (# thePlaceType: ^PlaceType;
+       <<SLOT FusionSetGetPlaceType:doPart>>
+       exit thePlaceType[]
+       #);
+     setInitMark:
+       (# theInitMark: ^InitMark;
+       enter theInitMark[]
+       <<SLOT FusionSetSetInitMark:doPart>>
+       #);
+     getInitMark:
+       (# theInitMark: ^InitMark;
+       <<SLOT FusionSetGetInitMark:doPart>>
+       exit theInitMark[]
+       #);
+     scanFusionSet:
+       (# current: ^Place;
+       <<SLOT FusionSetScanFusionSet:doPart>>
+       #);
+     addPlace:
+       (# thePlace: ^Place;
+       enter thePlace[]
+       <<SLOT FusionSetAddPlace:doPart>>
+       #);
+     removePlace:
+       (# thePlace: ^Place;
+       enter thePlace[]
+       <<SLOT FusionSetRemovePlace:doPart>>
+       #);
+
+     (* Used to propagate semanticChanged events to all members of
+      * a fusion group if one of the group members changes. *)
+     propagateChanges: (# <<SLOT FusionSetPropagateChanges:doPart>> #);
+     
+  #);
+
+Place: CPNNode
+  (# private: @<<SLOT PlacePrivate:Descriptor>>;
+     setCPNPage:: (# <<SLOT PlaceSetCPNPage:doPart>> #);     
+     editable:: (# do true->value; #);
+     hidemarkings: @boolean;
+     menuName::<
+       (# 
+       do NamesPageMenuPlace -> getGlobalNames -> txt[];
+          INNER;
+       #);
+     toString:: (# <<SLOT PlaceToString:doPart>> #);
+     scanInstances:
+       (# current: ^PlaceInstance;
+       <<SLOT PlaceScanInstances:doPart>>
+       #);
+     scanSurroundingTransitions:
+       (# current: ^Transition;
+       <<SLOT PlaceScanSurroundingTransitions:DoPart>>
+       #);
+     lookupSubstitutionTransition: lookup
+       (# Element:: Transition;
+       <<SLOT PlaceLookupSubstitutionTransition:DoPart>>
+       #);
+               
+     getElementsToAddToGroupWithThisElement::
+       (# 
+       do (if theGroup[]<>NONE then
+              scanArcs
+              (# 
+              do (if current.transEnd[] -> theGroup.isMember then
+                     current[] -> theElements.append;
+                     (current.getInscriptions).scan
+                     (# 
+                     do current[] -> theElements.append;
+                     #);
+                 if);
+              #);
+          if);
+       #);
+     hasAssignments: BooleanValue (# <<SLOT PlaceHasAssignments:DoPart>> #);    
+     portPlaceHasChangedType: (# <<SLOT PlacePortPlaceHasChangedType:DoPart>> #);
+     changedAssignmentToSocket: (# <<SLOT PlaceChangedAssignmentToSocket:DoPart>> #);
+     setAssignmentGraphError: 
+       (# error: @boolean
+       enter error
+       <<SLOT PlaceSetAssignmentGraphError:DoPart>>
+       #);
+     hasAssignmentGraphError: @BooleanValue (# <<SLOT PlaceHasAssignmentGraphError:DoPart>> #);
+     hasSyntaxError: BooleanValue
+       (# <<SLOT PlaceHasSyntaxError:DoPart>> #);
+     semanticChangedOnPlaceAndSubstitutionTransitions:
+       (# 
+       <<SLOT PlaceSemanticChangedOnPlaceAndSubstitutionTransitions:doPart>> 
+       #);
+     semanticChangedOnPlaceGraph:
+       (# <<SLOT PlaceSemanticChangedOnPlaceGraph:doPart>> #);
+     semanticChangedOnPlaceSubtree: 
+       (# <<SLOT PlaceSemanticChangedOnPlaceSubtree:doPart>> #);
+     scanAllReachablePlaces:
+       (# current: ^Place;
+       <<SLOT PlaceScanAllReachablePlaces:doPart>>
+       #);
+     scanPlaceSubtree:
+       (# current: ^Place;
+       <<SLOT PlaceScanPlaceSubtree:doPart>>
+       #);
+     setPlaceTypeOfAssignmentGraph: 
+       (# cpnml: ^Text;
+       enter cpnml[]
+       <<SLOT PlacesetPlaceTypeOfAssignmentGraph:doPart>>
+       #);
+     Connected: BooleanValue
+       (# theTrans: ^Transition;
+          theList: ^pageElementList;
+          (* This pattern checks if the place is connected to
+           * other transitions than the one entered. If the
+           * entered transition is none, it just checks if
+           * the place is connected to any transitions at all.
+           *)
+       enter theTrans[]
+       <<SLOT PlaceConnected:doPart>>
+       #);
+     notAssignedToSubpageError: @boolean;
+     tokenDelta: @Point2d;
+     
+     packTokenDelta:
+       (# dx, dy: @real;
+       <<SLOT PlacePackTokenDelta:doPart>>
+       exit (dx, dy)
+       #);
+     unPackTokenDelta:
+       (# dx, dy: @real;
+       enter (dx, dy)
+       <<SLOT PlaceUnPackTokenDelta:doPart>>
+       #);
+     
+     tokenSnapId: @integer;
+     
+     markingSnapId: @integer;
+     markingAnchorHorizontal: @integer;
+     markingAnchorVertical: @integer;
+     
+     
+     packMarkingDelta:
+       (# dx, dy: @real;
+       <<SLOT PlacePackMarkingDelta:doPart>>
+       exit (dx, dy)
+       #);
+     unPackMarkingDelta:
+       (# dx, dy: @real;
+       enter (dx, dy)
+       <<SLOT PlaceUnPackMarkingDelta:doPart>>
+       #);
+     
+     markingDelta: @Point2d;
+     portIsGenerated: @boolean;
+     localCheck: 
+       (# names: ^TextList;          
+       enter names[]
+       <<SLOT PlacelocalCheck:doPart>>
+       #);
+     getSlaves:: (# <<SLOT PlacegetSlaves:doPart>> #);
+     getInscriptions:: (# <<SLOT PlaceGetInscriptions:doPart>> #);
+     getHierarchyinfos:: (# <<SLOT PlaceGetHierarchyInfos:doPart>> #);
+     getAnchors:: 
+       (# 
+       <<SLOT PlaceGetAnchors: doPart>>
+       #);     
+     deleteFromPage:: (# do this(Place)[] -> (getCPNPage).removePlace; #);
+     delete:: (# <<SLOT Placedelete:doPart>> #);     
+     SetPortType: 
+       (# thePortType: ^PortType;
+       enter thePortType[]
+       <<SLOT PlaceSetPortType:doPart>>
+       #);     
+     Clone::
+       (# Type:: Place;
+       <<SLOT PlaceClone:doPart>> 
+       #);
+     setPlaceType:
+       (# thePlaceType: ^PlaceType;
+       enter thePlaceType[]
+       <<SLOT PlaceSetPlaceType:doPart>>       
+       #);
+     setFusionSet:
+       (# theFusionSet: ^FusionSet;
+       enter theFusionSet[]
+       <<SLOT PlaceSetFusionSet:doPart>>
+       #);
+     getFusionSet:
+       (# theFusionSet: ^FusionSet;
+       <<SLOT PlaceGetFusionSet:doPart>>          
+       exit theFusionSet[]
+       #);
+     getPlaceType: 
+       (# thePlaceType: ^PlaceType;
+       <<SLOT PlaceGetPlaceType:doPart>>       
+       exit thePlaceType[]
+       #);
+     setInitMark: 
+       (# theInitMark: ^InitMark;
+       enter theInitMark[]
+       <<SLOT PlaceSetInitMark:doPart>>
+       #);
+     getInitMark: 
+       (# theInitMark: ^InitMark;
+       <<SLOT PlaceGetInitMark:doPart>>
+       exit theInitMark[]
+       #);    
+     getPortType:
+       (# thePortType: ^PortType;
+       <<SLOT PlaceGetPortType:doPart>>
+       exit thePortType[]
+       #);
+     hasPortType: BooleanValue
+       (# <<SLOT PlaceHasPortType:doPart>> #);
+     createPortType: 
+       (# thePortType: ^PortType;
+          cpnml: ^Text;
+       enter cpnml[]
+       <<SLOT PlacecreatePortType:doPart>>
+       exit thePortType[]
+       #);     
+     getFusionInfo:
+       (# theFusionInfo: ^FusionInfo;
+       <<SLOT PlaceGetFusionInfo:doPart>>
+       exit theFusionInfo[]
+       #);
+     setFusionInfo: 
+       (# theFusionInfo: ^FusionInfo;
+       enter theFusionInfo[]
+       <<SLOT PlaceSetFusionInfo:doPart>>
+       #);
+     createFusionInfo:
+       (# theFusionInfo: ^FusionInfo;
+          cpnml: ^Text;
+       enter cpnml[]
+       <<SLOT PlaceCreateFusionInfo:doPart>>
+       exit theFusionInfo[]
+       #);
+     isFusionPlace: BooleanValue (# <<SLOT PlaceIsFusionPlace:doPart>> #);          
+     removeFusionInfo: (# <<SLOT PlaceRemoveFusionInfo:doPart>> #);
+     addAssignment:
+       (# theAssignment: ^Assignment;
+       enter theAssignment[]
+       <<SLOT PlaceAddAssignment:DoPart>>
+       #);
+     removeAssignment:
+       (# theAssignment: ^Assignment;
+       enter theAssignment[]
+       <<SLOT PlaceRemoveAssignment:DoPart>>
+       #);
+     addArc:: (# <<SLOT PlaceAddArc:DoPart>> #);
+     removeArc:: (# <<SLOT PlaceRemoveArc:DoPart>> #);
+     next:: (# <<SLOT Placenext:doPart>> #);         
+     onFocusLost::< (# do INNER; #);     
+     onTextUpdated:: (# <<SLOT PlaceonTextUpdated:doPart>> #);     
+     onSemanticChanged:: (# <<SLOT PlaceonSemanticChanged:doPart>> #);     
+     onSyntaxError:: (# <<SLOT mlPlaceSyntaxError:DoPart>> #);     
+     update:: (# do updateError; #);
+     getCurrentHighlight:: (# <<SLOT PlaceGetCurrentHighlight:DoPart>> #);
+     intersect:: 
+       (# a, b, angle: @Real;
+          x0, y0: @Real;
+          pos: ^Point2d;
+          cosa, sina: @real;
+       <<SLOT Placeintersect:doPart>>
+       #);
+     
+     makeShape:: 
+       (# ItemType:: Ellipse;
+       do width -> theItem.width;
+          height -> theItem.height;
+       #);
+     getIntersect::
+       (# <<SLOT PlaceGetIntersect:doPart>> #);
+     snap:: 
+       (# collectSnapList:: (# <<SLOT PlaceSnapCollectSnapList:doPart>> #); #);
+     
+     onChanged:: (# <<SLOT PlaceOnChanged:doPart>> #);
+
+     scanAssignments:
+       (# current: ^Assignment;
+       <<SLOT PlacescanAssignments:doPart>>
+       #);
+     scanPorts:
+       (# current: ^Place;
+       <<SLOT PlacescanPorts:doPart>>
+       #);
+     scanSockets:
+       (# current: ^Place;
+       <<SLOT PlacescanSockets:doPart>>
+       #);
+     scanSubstitutionTransitions:
+       (# current: ^Transition;
+       <<SLOT PlaceScanSubstitutionTransitions:DoPart>>
+       #);
+     scanFusionSet:
+       (# current: ^Place;
+       <<SLOT PlacescanFusionSet:doPart>>
+       #);
+     calculatePortType:
+       (# thePortType: ^Text;
+       <<SLOT PlaceCalculatePortType:doPart>>
+       exit thePortType[]
+       #);
+     initMarkChanged: (# <<SLOT PlaceInitMarkChanged:doPart>>#);
+     init:: (# <<SLOT PlaceInit:DoPart>> #);
+     layoutAttachmentPoints::
+       (# getSourcePoint::
+            (#
+            do &Point2d[] -> theSource[];
+               (if (theArc.getBends = NONE) or (theArc.getBends).empty then
+                   (if theArc.transEnd[] <> NONE then
+                       theArc.transEnd.position -> theSource;
+                   if);
+                else
+                   ((theArc.getBends).last).getPoint2d -> theSource[];
+               if);
+            #);
+          setIncidentPoint::
+            (#
+            do theIncidentPoint[] -> theArc.placeIncidentPoint[];
+               (if NOT theArc.moving then
+                   (# bends: ^BendPointList;
+                      first: ^BendPoint;
+                      w, h: @integer;
+                   do theArc.getBends -> bends[];
+                      (if bends[] <> NONE then
+                          (if not bends.empty then
+                              width -> w;
+                              height -> h;
+                              bends.first -> first[];
+                              (if (first.x > (x - w/2 - 10)) and (first.x < (x + w/2 + 10)) then
+                                  theIncidentPoint.x -> first.x;
+                              if);
+                              (if (first.y > (y - h/2 - 10)) and (first.y < (y + h/2 + 10)) then
+                                  theIncidentPoint.y -> first.y;
+                              if);
+                          if);
+                      if);
+                   #);
+               if);
+            #);
+          isArcLeftOfParallelArc::
+            (#
+            do first.getOrder < second.getOrder -> result;
+            #);
+       #);
+  #);
+
+BothDir: (# exit 1 #);
+PtoT: (# exit 2 #);
+TtoP: (# exit 3 #);
+
+ArcDistance: (# exit 14 #);
+
+(*
+ * Arc
+ *)
+Arc: PageElement
+  (# <<SLOT ArcAttributes: attributes>>;
+     private: @<<SLOT ArcPrivate:Descriptor>>;
+     setCPNPage::(# <<SLOT ArcSetCPNPage:doPart>> #);
+     getBends:
+       (# theBends: ^BendPointList;
+       <<SLOT ArcGetBends: doPart>>
+       exit theBends[]
+       #);
+     setBends:
+       (# theBends: ^BendPointList;
+       enter theBends[]
+       <<SLOT ArcSetBends: doPart>>
+       #);
+     scanBendPoints: 
+       (# current: ^BendPoint;
+       <<SLOT ArcScanBendPoints:doPart>>
+       #);
+     scanInstances: 
+       (# current: ^ArcInstance;
+       <<SLOT ArcScanInstances:DoPart>>
+       #);
+     menuName::< (# do NamesPageMenuArc -> getGlobalNames -> txt[]; INNER; #);
+     allowReturn:: trueObject;
+     placeEnd: ^Node;
+     transEnd: ^Node;
+     placeIncidentPoint, transIncidentPoint: ^Point2d;
+     points: ^PointList;
+     editable:: (# do true -> value #);
+     status: @integer;
+     arrowHeadSize: @real;
+     currentSize: @Real;
+     
+     
+     NodeObserver: @Element
+       (#
+          onChanged:: (#  do update; #);
+       #);
+     
+     setOrder:
+       (# order: @integer;
+       enter order
+       <<SLOT ArcSetOrder: doPart>>
+       #);
+     
+     getOrder:
+       (# order: @integer;
+       <<SLOT ArcGetOrder: doPart>>
+       exit order
+       #);
+     
+     scanParallelArcs:
+       (# current: ^Arc;
+       <<SLOT ArcScanParallelArcs: doPart>>
+       #);
+     
+     countParallelArcs:
+       (# count: @integer;
+       <<SLOT ArcCountParallelArcs: doPart>>
+       exit count
+       #);
+     
+     isParallelWith:
+       (# other: ^Arc;
+          result: @boolean;
+       enter other[]
+       <<SLOT ArcIsParallelWith: doPart>>
+       exit result
+       #);
+     
+     scanSiblings:
+       (# current: ^Arc;
+       <<SLOT ArcScanSiblings: doPart>>
+       #);
+     
+     countSiblings:
+       (# count: @integer;
+       <<SLOT ArcCountSiblings: doPart>>
+       exit count
+       #);
+     
+     decreaseOrder:
+       (#
+       <<SLOT ArcDecreaseOrder: doPart>>
+       #);
+     
+     increaseOrder:
+       (#
+       <<SLOT ArcIncreaseOrder: doPart>>
+       #);
+     
+     normalizeOrder:
+       (# 
+       <<SLOT ArcNormalizeOrder: doPart>>
+       #);
+     applyDefaultOrder:
+       (#
+       <<SLOT ArcApplyDefaultOrder: doPart>>
+       #);
+     
+     
+     setOrientation: 
+       (# newOrientation: @integer;
+       enter newOrientation
+       <<SLOT ArcSetOrientation:DoPart>> 
+       #);
+     getOrientation: IntegerValue
+       (# <<SLOT ArcGetOrientation:DoPart>> #);
+     startTextEditor:: (# <<SLOT ArcStartTextEditor:doPart>> #);
+     addBendPoint:
+       (# theBendPoint: ^BendPoint;
+       enter theBendPoint[]
+       <<SLOT ArcAddBendPoint:doPart>>
+       #);
+     removeBendPoint:
+       (# theBendPoint: ^BendPoint;
+       enter theBendPoint[]
+       <<SLOT ArcRemoveBendPoint:doPart>>
+       #);
+
+     SetColor::< (# elm: ^Inscription; <<SLOT ArcSetColor:doPart>> #); 
+     deleteFromPage::< (# <<SLOT ArcDeleteFromPage:DoPart>> #);
+     delete:: (# <<SLOT ArcDelete:doPart>> #); 
+     Clone::< (# Type:: Arc; <<SLOT ArcClone:doPart>> #);
+     toString:: (# <<SLOT ArcToString:doPart>> #);
+     setPlaceEnd: 
+       (# newPlaceEnd: ^Node; enter newPlaceEnd[] <<SLOT ArcSetPlaceEnd:doPart>> #);
+     getPlaceEnd:
+       (# thePlaceEnd: ^Place;
+       do placeEnd[] -> thePlaceEnd[];
+       exit thePlaceEnd[]
+       #);
+     setTransEnd: 
+       (# newTransEnd: ^Node; enter newTransEnd[] <<SLOT ArcSetTransEnd:doPart>> #);
+     getTransEnd:
+       (# theTransEnd: ^Transition;
+       do transEnd[] -> theTransEnd[];
+       exit theTransEnd[]
+       #);
+     getAnnotation: 
+       (# theAnnotation: ^Annotation; <<SLOT ArcGetAnnotation:doPart>> exit theAnnotation[] #);
+     setAnnotation: 
+       (# theAnnotation: ^Annotation; enter theAnnotation[] <<SLOT ArcSetAnnotation:doPart>> #);
+     (* Moved here from moveinstruments *)
+     createAttachedAnnotation: 
+       (# theAnnotation: ^Annotation;
+          cpnml: ^Text;
+       enter cpnml[]
+       <<SLOT ArcCreateAttachedAnnotation:doPart>>
+       exit theAnnotation[]
+       #);
+     computePoints:
+       (# <<SLOT ArcComputePoints:doPart>> #);
+     computeInitialAttachPoint:
+       (# theAnnotation: ^Annotation; enter theAnnotation[] <<SLOT ArcComputeInitialAttachPoint:doPart>> #);
+     straighten: (# <<SLOT ArcStraighten:doPart>> #);
+     onSyntaxError: (# error: ^text; enter error[] <<SLOT mlArcSyntaxError:doPart>> #);
+     onSemanticChanged:: (# <<SLOT ArcOnSemanticChanged:doPart>> #);
+     bounds:: (# <<SLOT ArcBounds:doPart>> #);
+     getCurrentHighlight:: (# <<SLOT ArcGetCurrentHighlight:doPart>> #); 
+     getInscriptions:: (# <<SLOT ArcGetInscriptions:doPart>> #);
+     presenthalo: (# <<SLOT ArcPresentHalo:doPart>> #);
+     init::< (# <<SLOT ArcInit:doPart>> #);
+     makeShape::< (# ItemType:: Line; <<SLOT ArcmakeShape:doPart>> #);
+     onChanged::< (# theAnnotation: ^Annotation; <<SLOT ArcOnChanged:doPart>> #);
+     update::< (# <<SLOT ArcUpdate:doPart>> #);
+     print:: (# ItemType:: Composite; <<SLOT Arcprint:doPart>> #); 
+     setMark:
+       (# p: ^Point2d;
+       enter p[]
+       <<SLOT ArcSetMark: doPart>>
+       #);
+     getStyle::
+       (#
+          <<SLOT ArcGetStyle: doPart>>
+       #);
+     setStyle::
+       (#
+       <<SLOT ArcSetStyle: doPart>>
+       #);
+     moving: @boolean;
+  #);
+
+(* Models a BendPoint *)
+BendPoint: GuideLineSnapable
+  (# private: @<<SLOT BendPointPrivate:Descriptor>>;
+     serial: @integer;
+     
+     getNextBendPoint:
+       (# theBendPoint: ^BendPoint;
+       <<SLOT BendPointGetNextBendPoint: doPart>>
+       exit theBendPoint[]
+       #);
+     getPreviousBendPoint:
+       (# theBendPoint: ^BendPoint;
+       <<SLOT BendPointGetPreviousBendPoint: doPart>>
+       exit theBendPoint[]
+       #);
+     setArc:
+       (# theArc: ^Arc;
+       enter theArc[]
+       <<SLOT BendPointSetArc:doPart>>
+       #);
+     getArc:
+       (# theArc: ^Arc;
+       <<SLOT BendPointGetArc:doPart>>
+       exit theArc[]
+       #);
+     
+     (* returns the Point2d coresponding to nextBendPoint *)
+     nextPoint2d: 
+       (# p: ^Point2d;
+          midpoint: @boolean;
+       enter midpoint
+       <<SLOT BendPointNextPoint2d:doPart>>
+       exit p[]
+       #);
+     (* same as for nextPoint2d *)
+     previousPoint2d: 
+       (# p: ^Point2d;
+          midpoint: @boolean;
+       enter midpoint
+       <<SLOT BendPointPreviousPoint2d:doPart>>
+       exit p[]
+       #);
+     getPoint2d:
+       (# p: ^Point2d;
+       do &Point2d[] -> p[];
+          XY -> p;
+       exit p[]
+       #);
+     
+     XY: (* Sets og gets x,y coordinates for BendPoint *)
+       (# 
+       enter (# enter (x,y) do changed; #)
+       exit (x,y)
+       #);
+     onChanged::< (# <<SLOT BendPointOnChanged:doPart>> #);
+     
+     clone::<
+       (# Type:: BendPoint;
+       <<SLOT BendPointClone: doPart>>
+       #);
+     
+     snap:: (* used for snapping points *)
+       (# 
+       <<SLOT BendPointSnap: doPart>>
+       #);
+     (* removes the bendpoint from the arc and the internal list *)
+     delete::< (# <<SLOT BendPointDelete:doPart>> #);
+     isStraight: booleanValue
+       (# c, p, q:^Point2d;
+          cp, cq, pq: @real;
+       do false->value;
+          getPoint2d->c[];
+          nextPoint2d->q[];
+          previousPoint2d->p[];
+          (if (q[]<>NONE) AND (p[]<>NONE) then
+              (c[], q[])->PointDist->cp;
+              (c[], p[])->PointDist->cq;
+              (q[], p[])->PointDist->pq;
+              (pq*1.005 > (cp + cq)) -> value;
+          if);
+       #);
+     
+  #);
+
+BendPointList: Sequence 
+  (# element:: BendPoint;
+     at:
+       (# elm: ^Element;
+          pos: @integer;
+       enter elm[]
+       do search: scan
+            (#
+            do pos+1 -> pos;
+               (if current[] = elm[] then
+                   leave search;
+               if);
+            #);
+       exit pos
+       #);
+     
+     sortBySerial: sort
+       (# less::
+            (#
+            do left.serial < right.serial -> value;
+            #);
+       #);
+     copy: 
+       (# new: ^BendPointList; 
+       <<SLOT BendPointListCopy:doPart>> 
+       exit new[]
+       #);
+  #);
+
+
+LeftJustify: (# exit 1 #);
+RightJustify: (# exit 2 #);
+CenterJustify: (# exit 3 #);
+TopJustify: (# exit 1 #);
+BottomJustify: (# exit 2 #);
+
+removeMessageBubble:
+  (# target: ^PageElement;
+  enter target[]
+  <<SLOT RemoveMessageBubble:DoPart>>
+  #);
+
+MLEvaluateExpression:
+  (# target: ^PageElement;
+     theML: ^MLCom;
+     input: ^Text;
+     output: ^Text;
+     mlError, feedbackOnSucces: @Boolean;
+  enter (target[], theML[], input[], feedbackOnSucces)
+  <<SLOT MLEvaluateExpression:doPart>>
+  exit (output[], mlError)
+  #);
+
+Inscription: PageElement
+  (# private: @<<SLOT InscriptionPrivate:Descriptor>>;
+     IsAutoCompleteable:< BooleanObject;
+     toString::< (# do (getInscription).copy -> str[]; #); 
+     makeAutoCompletion:< Object;
+     theItem: ^TextItem;
+     editable:: trueObject;
+     menuName::<
+       (# 
+       do NamesPageMenuInscription -> getGlobalNames -> txt[];
+          INNER;
+       #);
+     clone::< (# type::< Inscription; <<SLOT InscriptionClone:doPart>> #);
+     DefaultSnap::< (# <<SLOT InscriptionDefaultSnap:doPart>> #);     
+     PositionForSave:: (# <<SLOT InscriptionPositionForSave:doPart>> #);
+     next::< (# <<SLOT InscriptionNext:doPart>> #);    
+     onFocusLost::< (# <<SLOT InscriptionOnFocusLost:doPart>> #);
+     createdUnchanged: @boolean;     
+     defaultInscription:<
+       (# theInscription: ^text;
+       do INNER;
+          (if theInscription[] = NONE then
+              '-' -> theInscription[];
+          if);
+       exit theInscription[]
+       #);
+     defaultInscriptionRegularExpression:< 
+       (# theRegularExpression: ^Text;
+       <<SLOT InscriptionDefaultInscriptionRegularExpression:DoPart>>
+       exit theRegularExpression[]
+       #);
+     isDefaultInscription: BooleanValue (# <<SLOT InscriptionIsDefaultInscription:doPart>> #);
+     delete::< (# <<SLOT InscriptionDelete:doPart>> #);
+     onTextUpdated::< (# <<SLOT InscriptionOnTextUpdated:doPart>> #);
+     onChanged::< (# <<SLOT InscriptionOnChanged:doPart>> #);
+     onSemanticChanged::< (# <<SLOT InscriptionOnSemanticChanged:doPart>> #);
+     update:: (# <<SLOT InscriptionUpdate:doPart>> #);
+     print:: (# ItemType:: TextItem; <<SLOT InscriptionPrint:doPart>> #);
+     getTextItem:: (# <<SLOT InscriptionGetTextItem:doPart>> #);
+     bounds:: (# <<SLOT InscriptionBounds:doPart>> #);     
+     
+     init::< (# <<SLOT InscriptionInit:doPart>> #);
+     setInscription:
+       (# cpnml: ^Text;
+       enter cpnml[]
+       <<SLOT InscriptionSetInscription:doPart>>      
+       #);
+     getInscription:
+       (# cpnml: ^Text;
+       <<SLOT InscriptionGetInscription:doPart>>
+       exit cpnml[]
+       #);
+     isBeingEdited: BooleanValue (# <<SLOT InscriptionIsBeingEdited:doPart>> #);
+     setEditingMode: 
+       (# edit: @boolean
+       enter edit
+       <<SLOT InscriptionsetEditingMode:doPart>>
+       #);
+     setTextItem: (# <<SLOT InscriptionSetTextItem:doPart>> #);
+     clearTextItem: (# <<SLOT InscriptionClearTextItem:doPart>> #);
+     isVisible:< BooleanValue (# <<SLOT InscriptionIsVisible:doPart>> #);
+     setAST: 
+       (# ast: ^Text;
+       enter ast[]
+       <<SLOT InscriptionSetAST:doPart>>
+       #);
+     getAST: 
+       (# ast: ^Text;
+       <<SLOT InscriptionGetAST:doPart>>
+       exit ast[]
+       #);
+     getStyle::<
+       (#
+       do ('color',getColor) -> style.put;
+       #);
+     setStyle::<
+       (# theColor: ^Color;
+       do 'color' -> style.get -> theColor[];
+          (if theColor[] <> NONE then
+              theColor -> setColor;
+          if);
+       #);
+  #);
+
+TransitionInscription: Inscription 
+  (# private: @<<SLOT TransitionInscriptionPrivate:Descriptor>>;
+     defaultSnapToElement:: (# do getTransition -> elm[]; #);
+     setTransition:
+       (# theTransition: ^Transition;
+       enter theTransition[]
+       <<SLOT TransitionInscriptionSetTransition:DoPart>>
+       #);
+     getTransition:
+       (# theTransition: ^Transition;
+       <<SLOT TransitionInscriptionGetTransition:DoPart>>
+       exit theTransition[]
+       #);
+     onSemanticChanged::< (# <<SLOT TransitionInscriptionOnSemanticChanged:doPart>> #);
+     snap:: (# <<SLOT TransitionInscriptionSnap:doPart>> #);
+     isVisible:: (# <<SLOT TransitionInscriptionIsVisible:doPart>> #);
+     onTextUpdated::< (# <<SLOT TransitionInscriptionOnTextUpdated:DoPart>> #);
+     allowReturn:: TrueObject;
+  #);
+
+PlaceInscription: Inscription 
+  (# defaultSnapToElement:: (# do getPlace -> elm[]; #);
+     setPlace:<
+       (# thePlace: ^Place;
+       enter thePlace[]
+       do INNER
+       #);
+     getPlace:<
+       (# thePlace: ^Place;
+       do INNER
+       exit thePlace[]
+       #);
+     snap:: (# <<SLOT PlaceInscriptionSnap:doPart>> #);
+     isVisible:: (# <<SLOT PlaceInscriptionIsVisible:doPart>> #);
+     onSemanticChanged::< (# <<SLOT PlaceInscriptionOnSemanticChanged:doPart>> #);     
+  #);
+
+TransGuard: TransitionInscription
+  (# defaultInscription::(# do '[]' -> theInscription[]; #);
+     defaultInscriptionRegularExpression:: 
+       (# <<SLOT TransGuardDefaultInscriptionRegularExpression:DoPart>> #);
+     defaultSnap:: (# <<SLOT TransGuardDefaultSnap:doPart>> #);
+     clone::(# type:: TransGuard; #);     
+     next:: (# <<SLOT TransGuardNext:doPart>> #);
+  #);
+
+TransTime: TransitionInscription
+  (# defaultInscription::(# do '@+' -> theInscription[]; #);
+     defaultInscriptionRegularExpression:: 
+       (# <<SLOT TransTimeDefaultInscriptionRegularExpression:DoPart>> #);
+     defaultSnap:: (# <<SLOT TransTimeDefaultSnap:doPart>> #); 
+     clone::(# type:: TransTime; #);     
+     next:: (# <<SLOT TransTimeNext:doPart>> #);
+  #);
+
+TransAction: TransitionInscription
+  (# defaultInscription::
+       (# 
+       do 'input ();\n'
+          'output ();\n'
+          'action\n'
+          '();' -> theInscription[]; 
+       #);
+     defaultInscriptionRegularExpression:: 
+       (# <<SLOT TransActionDefaultInscriptionRegularExpression:DoPart>> #);
+     defaultSnap:: (# <<SLOT TransActionDefaultSnap:doPart>> #); 
+     clone::(# type:: TransAction; #); 
+     next:: (# <<SLOT TransActionNext:doPart>> #);  
+  #);
+
+TransChannel: TransitionInscription
+  (# defaultInscription::
+       (# 
+       do 'CHANNEL' -> theInscription[]; 
+       #);
+     defaultInscriptionRegularExpression:: 
+       (# <<SLOT TransChannelDefaultInscriptionRegularExpression:DoPart>> #);
+     defaultSnap:: (# <<SLOT TransChannelDefaultSnap:doPart>> #); 
+     clone::(# type:: TransChannel; #); 
+     next:: (# <<SLOT TransChannelNext:doPart>> #);  
+  #);
+
+TransPriority: TransitionInscription
+  (# defaultInscription::
+       (# 
+       do 'P_NORMAL' -> theInscription[]; 
+       #);
+     defaultInscriptionRegularExpression:: 
+       (# <<SLOT TransPriorityDefaultInscriptionRegularExpression:DoPart>> #);
+     defaultSnap:: (# <<SLOT TransPriorityDefaultSnap:doPart>> #); 
+     clone::(# type:: TransPriority; #); 
+     next:: (# <<SLOT TransPriorityNext:doPart>> #);  
+  #);
+
+PlaceType: PlaceInscription
+  (# private: @<<SLOT PlaceTypePrivate:Descriptor>>;       
+     IsAutoCompleteable:: TrueObject;     
+     resetCycleCounter: (# <<SLOT PlaceTypeResetCycleCounter:DoPart>> #);
+     makeAutoCompletion:: 
+       (# direction: @integer;
+       enter direction
+       <<SLOT PlaceTypeMakeAutoCompletion:doPart>>
+       #);
+     defaultInscription:: (# <<SLOT PlaceTypeDefaultInscription:doPart>> #);
+     defaultSnap:: (# <<SLOT PlaceTypeDefaultSnap:doPart>> #);
+     Clone:: (# type:: PlaceType; #);
+     allowReturn:: falseObject;     
+     next:: (# <<SLOT PlaceTypeNext:doPart>> #);
+     delete:: (# <<SLOT PlaceTypeDelete:doPart>> #);
+     onTextUpdated:: (# <<SLOT PlaceTypeOnTextUpdated:doPart>> #);
+     setPlace:: (# <<SLOT PlaceTypeSetPlace:doPart>> #);
+     getPlace:: (# <<SLOT PlaceTypeGetPlace:doPart>> #);
+     onSemanticChanged:: (# <<SLOT PlaceTypeOnSemanticChanged:doPart>> #);   
+     onFocusLost:: (# <<SLOT PlaceTypeOnFocusLost:DoPart>> #);
+     init:: (# <<SLOT PlaceTypeInit:DoPart>> #);
+  #);
+
+InitMark: PlaceInscription
+  (# private: @<<SLOT InitMarkPrivate:Descriptor>>;
+     allowReturn:: trueObject;     
+     defaultInscription::(# <<SLOT InitMarkDefaultInscription:doPart>> #);
+     defaultSnap::(# <<SLOT InitMarkDefaultSnap:doPart>> #); 
+     clone:: (# type:: InitMark; #);     
+     next:: (# <<SLOT InitMarkNext:doPart>> #);
+     onTextUpdated:: (# <<SLOT InitMarkOnTextUpdated:doPart>> #);
+     setPlace:: (# <<SLOT InitMarkSetPlace:doPart>> #);
+     getPlace:: (# <<SLOT InitMarkGetPlace:doPart>> #);
+     onSemanticChanged:: (# <<SLOT InitMarkOnSemanticChanged:doPart>> #); 
+  #);
+
+HierarchyInfo: PageElement
+  (# private: @<<SLOT HierarchyInfoPrivate:Descriptor>>;
+     theRect: @Rect;
+     halo: ^rect;
+     theCompStyle: ^CompositeStyle;
+     getTextItem:: (# <<SLOT HierarchyInfoGetTextItem:DoPart>> #);     
+     DefaultSnap::< (# w, h: @Real; <<SLOT HierarchyInfoDefaultSnap:doPart>> #);
+     clone::< (# Type::< HierarchyInfo; <<SLOT HierarchyInfoClone:doPart>> #);
+     delete::< (# <<SLOT HierarchyInfoDelete:doPart>> #);
+     status:< integerValue
+       (# <<SLOT HierarchyInfoStatus:doPart>> #);
+     being_checked: 
+       (# exit (status=unchecked) or (status=checking) #);
+     being_compiled: 
+       (# exit (status=checked) or (status=compiling) #);
+     has_error: 
+       (# exit status=incorrect #);
+     update::< 
+       (# w, h: @real;
+          theText: ^Text;
+       <<SLOT HierarchyInfoUpdate:doPart>>
+       #);     
+     bounds:: (# <<SLOT HierarchyInfoBounds:doPart>> #);     
+     init::< (# w, h: @real; RectColor: ^Color; <<SLOT HierarchyInfoInit:doPart>> #);     
+     onChanged::< (# <<SLOT HierarchyInfoOnChanged:doPart>> #);
+     onSemanticChanged::< (# <<SLOT HierarchyInfoOnSemanticChanged:doPart>> #);
+     setCPNML:
+       (# theCPNML: ^Text;
+       enter theCPNML[]
+       <<SLOT HierarchyInfoSetCPNML:doPart>>
+       #);
+     getCPNML:
+       (# theCPNML: ^Text;
+       <<SLOT HierarchyInfoGetCPNML:doPart>>          
+       exit theCPNML[]
+       #);
+  #);
+
+
+FusionInfo: HierarchyInfo
+  (# private: @<<SLOT FusionInfoPrivate:Descriptor>>;
+     setPlace:
+       (# thePlace: ^Place;
+       enter thePlace[]
+       <<SLOT FusionInfoSetPlace:doPart>>
+       #);
+     getPlace: 
+       (# thePlace: ^Place; 
+       <<SLOT FusionInfoGetPlace:doPart>>
+       exit thePlace[]
+       #);
+     defaultSnapToElement:: (# <<SLOT FusionInfoDefaultSnapToElement:doPart>> #);
+     menuName::<
+       (# 
+       do NamesPageMenuFusionSet -> getGlobalNames -> txt[];
+          INNER;
+       #);
+     editable:: (# do true->value; #);     
+     delete:: (# <<SLOT FusionInfoDelete:doPart>> #);     
+     onTextUpdated:: (# <<SLOT FusionInfoOnTextUpdated:doPart>> #);     
+     clone:: (# type:: FusionInfo; #); 
+     onSemanticChanged:: (# <<SLOT FusionInfoOnSemanticChanged:doPart>> #);
+     onChanged:: (# <<SLOT FusionInfoOnChanged:doPart>> #);
+     snap:: (# <<SLOT FusionInfoSnap:doPart>> #);
+  #);
+
+PortType: HierarchyInfo
+  (# private: @<<SLOT PortTypePrivate:Descriptor>>;
+     setPlace: 
+       (# thePlace: ^Place; 
+       enter thePlace[] 
+       <<SLOT PortTypeSetPlace:doPart>> #);
+     getPlace: 
+       (# thePlace: ^Place;
+       <<SLOT PortTypeGetPlace:doPart>> 
+       exit thePlace[] 
+       #);
+     defaultSnapToElement:: (# <<SLOT PortTypeDefaultSnapToElement:doPart>> #);     
+     menuName::<
+       (# 
+       do NamesPageMenuPortType -> getGlobalNames -> txt[];
+          INNER;
+       #);
+     clone:: (# type:: PortType; #);
+     delete:: (# <<SLOT PortTypeDelete:doPart>> #);     
+     update:: (# <<SLOT PortTypeUpdate:doPart>> #);     
+     next:: (# <<SLOT PortTypeNext:doPart>> #);
+     onSemanticChanged:: (# <<SLOT PortTypeOnSemanticChanged:doPart>> #);
+     onChanged:: (# <<SLOT PortTypeOnChanged:doPart>> #);
+     snap:: (# <<SLOT PortTypeSnap:doPart>> #);
+  #);
+
+SubPageInfo: HierarchyInfo
+  (# private: @<<SLOT SubPageInfoPrivate:descriptor>>;
+     setTransition: 
+       (# theTransition: ^Transition;
+       enter theTransition[]
+       <<SLOT SubPageInfoSetTransition:doPart>>
+       #);
+     getTransition:
+       (# theTransition: ^Transition;
+       <<SLOT SubPageInfoGetTransition:doPart>> 
+       exit theTransition[]  
+       #);
+     defaultSnap::
+       (#
+       do CenterJustify -> changeAnchorHorizontal;
+       #);
+     defaultSnapToElement:: (# <<SLOT SubPageInfoDefaultSnapToElement:doPart>> #);
+     menuName::<
+       (# 
+       do NamesPageMenuSubpage -> getGlobalNames -> txt[];
+          INNER;
+       #);
+     status:: (# <<SLOT SubPageInfostatus:doPart>> #);     
+     delete:: (# <<SLOT SubPageInfodelete:doPart>> #);
+     clone:: (# type:: SubPageInfo; #);
+     next:: (# <<SLOT SubPageInfoNext:doPart>> #);
+     onSemanticChanged:: (# <<SLOT SubPageInfoOnSemanticChanged:doPart>> #);
+     onChanged:: (# <<SLOT SubPageInfoOnChanged:doPart>> #);
+     snap:: (# <<SLOT SubPageInfoSnap:doPart>> #);
+     makeShape:: (# ItemType:: Rect; #);
+  #);
+
+Annotation: Inscription
+  (# private: @<<SLOT AnnotationPrivate:Descriptor>>;
+     setArc:
+       (# theArc: ^Arc; 
+       enter theArc[] 
+       <<SLOT AnnotationSetArc:doPart>> 
+       #);
+     getArc: 
+       (# theArc: ^Arc; 
+       <<SLOT AnnotationGetArc:doPart>> 
+       exit theArc[] 
+       #);
+     defaultSnapToElement:: (# <<SLOT AnnotationDefaultSnapToElement:doPart>> #);
+     <<SLOT AnnotationLib:attributes>>;
+     defaultInscription::(# do 'expr' -> theInscription[]; #);
+     computeAttachment: 
+       (# dx, dy: @real;
+       <<SLOT AnnotationComputeAttachment:doPart>>
+       exit (dx, dy)
+       #);
+     computePosition: (# <<SLOT AnnotationComputePosition:doPart>> #);
+     AllowReturn:: (# do true -> value #);     
+     clone:: (# type:: Annotation; <<SLOT AnnotationClone:doPart>> #);     
+     init::< (# <<SLOT AnnotationInit:doPart>> #);
+     attached: @boolean;
+     computing: @boolean;
+     dist: @real;
+     t: @real;
+     crossing: @boolean;
+     attachedSegment: @integer;     
+     startMove:: (# do true -> computing; #);
+     stopMove:: (# do false -> computing; #);
+     onTextUpdated:: (# <<SLOT AnnotationOnTextUpdated:doPart>> #);
+     onChanged:: (# <<SLOT AnnotationOnChanged:doPart>> #);
+     snap:: (# <<SLOT AnnotationSnap:doPart>> #);
+     isVisible:: (# <<SLOT AnnotationIsVisible:dopart>> #);
+  #);
+
+Declaration: Highlightable
+  (# private: @<<SLOT DeclarationPrivate:Descriptor>>;
+     init::
+       (# 
+       <<SLOT DeclarationInit:doPart>>
+       #);
+     getCPNet:
+       (# net: ^CPNet;
+       <<SLOT DeclarationGetCPNet:doPart>>
+       exit net[]
+       #);
+     setCPNet:
+       (# net: ^CPNet;
+       enter net[]
+       <<SLOT DeclarationSetCPNet:doPart>>
+       #);
+     getParent:
+       (# parent: ^Declaration;
+       <<SLOT DeclarationGetParent:doPart>>
+       exit parent[]
+       #);
+     scanDeclarations:
+       (# current: ^Declaration;
+       <<SLOT DeclarationScanDeclarations:doPart>>
+       #);
+     scanDeclarationTree:
+       (# current: ^Declaration;
+       <<SLOT DeclarationScanDeclarationTree:doPart>>
+       #);
+     removeDeclarationNoDelete:
+       (# theDeclaration, prev: ^Declaration;
+       enter theDeclaration[]
+       <<SLOT DeclarationRemoveDeclarationNoDelete:doPart>>
+       exit prev[]
+       #);
+     removeDeclaration:
+       (# theDeclaration, prev: ^Declaration;
+       enter theDeclaration[]
+       <<SLOT DeclarationRemoveDeclaration:doPart>>
+       exit prev[]
+       #);
+     addDeclaration:
+       (# theDeclaration: ^Declaration;
+       enter theDeclaration[]
+       <<SLOT DeclarationAddDeclaration:doPart>>
+       #);
+     addDeclarationAfter:
+       (# theDeclaration, prev: ^Declaration;
+       enter (theDeclaration[],prev[])
+       <<SLOT DeclarationAddDeclarationAfter:doPart>>
+       #);
+     addDeclarationBefore:
+       (# theDeclaration, next: ^Declaration;
+       enter (theDeclaration[],next[])
+       <<SLOT DeclarationAddDeclarationBefore:doPart>>
+       #);
+     getCurrentHighlight::
+       (# 
+       <<SLOT DeclarationGetCurrentHighlight:doPart>>
+       #);
+     node: ^Entity; 
+     (* Points back to the index node representing
+      * THIS(Declaration)
+      *)
+     allowCtrlReturn:: TrueObject;
+
+     onSemanticChanged:: (# <<SLOT DeclarationOnSemanticChanged:doPart>> #);
+     markForDeletion:
+       (# theDecl: ^Decl;
+       enter theDecl[]
+       <<SLOT DeclarationMarkForDeletion:doPart>>   
+       #);
+     changeDecl: 
+       (# new: ^Decl;
+       enter new[]
+       <<SLOT DeclarationChangeDecl:doPart>>
+       #);
+     delete: 
+       (# prev: ^Declaration;
+          (* prev[] is NONE if this Declaration is first in the list *)
+       <<SLOT DeclarationDelete:doPart>>
+       exit prev[]
+       #);     
+     mldecl: ^Decl;
+     isBlock: @Boolean;
+     print: 
+       (# output: ^Stream;
+       enter output[]
+       <<SLOT DeclarationPrint:DoPart>>       
+       #);
+     parse: 
+       (# input: ^Text;
+          string: ^Text;
+          error: @Boolean;
+          globboxXml: ^XML.Element;
+          globbox: ^Globals;
+          newDeclaration: ^Declaration;
+          declList: List(# Element:: Decl #);
+          first, last: ^declList;
+          SeperateFirst: 
+        (# preText: ^Text;
+           theText: ^Text;
+           postText: ^Text;
+           mydecl: ^Decl;
+        enter (mydecl[], theText[])
+            <<SLOT DeclarationParseSeparateFirst:doPart >> 
+        exit (preText[], postText[])
+            #);
+      
+       enter input[]
+       <<SLOT DeclarationParse:doPart>>
+       #);
+     theShortName: ^Text;
+     shortname:
+       (# name: ^Text;
+       <<SLOT DeclarationShortName:doPart>>
+       exit name[]
+       #);
+  #);
+
+Globals: Highlightable
+  (# private: @<<SLOT GlobalsPrivate:Descriptor>>;
+     init::<
+       (# 
+       <<SLOT GlobalsInit:doPart>>
+       #);
+     addUsedBy:
+       (# theDecl: ^Decl;
+       enter theDecl[]
+       <<SLOT GlobalsAddUsedBy:DoPart>>
+       #);
+     removeUsedBy:
+       (# theDecl: ^Decl;
+       enter theDecl[]
+       <<SLOT GlobalsRemoveUsedBy:DoPart>>
+       #);
+     hasUsedBy: BooleanValue (# <<SLOT GlobalsHasUsedBy:DoPart>> #);
+     addUsedByNode:
+       (# theNode: ^Node;
+       enter theNode[]
+       <<SLOT GlobalsAddUsedByNode:DoPart>>
+       #);
+     scanDeclTree:
+       (# current: ^Decl;
+       <<SLOT GlobalsScanDeclTree:DoPart>>
+       #);
+     getCPNet:<
+       (# net: ^CPNet;
+       <<SLOT GlobalsGetCPNet:doPart>>
+       exit net[]
+       #);
+     setCPNet:<
+       (# net: ^CPNet;
+       enter net[]
+       <<SLOT GlobalsSetCPNet:doPart>>
+       #);
+     getTopDeclaration:
+       (# d: ^Declaration;
+       <<SLOT GlobalsGetTopDeclaration:doPart>>
+       exit d[]
+       #);
+     getCurrentHighlight::
+       (# 
+       <<SLOT GlobalsGetCurrentHighlight:doPart>>
+       #);
+     associateIDandDecl:
+       (# ID: ^Text;
+          theDecl: ^Decl;
+          enter (ID[], theDecl[])
+          <<SLOT GlobalsAssociateIDandDecl:doPart>>
+       #);
+     disassociateIDandDecl:
+       (# ID: ^Text;
+          enter ID[]
+          <<SLOT GlobalsDisassociateIDandDecl:doPart>>
+       #);
+     lookupDecl:
+       (# ID: ^Text;
+          theDecl: ^Decl;
+          enter ID[]
+          <<SLOT GlobalsLookupDecl:doPart>>
+          exit TheDecl[]
+       #);
+     error: @boolean;    
+     UncheckedDecls: @boolean;
+     
+     getColorNames: 
+       (# colorNames: ^TextList;
+       <<SLOT GlobalsGetColorNames:doPart>>
+       exit colorNames[]
+       #);
+     
+     stopCycling: @boolean;
+     onSemanticChanged:: (# <<SLOT GlobalsOnSemanticChanged:DoPart>> #);
+     checkID: 
+       (# mldecl: ^Decl;
+          ID: ^Text;
+          error: ^Text;
+          CPN_ding: booleanValue
+            (# txt: ^Text;
+            enter txt[]
+            do (if txt.length > 3 then
+                   ((1 -> txt.inxGet) = 'C')
+                   and
+                   ((2 -> txt.inxGet) = 'P')
+                   and
+                   ((3 -> txt.inxGet) = 'N')
+                   and
+                   ((4 -> txt.inxGet) = '\'') -> value;
+               if);
+            #);
+       enter (mldecl[], ID[])
+       <<SLOT GlobalsCheckID:doPart>>
+       #);
+     
+     checkColorName: 
+       (# mldecl: ^Decl;
+          ID: ^Text;
+          error: ^Text;
+       enter (mldecl[], ID[])
+       do (if NOT (ID[] -> colorNames.defined) then
+              &Text[] -> error[];
+              '"' -> error.put;
+              ID[] -> error.puttext;
+              '" is not defined' -> error.puttext;
+          if);
+          (if error[] <> NONE then
+              error[] -> mldecl.onSyntaxError;
+          if);
+       #);
+     
+     defineColor: 
+       (# ID: ^Text;
+       enter ID[]
+       <<SLOT GlobalsDefineColor:doPart>>       
+       #);     
+     reset: (# <<SLOT GlobalsReset:DoPart>> #);     
+     print:
+       (# printed: ^Text;
+       enter printed[]
+       do (if printed[] = none then
+              &Text[] -> printed[];
+          if);
+          (getTopDeclaration).scanDeclarations
+            (#
+            do printed[] -> current.print;
+            #);
+       exit printed[]
+       #);
+     markForDeletion:
+       (# theDecl: ^Decl;
+       enter theDecl[]
+       <<SLOT GlobalsMarkForDeletion:DoPart>>       
+       #);
+     isColorNamesSorted: @boolean;
+     colorNames: ^SortedTextSequence;
+     scanColorNamesAlphabetically: 
+       (# current: ^Text;
+       <<SLOT GlobalsScanColorNamesAlphabetically:doPart>>
+       #);     
+     scanDeletionList:
+       (# current: ^Decl;
+       <<SLOT GlobalsScanDeletionList:DoPart>>
+       #);
+     clearDeletionList: (# <<SLOT GlobalsClearDeletionList:DoPart>> #);
+     hasDeletionDecls: BooleanValue
+       (# <<SLOT GlobalsHasDeletionDecls:DoPart>> #);
+     lookupDeletionDecl: lookup (# Element:: Decl; <<SLOT GlobalsLookupDeletionDecl:DoPart>> #);
+     IDs: ^SortedTextSequence;
+     reserved: ^MLReserved;
+  #);
+
+DeclPlaceAndTransitionVisitor:
+  (# decls: @DeclIDDictionary;
+     nodes: @NodeIDDictionary;      
+     visitDecl:<
+       (# theDecl: ^Decl;
+       enter theDecl[]
+       <<SLOT DeclPlaceAndTransitionVisitorVisitDecl:DoPart>>
+       #);
+     visitPlace:<
+       (# thePlace: ^Place;
+       enter thePlace[]
+       <<SLOT DeclPlaceAndTransitionVisitorVisitPlace:DoPart>>
+       #);
+     visitTransition:<
+       (# theTransition: ^Transition;
+       enter theTransition[]
+       do inner;
+       #);
+     init: (# <<SLOT DeclPlaceAndTransitionVisitorInit:DoPart>> #);
+     startDecl: ^Decl
+  enter startDecl[]
+  <<SLOT DeclPlaceAndTransitionVisitor:DoPart>>
+  #);
+
+Decl: Highlightable
+  (# private: @<<SLOT DeclPrivate:Descriptor>>;
+     toString: 
+       (# str: ^Text;
+       <<SLOT DeclToString:DoPart>>
+       exit str[]
+       #);
+     overwrites: @List (# Element:: Decl #);
+     overwrittenBy: @List (# Element:: Decl #);     
+     _status: @integer;
+     theDeclaration: ^Declaration;
+     getDeclaration:
+       (# 
+       exit theDeclaration[]
+       #);
+     data: ^Text;
+     rawLayout: ^Text; (* the layout made by the user, if none => doesn't matter *)
+     
+     (*
+      * Children interface is moved from highlightable to this class
+      *)
+     children: ^ElementDeque;
+     
+     add:
+       (# elm: ^Element;
+       enter elm[]
+       do THIS(Element)[] -> elm.father[];
+          elm[] -> children.append;
+          elm[] -> added;
+       #);
+     remove:
+       (# elm: ^Element;
+       enter elm[]
+       do elm[] -> children.remove;
+          NONE -> elm.father[];
+          elm[] -> removed;
+       #);
+     
+     
+     visit::< 
+       (# 
+       do (if children[] <> NONE then
+              children.scan
+              (# 
+              do theVisitor[] -> current.visit;
+              #);
+          if);
+          INNER;
+       #);
+     
+     scan: 
+       (# Type:< Element;
+          current: ^Type;
+          pos: ^List.theCellType;
+       do (if children[] <> NONE then
+              children.scan
+              (# 
+              do (if current## <= TYPE## then
+                     current[] -> this(scan).current[];
+                     pos[] -> this(scan).pos[];
+                     INNER scan;
+                 if);
+              #);
+          if);
+       #);
+     
+     addUsedBy:
+       (# theDecl: ^Decl;
+       enter theDecl[]
+       <<SLOT DeclAddUsedBy:DoPart>>
+       #);
+     removeUsedBy:
+       (# theDecl: ^Decl;
+       enter theDecl[]
+       <<SLOT DeclRemoveUsedBy:DoPart>>
+       #);
+     lookupUsedBy: lookup (# Element:: Decl; <<SLOT DeclLookupUsedBy:DoPart>> #);
+     scanUsedBy:
+       (# current: ^Decl;
+       <<SLOT DeclScanUsedBy:DoPart>>
+       #);
+     clearUsedBy: (# <<SLOT DeclClearUsedBy:DoPart>> #);
+     addUsedByNode:
+       (# theNode: ^Node;
+       enter theNode[]
+       <<SLOT DeclAddUsedByNode:DoPart>>
+       #);
+     removeUsedByNode:
+       (# theNode: ^Node;
+       enter theNode[]
+       <<SLOT DeclRemoveUsedByNode:DoPart>>
+       #);
+     scanUsedByNodes:
+       (# current: ^Node;
+       <<SLOT DeclScanUsedByNodes:DoPart>>
+       #);
+     clearUsedByNodes: (# <<SLOT DeclClearUsedByNodes:DoPart>> #);
+     addUsedByMonitor:
+       (# theMonitor: ^Monitor;
+       enter theMonitor[]
+       <<SLOT DeclAddUsedByMonitor:DoPart>>
+       #);
+     removeUsedByMonitor:
+       (# theMonitor: ^Monitor;
+       enter theMonitor[]
+       <<SLOT DeclRemoveUsedByMonitor:DoPart>>
+       #);
+     scanUsedByMonitors:
+       (# current: ^Monitor;
+       <<SLOT DeclScanUsedByMonitors:DoPart>>
+       #);
+     clearUsedByMonitors: (# <<SLOT DeclClearUsedByMonitors:DoPart>> #);
+     addOverwritesMonitor:
+       (# theMonitor: ^Monitor;
+       enter theMonitor[]
+       <<SLOT DeclAddOverwritesMonitor:DoPart>>
+       #);
+     removeOverwritesMonitor:
+       (# theMonitor: ^Monitor;
+       enter theMonitor[]
+       <<SLOT DeclRemoveOverwritesMonitor:DoPart>>
+       #);
+     scanOverwritesMonitors:
+       (# current: ^Monitor;
+       <<SLOT DeclScanOverwritesMonitors:DoPart>>
+       #);
+     clearOverwritesMonitors: (# <<SLOT DeclClearOverwritesMonitors:DoPart>> #);
+     addOverwrittenByMonitor:
+       (# theMonitor: ^Monitor;
+       enter theMonitor[]
+       <<SLOT DeclAddOverwrittenByMonitor:DoPart>>
+       #);
+     removeOverwrittenByMonitor:
+       (# theMonitor: ^Monitor;
+       enter theMonitor[]
+       <<SLOT DeclRemoveOverwrittenByMonitor:DoPart>>
+       #);
+     scanOverwrittenByMonitors:
+       (# current: ^Monitor;
+       <<SLOT DeclScanOverwrittenByMonitors:DoPart>>
+       #);
+     clearOverwrittenByMonitors: (# <<SLOT DeclClearOverwrittenByMonitors:DoPart>> #);
+     status: 
+       (# set: 
+            (# 
+            enter _status
+            #);
+       enter set
+       exit _status
+       #);
+     
+     
+     statusMonitor:
+       (# old: @Integer;
+       do status -> old;
+          INNER;
+          (if old <> status then changed; if);
+       #);
+     
+     changeStatus: statusMonitor
+       (# from, to, old_status: @integer;
+       enter (from, to)
+       do (if (status = from) or (from = any_status) then
+              status -> old_status;
+              to -> status;
+          (* If status is not incorrect, we should remove any errors 
+           * on the node. *)
+          (if (status <> incorrect) and
+          (old_status = incorrect) then
+          changed;
+          INNER;
+          if);
+          if);
+       #);
+     init::< (# <<SLOT DeclInit:doPart>> #);     
+     putOnBIS:< 
+       (# bis: ^MLBIS; 
+       enter bis[]
+       do INNER;
+       #);
+     
+     shortName:<
+       (# name: ^Text;
+       <<SLOT DeclShortName:doPart>>    
+       exit name[]
+       #);
+     print:<  
+       (# output: ^Stream;
+       enter output[]
+       do (if output[] = NONE then
+              screen[] -> output[];
+          if);
+      INNER;
+       #);
+     
+     localCheck:< 
+       (# box: ^Globals;
+       enter box[]
+       do INNER 
+       #);
+     isCycling: @boolean;
+     onSemanticChanged:: (# <<SLOT DeclOnSemanticChanged:DoPart>> #);     
+     onChanged::<
+       (# 
+       do INNER;
+       #);
+     
+     error:
+       (# e: ^text;
+       do (if qerror[] <> NONE then
+              qerror.theMessage[] -> e[];
+           else
+              NONE -> e[];
+          if);
+       exit e[]
+       #);
+     
+     onSyntaxError:< 
+       (# error: ^Text;
+       enter error[]
+       do (checking,incorrect) -> changeStatus;
+          INNER;
+          statusMonitor
+          (# 
+          do (if status <> incorrect then 
+                 removeError;
+              else
+                 (THIS(Decl)[], error[]) -> addError;
+             if);
+          #);
+       #);
+     
+     onNoSyntaxError:< 
+       (# 
+       do (checking,compiled) -> changeStatus;
+          INNER;
+          statusMonitor(# do (if status = compiled then removeError; if); #);
+       #);
+     
+     getCurrentHighlight::<
+       (#
+       do status -> statusToColor -> currentHighlight[];
+          INNER;
+       #);
+  #);
+
+Guideline: PageElement
+  (# private:@<<SLOT GuideLinePrivate:descriptor>>;    
+     setCPNPage:: (# <<SLOT GuideLineSetCPNPage:doPart>> #);
+
+     main: @Composite;
+     ShapeType:< Item;
+     shape: ^ShapeType;
+     guidestyle: ^CompositeStyle;
+     theStyle: @BasicStyle;
+     astyle: ^AlphaStyle;
+     range: @Integer;
+     defaultSpread, spread: @Real;
+     spreadoffset: @Real;
+     thespreadpoint: ^Spreadpoint; 
+     
+     AddGuideElement:
+       (# elm: ^GuideLineSnapable;
+       enter elm[]
+       <<SLOT GuidelineAddGuideElement: doPart>>
+       #);
+
+     scanGuideElements: 
+       (# current: ^GuideLineSnapable;
+       <<SLOT GuideLineScanGuideElements:doPart>>
+       #);
+
+     has: booleanValue
+       (# elm: ^GuideLineSnapable;
+       enter elm[] 
+       <<SLOT GuideLineHas:doPart>>
+       #);
+
+     RemoveGuideElement:
+       (# elm: ^GuideLineSnapable;
+       enter elm[]
+       <<SLOT GuidelineRemoveGuideElement: doPart>>
+       #);
+
+     delete:(# <<SLOT GuideLineDelete:doPart>> #);
+     
+     isonGuide:<
+       (# ison: @Boolean;
+       do INNER;
+       exit ison
+       #);
+     isObjectOnGuide:<
+       (# target: ^PageElement;
+          value: @boolean;
+       enter target[]
+       do INNER;
+       exit value
+       #);
+     isObjectClose:<
+       (# target: ^PageElement;
+          value: @boolean;
+       enter target[]
+       do INNER;
+       exit value
+       #);
+     apply:<
+       (# do INNER #);
+     snaptoSpreadpoint:<
+       (# snap: @Boolean;
+          target, newvalue: @Real;
+          i: @integer;
+       enter target
+       <<SLOT GuidelinesnaptoSpreadpoint: doPart>>
+       exit (snap, newvalue)
+       #);
+     
+     changeSpread: 
+       (# 
+       enter spread 
+       <<SLOT GuidelineChangeSpread:DoPart>> #);     
+     Hilite::< (# <<SLOT GuidelineHiLite:DoPart>> #);
+     LoLite::< (# <<SLOT GuidelineLoLite:DoPart>> #);     
+     TextList: List(# Element::Text; #);
+     loadList: ^TextList;
+     init::< (# <<SLOT Guidelineinit:doPart>> #);
+     getParameter:<
+       (# parameter: @real;
+       do inner;
+       exit parameter
+       #);
+     setParameter:<
+       (# parameter: @real;
+       enter parameter
+       do inner;
+       #);
+  #);
+
+Spreadpoint: Entity
+  (# shape: ^Rect;
+     gl: ^guideline;
+     main: @Composite;
+     
+     Position: (# enter (shape.x, shape.y) exit (shape.x, shape.y) #);
+     
+     init:: (# <<SLOT Spreadpointinit:doPart>> #);
+  #);
+
+HorizontalSpreadpoint: Spreadpoint (# #);
+
+VerticalSpreadpoint: Spreadpoint (# #);
+
+HorizontalGuideLine: Guideline
+  (# ShapeType:: Line;
+     point: ^Point2d;
+     y: @Real;
+     
+     update:: (# <<SLOT HorizontalGuideLineupdate:doPart>> #);
+     getParameter:: (# <<SLOT HorizontalGuideLineGetParameter:doPart>> #);
+     setParameter:: (# <<SLOT HorizontalGuideLineSetParameter:doPart>> #);
+     
+     isonGuide::
+       (# ey: @Real;
+       enter ey
+       <<SLOT HorizontalGuideLineisonGuide:doPart>>
+       #);
+     isObjectOnGuide::
+       (#
+       do (target.y = y) -> value;
+       #);
+     isObjectClose::
+       (# 
+       do ((target.y - y) -> fabs) < 15.0 -> value;
+       #);
+     apply:: (# <<SLOT HorizontalGuideLineApply:DoPart>> #);     
+     init:: (# <<SLOT HorizontalGuideLineinit:doPart>> #);
+  #);
+
+VerticalGuideLine: Guideline
+  (# ShapeType:: Line;
+     point: ^Point2d;
+     x: @Real;
+     update:: (# <<SLOT VerticalGuideLineupdate:doPart>> #);
+     getParameter:: (# <<SLOT VerticalGuideLineGetParameter:doPart>> #);
+     setParameter:: (# <<SLOT VerticalGuideLineSetParameter:doPart>> #);
+     
+     isonGuide::
+       (# ex: @Real;
+       enter ex
+       <<SLOT VerticalGuideLineisonGuide:doPart>>
+       #);
+     isObjectOnGuide::
+       (#
+       do (target.x = x) -> value;
+       #);
+     isObjectClose:: (# <<SLOT VerticalGuideLineIsObjectClose:DoPart>> #);       
+     apply:: (# <<SLOT VerticalGuideLineApply:DoPart>> #);     
+     init:: (# <<SLOT VerticalGuideLineinit:doPart>> #);
+  #);
+
+MarkingSizeType: (# exit 0 #);
+BreakpointType: (# exit 1 #);
+UserDefinedType: (# exit 2 #);
+DataCollectionType: (# exit 3 #);
+WriteInFileType: (# exit 4 #);
+ListLengthDataCollectionType: (# exit 5 #);
+CountTransitionOccurrenceDataCollectionType: (# exit 6 #);
+PlaceContentBreakpointType: (# exit 7 #);
+TransitionEnabledBreakpointType: (# exit 8 #);
+
+AbstractMonitor: Highlightable
+  (# private: @<<SLOT AbstractMonitorPrivate:Descriptor>>;
+     setFatherMonitor: 
+       (# father: ^MonitorBlock;
+       enter father[]
+       <<SLOT AbstractMonitorSetFatherMonitor:DoPart>> 
+       #);
+     getFatherMonitor: 
+       (# father: ^MonitorBlock;
+       <<SLOT AbstractMonitorGetFatherMonitor:DoPart>> 
+       exit father[]
+       #);
+     onDisabledChanged:< (# <<SLOT AbstractMonitorOnDisabledChanged:DoPart>> #);
+     getStatus:< IntegerObject;
+     disabled:<
+       (# value: @boolean
+       enter (# enter value <<SLOT AbstractMonitorDisabledEnter:DoPart>> #)
+       exit (# <<SLOT AbstractMonitorDisabledExit:DoPart>> exit value #)
+       #);
+     init::< 
+       (# 
+       enter (theCPNet[], name[]) 
+       <<SLOT AbstractMonitorInit:DoPart>>
+       #);
+     onSemanticChanged::< (# <<SLOT AbstractMonitorOnSemanticChanged:DoPart>> #);
+     name: ^Text;
+     theCPNet: ^CPNet;
+     getCurrentHighlight:: (# <<SLOT AbstractMonitorGetCurrentHighlight:DoPart>> #);
+     deleted:< Object;
+     unDeleted:< Object;
+  #);
+Monitor: AbstractMonitor
+  (# private: @<<SLOT MonitorPrivate:Descriptor>>;  
+     <<SLOT MonitorLib:Attributes>>;
+     isOverwritten: BooleanValue (# <<SLOT MonitorIsOverwritten:DoPart>> #);
+     onChanged:: (# <<SLOT MonitorOnChanged:DoPart>> #);
+     onAdded:: (# <<SLOT MonitorOnAdded:DoPart>> #);
+     onSemanticChanged:: (# <<SLOT MonitorOnSemanticChanged:DoPart>> #);
+     getStatus:: (# <<SLOT MonitorGetStatus:DoPart>> #);
+     getNodeStatus: IntegerObject (# <<SLOT MonitorGetNodeStatus:DoPart>> #);
+     canChangeDeclarations: BooleanObject
+       (# <<SLOT MonitorCanChangeDeclarations:DoPart>> #);
+     generateTemplateCode:
+       (# value: @boolean;
+       enter (# enter value <<SLOT MonitorGenerateTemplateCodeEnter:DoPart>> #)
+       exit (# <<SLOT MonitorGenerateTemplateCodeExit:DoPart>> exit value#)
+       #);
+     syntaxCheckAndGenerateMonitor: 
+       (# value: @boolean;
+       enter (# enter value <<SLOT MonitorSyntaxCheckAndGenerateMonitorEnter:DoPart>> #)
+       exit (# <<SLOT MonitorSyntaxCheckAndGenerateMonitorExit:DoPart>> exit value #)
+       #);
+     forwardDependencies: 
+       (# value: @boolean;
+       enter (# enter value <<SLOT MonitorForwardDependenciesEnter:DoPart>> #)
+       exit (# <<SLOT MonitorForwardDependenciesExit:DoPart>> exit value #)
+       #);
+     isTimed: BooleanValue (# <<SLOT MonitorIsTimed:DoPart>> #);     
+     numberOfPlaceInstances: IntegerObject (# <<SLOT MonitorNumberOfPlaceInstances:DoPart>> #);
+     numberOfTransitionInstances: IntegerObject (# <<SLOT MonitorNumberOfTransitionInstances:DoPart>> #);
+     type: IntegerObject (# <<SLOT MonitorType:DoPart>> #);
+     typeAsString:
+       (# str: ^Text;
+       <<SLOT MonitorTypeAsString:DoPart>>
+       exit str[]
+       #);
+     getDecl:
+       (# id: ^Text;
+          theDecl: ^Decl;
+       enter id[]
+       <<SLOT MonitorGetDecl:DoPart>>
+       exit theDecl[]
+       #);
+     getSingleNode:
+       (# theNode: ^NodeInstance;
+       <<SLOT MonitorGetSingleNode:DoPart>>
+       exit theNode[]
+       #);
+     hasNodeInstance:
+       (# instance: ^NodeInstance;
+          result: @boolean;
+       enter instance[]
+       <<SLOT hasNodeInstance:doPart>>
+       exit result
+       #);
+     getSimulationName:
+       (# simulationName: ^Text;
+       <<SLOT MonitorGetSimulationName:DoPart>>
+       exit simulationName[]
+       #);
+     init:: 
+       (# type: @integer; 
+       enter type
+       <<SLOT MonitorInit:DoPart>> 
+       #);
+     onDisabledChanged:: (# <<SLOT MonitorOnDisabledChanged:DoPart>> #);
+     deleted:: (# <<SLOT MonitorDeleted:DoPart>> #);
+     unDeleted:: (# <<SLOT MonitorUnDeleted:DoPart>> #);
+  #);
+MonitorBlock: AbstractMonitor
+  (# private: @<<SLOT MonitorBlockPrivate:Descriptor>>;     
+     addMonitorAfter:
+       (# theMonitor, beforeMonitor: ^AbstractMonitor;
+       enter (theMonitor[], beforeMonitor[])
+       <<SLOT MonitorBlockAddMonitorAfter:DoPart>>
+       #);
+     addMonitorLast:
+       (# theMonitor: ^AbstractMonitor;
+       enter theMonitor[]
+       <<SLOT MonitorBlockAddMonitorLast:DoPart>>
+       #);
+     removeMonitor:
+       (# theMonitor: ^AbstractMonitor;
+       enter theMonitor[]
+       <<SLOT MonitorBlockRemoveMonitor:DoPart>>
+       #);     
+     scanAbstractMonitors:
+       (# current: ^AbstractMonitor;
+       <<SLOT MonitorBlockScanAbstractMonitors:DoPart>>
+       #); 
+     scanAbstractMonitorTree:
+       (# current: ^AbstractMonitor;
+       <<SLOT MonitorBlockScanAbstractMonitorTree:DoPart>>
+       #);
+     scanMonitorTree:
+       (# current: ^Monitor;
+       <<SLOT MonitorBlockScanMonitorTree:DoPart>>
+       #);
+     numberOfMonitorsInTree: IntegerObject (# <<SLOT MonitorBlockNumberOfMonitorsInTree:DoPart>> #);
+     previousMonitor:
+       (# theMonitor: ^AbstractMonitor;
+          thePreviousMonitor: ^AbstractMonitor;
+       enter theMonitor[]
+       <<SLOT MonitorBlockPreviousMonitor:DoPart>>
+       exit thePreviousMonitor[]
+       #);
+     lastMonitor: 
+       (# theLastMonitor: ^AbstractMonitor;
+       <<SLOT MonitorBlockLastMonitor:DoPart>>
+       exit theLastMonitor[]
+       #);
+     onSemanticChanged:: (# <<SLOT MonitorBlockOnSemanticChanged:DoPart>> #);          
+     onAdded:: (# <<SLOT MonitorBlockOnAdded:DoPart>> #);
+     getStatus:: (# <<SLOT MonitorBlockGetStatus:DoPart>> #);
+     onDisabledChanged:: (# <<SLOT MonitorBlockOnDisabledChanged:DoPart>> #);
+     init:: (# <<SLOT MonitorBlockInit:DoPart>> #);
+     lookupMonitor: lookup (# Element:: Monitor; <<SLOT MonitorBlockLookupMonitor:DoPart>> #);
+     isBefore: BooleanValue
+       (# before, after: ^AbstractMonitor;
+       enter (before[], after[])
+       <<SLOT MonitorBlockIsBefore:DoPart>>
+       #);
+     hasMonitor: BooleanValue 
+       (# mon: ^AbstractMonitor;
+       enter mon[]
+       <<SLOT MonitorBlockHasMonitor:DoPart>>
+       #);
+  #);
+
+getCommandManagerManager:
+  (# theCommandManagerManager: ^CommandManagerManager;
+  do ObjectPool.get
+     (# Type::CommandManagerManager;
+        init::(# do obj.init; #);
+     #) -> theCommandManagerManager[];
+  exit theCommandManagerManager[]
+  #);
+
+CommandManagerManager:
+  (# theDictionary: @IdDictionary(# Element::CommandManager; #);
+     
+     init:
+       (#
+       do theDictionary.init;
+       #);
+     
+     getManager:
+       (# theNet: ^CPNet;
+          theManager: ^CommandManager;
+       enter theNet[]
+       do theNet.ID[] -> theDictionary.lookup -> theManager[];
+       exit theManager[]
+       #);
+     
+     associate:
+       (# theNet: ^CPNet;
+          theCommandManager: ^CommandManager;
+          theManager: ^CommandManager;
+       enter (theNet[],theCommandManager[])
+       do (theNet.ID[],theCommandManager[]) -> theDictionary.associate;
+       #);
+     
+     disassociate:
+       (# theNet: ^CPNet;
+       enter theNet[]
+       do theNet.ID[] -> theDictionary.disassociate;
+       #);
+  #);
+(* This method registers a command with a CommandManager, 
+ * so that the command is displayed in history and can be undone/redone 
+ *)
+registerCommand:
+  (# theNet: ^CPNet;
+     theCommand: ^Command;
+     private: @<<SLOT registercommandPrivate:descriptor>>
+  enter (theNet[],theCommand[])
+  <<SLOT registerCommand:doPart>>
+  #);
+
+SSNode: Node
+  (# <<SLOT SSNodeLib:Attributes>>;
+     number, MLXPos, MLYPos, pred, suc: @Integer;
+     processed, fullyProcessed, completeSS: @Boolean;
+     descriptor: ^Text;
+     dialog: ^Snapable;
+     delta: @Point2d;
+     visible: @boolean;
+     deadInfo: @boolean;
+     dead:
+       (# d: @Boolean;
+       enter (#
+             enter d
+         do (if (d AND (NOT deadInfo) 
+                    and (((0.0, 0.0, 0.0) -> &Color) -> (getColor).equal))  then 
+                    Gray[] -> setColor; 
+                if);
+            d -> deadInfo;
+         #)
+       exit deadInfo
+       #);
+     update:: (# <<SLOT SSNodeUpdate:doPart>> #);
+     makeShape:: 
+       (# ItemType:: Composite;
+       <<SLOT SSNodemakeShape:doPart>>
+       #);
+     getIntersect::
+       (# <<SLOT SSNodeGetIntersect:doPart>> #);
+     deleteFromPage:: (# do THIS(SSNode)[] -> (getCPNPage).removeSSNode; #);
+     clone::< 
+       (# Type::< SSNode;
+       <<SLOT SSNodeClone:doPart >>
+       #);
+     getElementsToAddToGroupWithThisElement::
+       (# <<SLOT SSNodeGetElementsToAddToGroupWithThisElement:dopart>> #);
+     menuName::<
+       (# <<SLOT SSNodeMenuName:doPart>> #);
+  #);
+
+SSArc: Arc
+  (#
+     number, srcNode, destNode: @Integer;
+     descriptor: ^Text;
+     dialog: ^Snapable;
+     delta: @Point2d;
+     visible: @boolean;
+     deadInfo: @boolean;
+     dead:
+       (# d: @Boolean;
+       enter
+     (#
+     enter d
+     do (if (d AND (NOT deadInfo) and (((0.0, 0.0, 0.0) -> &Color) -> (getColor).equal)) then (0.5, 0.5, 0.5) -> &Color -> setColor; if);
+        d -> deadInfo;
+         #)
+       exit deadInfo
+       #);
+   deleteFromPage:: (# do THIS(SSArc)[] -> (getCPNPage).removeSSArc; #);
+   update:: (# <<SLOT SSArcUpdate:doPart>> #);
+   toggle:
+     (#
+     <<SLOT SSArcToggle:doPart>>
+     #);
+   menuName::<
+     (# <<SLOT SSArcMenuName:doPart>> #);
+#);
+
+(*
+ * This is for keeping the functionality of CPNet nodes, i.e. 
+ * Places and Transisions, seperate from other nodes 
+ *)
+CPNNode: Node
+  (##);
+  

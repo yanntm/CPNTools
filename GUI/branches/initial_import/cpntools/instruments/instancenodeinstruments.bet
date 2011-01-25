@@ -1,0 +1,203 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+INCLUDE 'cpncommands';
+INCLUDE 'cpninstrument';
+INCLUDE '../resources/figures/netfigures';
+INCLUDE 'deletioninstruments';
+INCLUDE 'hierarchyinstruments';
+
+ORIGIN '../cpnworkspace';
+
+--cpnworkspacelib:attributes--
+
+DeletePageIndexInstrument: Instrument
+  (# TargetType:: theIndex.InstanceNode;     
+     apply::
+       (# thePageInstance: ^PageInstance;
+       do target.getPageInstance -> thePageInstance[];
+          (thePageInstance.theTransition[], thePageInstance.thePage[]) -> DeletePage;
+          finish;
+       #);
+  #);
+
+CreatePageIndexInstrument: FigureTInstrument
+  (# TargetType:: theIndex.NetNode;
+     FigureT:: NewPageFigure;
+     
+     apply::
+       (#
+       do (# com: ^CreatePageIndexCommand;
+          do &CreatePageIndexCommand[] -> com[];
+             target[] -> com.prepare;
+             com.apply;
+             (target.net[],com[]) -> registerCommand;
+             finish;
+          #);
+       #);
+     init:: (# do 'new_page'->helpname[]; #);
+
+     ToolTip:: (# do NamesCreateNewPage -> getGlobalNames -> theTip[]; #);
+  #);
+
+CreatePageBinderInstrument: Instrument
+  (# TargetType:: CpnBinder;
+     relevant::
+       (#
+       do target.theNet[] <> NONE -> value;
+       #);
+     apply::
+       (# 
+       do (target.theNet[],target[]) -> CreateAndOpenPage;
+       #);
+  #);
+
+CreateAndOpenPage:
+  (# net: ^CPNet;
+     binder: ^CpnBinder;
+     theCreatePageCommand: ^CreatePageCommand;
+     theTabClipping: ^TabClipping;
+     theOpenTabCommand: ^OpenTabCommand;
+     newSheet: ^CPNSheet;
+     com: ^Command;
+  enter (net[],binder[])
+  do 
+     &CreatePageCommand[] -> theCreatePageCommand[];
+     net[]  -> theCreatePageCommand.prepare;
+     theCreatePageCommand.apply;
+     &CPNSheet[] -> newSheet[];
+     newSheet.init;
+     theCreatePageCommand.getInstance -> newSheet.setContent;
+     
+     &TabClipping[] -> theTabClipping[];
+     (newSheet[],binder.father[]) -> theTabClipping.init;
+     &OpenTabCommand[] -> theOpenTabCommand[];
+     theTabClipping[] -> theOpenTabCommand.init;
+     binder[] -> theOpenTabCommand.prepare;
+     theOpenTabCommand.apply;
+     &Command
+     (# getName::
+          (#
+          do NamesNetNodeMenuNewPageItem -> getGlobalNames -> name[];
+          #);
+        undo::
+          (#
+          do theOpenTabCommand.undo;
+             theCreatePageCommand.undo;
+          #);
+        redo::
+          (#
+          do theCreatePageCommand.redo;
+             theOpenTabCommand.redo;
+          #);
+     #)[] -> com[];
+     (net[],com[]) -> registerCommand;
+  #);
+
+CreatePageCommand: Command
+  (# TargetType:: CPNet;
+     theInstanceNode: ^theIndex.InstanceNode;
+     thePosition: @Integer;
+     theCPNPageClipping: @CPNPageClipping;
+     getName::
+       (#
+       do 'Create Page' -> name[];
+       #);
+     
+     apply::
+       (# theInstance: ^PageInstance;
+          newPage: ^CPNPage;
+          theNetNode: ^theIndex.NetNode;
+       do target[] -> theIndex.getNetNode -> theNetNode[];
+          
+          theNetNode.theIndexNodes.size -> thePosition;
+          
+          &CPNPage[] -> newPage[];
+          newPage.init;
+          target[] -> newPage.net[];
+          
+          NamesDefaultNameOfNewPage -> getGlobalNames -> newPage.name;
+          newPage.createPageInstance -> theInstance[];
+          theInstance[] -> newPage.prime[];
+          true -> theInstance.notMLinstance;
+          theInstance[] -> newPage.addPageInstance;
+          newPage[] -> target.addCPNPage;
+          &theIndex.InstanceNode[] -> theInstanceNode[];
+          theInstance[] -> theInstanceNode.init;
+          
+          theInstanceNode[] -> makeTextEditor;
+          newPage[] -> theCPNPageClipping.init;
+          
+          theInstanceNode[] -> theNetNode.addIndexNode;
+          theIndex.layout;
+       #);
+     
+     undo::
+       (# 
+       do none -> theCPNPageClipping.remove;          
+       #);
+     
+     redo::
+       (# 
+       do none -> theCPNPageClipping.insert;
+       #);
+     
+     getInstance:
+       (# theInstance: ^PageInstance;
+       do theInstanceNode.instance -> theInstance[];
+       exit theInstance[]
+       #);
+  #);
+
+CreatePageIndexCommand: Command
+  (# TargetType:: theIndex.NetNode;
+     
+     theCreatePageCommand: @CreatePageCommand;
+     
+     getName::
+       (#
+       do theCreatePageCommand.getName -> name[];
+       #);
+     
+     prepare::
+       (#
+       do target.net[] -> theCreatePageCommand.prepare;
+       #);
+     
+     apply::
+       (#
+       do theCreatePageCommand.apply;
+       #);
+     
+     undo::
+       (# 
+       do theCreatePageCommand.undo;         
+       #);
+     
+     redo::
+       (# 
+       do theCreatePageCommand.redo;
+       #);
+  #);

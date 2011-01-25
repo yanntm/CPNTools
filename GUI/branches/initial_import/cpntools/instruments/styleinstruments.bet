@@ -1,0 +1,470 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../cpnworkspace';
+INCLUDE '../../cpntools/debug';
+INCLUDE '../resources/texts/texts';
+INCLUDE '../resources/figures/stylefigures';
+INCLUDE '../resources/figures/createfigures';
+INCLUDE 'cpninstrument';
+
+-- CPNWorkspacelib: attributes --
+ChangeColorCommand: StyleCommand
+  (# getName::
+       (#
+       do 'Change color' -> name[];
+       #);
+     apply::
+       (# theColor: ^Color;
+       enter theColor[]
+       do target.scan
+          (#
+          do theColor[] -> current.setColor;
+          #);
+       #);
+  #);
+ChangeLineWidthCommand: StyleCommand
+  (# getName::
+       (#
+       do 'Change linewidth' -> name[];
+       #);
+     apply::
+       (# theLineWidth: @real;
+       enter theLineWidth
+       do target.scan
+          (#
+          do theLineWidth -> current.strokewidth;
+             current.changed;
+          #);
+       #);
+  #);
+CycleLineType: StyleCommand
+  (# getName::
+       (#
+       do 'Cycle linetype' -> name[];
+       #);
+     next:
+       (# linetype: ^Text;
+       enter linetype[]
+       do (if true
+           //'solid' -> linetype.equalNCS then
+              'dashed' -> linetype[];
+           //'dashed' -> linetype.equalNCS then
+              'dotted' -> linetype[];
+           //'dotted' -> linetype.equalNCS then
+              'longdashed' -> linetype[];
+           //'longdashed' -> linetype.equalNCS then
+              'dotdashed' -> linetype[];
+           //'dotdashed' -> linetype.equalNCS then
+              'none' -> linetype[];
+           //'none' -> linetype.equalNCS then
+              'solid' -> linetype[];
+          if);
+       exit linetype[]
+       #);
+     apply::
+       (# theLineType: ^Text;
+       do grab: target.scan
+            (#
+            do current.linetype[] -> theLineType[];
+               leave grab;
+            #);
+          theLineType[] -> next -> theLineType[];
+          target.scan
+          (#
+          do theLineType[] -> current.linetype[];
+             current.changed;
+          #);
+       #);
+  #);
+
+ToggleFilled: StyleCommand
+  (# getName::
+       (#
+       do 'Toggle filled' -> name[];
+       #);
+     apply::
+       (# filled: @boolean;
+       do grab: target.scan
+            (#
+            do current.filled -> filled;
+               leave grab;
+            #);
+          target.scan
+          (#
+          do not filled -> current.setFill;
+          #);
+       #);
+  #);
+CycleArcHead: StyleCommand
+  (# getName::
+       (#
+       do 'Cycle head' -> name[];
+       #);
+     next:
+       (# size: @real;
+       enter size
+       do (if size
+           //0.5 then
+              0.7 -> size;
+           //0.7 then
+              1.0 -> size;
+           //1.0 then
+              1.2 -> size;
+           //1.2 then
+              1.5 -> size;
+           //1.5 then
+              2.0 -> size;
+           //2.0 then
+              0.5 -> size;
+           else
+              1.5 -> size;
+          if);
+       exit size
+       #);
+     apply::
+       (# size: @real;
+       do grab: target.scan
+            (# asArc: ^Arc;
+            do (if current## <= Arc## then
+                   current[] -> asArc[];
+                   asArc.arrowHeadSize -> size;
+                   leave grab;
+               if);
+            #);
+          size -> next -> size;
+          target.scan
+          (# asArc: ^Arc;
+          do (if current## <= Arc## then
+                 current[] -> asArc[];
+                 size -> asArc.arrowHeadSize;
+                 asArc.changed;
+             if);
+          #);
+       #);
+  #);
+
+
+SetColorInstrument: SimpleCpnInstrument
+  (# theColor: ^Color;
+     FigureT:: ColorFigure;
+     CommandType:: ChangeColorCommand;
+     ToolTip::
+       (# 
+       do NamesColor -> getGlobalNames -> theTip[];
+       #);   
+     init::
+       (# 
+       enter theColor[]
+       do 'set_color' -> helpname[];
+          ('foregroundcolour', theColor[]) -> options.setAddOption
+             (# OptionType:: ColorOption
+                  (# dname:: (# do 'Color' -> value[]; #); 
+                  #); 
+             #);
+       #);
+     applyCommand::
+       (#
+       do theColor[] -> theCommand.apply;
+       #);
+  #);
+
+SetLineWidthInstrument: SimpleCpnInstrument
+  (# theLineWidth: @RealObject;
+     CommandType:: ChangeLineWidthCommand;
+     FigureT:: LineWidthFigure;
+     
+     relevantPageElement::
+       (# 
+       do NOT(target## <= Inscription##) -> value;
+       #);
+     
+     ToolTip::
+       (# 
+       do NamesLineWidth -> getGlobalNames -> theTip[];
+       #);  
+     init::
+       (#
+       do 'line_thickness' -> helpname[];
+          1.0 -> theLineWidth;
+          ('linewidth','linewidth.linewidth')->options.setAddOptionWithDefault
+          (# OptionType:: RealOption
+               (# dname:: (# do 'Width' -> value[]; #); 
+               #); 
+          #);
+       #);
+     applyCommand::
+       (#
+       do 'linewidth' -> options.lookupReal -> theLineWidth;
+          theLineWidth -> theCommand.apply;
+       #);
+  #);
+
+CycleLinePatternInstrument: SimpleCpnInstrument
+  (# CommandType:: CycleLineType;
+     FigureT:: LinePatternFigure;
+     ToolTip::
+       (# 
+       do NamesLinePattern -> getGlobalNames -> theTip[];
+       #);       
+     init::
+       (#
+       do ('linepattern1','longdashed')->options.setAddOption
+          (# OptionType:: TextOption(# invisible:: trueObject; #); #);
+       #);
+     applyCommand::
+       (#
+       do theCommand.apply;
+       #);
+  #);
+
+ToggleFillInstrument: SimpleCpnInstrument
+  (# CommandType:: ToggleFilled;
+     FigureT:: ToggleFillFigure;
+     ToolTip::
+       (# 
+       do NamesFill -> getGlobalNames -> theTip[];
+       #); 
+     applyCommand::
+       (#
+       do theCommand.apply;
+       #);
+     init::
+       (# 
+       do 'toggle_fill' -> helpname[];
+       #);
+  #);
+CycleArcHeadInstrument: SimpleCpnInstrument
+  (# CommandType:: CycleArcHead;
+     FigureT:: CycleArcHeadFigure;
+     ToolTip::
+       (# 
+       do NamesCycleArcHead -> getGlobalNames -> theTip[];
+       #); 
+     applyCommand::
+       (#
+       do theCommand.apply;
+       #);
+     init::
+       (# 
+       do 'cycle_arc_head' -> helpname[];
+       #);
+  #);
+
+BasicStyleCommand: Command
+  (# TargetType:: PageElement;
+     before: ^Properties;
+     after: ^Properties;
+     
+     prepare::
+       (#
+       do target.getStyle -> before[];
+       #);
+     apply::
+       (#
+       do target.getStyle -> after[];
+       #);
+     
+     undo::
+       (#
+       do before[] -> target.setStyle;
+       #);
+     redo::
+       (#
+       do after[] -> target.setStyle;
+       #);
+  #);
+
+StyleCommand: Command
+  (# TargetType:: PageElementList;
+     getName::<
+       (#
+       do INNER;
+          (if name[] = NONE then
+              'Change style' -> name[];
+          if);
+          ' of ' -> name.puttext;
+          scan: target.scan
+            (#
+            do current[] -> getPatternName -> name.puttext;
+               leave scan;
+            #);
+          (if target.size > 1 then
+              '...' -> name.puttext;
+          if);
+       #);
+    
+     commands: @List
+       (# Element:: BasicStyleCommand;
+       #);
+     
+     prepare::
+       (#
+       do (#
+          do target.scan
+             (# processOne:
+                  (# elm: ^PageElement;
+                     aBasicStyleCommand: ^BasicStyleCommand;
+                  enter elm[]
+                  do &BasicStyleCommand[] -> aBasicStyleCommand[];
+                     elm[] -> aBasicStyleCommand.prepare;
+                     aBasicStyleCommand[] -> commands.append;
+                  #);
+                processAll:
+                  (# elm: ^PageElement;
+                     theList: ^InscriptionList;
+                  enter elm[]
+                  do elm[] -> processOne;
+                     elm.getInscriptions -> theList[];
+                     theList.scan
+                     (#
+                     do current[] -> processOne;
+                     #);
+                  #);
+             do current[] -> processAll;
+             #);
+          #);
+       #);
+     
+    
+     apply::<
+       (#
+       do INNER;
+          commands.scan
+          (#
+          do current.apply;
+          #);
+       #);
+     
+     undo::
+       (#
+       do commands.scanReverse
+          (#
+          do current.undo;
+          #);
+       #);
+     redo::
+       (#
+       do commands.scan
+          (#
+          do current.redo;
+          #);
+       #);
+     
+  #);
+
+ApplyGraphicsCommand: StyleCommand
+  (# style: ^Properties;
+     apply::
+       (#
+       do target.scan
+          (#
+             do style[] -> current.setStyle;
+          #);
+       #);
+  #);
+
+CloneGraphicsInstrument: CPNInstrument
+  (# FigureT:: CloneGraphicsFigure;
+     targetType:: PageElement;
+
+     ToolTip::
+       (# 
+       do NamesCloneGraphics -> getGlobalNames -> theTip[];
+       #);
+     
+     thePageElementInstrument: @Instrument
+       (# TargetType:: PageElement;
+          relevant::
+            (#
+            do (NOT (candidate## <= guideline##)) -> value;
+            #);
+          apply::
+            (# theApplyGraphicsInstrument: ^ApplyGraphicsInstrument;
+               picker: ^PickInstrument;
+               
+               createFilter:
+                 (# filter: ^PropertiesFilter;
+                 do &PropertiesFilter[] -> filter[];
+                    (if 'color' -> options.lookupBoolean then
+                        'color' -> filter.append;
+                    if);
+                    (if 'width' -> options.lookupBoolean then
+                        'width' -> filter.append;
+                    if);
+                    (if 'height' -> options.lookupBoolean then
+                        'height' -> filter.append;
+                    if);
+                    (if 'lineWidth' -> options.lookupBoolean then
+                        'lineWidth' -> filter.append;
+                    if);
+                    (if 'fill' -> options.lookupBoolean then
+                        'fill' -> filter.append;
+                    if);
+                    (if 'arrowHeadSize' -> options.lookupBoolean then
+                        'arrowHeadSize' -> filter.append;
+                    if);
+                 exit filter[]
+                 #);
+            do &ApplyGraphicsInstrument[] -> theApplyGraphicsInstrument[];
+               target[] -> theApplyGraphicsInstrument.init;
+               target.getStyle -> theApplyGraphicsInstrument.style[];
+               createFilter -> theApplyGraphicsInstrument.style.applyFilter;
+               theHand.active[] -> picker[];
+               theApplyGraphicsInstrument[] -> picker.activateInstrument;
+            #);
+       #);
+     
+     init::
+       (#
+       do ('color','clonegraphics.color') -> options.setAddOptionWithDefault(# OptionType:: BooleanOption; #);
+          ('width','clonegraphics.width') -> options.setAddOptionWithDefault(# OptionType:: BooleanOption; #);
+          ('height','clonegraphics.height') -> options.setAddOptionWithDefault(# OptionType:: BooleanOption; #);
+          ('lineWidth','clonegraphics.linewidth') -> options.setAddOptionWithDefault(# OptionType:: BooleanOption; #);
+          ('fill','clonegraphics.fill') -> options.setAddOptionWithDefault(# OptionType:: BooleanOption; #);
+          ('arrowHeadSize','clonegraphics.archead') -> options.setAddOptionWithDefault(# OptionType:: BooleanOption; #);
+          thePageElementInstrument[] -> register;
+       #);
+     
+  #);
+
+ApplyGraphicsInstrument: SimpleCpnInstrument
+  (# style: ^Properties;
+     FigureT::< ApplyGraphicsFigure;
+     CommandType:: ApplyGraphicsCommand; 
+     applyCommand::
+       (# 
+       do style[] -> theCommand.style[];
+          theCommand.apply;
+       #);
+     init::
+       (# clonedElement: ^PageElement;
+       enter clonedElement[]
+       do &ApplyGraphicsFigure[] -> tmpFigure[];
+          clonedElement[] -> tmpFigure.init;
+          tmpFigure[] -> instrumentCursor.setFigure;
+          tmpFigure[] -> instrumentIcon.setFigure;
+       #);
+  #);

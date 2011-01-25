@@ -1,0 +1,207 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../snapable'
+
+-- SnapableSnapTo:doPart --
+do 
+   
+   (# xmin, xmax, ymin, ymax: @Real;
+      left, right, top, bottom: @Real;
+      anchors: ^PointList;
+      pos: ^Point2d;
+      snapTo: ^Point2d;
+      width: @real;
+      height: @real;
+      ax: @real;
+      ay: @real;
+   do getWidth -> width;
+      getHeight -> height;
+      target.bounds -> (xmin, xmax, ymin, ymax);
+      20 * (xmax - xmin) / 100 -> ax;
+      20 * (ymax - ymin) / 100 -> ay;
+      (if ax > 13 then
+          13 -> ax;
+      if);
+      (if (ay > 13) then
+          13 -> ay;
+      if);
+      xmin + ax -> xmin;
+      xmax - ax -> xmax;
+      ymin + ay -> ymin;
+      ymax - ay -> ymax;
+
+      x + (width*10) / 200 -> right;
+      x - (width*10) / 200 -> left;
+      y + (height*10) / 200 -> bottom;
+      y - (height*10) / 200 -> top;
+      
+      (if true
+       //(xmin > right) then
+          LeftJustify -> target.changeAnchorHorizontal -> dx;
+       //(left > xmax) then
+          RightJustify -> target.changeAnchorHorizontal -> dx;
+       else
+          CenterJustify -> target.changeAnchorHorizontal -> dx;
+      if);
+      (if true
+       //(ymin > bottom) then
+          TopJustify -> target.changeAnchorVertical -> dy;
+       //(top > ymax) then
+          BottomJustify -> target.changeAnchorVertical -> dy;
+       else
+          CenterJustify -> target.changeAnchorVertical -> dy;
+      if);
+      getAnchors -> anchors[];
+      target.position -> MakePoint -> pos[];
+      0 -> target.snap_id;
+      
+      search: anchors.scan
+        (# dist: @real;
+           inx: @integer;
+        do (current[], pos[]) -> PointDist -> dist;
+           inx + 1 -> inx;
+           (if dist < 10 then
+               current[] -> snapTo[];
+
+               inx -> target.snap_id;
+               leave search;
+           if);
+        #);
+      (if snapTo[] <> NONE then
+          snapTo.x -> target.x;
+          snapTo.y -> target.y;
+      if);
+      target.positionToDelta;
+      target.changed;
+   #);
+   
+-- SnapableChangeAnchorHorizontal:doPart --
+do (# w, h, x1, y1: @Real;
+   do bounds -> (w, x1, h, y1);
+      x1 - w -> w;
+      y1 - h -> h;
+
+      (if newAnchor
+       // LeftJustify then
+          (if anchorHorizontal
+           // CenterJustify then
+              -w / 2 -> dx;
+           // RightJustify then
+              -w -> dx;
+          if);
+       // CenterJustify then
+          (if anchorHorizontal
+           // LeftJustify then
+              w / 2 -> dx;
+           // RightJustify then
+              - w / 2 -> dx;
+          if);
+       // RightJustify then
+          (if anchorHorizontal
+           // LeftJustify then
+              w -> dx;
+           // CenterJustify then
+              w / 2 -> dx;
+          if);
+      if);
+      x + dx -> x;
+
+      newAnchor -> anchorHorizontal;
+   #);
+
+-- SnapableChangeAnchorVertical:doPart --
+do (# w, h, x1, y1: @Real;
+   do bounds -> (w, x1, h, y1);
+      x1 - w -> w;
+      y1 - h -> h;
+
+      (if newAnchor
+       // TopJustify then
+          (if anchorVertical
+           // CenterJustify then
+              - h / 2 -> dy;
+           // BottomJustify then
+              - h -> dy;
+          if);
+       // CenterJustify then
+          (if anchorVertical
+           // TopJustify then
+              h / 2 -> dy;
+           // RightJustify then
+              - h / 2 -> dy;
+          if);
+       // BottomJustify then
+          (if anchorVertical
+           // TopJustify then
+              h -> dy;
+           // CenterJustify then
+              h / 2 -> dy;
+          if);
+      if);
+      y + dy  -> y;
+
+      newAnchor -> anchorVertical;
+   #);
+
+
+-- SnapableDefaultSnap:doPart --
+do defaultSnapToElement -> target[];
+   (if target[] <> NONE then
+       target.bounds -> (xmin, xmax, ymin, ymax);
+       target.getAnchors -> anchors[];
+       INNER DefaultSnap;
+       (if snap_id <> 0 then
+           snap_id -> anchors.get -> snappoint[];
+           snappoint -> position;
+       if);
+       snap;
+       changed;
+   if);
+ 
+-- SnapableGetRegions:doPart --
+do &SnapableList[] -> theList[];
+   INNER;
+-- SnapableFormatRegions:doPart --
+do (# anchors: ^PointList;
+      pos: ^Point2d;
+   do getAnchors -> anchors[];
+      (getRegions).scan
+      (# 
+      do (if current.snap_id <> 0 then
+             current.snap_id -> anchors.get -> pos[];
+             (pos.x, pos.y) -> current.position;
+          else
+             (x + current.dx, y + current.dy) -> current.position;
+         if);
+      #);
+   #);
+-- SnapableClone:doPart --
+do snap_id -> new.snap_id;
+   anchorHorizontal -> new.anchorHorizontal;
+   anchorVertical -> new.anchorVertical;
+   inner;
+
+

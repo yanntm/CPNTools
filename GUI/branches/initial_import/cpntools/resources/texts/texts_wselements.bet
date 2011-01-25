@@ -1,0 +1,133 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '~beta/postwimp/workspace';
+
+(* Usage:
+ * Include 'cpn2000/cpntools/resources/texts/texts'
+ *)
+
+-- Workspacelib: attributes --
+NamesStepNode: (# exit 3001 #);
+NamesTimeNode: (# exit 3002 #);
+NamesGlobalBoxNode: (# exit 3003 #);
+NamesHistoryNode: (# exit 3004 #);
+NamesInteriorNode: (# exit 3005 #);
+NamesPage: (# exit 3006 #);
+NamesPredicateNode: (# exit 3007 #);
+NamesPredicateNodeInterior: (# exit 3008 #);
+NamesObservationNode: (# exit 3009 #);
+NamesObservationNodeInterior: (# exit 3010 #);
+NamesNetSurveillanceNode: (# exit 3011 #);
+NamesIndexNode: (# exit 3012 #);
+NamesBindersNode: (# exit 3013 #);
+NamesBinderNode: (# exit 3014 #);
+NamesHelpNode: (# exit 3015 #);
+NamesNewsNode: (# exit 3016 #);
+NamesHomepage: (# exit 3017 #);
+NamesBugsNode: (# exit 3018 #);
+NamesLicenseNode: (# exit 3019 #);
+NamesSupportNode: (# exit 3082 #);
+NamesAboutNode: (# exit 3042 #);
+NamesDataCollNode: (# exit 3020 #);
+NamesStyleTools: (# exit 3021 #);
+NamesCreateAuxTools: (# exit 3022 #);
+NamesCreateTools: (# exit 3023 #);
+NamesSimulationTools: (# exit 3024 #);
+NamesHierarchyTools: (# exit 3025 #);
+NamesViewTools: (# exit 3026 #);
+NamesSurveillanceTools: (# exit 3027 #);
+NamesNetTools: (# exit 3028 #);
+NamesPrintTools: (# exit 3029 #);
+NamesToolBox: (# exit 3030 #);
+NamesProgramTitle: (# exit 3031 #);
+NamesDefaultToolboxName: (# exit 3032 #);
+NamesLoadingNet: (# exit 3033 #);
+
+NamesOGTools: (# exit 3034 #);
+NamesOG2Tools: (# exit 3045 #);
+
+NamesDefaultNameOfNewNet: (# exit 3035 #);
+NamesDefaultNameOfNewPage: (# exit 3036 #);
+NamesGlobalOptions: (# exit 3037 #);
+NamesGlobalOptionsConsistency: (# exit 3038 #);
+NamesGlobalOptionsConsistencyHistory: (# exit 3039 #);
+NamesGlobalOptionsAutosaveSteps: (# exit 3040 #);
+NamesGlobalOptionsConsistencyNow: (# exit 3041 #);
+
+NamesMonitoringName: (# exit 3046 #);
+NamesDataCollectionName: (# exit 3047 #);
+NamesMarkingSizeName: (# exit 3048 #);
+
+MonitorStop: (# exit 3049 #);
+MonitorInit: (# exit 3050 #);
+MonitorAction: (# exit 3051 #);
+MonitorObserver: (# exit 3052 #);
+MonitorPredicate: (# exit 3053 #);
+MonitorNodes: (# exit 3054 #);
+
+NamesBreakpointName: (# exit 3055 #);
+NamesUserDefinedName: (# exit 3056 #);
+
+NamesDataCollectionType: (# exit 3057 #);
+NamesMarkingSizeType: (# exit 3058 #);
+NamesBreakpointType: (# exit 3059 #);
+NamesUserDefinedType: (# exit 3060 #);
+NamesUnkownMonitorType: (# exit 3061 #);
+
+NamesMonitoringToolBox: (# exit 3062 #);
+
+NamesMonitorTimed: (# exit 3063 #);
+NamesMonitorLogged: (# exit 3064 #);
+
+MonitorInitFun: (# exit 3065 #);
+NamesNewMonitor: (# exit 3066 #);
+
+NamesWriteToFileName: (# exit 3067 #);
+NamesWriteInFileType: (# exit 3068 #);
+
+NamesMonitorFileExtension: (# exit 3069 #);
+NamesMonitorFileExtensionDefault: (# exit 3070 #);
+
+NamesListLengthDataCollectionName: (# exit 3071 #);
+NamesCountTransitionOccurrenceDataCollectionName: (# exit 3072 #);
+NamesPlaceContentBreakpointName: (# exit 3073 #);
+NamesTransitionEnabledBreakpointName: (# exit 3074 #);
+
+NamesListLengthDataCollectionType: (# exit 3075 #);
+NamesCountTransitionOccurrenceDataCollectionType: (# exit 3076 #);
+NamesPlaceContentBreakpointType: (# exit 3077 #);
+NamesTransitionEnabledBreakpointType: (# exit 3078 #);
+
+NamesMonitorIsEmpty: (# exit 3079 #);
+NamesMonitorIsEnabled: (# exit 3080 #);
+
+NamesGlobalMonitorName: (# exit 3081 #);
+
+NamesFileDialogFilter: (# exit 5000 #);
+NamesPrintDialogFilter: (# exit 5001 #);
+NamesSaveReportFilter: (# exit 5002 #);
+NamesExportDeclarationFilter: (# exit 5003 #);
+

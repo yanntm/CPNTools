@@ -1,0 +1,1391 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../cpnet';
+
+-- CPNPagePrivate:Descriptor --
+(# init: 
+     (# 
+     do places.init;
+        transitions.init;
+        arcs.init;
+        guidelines.init;
+        auxs.init;
+        groups.init;
+        topCPNPages.init;
+        nodesStatus.init;
+        subpagesStatus.init;
+        pageInstances.init;
+        SSNodes.init;
+	SSArcs.init;	
+     #);
+   places: @PlaceIDDictionary; 
+   transitions: @TransitionIDDictionary;
+   SSArcs: @SSArcIDDictionary;
+   arcs: @ArcIDDictionary;
+   guidelines: @GuidelineList;
+   auxs: @AuxIDDictionary;
+   SSNodes: @SSNodeIDDictionary;
+   groups: @GroupList;
+   topCPNPages: @CPNPageIDDictionary;
+   nodesStatus, subpagesStatus: @StatusContainer;
+   pageInstances: @PageInstanceIdDictionary;
+   subpagesHalo: ^Color;
+   selected: ^Group;
+#)
+
+-- CPNPageSetSubpagesHalo:DoPart --
+do halo[] -> private.subpagesHalo[];
+   changed;
+   
+-- CPNPageGetSubpagesHalo:DoPart --
+do private.subpagesHalo[] -> halo[];
+   
+-- CPNPageToString:doPart --
+do &Text[] -> str[];
+   'CPNPage: %s (%s)' -> str.putFormat 
+   (# 
+   do (if theName[] = none then
+          '<no name>' -> s;
+       else
+          thename.copy -> s;
+      if);
+      (if id[] = none then
+          '<no id>' -> s;
+       else
+          id.copy -> s;
+      if);
+   #);
+   
+-- CPNPageNodesStatusToString:doPart --
+do &text[] -> str[];
+   '%s\n%s ' -> str.putFormat
+   (# 
+   do toString -> s;
+      this(CPNPage).private.nodesStatus.toString -> s;
+   #);
+   
+-- CPNPageSubpagesStatusToString:doPart --
+do &text[] -> str[];
+   '%s\n%s ' -> str.putFormat
+   (# 
+   do toString -> s;
+      this(CPNPage).private.subpagesStatus.toString -> s;
+   #);
+   
+-- CPNpageonSemChanges:dopart--
+do (if debugging then
+       'Semantic changed on page %s, father: %s' -> debugCPNet
+       (# 
+       do name -> s;
+          (if father[] <> NONE then
+              father[] -> getPatternName -> s;
+           else
+              'NONE' -> s;
+          if);
+       #);
+   if);
+   (if net[] <> none then
+       (any_status,unchecked) -> changeStatus;
+       (* FIX, her opstaar en fejl hvis du sletter en topside i et hierarkinet, father[] = NONE
+        * Boer en topside have en father??? og i givet fald hvad? *)
+       (if father[] <> NONE then (* New DS: must be removed /omega *)
+           father.semanticChanged;
+       if);
+       ('CPNPage.net[] <> NONE', net[] <> NONE) -> assert (# #);
+       net.semanticChanged;
+   if);
+
+   
+-- CPNpagenameChanged:doPart --
+do (# allMonitors: ^MonitorIDDictionary;
+      containsCompiledNodes:
+        (# result: @boolean;
+        do false -> result;
+           search:
+             (#
+             do scanTransitions
+                (#
+                do (if current.status = COMPILED then
+                       true -> result;
+                       leave search;
+                   if);
+                #);
+                scanPlaces
+                (#
+                do (if current.status = COMPILED then
+                       true -> result;
+                       leave search;
+                   if);
+                #)
+             #);
+        exit result
+        #);
+   do (if (checkedName[] <> NONE) and (not ('' -> checkedName.equal)) then
+          (if namestatus = checked then
+              false -> foundAnother;
+              L: (# 
+                 do net.scanCPNPages
+                    (#
+                    do (if (current.namestatus = incorrect) AND
+                           (current.checkedName[] -> checkedName.equal) then
+                           current.changed;
+                           true -> foundAnother;
+                           leave L;
+                       if);
+                    #);
+                 #);
+          if);
+          (if not foundAnother then
+              checkedName[] -> net.pageNames.delete;
+          if);
+      if);
+      (any_status,unchecked) -> changeNameStatus;
+      
+      
+      (if containsCompiledNodes then
+          semanticchanged;
+      if);
+      
+      &MonitorIDDictionary[] -> allMonitors[];
+      allMonitors.init;
+      findAllMonitorsDependingOnThis:scanNodes
+        (# 
+        do current.scanNodeInstances
+           (# 
+           do current.scanMonitors
+              (# currentMonitor: ^Monitor;
+              do current[] -> currentMonitor[];
+                 (if (currentMonitor.id[] -> allMonitors.lookup)=none then
+                     (currentMonitor.id[],currentMonitor[]) -> allMonitors.associate;
+                 if);
+              #);
+           #);
+        #);
+      allMonitors.scan
+      (# 
+      do current.semanticChanged;
+      #);
+   #);
+   
+-- CPNpageonTextUpdated:doPart -- 
+do nameChanged;
+   
+-- CPNpageHideAllError:dopart --       
+do scanNodes (* only transition and places *)
+     (#
+   do current.hideError;
+   #);
+   
+   scanArcs
+     (#
+   do current.hideError;
+   #);
+
+-- CPNpageShowAllError:dopart --
+do scanNodes
+     (#
+   do current.showError;
+   #);
+   
+   scanArcs
+     (#
+   do current.showError;
+   #);
+
+-- CPNPageLookupPlace:doPart --
+do id[] -> private.places.lookup -> result[];
+   
+-- CPNPageLookupTransition:doPart --
+do id[] -> private.transitions.lookup -> result[];
+
+-- CPNPageLookupArc:doPart --
+do id[] -> private.arcs.lookup -> result[];
+
+-- CPNPageLookupSSNode:doPart --
+do id[] -> private.SSNodes.lookup -> result[];
+
+
+-- CPNPageLookupPageElement:doPart --
+do id[] -> private.places.lookup -> result[];
+   (if result[] = NONE then 
+       id[] -> private.transitions.lookup -> result[];
+   if);
+   (if result[] = NONE then
+       id[] -> private.arcs.lookup -> result[];
+   if);
+   (if result[] = NONE then
+       id[] -> private.auxs.lookup -> result[];
+   if);
+   (if result[] = NONE then
+       id[] -> private.ssnodes.lookup -> result[];
+   if);
+
+-- CPNPageLookupTopCPNPage:doPart --
+do id[] -> private.topCPNPages.lookup -> result[];
+   
+-- CPNPageLookupInstance:doPart --
+do id[] -> private.pageInstances.lookup -> result[];
+   
+-- CPNPageScanNotifiers:doPart --
+do private.places.scan 
+   (# do current[] -> this(scanNotifiers).current[]; inner scanNotifiers; #);
+   private.transitions.scan
+   (# do current[] -> this(scanNotifiers).current[]; inner scanNotifiers; #);
+   private.arcs.scan
+   (# do current[] -> this(scanNotifiers).current[]; inner scanNotifiers; #);
+   private.guidelines.scan
+   (# do current[] -> this(scanNotifiers).current[]; inner scanNotifiers; #);
+   private.auxs.scan
+   (# do current[] -> this(scanNotifiers).current[]; inner scanNotifiers; #);
+   private.groups.scan
+   (# do current[] -> this(scanNotifiers).current[]; inner scanNotifiers; #);
+   
+-- CPNPageScanTransitions:doPart --   
+do private.transitions.scan
+   (# 
+   do current[] -> this(scanTransitions).current[]; 
+      inner scanTransitions; 
+   #);
+   
+-- CPNPageScanSubstitutionTransitions:doPart --
+do scanTransitions
+   (# 
+   do (if current.getSubpage <> none then
+          current[] -> this(scanSubstitutionTransitions).current[];
+          inner scanSubstitutionTransitions;
+      if);
+   #);
+   
+-- CPNPageScanSubpages:doPart --
+do scanSubstitutionTransitions
+   (# 
+   do current.getSubpage -> this(scanSubpages).current[];
+      inner scanSubpages;
+   #);
+   
+-- CPNPageScanSubpageTree:doPart --
+do (# visitedPlaces: @CPNPageIDDictionary;
+      visit:
+        (# theCPNPage: ^CPNPage;
+        enter theCPNPage[]
+        do (if (theCPNPage.id[] -> visitedPlaces.lookup) = none then
+               (theCPNPage.id[], theCPNPage[])
+                 -> visitedPlaces.associate;
+               theCPNPage[] -> current[]; 
+               
+               inner scanSubpageTree;
+               
+               scanSubpages
+               (#
+               do current[] -> visit;
+               #);
+           if);
+        #);
+   do visitedPlaces.init;
+      this(CPNPage)[] -> visit;
+   #);
+   
+-- CPNPageScanPlaces:doPart --     
+do private.places.scan 
+   (# 
+   do current[] -> this(scanPlaces).current[];
+      INNER scanPlaces; 
+   #);
+   
+-- CPNPageScanSSNodes:doPart --
+do private.ssnodes.scan
+   (#
+   do current[] -> this(scanSSNodes).current[];
+      inner scanSSNodes;
+   #);
+
+-- CPNPageScanSSArcs:doPart --
+do private.ssarcs.scan
+   (#
+   do current[] -> this(scanSSArcs).current[];
+      inner scanSSArcs;
+   #);
+
+-- CPNPageScanFusionPlaces:doPart --
+do scanPlaces
+   (# 
+   do (if current.getFusionSet <> none then
+          current[] -> this(scanFusionPlaces).current[];
+          inner scanFusionPlaces;
+      if);
+   #);
+   
+-- CPNPageScanArcs:doPart --     
+do private.arcs.scan 
+   (# 
+   do current[] -> this(scanArcs).current[];
+      INNER scanArcs; 
+   #);
+   
+-- CPNPageScanGuidelines:doPart --
+do private.guidelines.scan
+   (#
+   do current[] -> this(scanGuidelines).current[];
+      INNER scanGuidelines;
+   #);
+   
+-- CPNPageScanHorizontalGuidelines:doPart --
+do private.guidelines.scan
+   (#
+   do (if current## <= HorizontalGuideline## then
+          current[] -> this(scanHorizontalGuidelines).current[];
+          INNER scanHorizontalGuidelines;
+      if);
+   #);
+   
+-- CPNPageScanVerticalGuidelines:doPart --
+do private.guidelines.scan
+   (#
+   do (if current## <= VerticalGuideline## then
+          current[] -> this(scanVerticalGuidelines).current[];
+          INNER scanVerticalGuidelines;
+      if);
+   #);
+   
+-- CPNPageScanAuxs:doPart --
+do private.auxs.scan
+   (#
+   do current[] -> this(scanAuxs).current[];
+      INNER scanAuxs;
+   #);
+   
+-- CPNPageScanGroups:doPart --
+do private.groups.scan
+   (#
+   do current[] -> this(scanGroups).current[];
+      INNER scanGroups;
+   #);
+   
+-- CPNPageScanNodes:doPart --
+do private.places.scan 
+   (# do  current[] -> this(scanNodes).current[]; inner scanNodes; #);
+   private.transitions.scan 
+   (# do  current[] -> this(scanNodes).current[]; inner scanNodes; #);
+   
+-- CPNPageScanPageElements:doPart --
+do private.places.scan 
+   (# do current[] -> this(scanPageElements).current[]; inner scanPageElements; #);
+   private.transitions.scan 
+   (# do current[] -> this(scanPageElements).current[]; inner scanPageElements; #);
+   private.arcs.scan 
+   (# do current[] -> this(scanPageElements).current[]; inner scanPageElements; #);   
+   private.auxs.scan
+   (# do current[] -> this(scanPageElements).current[]; inner scanPageElements; #);
+ private.ssnodes.scan
+   (# do current[] -> this(scanPageElements).current[]; inner scanPageElements; #);
+ private.ssarcs.scan
+   (# do current[] -> this(scanPageElements).current[]; inner scanPageElements; #);
+
+-- CPNPageScanPageInstances:doPart --
+do private.pageInstances.scan
+   (#
+   do current[] -> this(scanInstances).current[];
+      inner scanInstances;
+   #);
+   
+-- CPNPageScanTopCPNPages:doPart --
+do private.topCPNPages.scan
+   (# 
+   do current[] -> this(scanTopCPNpages).current[];
+      inner scanTopCPNpages;
+   #);
+   
+-- CPNPageAddTransition:doPart --
+do THIS(CPNPage)[] -> theTransition.attach;
+   (theTransition.id[], theTransition[]) -> private.transitions.associate;
+   this(CPNPage)[] -> theTransition.setCPNPage;
+   theTransition[] -> added;
+   
+-- CPNPageAddPlace:doPart --
+do THIS(CPNPage)[] -> thePlace.attach;
+   (thePlace.id[], thePlace[]) -> private.places.associate;
+   THIS(CPNPage)[] -> thePlace.setCPNPage;
+   thePlace[] -> added;
+    
+-- CPNPageAddArc:doPart --
+do THIS(CPNPage)[] -> theArc.attach;
+   (theArc.id[], theArc[]) -> private.arcs.associate;
+   THIS(CPNPage)[] -> theArc.setCPNPage;
+   theArc[] -> added;
+
+   
+-- CPNPageAddGuideline:doPart --
+do THIS(CPNPage)[] -> theGuideline.attach;
+   theGuideline[] -> private.guidelines.append;
+   THIS(CPNPage)[] -> theGuideline.setCPNPage;
+   theGuideline[] -> added;
+   
+-- CPNPageAddAux:doPart --
+do THIS(CPNPage)[] -> theAux.attach;
+   (theAux.id[], theAux[]) -> private.auxs.associate;
+   THIS(CPNPage)[] -> theAux.setCPNPage;
+   theAux[] -> added;
+
+-- CPNPageAddSSNode:doPart --
+do (# allreadyInPage: @boolean;
+   do false -> allreadyInPage;
+      scanSSNodes 
+      (#
+      do
+         allreadyInPage OR ((current.number = theSSNode.number) AND (NOT current.dead))
+           -> allreadyInPage;
+      #);
+      false -> allreadyInPage;
+      (if NOT allreadyInPage then
+   	  THIS(CPNPage)[] -> theSSNode.attach;
+   	  (theSSNode.id[], theSSNode[]) -> private.SSNodes.associate;
+   	  THIS(CPNPage)[] -> theSSNode.setCPNPage;
+   	  theSSNode[] -> added;
+	  true -> succes;
+       else
+	  false -> succes;
+      if);
+   #);
+
+-- CPNPageAddSSArc:doPart --
+do THIS(CPNPage)[] -> theSSArc.attach;
+   (theSSArc.id[], theSSArc[]) -> private.SSArcs.associate;
+   THIS(CPNPage)[] -> theSSArc.setCPNPage;
+   theSSArc[] -> added;
+
+-- CPNPageAddGroup:doPart --
+do net[] -> theGroup.setCPNet;
+   THIS(CPNPage)[] -> theGroup.setCPNPage;
+   THIS(CPNPage)[] -> theGroup.attach;
+   theGroup[] -> private.groups.append;
+   theGroup[] -> added;   
+   
+-- CPNPageAddPageElement:doPart --
+do (if true 
+    // thePageElement## <= Place## then thePageElement[] -> addPlace;
+    // thePageElement## <= Transition## then thePageElement[] -> addTransition;
+    // thePageElement## <= Aux## then thePageElement[] -> addAux;
+    // thePageElement## <= Arc## then thePageElement[] -> addArc;
+    // thePageElement## <= Guideline## then thePageElement[] -> addGuideline;
+    else 
+       'Can not add %s to page %s in addPageElement ' 
+         -> debugtemp (# do thePageElement[] -> getPatternName -> s; toString -> s #);
+   if);
+   
+-- CPNPageAddTopCPNPage:doPart --
+do (theCPNPage.id[], theCPNPage[]) -> private.topCPNPages.associate;
+   
+-- CPNPageAddPageInstance:doPart --
+do (thePageInstance.id[], thePageInstance[]) -> private.pageInstances.associate;
+   
+-- CPNPageRemoveTransition:doPart --   
+do THIS(CPNPage)[] -> theTransition.detach;
+   theTransition.id[] -> private.transitions.disassociate;
+   theTransition[] -> removed;
+   
+-- CPNPageRemovePlace:doPart --   
+do THIS(CPNPage)[] -> thePlace.detach;
+   thePlace.id[] -> private.places.disassociate;
+   thePlace[] -> removed;
+   
+-- CPNPageRemoveSSNode:doPart --
+do THIS(CPNPage)[] -> theSSNode.detach;
+   theSSNode.id[] -> private.ssnodes.disassociate;
+   theSSNode[] -> removed;
+   
+-- CPNPageRemoveArc:doPart --   
+do THIS(CPNPage)[] -> theArc.detach;
+   theArc.id[] -> private.arcs.disassociate;
+   theArc[] -> removed;
+   
+-- CPNPageRemoveSSArc:doPart --
+do THIS(CPNPage)[] -> theSSArc.detach;
+   theSSArc.id[] -> private.ssarcs.disassociate;
+   theSSArc[] -> removed;
+   
+-- CPNPageRemoveGuideline:doPart --   
+do THIS(CPNPage)[] -> theGuideline.detach;
+   theGuideline[] -> private.guidelines.at -> private.guidelines.delete;
+   theGuideline[] -> removed;
+   
+-- CPNPageRemoveGroup:doPart --   
+do THIS(CPNPage)[] -> theGroup.detach;
+   theGroup[] -> private.groups.at -> private.groups.delete;
+   theGroup[] -> removed;
+   none -> theGroup.setCPNPage;
+   
+-- CPNPageRemoveAux:doPart --   
+do THIS(CPNPage)[] -> theAux.detach;
+   theAux.id[] -> private.auxs.disassociate;
+   theAux[] -> removed;
+   
+-- CPNPageRemovePageElement:doPart --
+do (if true 
+    // thePageElement## <= Place## then thePageElement[] -> removePlace;
+    // thePageElement## <= Transition## then thePageElement[] -> removeTransition;
+    // thePageElement## <= Aux## then thePageElement[] -> removeAux;
+    // thePageElement## <= Arc## then thePageElement[] -> removeArc;
+    // thePageElement## <= Guideline## then thePageElement[] -> removeGuideline;
+    else 
+       'Can not remove %s to page %s in removePageElement ' 
+         -> debugtemp (# do thePageElement[] -> getPatternName -> s; toString -> s #);
+   if);
+   
+-- CPNPageRemoveTopCPNPage:doPart --
+do theCPNPage.id[] -> private.topCPNPages.disassociate;
+   
+-- CPNPageRemovePageInstance:doPart --
+do thePageInstance.id[] -> private.pageInstances.disassociate;
+   
+-- CPNPageNumberOfTransitions:doPart --
+do private.transitions.size -> count;
+   
+-- CPNPageNumberOfNodes:doPart --
+do private.places.size + private.transitions.size
+     -> value;
+   
+-- CPNPageNumberOfInstances:doPart --
+do private.pageInstances.size -> count;
+   
+-- CPNPageAllPageInstancesUnderSameTransition:doPart --
+do (# theTransition: ^Transition;
+   do (if prime[] = none then
+          true -> value;
+          scan: scanInstances
+            (# 
+            do (if theTransition[] = none then
+                   current.theTransition[] -> theTransition[];
+               if);
+               (if current.theTransition[] <> theTransition[] then
+                   false -> value;
+                   leave scan;
+               if);
+            #);
+       else
+          false -> value;
+      if);
+   #);
+   
+-- CPNPageSetNet:doPart --
+do scanFusionPlaces
+   (# 
+   do net[] -> (current.getFusionSet).net[];
+   #);
+   scanTransitions
+   (#
+   do (if current.getSubPage <> NONE then
+          net[] -> (current.getSubPage).setNet;
+      if);
+   #);
+   
+-- CPNPagestatusMonitor: doPart --
+do (# old: @Integer;
+   do status -> old;
+      INNER statusMonitor;
+      (if old <> status then changed; if);
+   #);
+   
+-- CPNPagechangeStatus: doPart --
+do (if debugging then
+       'Page.changeStatus(%i, %i) Status = %i; Name = "%s" ' -> debugCheckerLoop(# do from -> i; to -> i; status -> i; name -> s; #);
+   if);
+   (if (status = from) or (from = any_status) then
+       to -> status;
+   if);   
+   
+-- CPNPageChangeNameStatus:DoPart --
+do (if (namestatus = from) or (from = any_status) then
+       to -> namestatus;
+   if);
+   
+-- CPNPagecontainsSubpage: doPart --
+do L: private.pageInstances.scan
+     (#
+     do (if current[]=page[] then true->result; if);
+        (if page[]->current.containsSubpage then true->result; if);
+        (if result then leave L; if);
+     #);
+   
+-- CPNPagegetNewGroupName: doPart --
+do &text[] -> name[];
+   nofgroups + 1 -> nofgroups;
+   NamesNewGroupName -> getGlobalNames -> name.putFormat(# do nofgroups -> i; #);
+   
+-- CPNPageSubpageStatusChanged:doPart --
+do (# oldStatusOfSubpages, newStatusOfSubpages, statusOfNodes,
+      oldCombinedStatus, newCombinedStatus: @integer;
+   do private.subpagesStatus.leastUpperBound -> oldStatusOfSubpages;      
+      
+      (if from <> any_status then
+          from -> private.subpagesStatus.decrement;    
+      if);
+      
+      (if to <> any_status then
+          to -> private.subpagesStatus.increment;
+      if);
+      
+      private.subpagesStatus.leastUpperBound -> newStatusOfSubpages;
+      private.nodesStatus.leastUpperBound -> statusOfNodes;
+      (oldStatusOfSubpages, statusOfNodes) -> min -> oldCombinedStatus;
+      (newStatusOfSubpages, statusOfNodes) -> min -> newCombinedStatus;
+      
+      (if oldCombinedStatus <> newCombinedStatus then
+          (if isPrime then
+              (oldCombinedStatus, newCombinedStatus) -> net.topCPNPageStatusChanged;
+           else
+              scanTopCPNPages
+              (#
+              do (oldCombinedStatus, newCombinedStatus) -> current.subpageStatusChanged;
+              #);
+          if);
+      if);
+   #);
+   
+-- CPNPageSetSubpage:DoPart --
+do (any_status, theSubpage.getNodesAndSubpagesStatus) 
+     -> subpageStatusChanged;
+   
+-- CPNPageRemoveSubpage:DoPart --
+do (theSubpage.getNodesAndSubpagesStatus, any_status) 
+     -> subpageStatusChanged;
+
+-- CPNPageGetNodesStatus:doPart --
+do private.nodesStatus.leastUpperBound -> value;
+   
+-- CPNPageGetSubpagesStatus:doPart --
+do private.subpagesStatus.leastUpperBound -> value;
+   
+-- CPNPageGetNodesAndSubpagesStatus:doPart --
+do (if private.nodesStatus.leastUpperBound < 
+       private.subpagesStatus.leastUpperBound then
+       private.nodesStatus.leastUpperBound -> value;
+    else 
+       private.subpagesStatus.leastUpperBound -> value;
+   if);
+       
+-- CPNPageNodeChangedStatus:doPart --
+do (# oldStatusOfNodes, newStatusOfNodes, statusOfSubpages,
+      oldCombinedStatus, newCombinedStatus: @integer;
+   do private.nodesStatus.leastUpperBound -> oldStatusOfNodes;
+      
+      (if from <> any_status then
+          from -> private.nodesStatus.decrement;
+      if);
+      (if to <> any_status then
+          to -> private.nodesStatus.increment;
+      if);
+      
+      private.nodesStatus.leastUpperBound -> newStatusOfNodes;
+      private.subpagesStatus.leastUpperBound -> statusOfSubpages;
+      (oldStatusOfNodes, statusOfSubpages) -> min -> oldCombinedStatus;
+      (newStatusOfNodes, statusOfSubpages) -> min -> newCombinedStatus;
+      
+      (if (from = any_status) or (to = any_status) then
+          changed; 
+          (* Why the hell is changed called twice??? *)
+          changed;
+      if);
+      (if oldCombinedStatus <> newCombinedStatus then
+          (if isPrime then
+              (oldCombinedStatus, newCombinedStatus) -> net.topCPNPageStatusChanged;
+           else
+              scanTopCPNPages
+              (#
+              do (oldCombinedStatus, newCombinedStatus) -> current.subpageStatusChanged;
+              #);
+          if);
+      if);
+   #);
+   
+-- CPNPageSetSelectedGroup:DoPart --
+do selected[] -> private.selected[];
+   
+-- CPNPageGetSelectedGroup:DoPart --
+do private.selected[] -> selected[];
+   
+-- CPNPageGetCurrentHighlight:doPart --
+do (if currentHighlight[] = none then
+       private.nodesStatus.leastUpperBound 
+         -> getHighlight
+         -> currentHighlight[];
+   if);
+   
+-- CPNPageGetCurrentHighlightOfSubpageTree:DoPart --
+do getSubpagesStatus 
+     -> getHighlight
+     -> currentHighlight[];
+   
+-- CPNPageGetCurrentHighlightOfNodesAndSubpageTree:DoPart --
+do getNodesAndSubpagesStatus 
+     -> getHighlight
+     -> currentHighlight[];
+   
+-- CPNPageClone:doPart --
+do (# theAssociations: ^PageElementIDDictionary; 
+do keepInstances -> cloneAndGetAssociations -> (new[],theAssociations[]);
+   #);
+   
+-- CPNPageCloneAndGetAssociations: doPart --
+do (# newName: ^text;
+      createdPageElements: @PageElementIDDictionary;
+      createdCPNPages: @CPNPageIDDictionary;
+      createdFusionSets: @FusionSetIDDictionary;
+      dummyCreatedPageElements: ^PageElementIDDictionary;
+      clonePage:
+        (# thePage, theClonedPage: ^CPNPage;
+           nameNewPage:
+             (# 
+             do (thePage.name).copy -> newName[];
+                ' (clone)' -> newName.append;
+                newName[] -> theClonedPage.name;                
+             #);
+           cloneTransitions:
+             (# theNewTransition: ^Transition;
+             do thePage.scanTransitions
+                (# 
+                do current.clone -> theNewTransition[] -> theClonedPage.addTransition;
+                   (current.id[], theNewTransition[]) -> createdPageElements.associate;
+                   (if current.getSubpage <> none then
+                       (if keepInstances then
+                           current.getSubpage
+                             -> theNewTransition.setSubpage;
+                        else
+                           (if ((current.getSubpage).id[] -> createdCPNPages.lookup) = none then
+                               current.getSubpage
+                                 -> clonePage
+                                 -> (theNewTransition.setSubpage,dummyCreatedPageElements[]);
+                            else
+                               (current.getSubpage).id[] 
+                                 -> createdCPNPages.lookup
+                                 -> theNewTransition.setSubpage;
+                           if);
+                       if);
+                       (theNewTransition.getSubpage).theName[] 
+                         -> theNewTransition.createSubPageInfo
+                         -> theNewTransition.setSubpageInfo;
+                   if);
+                #);
+             #);
+           clonePlaces:
+             (# theNewPlace: ^Place;
+             do thePage.scanPlaces
+                (# 
+                do current.clone -> theNewPlace[] -> theClonedPage.addPlace;
+                   (current.id[], theNewPlace[]) -> createdPageElements.associate;
+                #);
+             #);
+           cloneFusionSets:
+             (# theNewPlace: ^Place;
+                theNewFusionSet: ^FusionSet;
+                theNewName: ^Text;
+             do thePage.scanPlaces
+                (# 
+                do (if current.getFusionSet <> none then
+                       current.id[] 
+                         -> createdPageElements.lookup
+                         -> theNewPlace[];
+                       (if keepInstances then
+                           current.getFusionSet -> theNewFusionSet[];
+                        else
+                           (current.getFusionSet).id[]
+                             -> createdFusionSets.lookup
+                             -> theNewFusionSet[];
+                           (if theNewFusionSet[] = none then
+                               &FusionSet[] -> theNewFusionSet[];
+                               theNewFusionSet.init;
+                               (current.getFusionSet).getName 
+                                 -> theNewFusionSet.setName;
+                           if);                           
+                       if);
+                       theNewFusionSet[] -> theNewPlace.setFusionSet;
+                       theNewPlace[] -> theNewFusionSet.addPlace;
+                       ((current.getFusionSet).id[], theNewFusionSet[])
+                         -> createdFusionSets.associate;
+                       theNewFusionSet.getName
+                         -> (theNewPlace.getFusionInfo).setCPNML;
+                   if);
+                #);
+             #);
+           cloneArcs:
+             (# transEnd: ^Transition;
+                placeEnd: ^Place;
+                thearc, newarc: ^Arc;
+             do thePage.scanArcs
+                (# 
+                do current[] -> thearc[];
+                   current.clone -> newarc[];
+                   current.transEnd.id[] -> createdPageElements.lookup -> transEnd[];
+                   current.placeEnd.id[] -> createdPageElements.lookup -> placeEnd[];
+                   placeEnd[] -> newarc.setPlaceEnd;
+                   transEnd[] -> newarc.setTransEnd;
+                   newarc[] -> theClonedPage.addArc;
+                   newarc[] -> placeEnd.addArc;
+                   newarc[] -> transEnd.addArc;
+                   
+                   (if not (current.getBends).empty then
+                       (current.getBends).copy -> newarc.setBends;
+                       (newarc.getBends).scan(# do current[] -> newarc.addBendPoint; #);
+                   if);
+                   
+                   newarc.changed;
+                   
+                   (if newarc.getOrientation = TtoP then
+                       placeEnd.snap;
+                       transEnd.snap;
+                    else
+                       transEnd.snap;
+                       placeEnd.snap;
+                   if);
+                   
+                   (current.id[], newarc[]) -> createdPageElements.associate;                   
+                #);
+             #);
+           cloneAuxs:
+             (# 
+             do thePage.scanAuxs
+                (# 
+                do current.clone -> theClonedPage.addAux;
+                #);
+             #);
+           cloneAssignments:
+             (# theSocketClone, thePortClone: ^Place;
+                theSubTransitionClone: ^Transition;
+                theNewAssignment: ^Assignment;
+             do thePage.scanPlaces
+                (# 
+                do current.scanAssignments
+                   (# 
+                   do (if (current.getSocket).getCPNPage = thePage[] then (* the port can be on thePage *)
+                          (current.getSocket).id[] 
+                            -> createdPageElements.lookup 
+                            -> theSocketClone[];
+                          (if keepInstances then
+                              (current.getPort) -> thePortClone[];
+                           else
+                              (current.getPort).id[] 
+                                -> createdPageElements.lookup 
+                                -> thePortClone[];
+                          if);
+                          (current.getSubTransition).id[] 
+                                -> createdPageElements.lookup
+                                -> theSubTransitionClone[];
+                          (if (theSocketClone[] <> NONE) and 
+                              (thePortClone[] <> NONE) and
+                              (theSubTransitionClone[] <> none) then                               
+                              &Assignment[] -> theNewAssignment[];
+                              (thePortClone[], theSocketClone[], theSubTransitionClone[])
+                                -> theNewAssignment.init;
+                          if);
+                      if);
+                   #);
+                #);
+             #);
+           cloneGroups:
+             (# theNewGroup: ^Group;
+             do thePage.scanGroups
+                (# 
+                do (if current[] <> thePage.all[] then
+                       &Group[] -> theNewGroup[];
+                       theNewGroup.init;
+                       (current.name).copy -> theNewGroup.name;
+                       theNewGroup[] -> theClonedPage.addGroup;
+                       current.scanElements
+                       (# thePageElement: ^PageElement;
+                       do current.id[] 
+                            -> createdPageElements.lookup
+                            -> thePageElement[];
+                          (if thePageElement[] <> none then
+                              thePageElement[] -> theNewGroup.addElement;
+                          if);
+                       #);                       
+                   if);
+                #);                
+                theClonedPage.all[] -> theClonedPage.setSelectedGroup;
+             #);
+           cloneGuidelines:
+             (# theNewGuideline: ^Guideline;                
+             do thePage.scanGuidelines
+                (# 
+                do (if true
+                    // current## <= HorizontalGuideline## then
+                       &HorizontalGuideline[] -> theNewGuideline[];                       
+                    // current## <= VerticalGuideline## then
+                       &VerticalGuideline[] -> theNewGuideline[];
+                   if);
+                   theNewGuideline.init;
+                   current.getParameter -> theNewGuideline.setParameter;
+                   current.scanGuideElements
+                   (# thePageElement: ^PageElement;
+                   do current.id[] 
+                        -> createdPageElements.lookup
+                        -> thePageElement[];
+                      (if thePageElement[] <> none then
+                          thePageElement[] -> theNewGuideline.addGuideElement;
+                      if);
+                   #);
+                   theNewGuideline[] -> theClonedPage.addGuideline;
+                #);
+             #);
+	   cloneSSNodes:
+	     (#
+	     do thePage.scanSSNodes
+		(#
+		do current.clone -> theClonedPage.addSSNode;
+		#);
+	     #);
+           cloneSSArcs:
+             (#
+             do thePage.scanSSArcs
+                (#
+                do current.clone -> theClonedPage.addSSArc;
+                #);
+             #);
+        enter thePage[]
+        do &CPNPage[] -> theClonedPage[];
+           theClonedPage.init;
+           (* Clone page should be net independent!
+            * Therefore, they should not be added 
+            * to the net here!
+            *)
+           
+           nameNewPage;           
+           cloneTransitions;
+           clonePlaces;
+           cloneFusionSets;
+           cloneArcs;
+           cloneAuxs;
+           cloneAssignments;
+           cloneGroups;
+           cloneGuidelines;
+           (**
+           cloneSSNodes;
+           cloneSSArcs;
+            **)
+           (thePage.id[], theClonedPage[]) -> createdCPNPages.associate;
+        exit (theClonedPage[],createdPageElements[])
+        #);
+   do createdPageElements.init;
+      createdCPNPages.init;
+      createdFusionSets.init;
+      this(CPNPage)[] -> clonePage -> (new[],associations[]);
+   #);
+   
+-- CPNPagegetRandomInstance: doPart --
+do (# chosen,count: @Integer;
+      instanceList: @List(# Element:: PageInstance #);
+   do instancelist.clear;
+      private.pageInstances.scan
+      (# 
+      do (if current.hasEnabledTransitions then
+             current[] -> instanceList.append;
+         if);
+      #);
+      (if instanceList.size > 0 then
+          (1,instanceList.size) -> ignuin -> chosen;
+          search:
+            (# 
+            do private.pageInstances.scan
+               (# 
+               do current[] -> theInstance[];
+                  count + 1 -> count;
+                  (if count = chosen then
+                      leave search;
+                  if);
+               #);
+            #);
+      if);
+   #);
+   
+-- CPNPagegetPageInstance: doPart --
+do id[] -> private.pageInstances.lookup -> instance[];
+   
+-- CPNPagecalculateMaxNoOfSuperPages:doPart --   
+do 0 -> currentNoOfSuperPages -> maxNoOfSuperPages;
+   findNumberForEachInstance:scanInstances
+     (# findCurrentNoOfSuperPages:
+          (# thePageInstance: ^PageInstance;
+             superPagesSoFar: @integer;
+          enter (thePageInstance[],superPagesSoFar)
+          do (if thePageInstance.getSuperPageInstance<>NONE then
+                 (thePageInstance.getSuperPageInstance,superPagesSoFar+1) -> &findCurrentNoOfSuperPages;
+              else
+                 superPagesSoFar -> currentNoOfSuperPages;
+             if);
+          #);
+     do (current[],0) -> findCurrentNoOfSuperPages;
+        (if currentNoOfSuperPages>maxNoOfSuperPages then 
+            currentNoOfSuperPages->maxNoOfSuperPages 
+        if);                     
+     #);
+   
+-- CPNPagecreatePageInstance: doPart --
+do &PageInstance[] -> instance[];
+   THIS(CPNPage)[] -> instance.thePage[];
+   instance[] -> THIS(CPNPage).attach;
+   theSubTrans[] -> instance.theTransition[];
+   theSuperPageInstance[] -> instance.init;
+   instance.thePage.scanTransitions
+   (# subpageInstance: ^PageInstance;
+   do (if current.getSubpage <> NONE then
+          (instance[],current[]) -> (current.getSubpage).createPageInstance -> subpageInstance[];
+          subpageInstance[] -> instance.addSubpageInstance;
+      if);
+   #);
+   (if debugging then
+       'pageinstance created from %s (%s)' -> debugLoad
+	 (# 
+	 do this(CPNPage).id[] -> s; 
+	    this(CPNPage).name -> s;
+	 #);
+   if);
+   
+-- CPNPageIsPrime:doPart --
+do prime[] <> none -> value;
+   
+-- CPNPageremoveSuper: doPart --
+do nofsuper - 1 -> nofsuper;
+   (if (nofsuper = 0) and (nofnodes > 0) then
+       (if debugging then 'adding new prime' -> debugCPNet; if);
+       createPageInstance -> prime[];
+   if);
+   
+-- CPNPageaddSuper: doPart --
+do nofsuper + 1 -> nofsuper;
+   (if prime[] <> NONE then
+       prime.delete;
+       NONE -> prime[];
+   if);
+   
+-- CPNPageinit: doPart --
+do (if theNet[] <> NONE then
+       theNet[] -> net[];
+   if);
+   all.init;
+   private.init;
+   'None' -> all.name;
+   net[] -> all.setCPNet;
+   all[] -> addGroup;
+   all[] -> private.selected[];
+   this(CPNPage)[] -> all.onSelect;
+   
+-- CPNPageonAdded: doPart --
+do (if true
+    // source## <= Transition## then
+       1+nofnodes -> nofnodes;
+       private.pageInstances.scan
+       (# do source[] -> current.addTransition; #);
+       semanticChanged;
+    // source## <= Place## then
+       1+nofnodes -> nofnodes;
+       private.pageInstances.scan
+       (# do source[] -> current.addPlace; #);
+       semanticChanged;
+    // (source## <= Arc##) AND (not (source## <= SSArc##)) then       
+       private.pageInstances.scan
+       (# do source[] -> current.addArc; #);       
+       source[] -> QUA
+       (# as:: Arc;
+       do (if thisObj.transend[] <> NONE then
+              thisObj.transend.semanticChanged;
+          if);
+       #);
+    // source## <= Group## then
+    // source## <= Guideline## then
+   if);
+   (* This assumes that onAdded is called after the
+    * element has been added. *)
+   
+   (if net[] <> NONE then
+       (if (nofsuper = 0) and (prime[] = NONE) then
+           (if (nofnodes > 0) and (private.pageInstances.size = 1) then
+               private.pageInstances.scan
+               (#
+               do current[] -> prime[];
+                  false -> current.notMLinstance;
+               #);
+           if);
+       if);
+   if);
+   (if source## <= PageElement## then
+       (if (private.selected[] <> none) and (private.selected[] <> all[]) then
+           (*source[] -> selected.addElement;*)
+       if);
+   if); 
+   (if source## <= Node## then
+       source[] -> QUA
+       (# as:: Node;
+       do (any_status, thisObj.status)
+            -> nodeChangedStatus;
+          (* private.nodesStatus.increment; *)
+       #);
+   if); 
+   
+-- CPNPageonRemoved: doPart --
+do (if true
+    // source## <= Transition## then
+       nofnodes-1 -> nofnodes;
+       private.pageInstances.scan
+       (# do source[] -> current.removeTransition; #);
+       semanticChanged;
+    // source## <= Place## then
+       nofnodes-1 -> nofnodes;
+       private.pageInstances.scan
+       (# do source[] -> current.removePlace; #);
+       semanticChanged;
+    // (source## <= Arc##) AND (not (source## <= SSArc##)) then
+       private.pageInstances.scan
+       (# do source[] -> current.removeArc; #);
+       source[] -> QUA
+       (# as:: Arc;
+       do thisObj.transend.semanticChanged;          
+       #);
+    // source## <= Group## then
+       all[] -> private.selected[];
+       this(CPNPage)[] -> private.selected.onSelect;
+       (*formatGroups;*)
+    // source## <= Guideline## then
+   if);
+   (if (nofnodes = 0) and (prime[] <> NONE) then
+       (* clear cached enablings value *)
+       (*        0 -> prime.cacheenabled; *)
+       (* We don't want the page to disappear when there
+        * are no nodes do we?  [mads]
+        * prime.delete;
+        * NONE -> prime[];
+        *)
+   if);
+   (if source## <= Node## then
+       source[] -> QUA
+       (# as:: Node;
+       do (thisObj.status, any_status)
+            -> nodeChangedStatus;
+       #);
+   if);
+   
+-- CPNPagebounds: doPart --
+do (# txmin, txmax, tymin, tymax: @real;
+      boing: @boolean;
+   do useFirstElementAsDefault:scanPageElements
+        (# 
+        do current.bounds -> (xmin,xmax,ymin,ymax);
+           leave useFirstElementAsDefault;
+        #);
+      scanPageElements
+      (#
+      do true -> boing;
+         current.bounds -> (txmin, txmax, tymin, tymax);
+         (if txmin < xmin then
+             txmin -> xmin;
+         if);
+         (if txmax > xmax then
+             txmax -> xmax;
+         if);
+         (if tymin < ymin then
+             tymin -> ymin;
+         if);
+         (if tymax > ymax then
+             tymax -> ymax;
+         if);
+      #);
+      (if not boing then
+          0 -> xmax -> ymax -> xmin -> ymin;
+      if);
+   #);
+   
+-- CPNPageprintprinterforeach: doPart --
+do 
+-- CPNPageprinttranslate: doPart --
+do (if theItem##
+    //Composite## then
+       (# theComposite: ^Composite;
+       do theItem[] -> theComposite[];
+          theComposite.scan
+          (#
+          do (current[], dx, dy) -> &translate;
+          #);
+       #);
+    //Line## then
+       (# theLine: ^Line;
+       do theItem[] -> theLine[];
+          (if theLine.points[] <> NONE then
+              theLine.points.scan
+              (#
+              do current.x + dx -> current.x;
+                 current.y + dy -> current.y;
+              #);
+          if);
+       #);
+    else
+       theItem.x + dx -> theItem.x;
+       theItem.y + dy -> theItem.y;
+   if);
+   
+-- CPNPageprintCanonify: doPart --
+do name.copy -> canon[];
+   canon.makelc;
+   '.svg' -> canon.append;
+   
+-- CPNPageprint: doPart --
+do 
+   
+-- CPNPageOnChanged:doPart --
+do (# callChangedOnSubpageInfos:
+        (#
+        do scanInstances
+           (#
+           do (if (current.theTransition[] <> none) and 
+                  current.theTransition.hasSubpageInfo then
+                  (current.theTransition.getSubpageInfo).changed;
+              if);
+           #);
+        #);
+   do (if not isPrime then
+          callChangedOnSubpageInfos;
+      if);
+   #);
+   
+-- CPNPageSemanticChangedOnCPNPageGraph:doPart --
+do (# visitedCPNPages: @CPNPageIDDictionary;
+      visitCPNPage:
+        (# theCPNPage: ^CPNPage;
+        enter theCPNPage[]
+        do (if (theCPNPage.id[] -> visitedCPNPages.lookup) = none then
+               (theCPNPage.id[], theCPNPage[]) 
+                 -> visitedCPNPages.associate;
+               theCPNPage.scanPlaces
+               (# 
+               do current.semanticChanged;
+               #);
+               theCPNPage.scanSubstitutionTransitions
+               (# 
+               do current.getSubpage -> visitCPNPage;
+               #);
+               theCPNPage.scanTopCPNpages
+               (# 
+               do current[] -> visitCPNPage;
+               #);
+           if);
+        #);
+   do visitedCPNPages.init;
+      this(CPNPage)[] -> visitCPNPage;
+   #);
+   
+-- CPNPageHasInTopCPNPageTree:doPart --
+do (# currentCPNPage: ^CPNPage;
+      hasInTree: BooleanValue
+        (# theCPNPage: ^CPNPage;
+        enter theCPNPage[]
+        do (if theCPNPage.id[] = currentCPNPage.id[] then
+               true -> value;
+            else
+               false -> value;
+               theCPNPage.scanTopCPNpages
+               (# 
+               do value or (current[] -> hasInTree)
+                    -> value;
+               #);
+           if);           
+        #);
+   do false -> value;
+      theCPNPage.scanSubpageTree
+      (# 
+      do current[] -> currentCPNPage[];
+         value or (this(CPNPage)[] -> hasInTree)
+         -> value;
+      #);
+   #);   
+   
+-- PageElementListClone:doPart --
+do (# dummyCPNPage, dummyCPNPageClone: ^CPNPage;
+      theOldCPNPage: ^CPNPage;
+   do (first).getCPNPage -> theOldCPNPage[];
+      &PageElementList[] -> thePageElementList[];
+      thePageElementList.init;
+      &CPNPage[] -> dummyCPNPage[];
+      dummyCPNPage.init;
+      theOldCPNPage.net[] -> dummyCPNPage.net[];
+      '' -> dummyCPNPage.name;
+      THIS(PageElementList).scan 
+      (# (* Warning HACK: use a temporary CPNPage for cloning! *)
+      do (if true
+          //current## <= Place## then
+             (current.id[], current[]) -> dummyCPNPage.private.places.associate;
+             (* due to the way assignment is handles in cpnpage clone *)
+             dummyCPNPage[] -> current.setCPNPage;
+          //current## <= Transition## then
+             (current.id[], current[]) -> dummyCPNPage.private.transitions.associate;
+          //current## <= Arc## then
+             current[] -> QUA
+             (# as::Arc; (* both ends must be in the list *)
+             do (if (thisObj.placeEnd[] -> has) and
+                    (thisObj.transEnd[] -> has) then
+                    (current.id[], current[]) -> dummyCPNPage.private.arcs.associate;
+                if);
+             #);
+          //current## <= GuideLine## then
+             current[] -> dummyCPNPage.private.guidelines.append;
+          //current## <= Aux## then
+             (current.id[],current[]) -> dummyCPNPage.private.auxs.associate;
+	  //current## <= SSNode## then
+	     (current.id[], current[]) -> dummyCPNPage.private.SSNodes.associate;
+	     dummyCPNPage[] -> current.setCPNPage;
+	  //current## <= SSArc## then
+	  (current.id[], current[]) -> dummyCPNPage.private.SSArcs.associate;
+	     dummyCPNPage[] -> current.setCPNPage;
+          else
+            'unknown type of pageElement in PageElementListClone: %s' ->
+	    debugtemp(# do current[] -> getPatternName -> s;#);
+         if);
+      #);
+    (*dummyCPNPage.private.thepageElements.size;*)
+      keepSubpages -> dummyCPNPage.clone -> dummyCPNPageClone[];
+      dummyCPNPageClone.scanPageElements
+      (#
+      do current[] -> thePageElementList.append;
+      #);  
+      (* CPNPage adds cloned fusion places to the fusion set.
+       * These has to be removed.
+       *)
+      dummyCPNPageClone.scanFusionPlaces
+      (# theFusionSet: ^FusionSet;
+      do current.getFusionSet -> theFusionSet[];
+         current[] -> theFusionSet.removePlace;
+         theFusionSet[] -> current.setFusionSet;
+      #);
+      This(PageElementList).scan
+      (# 
+      do (if current## <= Place## then
+             (* due to the way assignment is handles in cpnpage clone *)
+             theOldCPNPage[] -> current.setCPNPage;
+         if);
+      #);
+      thePageElementList.scanArcs
+      (# 
+      do current[] -> current.placeEnd.removeArc;
+         current[] -> current.transEnd.removeArc;
+      #);            
+   #);
+

@@ -1,0 +1,977 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../cpnet';
+
+-- PlacePrivate:Descriptor --
+(# thePlaceType: ^PlaceType;
+   theInitMark: ^InitMark;
+   theFusionInfo: ^FusionInfo;
+   thePortType: ^PortType;
+   theFusionSet: ^FusionSet; 
+   assignments: @AssignmentList;
+   notAssignedToPortError, notAssignedToSocketError: @boolean;
+   hasAssignmentGraphError, wrongSocketType: @boolean;
+(*    notConnectedToSubstitutionTransition: @boolean; *)
+   errorSocketToPortMsg: ^Text;
+   init:
+     (# 
+     do assignments.init;
+        false
+          -> notAssignedToPortError
+          -> notAssignedToSocketError
+(*           -> notConnectedToSubstitutionTransition *)
+          -> hasAssignmentGraphError
+          -> wrongSocketType;
+     #);
+#)
+  
+-- PlaceSetCPNPage:doPart --
+do theCPNPage[] -> private.thePlaceType.setCPNPage;
+   theCPNPage[] -> private.theInitMark.setCPNPage;
+   (if getFusionInfo <> none then
+       theCPNPage[] -> (getFusionInfo).setCPNPage;
+   if);   
+   (if getPortType <> none then
+       theCPNPage[] -> (getPortType).setCPNPage;
+   if);   
+   
+-- PlaceToString:doPart --
+do &Text[] -> str[];
+   (if thename[] = none then
+       'Place: %s (%s) (%s) ' -> str.putFormat (# do 'no name' -> s; id.copy -> s; status->statustostring->s#);
+    else
+       'Place: %s (%s) (%s) ' -> str.putFormat (# do thename.copy -> s; id.copy -> s; status->statustostring->s#);
+   if);
+   
+-- PlaceScanInstances: dopart --
+do (if getCPNPage <> NONE then (* prevents racecondition *)
+       (getCPNPage).scanInstances
+	 (#
+	 do id[] -> current.lookupPlaceInstance -> this(scanInstances).current[];
+	    (if this(scanInstances).current[] <> none then
+		inner scanInstances;
+	    if);
+	 #);
+   if);
+   
+-- PlaceScanSurroundingTransitions:DoPart --
+do (# transitions: @TransitionIDDictionary;
+   do transitions.init;
+      scanArcs
+      (# 
+      do (if (current.transEnd.id[], current.transEnd[]) -> transitions.associate then
+             current.transEnd[] -> this(scanSurroundingTransitions).current[];
+             inner scanSurroundingTransitions;
+         if);
+      #);
+   #);
+   
+-- PlaceLookupSubstitutionTransition:DoPart --
+do search: private.assignments.scan
+   (# 
+   do (if id[] = (current.getSubTransition).id[] then
+          current.getSubTransition -> result[];
+          leave search;
+      if);
+   #);
+   
+-- PlaceHasAssignments:DoPart --
+do not private.assignments.empty -> value; 
+   
+-- PlacePortPlaceHasChangedType:DoPart --
+do (# thePort: ^Place;
+      theSocketType, thePortType: ^Text;
+      (* isAssigned, correctSocketType: @Boolean; *)
+      getPortPlaceOnSubpage:
+        (# thePort: ^Place;
+           theTransition: ^Transition;
+        enter theTransition[]
+        do search: scanAssignments
+	     (#
+	     do (if theTransition[] = current.getSubTransition then
+		    current.getPort -> thePort[];
+		    leave search;
+		if);
+	     #);
+        exit thePort[]
+        #);      
+      getSocketType:
+        (# theTransition: ^Transition;
+           hasIn, hasOut: @boolean;
+           theSocketType: ^Text;
+        enter theTransition[]
+        do false -> hasIn -> hasOut;
+           check: scanArcs
+	     (#
+             do (if theTransition[] = current.transEnd[] then
+		    (if true
+                     // current.getOrientation = PtoT then true -> hasIn;
+                     // current.getOrientation = TtoP then true -> hasOut;
+                     // current.getOrientation = BothDir then true -> hasIn -> hasOut;
+		    if);
+		if);
+	     #);
+           (if hasIn and not hasOut then
+               'In' -> theSocketType[];
+           if);
+           (if not hasIn and hasOut then
+               'Out' -> theSocketType[];
+           if);
+           (if hasIn and hasOut then
+               'I/O' -> theSocketType[];
+           if);
+        exit theSocketType[]
+        #);
+      getPortType:
+        (# thePort: ^Place;
+           thePortType: ^Text;
+        enter thePort[]
+        do (if thePort.getPortType <> none then
+               ((thePort.getPortType).getCPNML).copy -> thePortType[];
+           if);
+        exit thePortType[]
+        #);
+      addNotAssignedError:
+        (# theTransition: ^Transition;
+           errorMsg: ^Text;
+        enter theTransition[]
+        do (* 'addNotAssignedError'->debugtemp; *)
+           &Text[] -> errorMsg[];
+           'This place is connected to the substitution transition "' -> errorMsg.puttext;
+           theTransition.theName[] -> errorMsg.puttext;
+           '"\nbut is not assigned to a port on page "' -> errorMsg.puttext;
+           (theTransition.getSubpage).theName[] -> errorMsg.puttext;
+           '"'-> errorMsg.puttext;
+           errorMsg[] -> private.errorSocketToPortMsg[];
+        #);
+      addWrongSocketTypeError:
+        (# thePort: ^Place;
+           theTransition: ^Transition;
+           theSocketType, thePortType, errorMsg: ^Text;
+        enter (thePort[], theTransition[], thePortType[])
+        do(*  'addWrongSocketTypeError'->debugtemp; *)
+           &Text[] -> errorMsg[];
+           'Port "' -> errorMsg.puttext;
+           thePort.theName[] -> errorMsg.puttext;
+           '" assigned to this socket on page "' -> errorMsg.puttext;
+           (thePort.getCPNPage).theName.copy -> errorMsg.puttext;
+           '" has type '-> errorMsg.puttext;
+           thePortType[] -> errorMsg.puttext;
+           '.\nThis socket must then be connected to transition "' -> errorMsg.puttext;
+           theTransition.theName[] -> errorMsg.puttext;
+           (if true
+            // 'I/O' -> thePortType.equal
+	    then '" with arcs in both directions' ->errorMsg.puttext;
+            // 'In' -> thePortType.equal
+	    then '" with arcs only from this place to the transition' -> errorMsg.puttext;
+            // 'Out' -> thePortType.equal
+	    then '" with arcs only from the transition to this place' -> errorMsg.puttext;
+           if);
+           errorMsg[] -> private.errorSocketToPortMsg[];
+        #);
+   do false
+        -> private.notAssignedToPortError
+        -> private.wrongSocketType;
+      check: scanArcs
+        (#
+        do (if (current.transEnd[] <> none) and
+               ((current.getTransEnd).getSubpage <> none) then
+               current.getTransEnd -> getPortPlaceOnSubpage -> thePort[];
+               (if thePort[] = none then
+                   true -> private.notAssignedToPortError;
+                   current.transEnd[] -> addNotAssignedError;
+                   leave check;
+               if);
+               current.transEnd[] -> getSocketType -> theSocketType[];
+               thePort[] -> getPortType -> thePortType[];
+               (if (thePortType[] <> NONE) and 
+                   (not (theSocketType[] -> thePortType.equal)) then
+                   true -> private.wrongSocketType;
+                   (thePort[], current.transEnd[], thePortType[]) -> addWrongSocketTypeError;
+                   leave check;
+               if);
+           if);
+        #);
+      (if not private.notAssignedToPortError and
+          not private.wrongSocketType then
+          none -> private.errorSocketToPortMsg[];
+      if);
+      
+      hasSyntaxError -> setAssignmentGraphError;
+   #);
+
+-- PlaceChangedAssignmentToSocket:DoPart --
+do (# isAssigned:
+        (# theTransition: ^Transition;
+           res: @boolean;
+        enter theTransition[]
+        do false -> res;
+           scanSubstitutionTransitions
+           (#
+           do res or (current[] = theTransition[]) -> res;
+           #);
+        exit res
+        #);
+   do false -> private.notAssignedToSocketError;
+           (* 'PlaceCheckIfUnassigned: %s '->debugtemp(# do tostring->s#); *)
+      (if hasPortType (* and not (getCPNPage).isPrime *) then
+          (getCPNPage).scanInstances
+          (# assigned: @boolean;
+             thePlaceInstance: ^Placeinstance;
+          do this(Place).id[] -> current.lookupPlaceInstance -> thePlaceInstance[];
+             current.theTransition[] -> isAssigned -> assigned;
+             (if assigned then
+                 false -> thePlaceInstance.setAssignedError;                     
+              else   
+                 true -> thePlaceInstance.setAssignedError;
+                 (if not (getCPNPage).isPrime then
+                     true
+                       -> private.notAssignedToSocketError;                       
+                 if);
+             if);
+          #);
+       else
+          (getCPNPage).scanInstances
+          (# thePlaceInstance: ^Placeinstance;
+          do this(Place).id[] -> current.lookupPlaceInstance -> thePlaceInstance[];
+             (if thePlaceInstance.unassigned then
+                 false -> thePlaceInstance.setAssignedError;                 
+             if);
+          #);
+      if);
+      
+      hasSyntaxError -> SetAssignmentGraphError;
+   #);
+   
+-- PlaceSetAssignmentGraphError:DoPart --
+do (# hasAssignmentGraphAnError: BooleanValue
+        (# 
+        do false -> value;
+           scan: scanAllReachablePlaces
+             (# 
+             do (if current.hasSyntaxError then
+                    true -> value;
+                    leave scan;
+                if);
+                current.scanInstances
+                (#
+                do (if current.unassigned then
+                       true -> value;
+                       leave scan;
+                   if);
+                #);
+             #);      
+        #);
+   do (if (error <> private.hasAssignmentGraphError) and
+          (error = hasAssignmentGraphAnError) then
+          (* 'new state %t '->debugtemp (# do error -> tv; #); *)
+          scanAllReachablePlaces
+          (# 
+          do (if (error and not current.hasAssignmentGraphError) or
+                 (not error and current.hasAssignmentGraphError) then
+                 current.semanticChanged;
+                 current.scanArcs
+	         (#
+                 do (if current.transEnd[] <> none then
+                        (any_status, unchecked) -> current.transEnd.changeStatus;
+                    if);
+	         #);
+             if);
+             error -> current.private.hasAssignmentGraphError;      
+          #);
+      if);
+   #);
+   
+-- PlaceHasAssignmentGraphError:DoPart --
+do private.hasAssignmentGraphError -> value;
+   
+-- PlaceScanAllReachablePlaces: dopart --
+do (# scannedPlaces: @IDDictionary;
+      scanPlace:
+        (# currentPlace: ^Place;
+        enter current[]
+        do (if (current.id[] -> scannedPlaces.lookup) = none then
+               current[] -> currentPlace[];
+               (currentPlace.id[], currentPlace[]) -> scannedPlaces.associate;
+
+               inner scanAllReachablePlaces;
+
+               currentPlace.scanSockets
+		 (#
+		 do current[] -> scanPlace;
+		 #);
+               currentPlace.scanPorts
+		 (#
+		 do current[] -> scanPlace;
+		 #);
+               currentPlace.scanFusionSet
+		 (#
+                 do current[] -> scanPlace;
+		 #);
+           if);
+        #);
+   do scannedPlaces.init;
+      this(Place)[] -> scanPlace;
+   #);
+   
+-- PlaceScanPlaceSubtree: dopart --
+do (# scannedPlaces: @IDDictionary;
+      scanPlace:
+        (# currentPlace: ^Place;
+        enter current[]
+        do (if (current.id[] -> scannedPlaces.lookup) = none then
+               current[] -> currentPlace[];
+               (currentPlace.id[], currentPlace[]) -> scannedPlaces.associate;
+
+               inner scanPlaceSubtree;
+
+               currentPlace.scanPorts
+		 (#
+		 do current[] -> scanPlace;
+		 #);
+               currentPlace.scanFusionSet
+		 (#
+                 do current[] -> scanPlace;
+		 #);
+           if);
+        #);
+   do scannedPlaces.init;
+      this(Place)[] -> scanPlace;
+   #);
+
+-- PlacesetPlaceTypeOfAssignmentGraph: dopart --
+do scanAllReachablePlaces
+     (# thePlaceType: ^PlaceType;
+     do current.getPlaceType -> thePlaceType[];
+        (if cpnml[] = none then
+	    none -> thePlaceType.setInscription;
+	 else
+	    cpnml.copy -> thePlaceType.setInscription;
+	if);
+        thePlaceType.semanticChanged;
+        current.semanticChangedOnPlaceAndSubstitutionTransitions;
+     #);
+   
+-- PlacePackTokenDelta:doPart --
+do tokenDelta.x -> dx;
+   tokenDelta.y -> dy;
+   
+-- PlaceUnPackTokenDelta:doPart --
+do dx -> tokenDelta.x;
+   dy -> tokenDelta.y;
+   
+-- PlacePackMarkingDelta:doPart --
+do markingDelta.x -> dx;
+   markingDelta.y -> dy;
+   
+-- PlaceUnPackMarkingDelta:doPart --
+do dx -> markingDelta.x;
+   dy -> markingDelta.y;
+   
+          
+-- PlaceConnected: dopart --
+do getSlaves -> theList[];
+   (if not theList.empty then
+       l: theList.scan
+         (# theArc: ^Arc;
+         do (if current## <= Arc## then
+                current[] -> theArc[];
+                (if not (theArc.TransEnd[] = theTrans[]) then
+                    true -> value;
+                    leave l;
+                if);
+            if);
+         #);
+   if);
+
+-- PlacelocalCheck: dopart --
+do (# reportedError: @boolean;
+      type: ^Inscription;
+      error: ^Text;
+   do false -> reportedError;
+      getPlaceType -> type[];
+      (if (type.defaultInscription -> (type.getInscription).equal) then
+          (* 'PlacelocalCheck: hasDefaultInscription'->debugtemp; *)
+          (any_status,unchecked) -> changeStatus;
+          true -> reportedError;
+      if);
+      (if (not reportedError) and
+          not (type.getInscription -> names.defined) and
+          not type.isDefaultInscription then
+          'Color-set not defined: "' -> error[];
+          type.getInscription -> error.puttext;
+          '"' -> error.put;
+          error.copy -> onSyntaxError;
+          true -> reportedError;
+          (* error.copy -> debugtemp; *)
+      if);
+      (if (not reportedError) and private.hasAssignmentGraphError then
+          (any_status, unchecked) -> changeStatus;
+          (* '%s: Has assignment chain error'->debugtemp(# do tostring->s#); *)
+          (if private.errorSocketToPortMsg[] <> none then
+              (this(place)[], private.errorSocketToPortMsg[])->addError;           
+              (any_status, incorrect) -> changeStatus;
+          if);
+          true -> reportedError;
+      if);
+      (if reportedError then
+          scanInstances
+	    (#
+	    do current.scanPlaceInstanceGroup
+		 (#
+		 do current.clearTokens;
+		 #);
+	    #);
+      if);
+      (if (status < checked) then
+          NONE -> private.theInitMark.setAST;
+      if);
+      (* (if reportedError then *)
+(*           'PlacelocalCheck: reportedError: %s: %d '->debugtemp(# do theName.copy->s; status->d#); *)
+(*        else *)
+(*           'PlacelocalCheck: not reportedError: %s: %d '->debugtemp(# do theName.copy->s; status->d#); *)
+(*        if); *)
+   #);
+   (*'%s: thePlace.status = %d '->debugtemp(# do theName.copy->s;status ->d#);*)
+
+-- PlacegetSlaves: dopart --
+do (# elm: ^PageElement;
+   do (if getCPNPage <> NONE then
+          (THIS(Place).getCPNPage).scanArcs
+	  (# 
+	  do (if current.placeEnd[] = THIS(Place)[] then
+		 current.getAnnotation -> elm[];
+		 (if elm[] <> NONE then
+		     elm[] -> theList.append;
+		 if);
+		 current[] -> theList.append;
+	     if);
+	  #);             
+      if);
+      private.thePlaceType[] -> theList.append;
+      private.theInitMark[] -> theList.append;
+      (if private.theFusionInfo[] <> none then
+          private.theFusionInfo[] -> theList.append;
+      if);
+      (if private.thePortType[] <> none then
+          private.thePortType[] -> theList.append;
+      if);           
+   #);
+
+-- PlaceGetInscriptions:doPart --
+do private.thePlaceType[] -> theList.append;
+   private.theInitMark[] -> theList.append; 
+  
+
+-- PlaceGetHierarchyInfos:doPart --
+do (if private.theFusionInfo[] <> NONE then
+       private.theFusionInfo[] -> theList.append;
+   if);
+   (if private.thePortType[] <> NONE then
+       private.thePortType[] -> theList.append;
+   if); 
+
+-- PlaceGetAnchors: doPart --
+do (# add: 
+        (# degree: @Real;
+           ix, iy: @integer;
+        enter degree
+        do (x + (degree -> cose) * a, y + (degree -> sine)*b)
+             -> (ix, iy)
+             -> MakePoint
+             -> anchors.append;
+        #);
+   do 7*45 -> add;
+      5*45 -> add;
+      3*45 -> add;
+      45 -> add;
+   #);
+   
+-- Placedelete: dopart --
+do (any_status, unchecked) -> ChangeStatus;   
+   (if getCPNPage <> NONE then
+       removeError;
+       (getCPNPage).placeNames[] -> nameChanged;
+   if);
+
+-- PlaceSetPortType: dopart --
+do (if (private.thePortType[] <> NONE) and (thePortType[] <> NONE) then
+       thePortType.getCPNML -> private.thePortType.setCPNML;
+    else
+       thePortType[] -> private.thePortType[];
+   if);
+   (if getCPNPage <> NONE then (* only do this when on a page *)
+       THIS(Place)[] -> changed; 
+       changedAssignmentToSocket;
+       scanSockets
+         (#
+         do current.portPlaceHasChangedType;
+         #);
+   if);
+   
+-- PlaceClone: dopart --
+do (# thePlaceType: ^PlaceType;
+      thePortType: ^PortType;
+      theInitMark: ^InitMark;
+      theFusionInfo: ^FusionInfo;
+   do tokenSnapId -> new.tokenSnapId;
+      tokenDelta -> new.tokenDelta;
+      markingDelta -> new.markingDelta;
+      hidemarkings -> new.hidemarkings;
+      
+      private.thePlaceType.clone -> thePlaceType[] -> new.setPlaceType;
+      new[] -> thePlaceType.setPlace;
+      
+      private.theInitMark.clone -> theInitMark[] -> new.setInitMark;
+      new[] -> theInitMark.setPlace;   
+      
+      getPortType -> thePortType[];
+      (if thePortType[] <> NONE then
+          thePortType.clone -> thePortType[];
+          new[] -> thePortType.setPlace;
+          thePortType[] -> new.setPortType;
+      if);
+      
+      getFusionInfo -> theFusionInfo[];
+      (if theFusionInfo[] <> none then          
+          theFusionInfo.clone -> theFusionInfo[];
+          new[] -> theFusionInfo.setPlace;
+          private.theFusionSet[] -> new.setFusionSet;
+          theFusionInfo[] -> new.setFusionInfo;
+      if);
+   #);
+
+-- PlaceSetPlaceType: dopart --
+do (if private.thePlaceType[] <> NONE then (* the first time *)
+       this(Place)[] -> private.thePlaceType.detach;
+       NONE -> private.thePlaceType.setPlace;
+   if);
+   (if theplacetype[] = none then
+       &PlaceType[] -> private.thePlacetype[];
+       private.thePlaceType.init;
+       this(Place)[] -> private.thePlaceType.setPlace;
+       private.thePlaceType.defaultSnap;
+       none -> private.theplacetype.setInscription;
+    else
+       thePlaceType[] -> private.thePlaceType[];
+   if);
+   this(Place)[] -> private.thePlaceType.attach;
+   this(Place)[] -> private.thePlaceType.setPlace;
+   getCPNPage -> private.thePlaceType.setCPNPage;
+      
+-- PlaceSetFusionSet:doPart --
+do theFusionSet[] -> private.theFusionSet[];
+   
+-- PlaceGetFusionSet:doPart --
+do private.theFusionSet[] -> theFusionSet[];
+   
+-- PlaceGetPlaceType: dopart --
+do private.thePlaceType[] -> thePlaceType[];
+   
+-- PlaceSetInitMark:doPart --
+do (if (theInitMark[] = none) and
+       (private.theInitMark[] <> none) then
+       private.theInitMark[] -> removeMessageBubble;
+   if);
+   (if private.theInitMark[] <> NONE then (* the first time *)
+       this(Place)[] -> private.theInitMark.detach; (* remove the old *)
+       NONE -> private.theInitMark.setPlace;
+   if);
+   (if theInitMark[] = none then
+       &InitMark[] -> private.theInitMark[];
+       private.theInitMark.init;
+       this(Place)[] -> private.theInitMark.setPlace;
+       private.theInitMark.defaultSnap;
+       none -> private.theInitMark.setInscription;
+    else
+       theInitMark[] -> private.theInitMark[];
+   if);
+   this(Place)[] -> private.theInitMark.attach;
+   this(Place)[] -> private.theInitMark.setPlace;
+   getCPNPage -> private.theInitMark.setCPNPage;
+   (if getCPNPage <> none then
+       initmarkchanged;
+   if);
+   
+-- PlaceGetInitMark:doPart --
+do private.theInitMark[] -> theInitMark[];
+   
+-- PlaceGetFusionInfo:doPart --
+do private.theFusionInfo[] -> theFusionInfo[];
+   
+-- PlaceGetPortType:doPart --
+do private.thePortType[] -> thePortType[];   
+
+-- PlaceHasPortType:doPart --
+do private.thePortType[] <> none -> value;
+   
+-- PlaceSetFusionInfo:dopart --
+do theFusionInfo[] -> private.theFusionInfo[];
+   (if theFusionInfo[]<>none then
+       (if isLolited then
+           theFusionInfo.lolite;
+        else
+           theFusionInfo.hilite;
+       if);
+   if);
+       
+-- PlaceCreateFusionInfo:doPart --
+do ('creating a fusionInfo from nothing', cpnml[] <> NONE) -> assert (# #);
+   &FusionInfo[] -> theFusionInfo[];
+   theFusionInfo.init;
+   cpnml[] -> theFusionInfo.setCPNML;
+   this(Place)[] -> theFusionInfo.setPlace;
+   getCPNPage -> theFusionInfo.setCPNPage;
+   theFusionInfo.defaultSnap;
+   
+-- PlaceIsFusionPlace:doPart --
+do private.theFusionSet[] <> none -> value;
+   
+-- PlaceRemoveFusionInfo:doPart --
+do none -> private.theFusionInfo[];
+   update; (** ???? **)
+   
+-- PlaceAddAssignment:DoPart --
+do (* 'PlaceAddAssignment: %s '->debugtemp(# do tostring->s#); *)
+   theAssignment[] -> private.assignments.append;
+   (if theAssignment.getPort = this(Place)[] then
+       changedAssignmentToSocket;
+    else
+       portPlaceHasChangedType;
+   if);
+   
+-- PlaceRemoveAssignment:DoPart --
+do theAssignment[] -> private.assignments.at -> private.assignments.delete;
+   (if theAssignment.getPort = this(Place)[] then
+       changedAssignmentToSocket;
+    else
+       portPlaceHasChangedType;
+   if);
+   
+-- PlaceAddArc:DoPart --
+do portPlaceHasChangedType;
+   
+-- PlaceRemoveArc:DoPart --
+do portPlaceHasChangedType;
+   
+-- PlacecreatePortType: dopart --
+do ('creating a porttype from something', cpnml[] <> NONE) -> assert (# #);
+   &PortType[] -> thePortType[];
+   thePortType.init;
+   cpnml[] -> thePortType.setCPNML;
+   this(Place)[] -> thePortType.setPlace;
+   getCPNPage -> thePortType.setCPNPage;
+   thePortType.defaultSnap;
+
+-- Placenext: dopart --
+do (# thePlaceType: ^PlaceType;
+      theTextItem: ^TextItem;
+   do getPlaceType -> elm[] -> thePlaceType[];
+      thePlaceType.setTextItem;      
+   #);
+
+-- PlaceonTextUpdated: doPart --
+do (getCPNPage).placeNames[] -> nameChanged;
+   
+-- PlaceHasSyntaxError:DoPart --
+do (* '%s\n  notAssignedToPortError: %t\n  notAssignedToSocketError: %t\n  wrongSocketType: %t ' -> debugtemp(# do tostring->s;this(place).private.notAssignedToPortError -> tv;this(place).private.notAssignedToSocketError -> tv;this(place).private.wrongSocketType -> tv;#); *)
+   private.notAssignedToPortError or
+   private.notAssignedToSocketError or
+   private.wrongSocketType
+     -> value; 
+   
+-- PlaceSemanticChangedOnPlaceAndSubstitutionTransitions:doPart --
+do semanticChanged;
+   (if getPortType <> none then
+       (getCPNPage).scanInstances
+       (#
+       do (if current.theTransition[] <> none then
+              current.theTransition.semanticChanged; 
+          if);
+       #);
+   if);  
+   
+-- PlaceSemanticChangedOnPlaceGraph:doPart --
+do scanAllReachablePlaces
+   (# 
+   do current.semanticChangedOnPlaceAndSubstitutionTransitions;
+   #);
+   
+-- PlaceSemanticChangedOnPlaceSubtree:doPart --
+do scanPlaceSubtree
+   (# 
+   do current.semanticChangedOnPlaceAndSubstitutionTransitions;
+   #);
+   
+-- PlaceonSemanticChanged: dopart --
+do (getCPNPage).scanArcs
+   (# 
+   do (if current.placeEnd[] = THIS(Place)[] then
+          current.semanticChanged;
+      if);
+   #);
+   removeError;
+   scanInstances (# do current.removeError; #);
+   (* If the place is a fusionplace all places in the
+    * fusion group needs to be checked. *)
+   (if (private.theFusionSet[] <> NONE) AND
+       (not private.theFusionSet.propagatingChanges) then
+       private.theFusionSet.propagateChanges;
+   if);
+   
+-- PlaceGetCurrentHighlight:DoPart --
+do 
+   
+-- PlaceSnapCollectSnapList:doPart --
+do scanArcs   
+   (#
+   do (if (current.points[] <> NONE) AND (current.points.size>2) then
+          current.points.size  - 1 -> current.points.get -> snaplist.append;
+       else
+          (current.transEnd.x,current.transEnd.y)->MakePoint->snaplist.append;
+      if);
+   #);
+
+   
+-- PlaceOnChanged: dopart --
+do (# anchors: ^PointList;
+   do getAnchors -> anchors[];
+      scanInstances (* to get the errorMessage on a PlaceInstance placed right *)
+      (# theToken: ^Token;
+      do position -> current.position;
+         current.getToken -> theToken[];
+         tokenSnapId -> theToken.snap_id;
+         (if theToken.snap_id <> 0 then
+             (theToken.snap_id -> anchors.get).XY -> theToken.changePosition;
+             theToken.update;
+             (current.getPlaceMarking).update;
+         if);
+      #);
+   #);   
+   
+-- PlacescanAssignments: dopart --
+do private.assignments.scan
+     (#
+     do current[] -> this(scanAssignments).current[];
+	INNER scanAssignments;
+     #);
+
+-- PlacescanPorts: dopart --
+do private.assignments.scan
+     (#
+     do current.getPort -> this(scanPorts).current[];
+        (if this(scanPorts).current[] <> this(Place)[] then            
+	    INNER scanPorts;
+	if);
+     #);
+
+-- PlacescanSockets: dopart --
+do private.assignments.scan
+     (#
+     do current.getSocket -> this(scanSockets).current[];
+        (if this(scanSockets).current[] <> this(Place)[] then            
+	    INNER scanSockets;
+	if);
+     #);
+   
+-- PlaceScanSubstitutionTransitions:DoPart --
+do private.assignments.scan
+     (#
+     do current.getSubTransition -> this(scanSubstitutionTransitions).current[];
+        INNER scanSubstitutionTransitions;
+     #);
+   
+-- PlacescanFusionSet: dopart --
+do (if private.theFusionSet[] <> none then
+       private.theFusionSet.scanFusionSet
+	 (#
+         do current[] -> this(scanFusionSet).current[];
+            INNER scanFusionset;
+	 #);
+   if);
+   
+-- PlaceCalculatePortType:doPart --
+do (# hasIn, hasOut: @Boolean;
+   do false -> hasIn -> hasOut;
+      scanArcs
+      (# 
+      do hasIn or 
+         (current.getOrientation = PtoT) or
+         (current.getOrientation = BothDir) -> hasIn;
+         hasOut or 
+         (current.getOrientation = TtoP) or
+         (current.getOrientation = BothDir) -> hasOut;
+      #);
+      (if hasIn and hasOut then
+          'I/O' -> thePortType[];
+       else
+          (if hasIn then
+              'In' -> thePortType[];
+           else
+              'Out' -> thePortType[];           
+          if);
+      if);
+   #);
+   
+-- Placeintersect: dopart --
+do Position -> MakePoint -> pos[];
+   width / 2 -> a;
+   height / 2 -> b;
+   p.x - pos.x -> x0;
+   p.y - pos.y -> y0;
+   (0.0, 0.0, a, b, x0, y0) -> theEllipseAngle -> (angle, cosa, sina);
+   pos.x + a * cosa -> q.x;
+   pos.y + b * sina -> q.y;
+   
+-- PlaceGetIntersect:doPart --
+do (# square: 
+        (# x: @real;
+        enter x
+        exit x * x
+        #);
+      solveEq:
+        (# a,b,c: @real;
+           res1,res2: ^RealObject;
+        enter (a,b,c)
+        do (# d: @real;
+              rootOfD: @real;
+           do b * b - 4 * a * c -> d;
+              (if true
+               // d > 0 then
+                  &RealObject[] -> res1[];
+                  &RealObject[] -> res2[];
+                  d -> sqrt -> rootOfD;
+                  (- b + rootOfD)/(2 * a) -> res1;
+                  (- b - rootOfD)/(2 * a) -> res2;
+               // d = 0 then
+                  &RealObject[] -> res1[];
+                  - b / (2 * a ) -> res1;
+               // d < 0 then
+              if);
+           #);
+        exit (res1[],res2[])
+        #);
+      
+      
+      l: ^GeomLine;
+      dx,dy: @real;
+      a,b,c, d: @real;
+      x1, x2, y1, y2: ^RealObject;
+      t1,t2: @real;
+      w, h: @real;
+      center: ^Point2d;
+   do 
+      line[] -> l[];
+      width -> w;
+      height -> h;
+      &Point2d[] -> center[];
+      position -> center;
+      l.b.x - l.a.x -> dx;
+      l.b.y - l.a.y -> dy;
+      (*This checks is due to #2084*)
+      (if (h<>0) and (w<>0) then
+          (if true 
+           // dx <> 0 then
+              (* Find coordinates of intersecting points. Coordinates are (x1,y1) and (x2,y2) *)
+              4 * (dy * dy * w * w + h * h * dx * dx) / (h * h * dx * dx * w * w) -> a;
+              -8 * ((l.a.x * dy - (l.a.y - center.y) * dx) * dy * w * w + h * h * center.x * dx * dx) /
+              (h * h * dx * dx * w * w) -> b;
+              4 * (((l.a.x * dy - (l.a.y - center.y) * dx) -> square) * w * w + h * h * center.x * center.x * dx * dx) / 
+              (h * h * dx * dx * w * w) - 1 -> c;
+              (a,b,c) -> solveEq -> (x1[],x2[]);
+              (if x1[] <> NONE then
+                  &RealObject[] -> y1[];
+                  (x1 - l.a.x) * dy / dx + l.a.y -> y1;
+              if);
+              (if x2[] <> NONE then
+                  &RealObject[] -> y2[];
+                  (x2 - l.a.x) * dy / dx + l.a.y -> y2;
+              if);
+           // dy <> 0 then
+              4 / (h * h) -> a;
+              - 8 * center.y / (h * h) -> b;
+              - ((h * h - 4 * center.y * center.y) * w * w - 4 * h * h * ((l.a.x - center.x) -> square)) / (h * h * w * w) -> c;
+              (a,b,c) -> solveEq -> (y1[],y2[]);
+              (if y1[] <> NONE then
+                  &RealObject[] -> x1[];
+                  (y1 - l.a.y) * dx / dy + l.a.x -> x1;
+              if);
+              (if y2[] <> NONE then
+                  &RealObject[] -> x2[];
+                  (y2 - l.a.y) * dx / dy + l.a.x -> x2;
+              if);
+          if);
+      if);
+      (* Remove points not intersecting due to finite-ness of the line *)
+      (if l.type <> INFINITE then
+          (if x1[] <> NONE then
+              (if dx <> 0 then
+                  (x1 - l.a.x) / dx -> t1;
+               else
+                  (y1 - l.a.y) / dy -> t1;
+              if);
+              (if t1 < 0 then 
+                  NONE -> x1[];
+              if);
+              (if (t1 > 1) and (l.type = FINITE) then
+                  NONE -> x1[];
+              if);
+          if);
+          (if x2[] <> NONE then
+              (if dx <> 0 then
+                  (x2 - l.a.x) / dx -> t2;
+               else
+                  (y2 - l.a.y) / dy -> t2;
+              if);
+              (if t2 < 0 then 
+                  NONE -> x2[];
+              if);
+              (if (t2 > 1) and (l.type = FINITE) then
+                  NONE -> x2[];
+              if);
+          if);
+      if);
+      (* Make sure the eventual single value of intersection is returned first *)
+      (if x1[] = NONE then
+          x2[] -> x1[];
+          y2[] -> y1[];
+          NONE -> x2[];
+      if);
+      (* Create points to return *)
+      (if x1[] <> NONE then
+          &Point2d[] -> intersect[];
+          (x1,y1) -> intersect.XY;
+      if);
+   #);
+   
+-- PlaceInitMarkChanged:doPart --
+do (if private.theFusionSet[] <> none then
+       private.theInitMark[] -> private.theFusionSet.setInitMark;
+   if);
+   semanticChangedOnPlaceGraph;
+
+-- PlaceInit:DoPart --
+do private.init;

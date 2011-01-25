@@ -1,0 +1,570 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../mlsocket';
+INCLUDE '~beta/basiclib/external';
+INCLUDE '~beta/sysutils/endian';
+INCLUDE '~beta/process/private/basicsocketbody';
+INCLUDE '../../../cpntools/debug';
+
+
+--- MLDataClear:DoPart ---
+do 0->Private.length->Private.position;
+   
+--- MLDataReset:DoPart ---
+do 0->Private.position;
+   
+--- MLDataGet:DoPart ---
+do (if Private.position + 1 > Private.length then
+       onError;
+    else
+       Private.position+1->Private.position;
+       Private.data[Private.position]->value;
+   if);
+   
+--- MLDataGetInt:DoPart ---
+do (if Private.position + 4 > Private.length then
+       onError;
+    else
+       (@@value, @@Private.data[Private.position+1], 4)->memcpy;
+       Private.position+4->Private.position;
+       value->ntohl->value;
+   if);
+   
+--- MLDataGetTextNull:DoPart ---
+do &Text[]->value[];
+   While: 
+     (# ch: @Char;
+     do Get
+        (# onError:: 
+             (# 
+             do THIS(GetTextNull).onError; true->continue; 
+             #); 
+        #)->ch;
+        (if ch <> 0 then
+            ch->value.Put;
+            restart While;
+         else
+            leave While;
+        if);
+     #);
+   
+--- MLDataGetTextLength:DoPart ---
+do onError;
+   
+--- MLDataPut:DoPart ---
+do (if Private.data.range < Private.position + 1 then
+       Private.data.range + 1 -> Private.data.extend;
+   if);
+   Private.position+1->Private.position;
+   value->Private.data[Private.position];
+   (if Private.position > Private.length then
+       Private.position->Private.length;
+   if);
+   
+--- MLDataPutInt:DoPart ---
+do (if Private.data.range < Private.position + 4 then
+       Private.data.range + 4 -> Private.data.extend;
+   if);
+   value->htonl->value;
+   (@@Private.data[Private.position+1], @@value, 4)->memcpy;
+   Private.position+4->Private.position;
+   (if Private.position > Private.length then
+       Private.position->Private.length;
+   if);
+   
+--- MLDataPutText:DoPart ---
+do  (if value[] <> NONE then
+        (if value.length > 0 then
+            (if Private.data.range < Private.position + value.length then
+                Private.data.range + value.length -> Private.data.extend;
+            if);
+            (@@Private.data[Private.position+1], @@value.T[1], value.length)->memcpy;
+            Private.position+value.length->Private.position;
+            (if Private.position > Private.length then
+                Private.position->Private.length;
+            if);
+        if);
+    if);
+   
+--- MLDataPutTextNull:DoPart ---
+do value[]->PutText;
+   0->Put;
+   
+--- MLDataPutTextLength:DoPart ---
+do (# spill: @Integer;
+   do     value.length->PutInt;
+          value[]->PutText;
+          (value.length mod 4)->spill;
+          (if spill > 0 then
+              (for i: (4-spill) repeat
+                   0->Put;
+              for);
+          if);
+   #);
+   
+--- MLDataPrivate:Descriptor ---
+(# data: [0]@Char;
+   opcode: @Integer;
+   length: @Integer;
+   position: @Integer;
+#)
+
+--- MLBISReset:DoPart ---
+do Private.firstBooleanElement[]->Private.nextBooleanElement[];
+   Private.firstIntegerElement[]->Private.nextIntegerElement[];
+   Private.firstStringElement[]->Private.nextStringElement[];
+   
+--- MLBISClear:DoPart ---
+do 0->Private.booleans->Private.integers->Private.strings;
+   NONE->Private.firstBooleanElement[]->Private.nextBooleanElement[]->Private.lastBooleanElement[];
+   NONE->Private.firstIntegerElement[]->Private.nextIntegerElement[]->Private.lastIntegerElement[];
+   NONE->Private.firstStringElement[]->Private.nextStringElement[]->Private.lastStringElement[];
+   
+--- MLBISBools:DoPart ---
+do Private.booleans->value;
+   
+--- MLBISInts:DoPart ---
+do Private.integers->value;
+   
+--- MLBISStrings:DoPart ---
+do Private.strings->value;
+   
+--- MLBISGetBool:DoPart ---
+do (if Private.nextBooleanElement[] <> NONE then
+       Private.nextBooleanElement.value->value;
+       Private.nextBooleanElement.next[]->Private.nextBooleanElement[];
+    else
+       ('More bools on bis',false) -> assert(# #);
+   if);
+   
+--- MLBISGetInt:DoPart ---
+do (if Private.nextIntegerElement[] <> NONE then
+       Private.nextIntegerElement.value->value;
+       Private.nextIntegerElement.next[]->Private.nextIntegerElement[];
+    else
+       ('More ints on bis',false) -> assert(# #);
+   if);
+   
+--- MLBISGetString:DoPart ---
+do (if Private.nextStringElement[] <> NONE then
+       &Text[]->value[];
+       Private.nextStringElement.value->value;
+       Private.nextStringElement.next[]->Private.nextStringElement[];
+    else
+       ('More strings on bis',false) -> assert(# #);
+   if);
+   
+--- MLBISPutBool:DoPart ---
+do (if value then
+       'true on BIS' -> debugSyntaxCheck;
+    else
+       'false on BIS' -> debugSyntaxCheck;
+   if);
+   (# elm: ^Private.BooleanElement;
+   do &Private.BooleanElement[]->elm[];
+      value->elm.value;
+      1+Private.booleans->Private.booleans;
+      (if Private.lastBooleanElement[] = NONE then
+          elm[]->Private.lastBooleanElement[]->Private.firstBooleanElement[]->Private.nextBooleanElement[];
+       else
+          elm[]->Private.lastBooleanElement.next[];
+          elm[]->Private.lastBooleanElement[];
+      if);
+   #);
+   
+--- MLBISPutInt:DoPart ---
+do 'int on BIS' -> debugSyntaxCheck;
+   (# elm: ^Private.IntegerElement;
+   do &Private.IntegerElement[]->elm[];
+      value->elm.value;
+      1+Private.integers->Private.integers;
+      (if Private.lastIntegerElement[] = NONE then
+          elm[]->Private.lastIntegerElement[]->Private.firstIntegerElement[]->Private.nextIntegerElement[];
+       else
+          elm[]->Private.lastIntegerElement.next[];
+          elm[]->Private.lastIntegerElement[];
+      if);
+   #);
+   
+--- MLBISPutString:DoPart ---
+do (if value[] <> NONE then
+       '%s on BIS' -> debugSyntaxCheck(# do value.copy -> s; #);
+    else
+       'NONE String on BIS' -> debugSyntaxCheck;
+   if);
+   (# elm: ^Private.StringElement;
+   do &Private.StringElement[]->elm[];
+      (if value[] <> NONE then 
+          value->elm.value;
+      if);
+      1+Private.strings->Private.strings;
+      (if Private.lastStringElement[] = NONE then
+          elm[]->Private.lastStringElement[]->Private.firstStringElement[]->Private.nextStringElement[];
+       else
+          elm[]->Private.lastStringElement.next[];
+          elm[]->Private.lastStringElement[];
+      if);
+   #);
+   
+--- MLBISPrivate:Descriptor ---
+(#
+   booleans, integers, strings: @Integer;
+   
+   firstBooleanElement: ^BooleanElement;
+   firstIntegerElement: ^IntegerElement;
+   firstStringElement: ^StringElement;
+   
+   lastBooleanElement: ^BooleanElement;
+   lastIntegerElement: ^IntegerElement;
+   lastStringElement: ^StringElement;
+   
+   nextBooleanElement: ^BooleanElement;
+   nextIntegerElement: ^IntegerElement;
+   nextStringElement: ^StringElement;
+   
+   BooleanElement:
+     (# value: @Boolean;
+        next: ^BooleanElement;
+     #);
+   IntegerElement:
+     (# value: @Integer;
+        next: ^IntegerElement;
+     #);
+   StringElement:
+     (# value: @Text;
+        next: ^StringElement;
+     #);
+#)
+
+--- MLSocketShake:DoPart ---
+do (# data: @MLData;
+      opcode: @Integer;
+      shakeError: @Boolean;
+      getTickCount: external
+        (# count: @integer;
+        do 'getmilisectimestamp' -> callC;
+        exit count
+        #);
+   do
+      (500, host[], port)->Connect
+      (# error:: (# do true -> shakeError; abort; #); #); 
+      (if not shakeError then
+          getTickCount->opcode->data.opcode;
+          (waitForEver, data[])-> SimplePut (# onError:: (# do true -> continue; #); #);
+          theSimpleGet: 5 -> SimpleGet
+          (# onError:: (# do true -> continue; leave theSimpleGet;  #);
+             onData::
+               (# 
+               do (if data.opcode = opcode then
+                      true -> success;
+                  if);
+               #);
+          #);
+      if);
+   #);
+   
+   
+--- MLSocketSimpleGet: doPart ---
+do &onError[]->MLPrivate.currentErrorHandler[];
+   Receive: 
+     (# opcode: @Integer;
+        data: @MLData;
+        length: @integer;
+        bytes: @integer;
+     do (*
+         * Unfortunately the following timeout
+         * mechanism does not seem to work.
+         *)
+        timeout -> private.timerStart;
+        (THIS(withIdle)[], 8)->Private.ReceiveMem.Init;
+        private.ReceiveMem.readExact;
+        private.timerStop;
+        (@@opcode, 4)->Private.ReceiveMem.CopyFromBuffer;
+        opcode->ntohl->opcode;
+        (@@length, 4)->Private.ReceiveMem.CopyFromBuffer;
+        length->ntohl->length;
+        
+        opcode->data.Opcode;
+        data[]->onData;
+        data[]->message[];
+     #);
+   NONE->MLPrivate.currentErrorHandler[];
+   false->MLPrivate.errorHandled;
+   
+--- MLSocketGet:DoPart ---
+do &onError[]->MLPrivate.currentErrorHandler[];
+   Receive: 
+     (# opcode: @Integer;
+     do (THIS(withIdle)[], 4)->Private.ReceiveMem.Init;
+	  (THIS(withIdle)[], 4) -> Private.ReceiveMem.ReadExact;
+        (@@opcode, 4)->Private.ReceiveMem.CopyFromBuffer;
+        opcode->ntohl->opcode;
+        (if (opcode = 9) or (opcode = 7) or (opcode = 6) or (opcode = 5) then
+            (# bis: ^MLBIS;
+               bools, ints, strings: @Integer;
+               bool: @Integer;
+               int: @Integer;
+               string: @Text;
+               strlen: @Integer;
+               spill: @Integer;
+            do (* Receive the BIS message. *)
+               &MLBIS[] -> bis[];
+               opcode -> bis.opcode;
+               (THIS(withIdle)[],4)->Private.ReceiveMem.ReadExact;
+               (@@bools,4)->private.receivemem.copyFromBuffer;
+               bools->ntohl->bools;
+               
+               (THIS(withIdle)[],4)->Private.ReceiveMem.ReadExact;
+               (@@ints,4)->private.receivemem.copyFromBuffer;
+               ints->ntohl->ints;
+               
+               (THIS(withIdle)[],4)->Private.ReceiveMem.ReadExact;
+               (@@strings,4)->private.receivemem.copyFromBuffer;
+               strings->ntohl->strings;
+               
+               (for i: bools repeat
+                    (THIS(withIdle)[],4)->Private.ReceiveMem.ReadExact;
+                    (@@bool,4)->private.receivemem.copyFromBuffer;
+                    bool->ntohl->bool;
+                    (if bool = 1 then
+                        true->bis.PutBool;
+                     else
+                        false->bis.PutBool;
+                    if);
+               for);
+               
+               (for i: ints repeat
+                    (THIS(withIdle)[],4)->Private.ReceiveMem.ReadExact;
+                    (@@int,4)->private.receivemem.copyFromBuffer;
+                    int->ntohl->int;
+                    int->bis.PutInt;
+               for);
+               
+               (for i: strings repeat
+                    (THIS(withIdle)[],4)->Private.ReceiveMem.ReadExact;
+                    (@@strlen,4)->private.receivemem.copyFromBuffer;
+                    strlen->ntohl->strlen; 
+                    (if strlen > 0 then
+                        (strlen mod 4)->spill;
+                        (if spill > 0 then 
+                            (4 - spill)->spill;
+                        if);
+                        strlen+spill->string.T.new;
+                        strlen->string.lgth;
+                        (THIS(withIdle)[],strlen+spill)->Private.ReceiveMem.ReadExact;
+                        (@@string.T[1],strlen+spill)->private.receivemem.copyFromBuffer;
+                        string[]->bis.PutString;
+                     else
+                        ''->bis.PutString;
+                    if);
+               for);
+               
+               bis.reset;
+               bis[]->onBIS;            
+               bis[]->message[];
+            #);
+         else
+            (# data: @MLData;
+               length: @Integer;
+            do opcode->data.Opcode;
+               (THIS(withIdle)[],4)->Private.ReceiveMem.ReadExact;
+               (@@length, 4)->Private.ReceiveMem.CopyFromBuffer;
+               length->ntohl->length;
+               (if length > 0 then
+                   length->data.Private.data.new;
+                   length->data.Private.length;
+			 (THIS(withIdle)[],length)->Private.ReceiveMem.ReadExact;
+                   (@@data.Private.data[1], length)->Private.ReceiveMem.CopyFromBuffer;
+               if);
+               data.Print;
+               data[]->onData;
+               data[]->message[];
+            #);
+        if);
+     #);
+   NONE->MLPrivate.currentErrorHandler[];
+   false->MLPrivate.errorHandled;
+   
+--- MLSocketOnBISPattern:DoPart ---
+do (if THIS(onBISPattern)## = onBISPattern## then
+       onError;
+    else
+       INNER;
+   if);
+   
+--- MLSocketOnDataPattern:DoPart ---
+do (if THIS(onDataPattern)## = onDataPattern## then
+       onError;
+    else
+       INNER;
+   if);
+   
+--- MLSocketGetText:DoPart ---
+do &onError[]->MLPrivate.currentErrorHandler[];
+   &Text[]->message[];
+   Receive:
+     (# ch: @Char;
+        oldch: @Char;
+        len: @Integer;
+     do (if not MLPrivate.buffer.eos then
+            ch->oldch;
+            MLPrivate.buffer.get->ch;
+            (if ch = 1 then
+                leave Receive;
+            if);
+            (if ch = 2 then
+                (1, message.length - 1) -> message.sub -> message[];
+                (message[], oldch)->onMLException;
+                leave Receive;
+            if);
+            ch->message.put;
+         else
+            (THIS(withIdle)[], 1024)->Private.ReceiveMem.Init;
+            Private.ReceiveMem.ReadMore->len;
+            (if len = 0 then 
+                (if not MLPrivate.errorHandled then
+                    onError;
+                if);
+                leave Receive;
+            if);
+            len->MLPrivate.buffer.T.new;
+            len->MLPrivate.buffer.lgth;
+            (@@MLPrivate.buffer.T[1], len)->Private.ReceiveMem.copyFromBuffer;
+            MLPrivate.buffer.reset;
+        if);
+        restart Receive;
+     #);
+   NONE->MLPrivate.currentErrorHandler[];
+   false->MLPrivate.errorHandled;
+   
+-- MLSocketSimplePut: doPart --
+do (# netOpCode: @integer;
+      netLength: @integer;
+   do data.Opcode->htonl->netOpcode;
+      data.Private.length->htonl->netLength;
+      8+data.Private.length->Private.SendMem.Init;
+      (@@netOpcode, 4)->Private.SendMem.AppendToBuffer;
+      (@@netLength, 4)->Private.SendMem.AppendToBuffer;
+      (if data.Private.length > 0 then
+          (@@data.Private.data[1], data.Private.length)->Private.SendMem.AppendToBuffer;
+      if);
+      (timeout, THIS(withIdle)[])->Private.SendMem;
+   #);
+   
+--- MLSocketPut:DoPart ---
+do Send: 
+     (# netOpcode: @Integer;
+        netLength: @Integer;
+        data: ^MLData;
+        bis: ^MLBIS;
+     do (if message[] <> NONE then
+            (if message## <= MLData## then
+                
+                message[]->data[];
+                data.Opcode->htonl->netOpcode;
+                data.Private.length->htonl->netLength;
+                8+data.Private.length->Private.SendMem.Init;
+                (@@netOpcode, 4)->Private.SendMem.AppendToBuffer;
+                (@@netLength, 4)->Private.SendMem.AppendToBuffer;
+                (if data.Private.length > 0 then
+                    (@@data.Private.data[1], data.Private.length)->Private.SendMem.AppendToBuffer;
+                if);
+                (timeout, THIS(withIdle)[])->Private.SendMem;
+                leave Send;
+            if);
+            (if message## <= MLBIS## then
+                message[]->bis[];
+                (if bis.opcode = 0 then
+                    9->htonl->netOpcode; (* BIS opcode. *)
+                 else
+                    bis.opcode->htonl->netOpcode;
+                if);
+                
+                &MLData[]->data[];
+                bis.Private.booleans->data.PutInt;
+                bis.Private.integers->data.PutInt;
+                bis.Private.strings->data.PutInt;
+                
+                bis.reset;
+                (for i: bis.Private.booleans repeat
+                     (if bis.GetBool then
+                         1->data.PutInt;
+                      else
+                         0->data.PutInt;
+                     if);
+                for);
+                (for i: bis.Private.integers repeat
+                     bis.GetInt->data.PutInt;
+                for);
+                (for i: bis.Private.strings repeat
+                     bis.GetString->data.PutTextLength;
+                for);
+                
+                4+data.Private.length->Private.SendMem.Init;
+                (@@netOpcode, 4)->Private.SendMem.AppendToBuffer;
+                (if data.Private.length > 0 then
+                    (@@data.Private.data[1], data.Private.length)->Private.SendMem.AppendToBuffer;
+                if);
+                (timeout, THIS(withIdle)[])->Private.SendMem;
+                leave Send;
+            if);
+            onError;
+        if);
+     #);
+
+--- MLSocketError:DoPart ---
+do (if MLPrivate.currentErrorHandler[] <> NONE then
+       MLPrivate.currentErrorHandler;
+       true->MLPrivate.errorHandled;
+    else
+       onError;
+   if);
+   Continue;
+   
+--- MLSocketLocalException:DoPart ---
+do (if THIS(LocalException)## = LocalException## then
+       THIS(MLSocket).onError;
+    else
+       failureTrace->termCode;
+       INNER;
+       (if not continue then
+           '**** Exception processing\n'->msg.prepend;
+           (termCode, msg[])->Stop;
+       if);
+   if);
+   
+   
+--- MLSocketPrivate:Descriptor ---
+(# currentErrorHandler: ^LocalException;
+   errorHandled: @Boolean;
+   buffer: @Text;   
+#)
+
+
+
+
+
+
