@@ -1,0 +1,142 @@
+//Microsoft Developer Studio generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "converter.h"
+#include "dlgs.h"
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// Danish resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_DAN)
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "#include ""converter.h""\r\n"
+    "#include ""dlgs.h""\0"
+END
+
+3 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_CONVERTER DIALOG DISCARDABLE  0, 0, 247, 86
+STYLE DS_3DLOOK | DS_CONTROL | WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS
+FONT 8, "MS Shell Dlg"
+BEGIN
+    LTEXT           "Output format:",-1,8,70,46,8
+    LTEXT           "",stc32,0,0,247,63
+    COMBOBOX        IDC_COMBO1,54,68,141,13,CBS_DROPDOWN | CBS_SORT | 
+                    WS_VSCROLL | WS_TABSTOP
+END
+
+IDD_OVERWRITE DIALOG DISCARDABLE  0, 0, 276, 71
+STYLE DS_MODALFRAME | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+CAPTION "Overwrite file?"
+FONT 8, "MS Shell Dlg"
+BEGIN
+    DEFPUSHBUTTON   "Yes",IDYES,75,45,50,14
+    PUSHBUTTON      "No",IDNO,149,45,50,14
+    LTEXT           "Warning, if you select yes, the following file wil be overwritten:",
+                    IDC_STATIC,38,11,199,8
+    LTEXT           "",IDC_FILE,8,27,267,9
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog Info
+//
+
+IDD_CONVERTER DLGINIT
+BEGIN
+    IDC_COMBO1, 0x403, 16, 0
+0x4449, 0x5f53, 0x4f43, 0x424d, 0x5f4f, 0x5043, 0x544e, 0x0032, 
+    IDC_COMBO1, 0x403, 16, 0
+0x4449, 0x5f53, 0x4f43, 0x424d, 0x5f4f, 0x5043, 0x544e, 0x0031, 
+    IDC_COMBO1, 0x403, 17, 0
+0x4449, 0x5f53, 0x4f43, 0x424d, 0x5f4f, 0x4544, 0x4953, 0x4e47, "\000" 
+    0
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDS_DIALOGFAILURE       "Creation of CD failed on call to DialogBox()"
+    IDS_STRUCTSIZE          "Invalid structure size passed to CD"
+    IDS_INITIALIZATION      "Failure initializing CD.  Possibly\n\r do to insufficient memory."
+    IDS_NOTEMPLATE          "Failure finding custom template for CD"
+    IDS_NOHINSTANCE         "Instance handle not passed to CD"
+    IDS_LOADSTRFAILURE      "Failure loading specified string"
+    IDS_FINDRESFAILURE      "Failure finding specified resource"
+    IDS_LOADRESFAILURE      "Failure loading specified resource"
+    IDS_LOCKRESFAILURE      "Failure locking specified resource"
+    IDS_MEMALLOCFAILURE     "Failure allocating memory for internal CD structure"
+    IDS_MEMLOCKFAILURE      "Failure locking memory for internal CD structure"
+    IDS_NOHOOK              "No hook function passed to CD but ENABLEHOOK\n\r was passed as a flag"
+    IDS_SETUPFAILURE        "Failure setting up resources for CD"
+    IDS_PARSEFAILURE        "Failure parsing strings in [devices]\n\rsection of WIN.INI"
+    IDS_RETDEFFAILURE       "PD_RETURNDEFAULT flag was set but either the \n\rhDevMode or hDevNames field was nonzero"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDS_LOADDRVFAILURE      "Failure loading the printers device driver"
+    IDS_GETDEVMODEFAIL      "The printer driver failed to initialize a DEVMODE data structure"
+    IDS_INITFAILURE         "Print CD failed during initialization"
+    IDS_NODEVICES           "No printer device drivers were found"
+    IDS_NODEFAULTPRN        "No default printer was found"
+    IDS_DNDMMISMATCH        "Data in DEVMODE contradicts data in DEVNAMES"
+    IDS_CREATEICFAILURE     "Failure creating an IC"
+    IDS_PRINTERNOTFOUND     "Printer not found"
+    IDS_NOFONTS             "No fonts exist"
+    IDS_SUBCLASSFAILURE     "Failure subclassing during initialization of CD"
+    IDS_INVALIDFILENAME     "Invalide filename passed to FileOpen or FileSave"
+    IDS_BUFFERTOOSMALL      "Buffer passed to CD too small to accomodate string"
+    IDS_FILTERSTRING        "Relevant files (*.cpn; *.xml)|*.cpn;*.xml|"
+    IDS_UNKNOWNERROR        "Unknown error."
+    IDS_COMBO_DESIGN        "Design/CPN"
+    IDS_COMBO_CPNT1         "CPN Tools 1"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDS_COMBO_CPNT2         "CPN Tools 2"
+END
+
+#endif    // Danish resources
+/////////////////////////////////////////////////////////////////////////////
+
+
