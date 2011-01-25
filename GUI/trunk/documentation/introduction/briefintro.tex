@@ -1,0 +1,318 @@
+\documentclass[12pt]{article}
+
+\usepackage[latin1]{inputenc}
+%\usepackage[danish]{babel}
+\usepackage[danish, english]{babel}
+\usepackage{a4}
+\usepackage{moreverb}
+\usepackage{epsfig,here}
+\usepackage{subfigure}
+\usepackage{rotate}
+
+\newcommand{\efig}[4][\columnwidth]{
+        \begin{center}
+        \begin{figure}[h!t]
+                \begin{center}
+                \epsfig{file={#4},width={#1}}
+                \caption{{#2} \label{#3}}
+                \end{center}
+        \end{figure}
+        \end{center}}
+
+\newcommand{\twofig}[8][\columnwidth]{
+        \begin{center}
+        \begin{figure}[h!t]
+                \begin{center}
+		\mbox{\subfigure[#5]{\epsfig{file={#6},width={#1}}}\quad
+		      \subfigure[#7]{\epsfig{file={#8},width={#2}}}
+                     }
+                \caption{{#3} \label{#4}}
+                \end{center}
+        \end{figure}
+        \end{center}}
+
+\newcommand{\rotatefig}[4][\columnwidth]{
+        \begin{center}
+        \begin{figure}[h!t]
+                \begin{center}
+                \begin{sideways}
+                \epsfig{file={#4},width={#1}}
+                \end{sideways}
+                \caption{{#2} \label{#3}}
+                \end{center}
+        \end{figure}
+        \end{center}}
+
+
+\begin{document}
+%\efig[10cm]{Tilstandsdiagram for bestilling}{besttilst}{bestiltilst.eps}
+
+\section{CPNTools interface}
+\label{sec:ctinterface}
+
+\subsection{Introduction}
+This is a brief introduction to the interface elements and interaction 
+techniques in CPNTools. After reading this, it should be possible
+to explore CPNTools further, trying out the interaction techniques
+on available net examples and tools. There are no detailed explanations 
+of CP-nets herein, nor of the exact tools available in CPNTools; the 
+latter can be found on the CPNTools help pages, located at 
+\textit{http://wiki.daimi.au.dk:8000/cpntools-help/\_home.wiki}
+
+\subsection{Workspace}
+\label{sec:ctworkspace}
+CPNTools runs in one big window, which can be maximized and resized
+just as a standard window in a window-based environment. It consists 
+of an \textbf{index} on the left side, showing text items (index nodes) 
+that represent the accessible workspace elements, and a large open 
+area, the \textbf{workspace}, for tools and net modules. (See 
+fig.~\ref{fig:ctworkspace}). 
+
+\efig[13cm]{CPNTools workspace}{fig:ctworkspace}{../screendumps/introduction/workspace_notes.ps}
+
+\noindent
+A net module, or \textbf{page}, is placed in a \textbf{sheet} when 
+opened (one page per sheet), and the sheets are organized in 
+\textbf{binders}. \textbf{Tabs} on the sheets make it possible to 
+flip between several pages in one binder. The sheets can be moved 
+around and placed in different binders, and one sheet can be in 
+several binders, providing several views, e.g. with different zoom 
+factors, on the associated page (see fig~\ref{fig:ctviews}). Binders 
+can also be moved around and resized.
+
+\efig[10cm]{Multiple views}{fig:ctviews}{../screendumps/introduction/multiple_views.ps}
+
+\noindent
+The workspace contains two cursors, one for the right hand and one
+for the left. (Fig.~\ref{fig:ctstdcursors}) 
+
+\efig[5cm]{Standard cursors}{fig:ctstdcursors}{../screendumps/introduction/twocursors.ps}
+
+\noindent
+Left-handed users can switch devices (using the trackball in the 
+right hand and the mouse in the left hand), and it is possible to
+plug in extra input devices to work collaborately with other users
+on the same machine. Each new input device will have its own cursor.
+
+\subsection{CP-net objects}
+
+The pages contain the objects in the net, i.e. places, transitions,
+arcs, inscriptions, etc.
+\efig[10cm]{CP-net objects}{fig:cpnetobjects}{../screendumps/introduction/cpnetobjects.ps}
+
+\subsection{Interaction techniques}
+
+\subsubsection{Palettes}
+\label{sec:ctpalettes}
+Tool palettes consist of a collection of \textbf{tool cells}, each
+containing an icon that indicates the tool in the cell. Tools are
+located in \textbf{tool binders}.\newline
+\noindent
+Tool palettes are on sheets, and they can be placed together in 
+binders (fig~\ref{fig:cttoolbinder}). This way, users can collect 
+tools that they need to switch between for a certain task. 
+
+\efig[6cm]{Tools in a binder}{fig:cttoolbinder}{../screendumps/introduction/toolbinder.ps}
+
+\noindent
+Toolbinders only contain tool-sheets, and cpnbinders only contain 
+page-sheets; thus, it is not possible to put toolglasses and net pages
+together in a binder.\newline
+
+\noindent
+Tools are selected from palettes by clicking on a cell with the left 
+mouse button. The tool is now ''in the hand'' and clicking with the
+left mouse button on an appropriate object will apply the tool. The 
+cursor changes to indicate which tool is currently in the hand (see
+fig.~\ref{fig:ctcursors}).\newline
+\efig[10cm]{Examples of cursors}{fig:ctcursors}{../screendumps/introduction/cursorexamples.ps}
+
+\noindent
+While a tool is in the hand, it is still possible to move objects
+around; this is done with a so-called \textbf{long click}, where
+the mouse is pressed and held over an object, until the cursor
+changes to indicate that the move tool is now active (see 
+figure~\ref{fig:movewithtool}). When the move operation is finished, 
+the user releases the mouse, and the tool that was in the hand before 
+the move is back (indicated by a switch back to the associated tool 
+cursor).
+
+\twofig[4cm]{4cm}{Moving a binder with a tool in the hand}{fig:movewithtool}{Cursor for color tool}{../screendumps/introduction/before_move.ps}{Cursor changed to move cursor}{../screendumps/introduction/after_move.ps}
+
+\paragraph{Icons}
+Icons in the marking menus and palettes show which action is associated 
+with the tool. An icon is either a graphical object or a text item. 
+Marking menus currently use text items.
+
+\noindent
+An example of a graphical icon: the Transition tool has a small version 
+of a transition as its icon, and the Change Color tool has a small 
+colored triangle. The graphical icons change if the associated action 
+does, e.g. if the Transition tool changes to make red transitions of a 
+particular width and breadth, the icon turns into a red transition of 
+the right proportions. (Fig~\ref{fig:deftrans}).
+
+\twofig[6cm]{6cm}{Changing icons for transition tool}{fig:deftrans}{Black}{../screendumps/introduction/def_transition_black.ps}{Red, smaller}{../screendumps/introduction/def_transition.ps}
+
+\noindent
+Icons in palettes highlight when they are active, i.e. when a tool is
+picked from a palette into the hand, the corresponding tool cell has
+a darker background to indicate that it is active. (See 
+fig.~\ref{fig:ctactivecell}).
+
+\efig[5cm]{A highlighted cell}{fig:ctactivecell}{../screendumps/introduction/cell_highlight.ps}
+
+\subsubsection{Toolglasses}
+Toolglasses are semi-transparent, floating palettes (fig.~\ref{fig:tg}).
+
+\efig[7cm]{A toolglass}{fig:tg}{../screendumps/introduction/../screendumps/introduction/tooglass.ps}
+
+\noindent 
+With toolglasses, users specify a tool and a target in one action by 
+clicking through a cell onto an object. One hand moves the toolglass 
+around, and the other hand clicks through with the left button. Clicking 
+the right button on the device that holds the toolglass drops the 
+toolglass as a fixed palette.\newline
+
+Both hands can pick up a toolglass. The most common practice is to 
+work with the toolglass in the non-dominant (typically left) hand.
+
+\subsubsection{Marking menus}
+The marking menus are nearly opaque, circular, context-sensitive menus. 
+The marking menus appear when the right mouse button is pressed and 
+held down for a short while. It appears with the center at the mouse 
+coordinates. Moving the mouse cursor over the entries make the entries 
+highlight to show which entry is chosen. (See fig.~\ref{fig:ctentrymm}). 
+Releasing the mouse button on top of an entry will perform the 
+corresponding action.
+
+\efig[6cm]{CPNTools marking menus}{fig:ctentrymm}{../screendumps/introduction/before_mmdelete.ps}
+
+\noindent
+When the user has learned the position of the individual entries, it is
+no longer necessary to pop up the menu, and a quick gesture can now
+perform the desired action. The user presses down the right mouse
+button and with a quick gesture moves the mouse in the direction of
+the menu entry (see fig.~\ref{fig:ctgesture}).\newline
+
+\twofig[6cm]{6cm}{Gesture interaction}{fig:ctgesture}{Gesture to delete item}{../screendumps/introduction/mmdelete.ps}{Text feedback on correct gesture}{../screendumps/introduction/after_mmdelete.ps}
+
+\noindent
+The starting point of a gesture is the focus point for the following
+action. When the user wants to e.g. create an object, the object appears
+where the gesture starts.
+
+\subsubsection{Two-handed manipulation}
+\label{sec:cttwohanded}
+The two hands can interact with objects in a number of different 
+ways, working simultaneously either on their own or together. Two 
+buttons on each hand have separate functions, determining the
+interactions of the hands. The following describes the three ways 
+the hands can work; separately, asymmetrically, and symmetrically.
+
+\paragraph{Separate hand interaction}
+The two hands can work separately, performing similar interactions such
+as moving objects and picking up tools (toolglasses in the non-dominant 
+hand, individual tools in the dominant hand). 
+\newline
+In the following, I will use ''right'' and ''left'' for dominant and
+non-dominant; the operations are reversible for left-handed users.
+Possible separate hand operations are:
+\begin{description}
+\item[Move objects] By pressing the \textbf{left} button on the
+mouse or trackball and dragging, users can move objects around. The 
+cursor changes to the move cursor (see fig.~\ref{fig:movecursor}) to 
+indicate when the object can be moved.
+\efig[4cm]{The move cursor}{fig:movecursor}{../screendumps/introduction/after_move.ps}
+Objects that can be moved are: \textbf{Pages} (by dragging the page 
+tab), \textbf{binders} (by dragging the lightgrey title area),
+\textbf{tool palettes} (by dragging the tab on the palette),
+\textbf{CP-net objects} (by dragging the object).
+\item[Pan] By pressing and dragging with the \textbf{left} button
+on the mouse or trackball in the background of a page (i.e. the
+light brown area), users can pan the page. The pan cursor (see
+fig.~\ref{fig:pancursor}) indicates when the page can be panned.
+\efig[4cm]{The pan cursor}{fig:pancursor}{../screendumps/introduction/pancursor.ps}
+\item[Switch between pages and tools] By clicking on a tab (either
+a page or a tool tab), users can bring a page or tool palette to 
+front.
+\item[Expanding/collapsing index triangles] By clicking on the
+small triangles in the index (and on declaration sheets), users
+can open and close the index entries. The triangles flash briefly
+in green when they expand/collapse.
+\item[Drag from index] By pressing and dragging on a text item
+in the index, users can drag the item out to open a page, a
+tool palette, or a declaration. Not all text items can be dragged
+from the index.
+\item[Pick up a tool] By clicking with the \textbf{left} button
+of the mouse on a tool in a tool palette, users can pick up tools
+in the hand. Note that this only works when the tool palette is
+in palette mode, i.e. it is not possible to pick tools up from
+a toolglass. 
+A yellow frame around the tool cell indicates that the tool is 
+selected (see fig.~\ref{fig:ctactivecell}). Clicking again on the 
+selected tool will drop the tool, and the hand is now empty. When
+there is a tool in the hand, the cursor shows which tool it is
+(see fig.~\ref{fig:ctcursors}).\newline
+While a tool is in the hand, it is still possible to move objects,
+pan, bring pages to front, etc. This is then done with a ''long
+click'', i.e. by pressing and holding down the mouse button until
+the cursor changes to indicate that e.g. an object can be moved.
+When the operation is done, the cursor returns to the tool cursor,
+and 
+\item[Apply a tool] When a tool is in the hand, it can be applied
+by clicking on an appropriate object with the \textbf{left} mouse
+button. If there is no tool in the hand, a toolglass tool can be
+applied by clicking through the cell with the \textbf{left} mouse
+button onto an appropriate object. Fig.~\ref{fig:application} shows
+how to change colors on an object with a tool in the hand and with
+a toolglass.
+\twofig[6cm]{6cm}{Coloring a place}{fig:application}{Tool in hand: Click on place}{../screendumps/introduction/tool_color.ps}{Toolglass: Click through on place}{../screendumps/introduction/toolglass_color.ps}
+\item[Pick up toolglass] Clicking with the \textbf{right} trackball
+button on a tool binder picks the binder up as a toolglass, i.e. a
+semi-transparent palette that sticks to the trackball. The right 
+hand apply tools in the toolglass to objects underneath as described 
+above.
+\item[Drop toolglass] If the palette is in toolglass mode, a 
+click with the \textbf{right} trackball button drops it on the
+background (as a palette), and it no longer sticks to the trackball. 
+\item[Move toolglass] While the toolglass sticks to one of the 
+input devices, it can be moved around by moving the device, thus 
+keeping tools close to where the user works. 
+\end{description}
+
+\paragraph{Asymmetrical two-handed interaction}
+The two hands can perform tasks together, working in two different 
+ways. These tasks are:
+\begin{description}
+\item[Apply tool from toolglass] While the trackball moves the toolglass
+around, the mouse clicks through the cells to apply the tools, as
+described above.
+\end{description}
+
+\paragraph{Symmetrical two-handed interaction}
+The two hands can work together, symmetrically, on the same task:
+\begin{description}
+\item[Zoom] To zoom in on a page, position the trackball cursor
+somewhere on the page background (i.e. the light brown area), and
+press the \textbf{left} trackball button. Now position the mouse 
+cursor somewhere on the same page background, and press the 
+\textbf{left} mouse button. Moving the cursors closer and farther 
+from each other (''stretching'' and ''shrinking'') will zoom in and 
+out on the page. There is no cursor feedback on the zoom; only the 
+left cursor changes during this interaction.
+\item[Resize binder] To resize a binder, position the trackball 
+cursor somewhere on the binder's title area (i.e. the light grey 
+bar in the top of the binder), and press the \textbf{left} trackball
+button. Now position the mouse cursor somewhere in the binder, e.g. 
+on the background of the page in the binder, and press the 
+\textbf{left} mouse button. Moving the cursors closer and farther 
+from each other will resize the binder. There is no cursor feedback 
+on this; only the left cursor changes during this interaction.
+\end{description}
+The interactions for zoom and resize are the same, the only difference
+is where to position the trackball cursor. 
+
+\label{endrapport}
+
+\end{document}
