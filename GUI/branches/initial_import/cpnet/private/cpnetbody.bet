@@ -1,0 +1,2540 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../cpnet';
+
+INCLUDE '../../cpntools/cpnworkspace';
+INCLUDE '../runtimeerror';
+INCLUDE '../mlcoms';
+
+INCLUDE '../../cpntools/instruments/cpncommands.bet';
+
+-- PageElementListCalcAvgXY:doPart --
+do (# count: @integer;
+      xPos, yPos: @real;
+   do &Point2D[] -> c[];
+      0 -> xPos -> yPos;
+      0 -> count;
+      scan 
+      (# 
+      do (if (current## <= Node##) or (current## <= Aux##) then
+             current.x + xPos -> xPos;
+             current.y + yPos -> yPos;
+             count + 1 -> count;
+         if);
+      #);
+      (if count = 0 then
+          (0,0) -> c;
+       else
+          (xPos / count, yPos / count) -> c;
+      if);
+   #);
+   
+-- PageElementListScanTransitions:doPart --
+do scan
+   (# 
+   do (if current## <= Transition## then
+          current[] -> this(scanTransitions).current[];
+          inner scanTransitions;
+      if);
+   #);
+   
+-- PageElementListScanPlaces:doPart --
+do scan
+   (# 
+   do (if current## <= Place## then
+          current[] -> this(scanPlaces).current[];
+          inner scanPlaces;
+      if);
+   #);
+   
+-- PageElementListScanFusionPlaces:doPart --
+do scanPlaces
+   (# 
+   do (if current.getFusionSet <> none then
+          current[] -> this(scanFusionPlaces).current[];
+          inner scanFusionPlaces;
+      if);
+   #);
+   
+-- PageElementListScanSubstitutionTransitions:doPart --
+do scanTransitions
+   (# 
+   do (if current.isSubstituationTransition then
+          current[] -> this(scanSubstitutionTransitions).current[];
+          inner scanSubstitutionTransitions;
+      if);
+   #);
+   
+-- PageElementListScanArcs:DoPart --
+do scan
+   (# 
+   do (if current## <= Arc## then
+          current[] -> this(scanArcs).current[];
+          inner scanArcs;
+      if);
+   #);
+
+-- PageElementListScanSSArcs:DoPart --
+do scan
+   (# 
+   do (if current## <= SSArc## then
+          current[] -> this(scanSSArcs).current[];
+          inner scanSSArcs;
+      if);
+   #);
+
+-- PageElementListScanNodes:DoPart --
+do scan
+   (# 
+   do (if current## <= Node## then
+          current[] -> this(scanNodes).current[];
+          inner scanNodes;
+      if);
+   #);
+
+-- PageElementListScanSSNodes:DoPart --
+do scan
+   (# 
+   do (if current## <= SSNode## then
+          current[] -> this(scanSSNodes).current[];
+          inner scanSSNodes;
+      if);
+   #);
+
+-- PageElementListSetCPNPage:DoPart --
+do scan
+   (# 
+   do theCPNPage[] -> current.setCPNPage;
+   #);
+      
+-- CheckName: doPart --
+do check: 
+     (# theChar: @char;
+        typeAsText: 
+          (# theText: ^Text;
+          do (if true
+              // type = page_type then
+                 'Page ' -> theText[];
+              // type = place_type then
+                 'Place ' -> theText[];
+              // type = trans_type then
+                 'Transition ' -> theText[];
+              else 
+                 &Text[] -> theText[];
+             if);
+          exit theText[]
+          #);
+        checkUnique:
+          (# table: ^NameTable;
+          enter table[]
+          do (if theName[] -> table.has then
+                 typeAsText -> errorMsg[];
+                 'name \'' -> errorMsg.puttext;
+                 theName[] -> errorMsg.puttext;
+                 '\' not unique' -> errorMsg.puttext;;
+                 errorMsg[] -> onError;
+                 leave check;
+              else 
+                 theName[] -> table.insert;
+             if);
+          #);
+        (* a name is the match of
+         * ^([A-Z]|[a-z])([A-Z]|[a-z]|[0-9]|\'|_|\n|\ )*
+         * else the empty string *)
+    generateName:
+          (# theName, temp: ^Text;
+             lastWas_: @boolean;
+      enter theName[]
+          do theName.trim -> theName[];
+             (if (not theName.empty) and (1 -> theName.inxGet -> ascii.isLetter) then
+                 &Text[] -> temp[];
+                 vegas: theName.scanAll
+                 (#
+                 do (if (ch -> ascii.isLetter) or
+                        (ch -> ascii.isDigit) or
+                        (ch = '\'') or
+                        (ch = '_') or
+                        (ch -> ascii.isWhiteSpace) then
+                        ch -> temp.put;
+                     else
+                        leave vegas;
+                    if);
+                 #);
+                 temp.reset; temp[] -> theName[]; &Text[] -> temp[];
+                 false -> lastWas_; (* we only want 1 _ per group of ws *)
+                 vegas: (theName.trim).scanAll
+                 (# 
+                 do (if ch -> ascii.isWhiteSpace then
+                        (if not lastWas_ then
+                            '_' -> temp.put;
+                            true -> lastWas_;
+                        if);
+                     else
+                        ch -> temp.put;
+                        false -> lastWas_;
+                    if);
+                 #);
+              else
+                 &Text[] -> temp[];
+             if);
+          exit temp[]
+      #);
+     do (if theName[] = NONE then
+            &Text[] -> theName[];
+        if);
+        theName.reset;
+    theName[] -> generateName -> theName[];
+        theName.reset;
+        (if theName.length = 0 then
+            leave check;
+        if);
+        (if not (theName.get -> ascii.isLetter) then
+            typeAsText -> errorMsg[];
+            'name \'' -> errorMsg.puttext;
+            theName[] -> errorMsg.puttext;
+            '\' starts with non letter character' -> errorMsg[];
+            errorMsg[] -> onError;
+            '' -> theName[];
+            leave check;
+         else
+            (for i: (theName.length - 1) repeat
+                 theName.get -> theChar;
+                 (if not ((theChar -> ascii.isLetter) or
+                     (theChar -> ascii.isDigit) or
+                     (theChar = '\'') or (theChar = '_')) then
+                     typeAsText -> errorMsg[];
+                     'name \'' -> errorMsg.puttext;
+                     theName[] -> errorMsg.puttext;
+                     '\' is not an ML identifier' -> errorMsg[];
+                     errorMsg[] -> onError;
+                     '' -> theName[];
+                     leave check;
+                 if);
+            for);
+        if);
+        (if true
+         // type = page_type then
+            thePage.net.pageNames[] -> checkUnique;
+         // type = place_type then
+            thePage.placeNames[] -> checkUnique;
+         // type = trans_type then
+            thePage.transitionNames[] -> checkUnique;
+        if);
+     #);
+   
+-- CPNetPrivate:descriptor --
+(# instanceRoots: @Notifier 
+     (# roots: @ElementDeque
+          (# Element::PageInstance;
+          #);
+        add:
+          (# elm: ^Element;
+          enter elm[]
+          do THIS(Element)[] -> elm.father[];
+             elm[] -> roots.append;
+             elm[] -> added;
+          #);
+        remove:
+          (# elm: ^Element;
+          enter elm[]
+          do elm[] -> roots.remove;
+             NONE -> elm.father[];
+             elm[] -> removed;
+          #);
+        clear: (# do roots.clear; #); 
+     #);
+   theCPNPages: @CPNPageIDDictionary;
+   theGlobalGroups: @GroupIDDictionary;
+   theFusionSets: @FusionSetIDDictionary;
+   pagesToBeDeleted: @CPNPageList;
+   MLComSemanticChanged: @boolean;
+   recheckForEnabling: @TransitionIDDictionary;
+   recheckForMarking: @PlaceIDDictionary;
+   topCPNPageStatusContainer: @StatusContainer;
+   instanceRootsStatusContainer: @InstanceStatusContainer;
+   (* For managing autosaves *)
+   lastSavedVersion: @integer;
+   lastAutosavedVersion: @integer;
+   currentVersion: @integer;
+   monitorOrderChanged, modelDirChanged, simreportOptionsChanged, repreportOptionsChanged:@boolean;
+   outputDir: ^Text;
+   outputOption: ^FolderPathOption;
+   timestampOption: ^BooleanOption;
+   currentTimeType: ^Text;
+   simreportOptions: ^OptionList;
+   repreportOptions: ^OptionList;
+   monitorsToBeRemoved, monitorsToggleEnabling, incorrectMonitors: @MonitorIDDictionary;
+   regenerateTransitions: @TransitionIDDictionary;
+   recheckEnablingTransitions, preenabledEnabled, preenabledDisabled: @TransitionIDDictionary;
+   init: 
+     (# 
+     do instanceRoots.init;
+        theCPNPages.init;
+        theGlobalGroups.init;
+        theFusionSets.init;
+        pagesToBeDeleted.init;
+        recheckForEnabling.init;        
+        recheckForMarking.init;
+        topCPNPageStatusContainer.init;
+        instanceRootsStatusContainer.init;
+        monitorsToBeRemoved.init;
+        monitorsToggleEnabling.init;
+        0 -> lastSavedVersion;
+        0 -> currentVersion;
+        0 -> lastAutosavedVersion;
+        false -> monitorOrderChanged;
+        true -> modelDirChanged;
+        true -> simreportOptionsChanged;
+        true -> repreportOptionsChanged;
+        '' -> outputDir[];
+        regenerateTransitions.init;
+	recheckEnablingTransitions.init;
+        preenabledEnabled.init;
+        preenabledDisabled.init;
+        incorrectMonitors.init;
+     #);
+#)
+
+-- CPNetGetSimreportOptions:doPart --
+do private.simreportOptions[] -> simreportOptions[];
+
+-- CPNetGetRepreportOptions:doPart --
+do private.repreportOptions[] -> repreportOptions[];
+   
+-- CPNetTopCPNPageStatusChanged:DoPart --
+do (if from <> any_status then
+       from -> private.topCPNPageStatusContainer.decrement;    
+   if);
+   
+   (if to <> any_status then
+       to -> private.topCPNPageStatusContainer.increment;
+   if);   
+   
+-- CPNetInstanceRootsStatusChanged:DoPart --
+do (if from <> any_status then
+       from -> private.instanceRootsStatusContainer.decrement;    
+   if);
+   
+   (if to <> any_status then
+       to -> private.instanceRootsStatusContainer.increment;
+   if);
+   
+-- CPNetGetCurrentHighlight:DoPart --
+do (if (currentHighlight[] = none) then
+       (if (private.instanceRootsStatusContainer.leastUpperBound <> noRemarks) and
+           ((private.topCPNPageStatusContainer.leastUpperBound = compiled) or
+           (private.topCPNPageStatusContainer.leastUpperBound = unchecked) or
+           (private.topCPNPageStatusContainer.leastUpperBound = nameError)) then
+           private.instanceRootsStatusContainer.leastUpperBound
+             -> getHighlight
+             -> currentHighlight[];       
+        else
+           private.topCPNPageStatusContainer.leastUpperBound
+             -> getHighlight
+             -> currentHighlight[];
+       if);
+   if);
+   
+-- CPNetReestablishMarking:doPart --
+do currentStep > 0 -> value;
+   
+-- CPNetSetSimulationOptions:DoPart --
+do (ML[],
+   simulationOptions.pause_before,
+   simulationOptions.pause_after,
+   simulationOptions.pause_show,
+   simulationOptions.report_trans,
+   simulationOptions.report_binds,
+   simulationOptions.show_marking,
+   simulationOptions.show_enabling,
+   simulationOptions.until_step[],
+   simulationOptions.add_step[],
+   simulationOptions.until_time[],
+   simulationOptions.add_time[],
+   simulationOptions.pause_cont[],
+   simulationOptions.report_func[]) -> MLsetSimulationOptions;
+   
+-- CPNetonRemoved: doPart --
+do (# asNotifier: ^Notifier;
+      asHighlightable: ^Highlightable;
+      asPage: ^CPNPage;
+   do (if source## <= CPNPage## then (* to remove the instances from the sim. bug #947 *)
+          source[] -> asPage[];
+          asPage.scanInstances
+            (# 
+            do current.delete;
+            #);
+          semanticChanged;
+      if);
+      (* this is not nessary, since we only use elements to
+      postprocess and never remove elements from it 
+      (*(if source## <= Notifier## then*)
+      (*    source[] -> asNotifier[];*)
+      (*    (if (asNotifier.id[] <> none) and not ('' -> asNotifier.id.equal) then*)
+      (*        asNotifier.ID[] -> elements.disassociate;*)
+      (*    if);*)
+      (*if);*)
+
+      (* Needed for runtime errors, see bug #578 *)
+      (if (source## <= Highlightable##) and
+          (source[] -> runtimeErrorElements.has) then
+          source[] 
+            -> runtimeErrorElements.at 
+            -> runtimeErrorElements.delete;
+          asHighlightable.removeError;
+      if);
+      
+      (if source[] = this(CPNet)[] then
+          (* Remove any error-bubbles *)
+          hideAllErrorMsg;
+          (* terminate the ml-part *)
+          ML.stop;
+          MLCheckerThread.stop;
+          MLCheckerThread.resume;
+          true -> deleted;
+          this(CPNet)[] -> (getCommandManagerManager).disassociate;
+      if);
+   #);
+   
+-- CPNetFusionSetsKeyEqual:DoPart --
+do left[] -> right.equal -> value;
+   
+-- CPNetFusionSetsHashFunction:DoPart --
+do k.length -> value;
+   
+-- CPNetnewFusionName: doPart --
+do highestNumber + 1 -> highestNumber;
+   'Fusion ' -> fusionName[];
+   highestNumber -> fusionName.putint;
+   (if (fusionName[] -> fusionSets.lookup) <> NONE then
+       newFusionName -> fusionName[];
+   if);
+   
+-- CPNetHideAllErrorMsg:DoPart --
+do scanCPNPages
+   (#
+   do current.hideAllErrorMsg;
+   #);
+   
+-- CPNetAddInstanceRoot:doPart --
+do theInstanceRoot[] -> private.instanceroots.add;
+   (any_status, theInstanceRoot.thePage.getNodesAndSubpagesStatus)
+     -> topCPNPageStatusChanged;
+   (any_status, theInstanceRoot.getNodesAndSubpagesStatus)
+     -> instanceRootsStatusChanged;  
+   
+-- CPNetRemoveInstanceRoot:doPart --
+do theInstanceRoot[] -> private.instanceroots.remove;
+   (theInstanceRoot.thePage.getNodesAndSubpagesStatus, any_status)
+     -> topCPNPageStatusChanged;
+   (theInstanceRoot.getNodesAndSubpagesStatus, any_status)
+     -> instanceRootsStatusChanged;
+   
+-- CPNetScanInstanceRoots:doPart --
+do private.instanceRoots.roots.scan
+   (# 
+   do current[] -> this(scanInstanceRoots).current[];
+      inner scanInstanceRoots;
+   #);
+   
+-- CPNetAttachToInstanceRoots:doPart --
+do theEntity[] -> private.instanceRoots.attach;
+   
+-- CPNetGetOutputDir:DoPart --
+do private.outputDir.copy -> outputDir[];
+   
+-- CPNetCommandApplied: doPart --
+do (# theCpnWorkspace: ^CpnWorkspace;
+      commandsBetweenAutosave: ^integerObject;
+      options: ^OptionList;
+      status: ^StatusBubble;
+   do THIS(Workspace)[] -> theCpnWorkspace[];
+      ObjectPool.get(# Type:: StatusBubble; #) -> status[];
+      (if private.lastSavedVersion > private.currentVersion then
+          private.lastSavedVersion -> private.currentVersion;
+      if);
+      private.currentVersion + 1 -> private.currentVersion;
+      theCpnWorkspace.getGlobalOptions -> options[];
+      'autosave' -> options.lookupIntegerObject -> commandsBetweenAutosave[];
+      (if commandsBetweenAutosave[] <> NONE then
+          (if commandsBetweenAutosave <= private.currentVersion - private.lastAutosavedVersion then
+              THIS(CPNet)[] -> 
+              Autosave
+              (#
+                 myError::
+                   (#
+                   do 'Autosave Failed: ' -> msg.prepend;
+                      (if commandsBetweenAutosave = private.currentVersion - private.lastAutosavedVersion then
+                          msg[] -> status.error;
+                      if);
+                   #);
+              #);
+              
+          if);
+      if);
+   #);
+   
+-- CPNetCommandRedone: doPart --
+do private.currentVersion + 1 -> private.currentVersion;
+   
+-- CPNetCommandUndone: doPart --
+do private.currentVersion - 1 -> private.currentVersion;
+   
+-- CPNetModifiedSinceSave: doPart --
+do (private.currentVersion <> private.lastSavedVersion) -> modified;
+   
+-- CPNetSaved: doPart --
+do (# ignore: @boolean;
+   do private.currentVersion -> private.lastSavedVersion;
+      private.currentVersion -> private.lastAutosavedVersion;
+      true -> private.modelDirChanged;
+      ignoreStateSpaceExit -> ignore;
+      true -> ignoreStateSpaceExit;
+      semanticChanged;
+      ignore -> ignoreStateSpaceExit;
+   #);
+   
+-- CPNetAutoSaved: doPart --   
+do private.currentVersion -> private.lastAutosavedVersion;
+   
+-- mlOnError:dopart -- 
+do 'mlOnError' -> debugTemp;
+   (* This error callback is used to signal that the ML engine is
+    * no longer available due to some fatal communication error. *)
+   (if debugging and (not localsim) then
+       'cpnet.bet: CPNet.ML.onError: The ML engine is no longer available due to some fatal communication error!'->debugCPNet;
+   if);
+   (if initialized then
+     (# status: ^StatusBubble;
+     do ObjectPool.get(# Type:: StatusBubble; #) -> status[];
+        'The simulator has gone away.  Try stopping CPN Tools, kill the simulator thread and the mldaemon, then restart CPN Tools.' -> status.error;
+     #);
+   if);
+   true->continue; 
+   
+-- MLOnInternalError: doPart --
+do (# errorMsg: ^Text;
+      status: ^StatusBubble;
+      handled: @boolean;
+   do (what[],THIS(CPNet)[], none) -> addArcRuntimeError -> handled;
+      
+      (if not handled then
+          ObjectPool.get(# Type:: StatusBubble; #) -> status[];
+          'An error has occured in the simulator. The error is:'
+          '\n\n' -> errorMsg[];
+          what[] -> errorMsg.puttext;
+          errorMsg[] -> status.error;
+      if);
+   #);
+   
+-- CPNetMLDoReceive:DoPart --
+do not this(CPNet).private.MLComSemanticChanged -> value;
+   
+-- CPNetonSemanticChanged:dopart--
+do (# theManager: ^CommandManager;
+   do
+      (if (not ignoreStateSpaceExit) then
+      false -> statespaceEntered;
+      scanCPNPages(#
+          do
+         current.scanSSArcs
+           (#
+           do true -> current.dead;
+           #);
+         current.scanSSNodes
+           (#
+           do true -> current.dead;
+           #);
+      #);
+          (any_status, unchecked) -> changeStatus;
+      if);
+      (if debugging then 
+      'CPNet.onSemanticChanged: Trying to reactivate the ML checker loop' -> debugCPNet; 
+      if);
+      (if ML.Initialized then
+      MLcheckerThread.resume;
+      if);
+   #);
+-- CPNetRegenerateTransition:DoPart --
+do (theTransition.id[], theTransition[]) 
+     -> private.regenerateTransitions.associate;  
+
+-- CPNetMLCheckerThreadPrivate:Descriptor --
+(# resume: @Semaphore;
+   shouldStop: @boolean;
+#)
+
+-- CPNetMLCheckerThreadStop: doPart --
+do true -> private.shouldStop;
+
+-- CPNetMLCheckerThreadResume:DoPart --
+do (*
+    * The next two statements asures that the semaphore is open.
+    *)
+   private.resume.tryP;
+   private.resume.V;
+   
+   false -> private.shouldStop;
+   
+   (*
+    * Makes the thread restart when it reaches a safe point.
+    *)
+   true -> this(CPNet).private.MLComSemanticChanged;
+   
+-- CPNetMLCheckerThread:DoPart --
+do getMLReserved -> reserved[];
+   checkerLoop:
+     (# safePoint:
+          (#
+          do (if this(CPNet).private.MLComSemanticChanged then
+                 false -> this(CPNet).private.MLComSemanticChanged;
+                 restart checkerLoop;
+             if);
+          #);
+        preenablingsE: @boolean;
+        preenablingsD: @boolean;
+        addAllFromList:
+	(# elements: ^TransitionIDDictionary;
+	enter elements[]
+	do
+	  elements.scan
+	  (#
+	  do (if (current.id[] -> this(CPNet).private.recheckEnablingTransitions.lookup) = NONE then
+		 (current.id[], current[]) -> this(CPNet).private.recheckEnablingTransitions.associate;
+(*		 (if (current.getSubpage = NONE) and
+		     (current.status = compiled) then
+		     (current.getCPNPage).scanInstances
+		     (# currentInstance: ^TransitionInstance;
+		     do (if current.mlinstancenumber > 0 then
+			    current.id[] -> current.lookupTransitionInstance -> currentInstance[];
+			    (if currentInstance[] <> NONE then
+			    true -> currentInstance.setPreEnabled;
+			    if);
+			if);
+		     #);
+		 if);*)
+	     if);
+	  #);
+	#);
+
+
+        preenableCheck:
+          (# theTransition: ^Transition;
+             tlist: @TransitionList; 
+	  enter theTransition[]
+          do  theTransition[] -> tlist.append;
+	      (if true then
+		  (if (ml[], tlist[]) -> getPreEnabledTransitions then
+		      (theTransition.id[], theTransition[]) -> this(CPNet).private.recheckEnablingTransitions.associate;
+                      (if not preenablingsE then
+                          this(CPNet).private.preenabledEnabled[] -> addAllFromList;
+			  true -> preenablingsE;
+                      if);
+                      (if not preenablingsD then
+                          this(CPNet).private.preenabledDisabled[] -> addAllFromList;
+			  true -> preenablingsD;
+                      if);
+		   else
+		      theTransition.id[] -> this(CPNet).private.preenabledEnabled.disassociate;
+		      theTransition.id[] -> this(CPNet).private.preenabledDisabled.disassociate;
+                      (if not preenablingsD then
+                          this(CPNet).private.preenabledDisabled[] -> addAllFromList;
+			  true -> preenablingsD;
+                      if);
+		  if);
+	       else
+		  (ml[], tlist[]) -> getEnabledTransitionsNoScheduler;
+	       if);
+
+          #);
+        compileTransition:
+          (# theTransition: ^Transition;
+             tlist: ^TransitionList; 
+          enter theTransition[]
+          do (if true
+               // theTransition.status = checked then
+                  safePoint;
+                  &TransitionList[] -> tlist[];
+                  theTransition[] -> tlist.append;
+                  
+                  (* Compile the node. *)
+                  (ml[], THIS(CPNet)[], tlist[], &PlaceList[], false) -> MLGenerateInstances;
+                  theTransition.id[] -> this(CPNet).private.regenerateTransitions.disassociate;
+                  (if theTransition.getSubpage = NONE then
+		      theTransition[] -> preenableCheck;
+                  if);
+               // ((theTransition.id[] -> this(CPNet).private.recheckForEnabling.lookup) <> none) then
+                    safePoint;
+		    (if (theTransition.id[] -> (theTransition.getCPNPage).lookupTransition) <> none then
+		      theTransition[] -> preenableCheck;
+                    if);
+                    theTransition.id[] -> this(CPNet).private.recheckForEnabling.disassociate;
+              if);
+              
+              (if theTransition.status = incorrect then
+                  (compiling,incorrect) -> (theTransition.getCPNPage).changeStatus;
+              if);
+          #);
+        checkEnabling:
+          (# theTransition: ^Transition;
+             tlist: ^TransitionList; 
+          enter theTransition[]
+          do 
+                  safePoint;
+                  &TransitionList[] -> tlist[];
+                  theTransition[] -> tlist.append;
+                  
+                  (if theTransition.getSubpage = NONE then
+                      (if (ml[], tlist[]) -> getEnabledTransitions then
+		            (theTransition.id[], theTransition[]) -> this(CPNet).private.preenabledEnabled.associate;
+                       else
+		            (theTransition.id[], theTransition[]) -> this(CPNet).private.preenabledDisabled.associate;
+		      if);
+                  if);
+              
+              (if theTransition.status = incorrect then
+                  (compiling,incorrect) -> (theTransition.getCPNPage).changeStatus;
+              if);
+          #);
+        syntaxCheckMonitor:
+          (# theMonitor: ^Monitor;
+          enter theMonitor[]
+          do (if theMonitor.type
+              // MarkingSizeType then
+                 (ml[], theMonitor[]) -> MLCreateMarkingSizeMonitor;
+              // ListLengthDataCollectionType then
+                 (ml[], theMonitor[]) -> MLCreateListLengthDataCollectionMonitor;
+              // CountTransitionOccurrenceDataCollectionType then
+                 (ml[], theMonitor[]) -> MLCreateCountTransitionOccurrenceDataCollectionMonitor;
+              // PlaceContentBreakpointType then
+                 (ml[], theMonitor[]) -> MLCreatePlaceContentBreakpointMonitor;
+              // TransitionEnabledBreakpointType then
+                 (ml[], theMonitor[]) -> MLCreateTransitionEnabledBreakpointMonitor;
+              else
+                 (ml[], theMonitor[]) -> MLSyntaxCheckAndGenerateMonitor;
+             if);
+             false -> theMonitor.syntaxCheckAndGenerateMonitor;
+             (if theMonitor.disabled then
+                 (theMonitor.id[],theMonitor[]) 
+                   -> this(CPNet).private.monitorsToggleEnabling.associate;
+             if);
+          #);             
+        debugging: (# exit false #);    
+        countBefore, countAfter: @integer;
+        thePageInstances: ^PageInstanceList;                
+     do (if debugging then 
+            'cpnet.bet: CPNet.MLcheckerThread: Starting the ML checker loop' -> debugCheckerLoop; 
+        if);
+        private.resume.P;
+        false -> this(CPNet).private.MLComSemanticChanged;
+        
+        knownFusionSets.init;
+        knownFusionSets.clear;
+                                    
+        (if this(CPNet).private.modelDirChanged then
+            ml[] -> MLSetModelNameDirAndOutput;
+            false -> this(CPNet).private.modelDirChanged;
+            Safepoint;
+        if);
+        
+        (* Start by checking the necessary parts of the global box. *)
+        (if theGlobals[] <> NONE then
+            theGlobals.reset;
+            theGlobals.scanDeletionList
+            (#
+            do (ml[], current.id[]) -> MLDeleteDeclaration;
+            #);
+            theGlobals.clearDeletionList;
+            
+            (theGlobals.getTopDeclaration).scanDeclarationTree
+            (# 
+            do safePoint;
+               (* Only check declarations that are unchecked. *)
+               (if current.mlDecl[] <> NONE then                               
+                   (unchecked,checking) -> current.mlDecl.changeStatus;
+                   (if current.mlDecl.status = checking then                            
+                       (if debugging then
+                           'Now checking %s...' -> debugCheckerLoop (# do current.mlDecl.shortname -> s; #);
+                       if);
+                       theGlobals[] -> current.mlDecl.localCheck;
+                       (if current.mlDecl.status = checking then
+                           (ml[], current.mlDecl[]) -> MLCompileDeclaration;
+                       if);
+                    else
+                       theGlobals[] -> current.mlDecl.localCheck;
+                   if);
+               if);
+            #);
+            (if theGlobals.hasDeletionDecls then
+                (# Visitor: @DeclPlaceAndTransitionVisitor
+                     (# visitDecl::
+                          (# 
+                          do (if (theDecl.id[] -> theGlobals.lookupDeletionDecl) = none then
+                                 theDecl[] -> declarations.append;
+                             if);
+                          #);
+                        visitPlace::
+                          (# 
+                          do thePlace[] -> places.append;
+                          #);
+                        visitTransition::
+                          (# 
+                          do theTransition[] -> transitions.append;
+                          #);
+                     #);
+                   declarations: @DeclList;
+                   places: @PlaceList;
+                   transitions: @TransitionList;
+                do declarations.init;
+                   places.init;
+                   transitions.init;
+                   Visitor.init;
+                   theGlobals.scanDeletionList
+                   (# 
+                   do current[] -> Visitor;
+                   #); 
+                   theGlobals.scanDeletionList
+                   (#
+                   do (ml[], current.id[]) -> MLDeleteDeclaration;
+                   #);
+                   declarations.scan 
+                   (# 
+                   do (ml[], current[]) -> MLCompileDeclaration;
+                   #);
+                   places.scan
+                   (# 
+                   do current.semanticChangedOnPlaceAndSubstitutionTransitions
+                   #);
+                   transitions.scan (# do current.semanticChanged; #);
+                   
+                   theGlobals.scanDeletionList
+                   (#
+                   do (any_status, incorrect) -> current.changeStatus;
+                      current[] -> theGlobals.addUsedBy;               
+                      current.clearUsedBy;
+                      current.clearUsedByNodes;
+                   #);
+                   theGlobals.scanDeletionList
+                   (# theDeletedDecl: ^Decl;
+                   do current[] -> theDeletedDecl[];
+                      theGlobals.scanDeclTree
+                      (#
+                      do theDeletedDecl[] -> current.removeUsedBy;
+                      #);
+                   #);
+                   theGlobals.clearDeletionList;
+                #);
+            if);
+        if);       
+        
+        flattenPageInstances -> thePageInstances[];
+        
+        (* 
+         * Delete pages from simulator
+         *)
+        
+        this(CPNet).private.pagesToBeDeleted.scan
+        (# 
+        do (ml[], theGlobals.getColorNames) -> current.syntaxCheck;
+        #);
+        this(CPNet).private.pagesToBeDeleted.clear;
+        
+        (* 
+         * Syntax check the pages in a bottom up fashion. 
+         *)       
+        
+        thePageInstances.scan
+        (# pginst: ^PageInstance;
+        do current[] -> pginst[];
+           safePoint;
+           (if pginst.thePage.status = unchecked then
+               (unchecked,checking) -> pginst.thePage.changeStatus;
+               (ml[], theGlobals.getColorNames) -> pginst.thePage.syntaxCheck;
+               (if debugging then
+                   (if true
+                    // pginst.thePage.status = checking then
+                       'CPNet.MLcheckerThread: Page %s unsuccesfully checked!' -> debugCPNet
+                       (#
+                       do pginst.thePage.id[] -> s;
+                       #);
+                    // (pginst.thePage.status = checked) or
+                       (pginst.thePage.status = incorrect) then
+                       'CPNet.MLcheckerThread: Page %s succesfully checked!' -> debugCPNet
+                       (#
+                       do pginst.thePage.id[] -> s;
+                       #);
+                    // pginst.thePage.status = unchecked then
+                       'CPNet.MLcheckerThread: Page %s changed while checking!' -> debugCPNet
+                       (#
+                       do pginst.thePage.id[] -> s;
+                       #);
+                   if);
+               if);
+           if);
+        #); 
+        
+        (* 
+         * Compile the pages in a top down fashion. 
+         *)
+        
+        thePageInstances.scanReverse
+        (# pginst: ^PageInstance;
+           plist: ^PlaceList;
+           thePlace: ^Place;
+           theInstMark: ^InstAndMarking;
+           InstAndMarking: (# thePlace: ^Place; thePageInstance: ^PageInstance; instnum: @integer; marking: ^Text; #);
+           InstMarkingList: @List (# Element::InstAndMarking #);
+           isLegal: @boolean;
+        do current[] -> pginst[];
+           (checked,compiling) -> pginst.thePage.changeStatus;
+           
+           (* Find all places to compile. *)
+           
+           pginst.thePage.scanPlaces
+           (# isCompiled:
+                (# plist: ^PlaceList;
+                   result: @boolean;
+                enter plist[]
+                do true -> result;
+                   scan: plist.scan
+                     (#
+                     do (if NOT (current.status = compiled) then
+                            false -> result;
+                            leave scan;
+                        if);
+                     #);
+                exit result
+                #);
+           do (if true
+               // current.status = checked then
+                  safePoint;
+                  &PlaceList[] -> plist[];
+                  current[] -> plist.append;
+                  
+                  (if reestablishMarking then
+                      (* If we have changed the initial marking of a place, we don't want the
+                       * current marking of the place to change. This is achived by reestablishing
+                       * the current marking after rechecking. We collect the current markings
+                       * in a list, so that we can reestablish them later.
+                       *)
+                      plist.scan
+                      (#
+                      do current[] -> thePlace[];
+                         (thePlace.getCPNPage).scanInstances
+                         (# thePageInstance: ^PageInstance;
+                         do current[] -> thePageInstance[];
+                            thePageInstance.scanPlaceInstances
+                            (#
+                            do (if (current.thePlace[] = thePlace[]) and
+                                   (current.theMarking[] <> none) then
+                                   &InstAndMarking[] -> theInstMark[];
+                                   thePageInstance.MLInstanceNumber -> theInstMark.instnum;
+                                   current.themarking.copy -> theInstMark.marking[];
+                                   thePlace[] -> theInstMark.thePlace[];
+                                   thePageInstance[] -> theInstMark.thePageInstance[];
+                                   theInstMark[] -> InstMarkingList.append;
+                               if);
+                            #);
+                         #);
+                      #);
+                  if);
+                  
+                  (* Compile the node. *)
+                  (ml[], THIS(CPNet)[], &TransitionList[], plist[], false) -> MLGenerateInstances;
+                  
+                  (* Do the actual reestablishment of the markings
+                   *
+                   * FIXME: This doesn't work for timed markings since we use
+                   * intinf time we cannot use a text of the form 1`1@1, but
+                   * we have to have a text of the form 1`1@maketime "1" ... [mads]
+                   *)
+                  (if not InstMarkingList.empty then
+                      InstMarkingList.scan
+                      (#
+                      do false -> isLegal;
+                         ((current.thePlace.getCPNPage).net.ml[],current.marking[],
+                         (current.thePlace.getPlaceType).getInscription)
+                           -> MLCheckMarking -> isLegal;
+                         (if isLegal then
+                             ((current.thePlace.getCPNPage).net.ml[],current.thePlace.id[],
+                             current.thePageInstance.mlinstancenumber)
+                               -> MLChangeMarking;
+                         if);
+                      #);
+                      InstMarkingList.clear;
+                  if);
+                  (if plist[] -> isCompiled then
+                      plist[] -> getMarkings;
+                  if);
+               // ((current.id[] -> this(CPNet).private.recheckForMarking.lookup) <> none) then
+                  (if (current.id[] -> (current.getCPNPage).lookupPlace) <> none then
+                      safePoint;
+                      &PlaceList[] -> plist[];
+                      current[] -> plist.append;
+                      plist[] -> getMarkings;
+                  if);
+                  current.id[] -> this(CPNet).private.recheckForMarking.disassociate;
+               else
+                  
+              if);
+              
+              (if current.status = incorrect then
+                  (compiling,incorrect) -> pginst.thePage.changeStatus;
+              if);
+           #);
+           pginst.changed;
+        #);
+        
+        (if this(CPNet).private.simreportOptionsChanged then
+            ml[] -> MLSetSimReportOptions;
+            false -> this(CPNet).private.simreportOptionsChanged;
+            Safepoint;
+        if);
+        
+        (if this(CPNet).private.repreportOptionsChanged then
+            ml[] -> MLSetRepReportOptions;
+            false -> this(CPNet).private.repreportOptionsChanged;
+            Safepoint;
+        if);
+        
+        this(CPNet).private.monitorsToBeRemoved.scan
+        (# 
+        do (ml[], current[]) -> MLRemoveMonitor;
+           current.id[] -> this(CPNet).private.incorrectMonitors.disassociate;
+           Safepoint;
+        #);
+        this(CPNet).private.monitorsToBeRemoved.clear;
+        
+        (if this(CPNet).private.monitorOrderChanged then
+            ml[] -> MLSetMonitorOrder;
+            false -> this(CPNet).private.monitorOrderChanged;
+            Safepoint;
+        if);        
+        
+        theGlobalMonitor.scanMonitorTree
+        (# 
+        do (if current.generateTemplateCode then
+               (ml[], current[]) -> MLGenerateMonitorTemplateCode;
+               false -> current.generateTemplateCode;  
+               true -> current.syntaxCheckAndGenerateMonitor;
+           if);
+           Safepoint;
+        #);
+        
+        this(CPNet).private.incorrectMonitors.scan
+        (# 
+        do current[] -> syntaxCheckMonitor;
+           false -> current.syntaxCheckAndGenerateMonitor;
+           Safepoint;
+        #);
+        this(CPNet).private.incorrectMonitors.clear;
+        
+        theGlobalMonitor.scanMonitorTree
+        (# 
+        do (if current.syntaxCheckAndGenerateMonitor then
+               current[] -> syntaxCheckMonitor;
+               Safepoint;        
+           if);           
+        #);
+        
+        this(CPNet).private.monitorsToBeRemoved.scan
+        (# 
+        do (ml[], current[]) -> MLRemoveMonitor;   
+           (current.id[], current[]) -> this(CPNet).private.incorrectMonitors.associate;
+           Safepoint;
+        #);
+        this(CPNet).private.monitorsToBeRemoved.clear;
+        
+        thePageInstances.scanReverse
+        (# pginst: ^PageInstance;
+        do current[] -> pginst[];
+           (* Find all transitions to compile. *)
+           pginst.thePage.scanTransitions
+           (# 
+           do current[] -> compileTransition;
+           #);                      
+           
+           (compiling,compiled) -> pginst.thePage.changeStatus;           
+           
+           (* send changed notification to update colour highlight *)
+           pginst.changed;              
+        #);        
+        
+        this(CPNet).private.regenerateTransitions.scan
+        (# 
+        do (compiled, checked) -> current.changeStatus;
+           current[] -> compileTransition;
+           Safepoint;
+        #);
+        this(CPNet).private.regenerateTransitions.clear;
+        
+        (* Create the scheduler. *)
+        ml[] -> MLCreateScheduler;
+        
+        this(CPNet).private.preenabledEnabled.scan
+        (#
+        do (if (current.getCPNPage) <> NONE then
+	       (if (current.id[] -> (current.getCPNPage).lookupTransition) = NONE then
+	           this(CPNet).private.preenabledDisabled[] -> addAllFromList;
+                   current.id[] -> this(CPNet).private.preenabledEnabled.disassociate;
+	       if);
+	   if);
+        #);
+
+        (if preenablingsE then this(CPNet).private.preenabledEnabled.init; if);
+        (if preenablingsD then this(CPNet).private.preenabledDisabled.init; if);
+	false -> preenablingsE -> preenablingsD;
+        this(CPNet).private.recheckEnablingTransitions.scan
+        (# 
+        do current[] -> checkEnabling;
+           Safepoint;
+        #);
+        this(CPNet).private.recheckEnablingTransitions.clear;
+        
+        (unchecked, compiled) -> THIS(CPNet).changeStatus;
+        
+        this(CPNet).private.monitorsToggleEnabling.scan
+        (# 
+        do (if (current.getStatus = compiled) and 
+               ((current.id[] -> this(CPNet).private.incorrectMonitors.lookup)=none) then
+               (ml[], current[]) -> MLToggleEnablingForMonitor;
+               Safepoint;
+           if);
+        #);
+        this(CPNet).private.monitorsToggleEnabling.clear;
+        (if private.shouldStop then
+            leave checkerLoop;
+        if);
+        restart checkerLoop;               
+     #);
+   
+-- CPNetSetGlobalBox: doPart --
+do (if theGlobals[] <> NONE then
+       THIS(CPNet)[] -> theGlobals.detach;
+       NONE -> theGlobals.setCPNet;
+   if);
+   THIS(CPNet)[] -> newGlobals.setCPNet;
+   newGlobals[] -> theGlobals[];
+   THIS(CPNet)[] -> theGlobals.attach;
+   (theGlobals.getTopDeclaration).scanDeclarationTree
+   (# 
+   do (current.mldecl.ID[], current.mldecl[]) -> theGlobals.associateIDandDecl;
+   #);
+   
+-- CPNetAddMonitorToDeletionList:DoPart --
+do (theMonitor.id[], theMonitor[]) -> private.monitorsToBeRemoved.associate;
+   
+-- CPNetRemoveMonitor:DoPart --
+do theMonitor[] -> addMonitorToDeletionList;
+   semanticChanged;
+   
+-- CPNetToggleMonitorEnabled:DoPart --
+do (theMonitor.id[], theMonitor[]) -> private.monitorsToggleEnabling.associate;
+   semanticChanged;
+   
+-- CPNetScanColorNamesAlphabetically:doPart --   
+do theGlobals.scanColorNamesAlphabetically
+   (# 
+   do (if ((0, this(scanColorNamesAlphabetically).prefix.length) 
+            -> current.sub)
+            -> prefix.equal then
+          current[] -> this(scanColorNamesAlphabetically).current[];
+          inner scanColorNamesAlphabetically;
+      if);
+   #);
+   
+-- CPNetGetColorNamesAlphabetically:doPart --
+do &SortedTextSequence[] -> colorNames[];
+   prefix[] -> scanColorNamesAlphabetically
+   (# 
+   do current[] -> colorNames.append;
+   #);
+   
+---mlCPNetGetEnabledSend:DoPart---
+do (# transitionsReadyToBeCheckedForEnabling: @List (# Element:: TransitionInstance #);
+   do (if debugging then
+          'mlCPNetGetEnabledSend: Getting enabled transitions' -> debugCPNet;
+      if);
+      transitionsReadyToBeCheckedForEnabling.init;
+      500 -> bis.putInt; (* command *)
+      opcode -> bis.putInt;  (* subcommand - without requiring a scheduler. *)
+      0 -> count;
+      tlist.scan
+      (# theTransition: ^Transition;
+      do current[] -> theTransition[];
+         (if (theTransition.getSubpage = NONE) and
+             (theTransition.status = compiled) then
+             (theTransition.getCPNPage).scanInstances
+             (# theTransitionInstance: ^TransitionInstance;
+             do (if current.mlinstancenumber > 0 then
+                    theTransition.id[] -> current.lookupTransitionInstance -> theTransitionInstance[];
+                    theTransitionInstance[] -> transitionsReadyToBeCheckedForEnabling.append;
+                    count + 1 -> count;
+                if);
+             #);
+         if);
+      #);
+      count -> bis.putInt;  (* #transitioninstances to check *)
+      lst.clear;
+      transitionsReadyToBeCheckedForEnabling.scan
+      (# 
+      do current[] -> lst.append;
+         current.theTransition.id[] -> bis.putString;
+         current.thePageInstance.mlinstancenumber -> bis.putInt;
+         false -> current.setSimulationError;
+      #);
+   #)
+      
+---mlCPNetGetEnabledReceive:DoPart---
+do false -> foundEnabled;
+   (if debugging then 'mlCPNetGetEnabledReceive: (OK)' -> debugCPNet; if);      
+   lst.scan
+   (# b: @boolean;
+      err: ^Text;
+   do bis.getBool -> b;
+      bis.getString -> err[];
+      b -> current.setEnabled;
+      (if b then 
+          true -> foundEnabled;          
+      if);
+      (if err.length > 0 then
+          (current[], err[]) -> current.addError; (* TransitionInstance *)
+          current[] -> runtimeErrorElements.append;
+          true -> current.setSimulationError;
+      if);            
+   #);
+       
+---mlCPNetGetPreEnabledReceive:DoPart---
+do (if debugging then 'mlCPNetGetPreEnabledReceive: (OK)' -> debugCPNet; if);      
+   lst.scan
+   (# b: @boolean;
+      err: ^Text;
+   do bis.getBool -> b;
+      bis.getString -> err[];
+      (if b then 
+          b -> current.setPreEnabled;
+          true -> foundEnabled;
+       else
+          false -> current.setEnabled;
+      if);
+      (if err.length > 0 then
+          (current[], err[]) -> current.addError; (* TransitionInstance *)
+          current[] -> runtimeErrorElements.append;
+          true -> current.setSimulationError;
+      if);            
+   #);
+      
+-- CPNetGetEnabledTransitionInstancesReceiveAborted:DoPart --
+do tlist.scan
+   (# 
+   do (current.id[], current[]) 
+        -> this(CPNet).private.recheckForEnabling.associate;
+   #);
+   
+---mlCPNetGetEnabledError:DoPart---
+do (if debugging then 
+       'mlCPNetGetEnabledError: (FAILED)' -> debugCPNet;
+   if);
+   lst.scan
+   (# b: @boolean; 
+   do (what[], current.thePageInstance.thePage[], THIS(CPNet)[]) -> addRuntimeError;
+   #);
+   true -> continue;
+   
+---mlCPNetGetMarkings:DoPart---
+do (# placesToBeCheckedForCurrentMarking: @PlaceInstanceList;
+      checkPlaceInstances: @IDDictionary (# Element:: BooleanValue #);
+      noErrorOnAllInstances: BooleanValue
+        (# thePlace: ^Place;
+           noErrorOnSockets: BooleanValue
+             (# thePlaceInstance: ^PlaceInstance;
+                theBooleanValue: ^BooleanValue;
+             enter thePlaceInstance[]
+             do thePlaceInstance.id[] -> checkPlaceInstances.lookup -> theBooleanValue[];
+                (if theBooleanValue[] = none then
+                    true -> value;
+                    scan: thePlaceInstance.scanSockets
+                    (# 
+                    do value and (not theSocketInstance.unassigned) -> value;
+                       (if value then
+                           theSocketInstance.scanSockets
+                           (# 
+                           do value and (theSocketInstance[] -> noErrorOnSockets) -> value;
+                           #);
+                       else
+                           leave scan;
+                       if);
+                    #);
+                    (if value then
+                        &TrueObject[] -> theBooleanValue[];
+                     else 
+                        &FalseObject[] -> theBooleanValue[];
+                    if);
+                    (thePlaceInstance.id[], theBooleanValue[]) -> checkPlaceInstances.associate;
+                 else 
+                    theBooleanValue -> value;
+                if);
+             #);
+        enter thePlace[]
+        do true -> value;
+           scan: thePlace.scanInstances
+           (#   
+           do (if not (current[] -> noErrorOnSockets) then
+                  false -> value;
+                  leave scan;
+              if);
+           #);
+        #);                         
+   do (if debugging then
+          'mlCPNetGetMarkingsSend: Getting markings' -> debugCPNet;
+      if);
+      checkPlaceInstances.init;
+      placesToBeCheckedForCurrentMarking.init;      
+
+      plist.scan
+      (# thePlace: ^Place;
+      do current[] -> thePlace[];
+         (if (thePlace[] -> noErrorOnAllInstances) then
+             (thePlace.getCPNPage).scanInstances
+             (# thePlaceInstance: ^PlaceInstance;
+             do (if current.mlinstancenumber > 0 then
+                    thePlace.id[] -> current.lookupPlaceInstance -> thePlaceInstance[];                
+                    thePlaceInstance[] -> placesToBeCheckedForCurrentMarking.append;                    
+                if);
+             #);
+         if);
+      #);
+      (* placeinstances to check *)
+      (ML[], placesToBeCheckedForCurrentMarking[]) -> getMarkingsOnPlaceInstances;
+   #);
+   
+---mlCPNetGetMarkingsOnPlaceInstancesSend:doPart---
+do 500 -> bis.putInt; (* command *)
+   31 -> bis.putInt;  (* subcommand *)
+   thePlaceInstanceList.size -> bis.putInt;
+   thePlaceInstanceList.scan
+      (# 
+      do current.thePlace.id[] -> bis.putString;
+         current.thePageInstance.mlinstancenumber -> bis.putInt;
+      #);
+   
+---mlCPNetGetMarkingsOnPlaceInstancesReceive:doPart---
+do (if thePlaceInstanceList.size = bis.getInt then
+       (if debugging then 'mlCPNetGetMarkingsReceive: (OK)' -> debugCPNet; if);
+       thePlaceInstanceList.scan
+       (# marking: ^Text;
+          marking_size: @Integer;
+       do bis.getInt -> marking_size;
+          bis.getString -> marking[];
+          (if (marking_size >= 0) then
+              (marking[], marking_size) -> current.marking;
+           else
+              (NONE, -1) -> current.marking;
+              (current[], marking[]) -> current.addError; (* PlaceInstance *)
+          if)
+       #);
+    else
+       (if debugging then 'mlCPNetGetMarkingsReceive (MISMATCH)' -> debugCPNet; if);
+   if);
+   
+-- CPNetGetMarkingsOnPlaceInstancesReceiveAborted:DoPart --
+do thePlaceInstanceList.scan
+   (# 
+   do (current.thePlace.id[], current.thePlace[])
+        -> this(CPNet).private.recheckForMarking.associate;
+   #);
+   
+---mlCPNetGetMarkingsOnPlaceInstancesError:DoPart---
+do (if debugging then 
+       'mlCPNetGetMarkingsError: (FAILED)' -> debugCPNet;
+   if);
+   true -> continue;
+   
+-- CPNetgetRandomPage: doPart --
+do pageList.clear;
+   scanCPNPages
+     (#
+     do current[] -> pageList.append;
+   #);
+   (if pageList.size > 0 then
+       0 -> count;
+       (1,pageList.size) -> ignuin -> chosen;
+       (* ignuin = Integer Generate Uniform Integer *)
+       search: 
+         (# 
+         do pageList.scan
+            (# 
+            do current[] -> thePage[];
+               count + 1 -> count;
+               (if count = chosen then
+                   leave search;
+               if);    
+            #);
+         #);
+   if);
+   
+-- CPNetfindPage: doPart --
+do search: scanCPNPages
+     (#
+     do (if name[] -> (current.name).equalNCS then
+            current[] -> thePage[];
+            leave search;
+        if);
+     #);
+
+-- CPNetScanCPNPages:doPart --
+do private.theCPNPages.scan
+   (#
+     do current[] -> this(scanCPNPages).current[];
+        inner scanCPNPages;
+     #);
+   
+-- CPNetLookupFusionSet:doPart --
+do id[] -> private.theFusionSets.lookup -> result[];
+   
+-- CPNetScanFusionSets:doPart --
+do private.theFusionSets.scan
+     (#
+     do current[] -> THIS(scanFusionSets).current[];
+        inner scanFusionSets;
+     #);
+
+-- CPNetLookupCPNPage:doPart --
+do id[] -> private.theCPNPages.lookup -> theCPNPage[];
+   
+-- CPNetLookupPageInstance:DoPart --
+do search: scanInstanceRoots
+   (# 
+   do current.scanSubpageInstanceTree
+      (# 
+      do (if current.id[] -> id.equal then
+             current[] -> result[];
+             leave search;
+         if);
+      #);
+   #);
+   
+-- CPNetLookupPageElement:DoPart --
+do search: scanCPNPages
+     (# 
+     do id[] -> current.lookupPageElement -> result[];
+        (if result[] <> none then 
+            leave search;
+        if);
+     #);
+   
+-- CPNetLookupTransitionInstance:DoPart --
+do (# theTransition: ^Transition;
+   do search: scanCPNPages
+        (# 
+        do transitionId[] -> current.lookupTransition -> theTransition[];
+           (if theTransition[] <> none then
+               theTransition.scanInstances
+               (# 
+               do (if current.thePageInstance.mlinstancenumber = instanceNumber then
+                      current[] -> result[];
+                      leave search;
+                  if);
+               #);
+           if);
+        #);
+   #);
+   
+-- CPNetLookupPlaceInstance:doPart --
+do (# thePlace: ^Place;
+   do search: scanCPNPages
+        (# 
+        do id[] -> current.lookupPlace -> thePlace[];
+           (if thePlace[] <> none then
+               thePlace.scanInstances
+               (# 
+               do (if current.thePageInstance.mlinstancenumber = instanceNumber then
+                      current[] -> result[];
+                      leave search;
+                  if);
+               #);
+           if);
+        #);
+   #);
+   
+-- CPNetAddCPNPage:doPart --
+do (if (theCPNPage.id[] -> private.theCPNPages.lookup) <> NONE then
+       'CPNetAddCPNPage: Page already in net!' -> FIXME;
+    else
+       (*   THIS(CPNet)[] -> theCPNPage.father[];*)
+       THIS(CPNet)[] -> theCPNPage.attach;
+       (theCPNPage.id[], theCPNPage[]) -> private.theCPNPages.associate;
+       THIS(cpnet)[] -> theCPNPage.net[];
+       theCPNPage[] -> added;   
+       (*   theCPNPage[] -> add;*)
+   if);
+
+
+-- CPNetRemoveCPNPage:doPart --
+do (# deletedPage: ^CPNPage;
+   do THIS(CPNet)[] -> theCPNPage.detach;
+      theCPNPage.id[] -> private.theCPNPages.disassociate;
+      theCPNPage[] -> removed;
+      &CPNPage[] -> deletedPage[];
+      this(CPNet)[] -> deletedPage.init;
+      theCPNPage.id.copy -> deletedPage.id[];
+      theCPNPage.theName.copy -> deletedPage.theName[];
+      deletedPage[] -> private.pagesToBeDeleted.append;      
+      (*   theCPNPage[] -> remove;*)
+   #);
+   
+-- CPNetAddGlobalGroup:DoPart --
+do (theGroup.id[], theGroup[]) -> private.theGlobalGroups.associate;
+   this(CPNet)[] -> theGroup.setCPNet;
+   scanCPNPages
+   (# 
+   do theGroup[] -> current.onAdded;
+      (if (current.getSelectedGroup)<>NONE then (*Bug #1955*)
+          current[] -> (current.getSelectedGroup).onSelect;
+       else
+          current[] -> current.all.onSelect;
+      if);
+   #);
+   
+-- CPNetRemoveGlobalGroup:DoPart --
+do theGroup.id[] -> private.theGlobalGroups.disassociate;
+   scanCPNPages
+   (# 
+   do theGroup[] -> current.onRemoved;
+   #);
+   
+-- CPNetScanGlobalGroups:DoPart --
+do private.theGlobalGroups.scan
+   (# 
+   do current[] -> this(scanGlobalGroups).current[];
+      inner scanGlobalGroups;
+   #);
+   
+-- CPNetGetNewGroupName:DoPart --
+do &Text[] -> name[];
+   NamesNewGroupName
+     -> getGlobalNames
+     -> name.putFormat(# do this(CPNet).private.theGlobalGroups.size + 1 -> i; #);  
+   
+-- CPNetAddFusionSet:doPart --
+do THIS(CPNet)[] -> theFusionSet.net[];
+   (theFusionSet.id[], theFusionSet[])
+     -> private.theFusionSets.associate;
+   theFusionSet[] -> added;
+(*   theFusionSet[] -> add;*)
+
+-- CPNetRemoveFusionSet:doPart --
+do theFusionSet.id[] -> private.theFusionSets.disassociate;
+   theFusionSet[] -> removed;
+(*   theFusionSet[] -> add;*)
+
+
+      
+-- CPNetinit: doPart --
+do (# thePort: @integer;
+      theImage: ^Text;
+      theHost: ^Text;
+   do private.init;
+      
+      (if theGlobalMonitor[] = none then
+          &MonitorBlock[] -> theGlobalMonitor[];
+          (this(CPNet)[], NamesGlobalMonitorName -> getGlobalNames) -> theGlobalMonitor.init;
+      if);
+      this(CPNet)[] -> theGlobalMonitor.attach;
+      
+      (* When checknames is true it is checked that page, transition
+       * and page names are unique (for places and transitions unique
+       * on their page) and ML-identifiers. *)
+      true -> checknames;
+      (*elements.init;*)
+      (if image[] <> NONE then
+          image[] -> theImage[];
+       else
+          'cpn.ML' -> theImage[]; 
+      if);
+      
+      
+      (if host[] <> NONE then
+          host[] -> thehost[];
+       else
+      'ariel.daimi.au.dk' -> thehost[];
+      if);
+      (if port <> 0 then
+          port -> thePort;
+       else
+          3010 -> thePort;
+      if);
+      
+      MLcheckerThread[] -> fork;
+      &|System
+      (# temp,temp2:^text;
+     theCpnWorkSpace: ^CpnWorkspace;
+     remote: ^BooleanOption;
+     host, runtime, image: ^text;
+     port: ^IntegerObject;
+      do 
+         THIS(Workspace)[] -> theCpnWorkspace[]; 
+         'remote' -> (theCpnWorkSpace.getGlobalOptions).find -> remote[];
+         (if remote.theValue then
+         ('host' -> (theCpnWorkSpace.getGlobalOptions).find).theValue[] -> host[];
+         ('port' -> (theCpnWorkSpace.getGlobalOptions).find).theValue[] -> port[];
+         ('runtime' -> (theCpnWorkSpace.getGlobalOptions).find).theValue[] -> runtime[];
+         ('  Image path' -> (theCpnWorkSpace.getGlobalOptions).find).theValue[] -> image[];
+         (host[], port, 'cpn2000', '', runtime[],image[],(this(CPNet).private.timestampOption.theValue), false) -> initML;
+          else
+         'cpnsim/cpn.ML' -> relativeFile -> cygwinify -> temp[] -> temp2[];
+             ('localhost', 2098, 'cpn2000', '', './',temp[],(this(CPNet).private.timestampOption.theValue), true) -> initML;
+         if);
+         (* HV *)
+         (if this(CPNet).private.timestampOption.theValue then
+            'real' -> this(CPNet).private.currentTimeType[];
+         else
+            'intinf' -> this(CPNet).private.currentTimeType[];
+         if);
+         MLcheckerThread.resume;
+      #)[] -> fork;
+      
+      (# addCommonOptions:
+           (# optionToAddTo: ^OptionList;
+           enter optionToAddTo[]
+           do ('Average','avg',&FalseObject[]) -> createBooleanOption -> optionToAddTo.add;
+              ('Confidence intervals for average','ciavg',&FalseObject[]) -> createBooleanOption -> optionToAddTo.add;
+              ('Number of observations','count',&FalseObject[]) -> createBooleanOption -> optionToAddTo.add;
+              ('First value observed','firstval',&FalseObject[]) -> createBooleanOption -> optionToAddTo.add;
+              ('Last value observed','lastval',&FalseObject[]) -> createBooleanOption -> optionToAddTo.add;
+              ('Maximum','max',&FalseObject[]) -> createBooleanOption -> optionToAddTo.add;
+              ('Minimum','min',&FalseObject[]) -> createBooleanOption -> optionToAddTo.add;
+              ('Sum of squares','ssquare',&FalseObject[]) -> createBooleanOption -> optionToAddTo.add;
+              ('Sum of squares of deviation','ssqdev',&FalseObject[]) -> createBooleanOption -> optionToAddTo.add;
+              ('Standard deviation','stddev',&FalseObject[]) -> createBooleanOption -> optionToAddTo.add;
+              ('Sum','sum',&FalseObject[]) -> createBooleanOption -> optionToAddTo.add;
+              ('Variance','variance',&FalseObject[]) -> createBooleanOption -> optionToAddTo.add;
+              INNER;
+           #);
+         addTimedOptions: addCommonOptions
+           (# 
+           do ('Time of first update','firstupdate',&FalseObject[]) ->createBooleanOption -> optionToAddTo.add;
+              ('Time interval','interval',&FalseObject[]) ->createBooleanOption -> optionToAddTo.add;
+              ('Time of last update','lastupdate',&FalseObject[]) ->createBooleanOption -> optionToAddTo.add;
+           #);
+         createNewOptionListOption:
+           (# theOption: ^OptionListOption;
+              theText: ^Text;
+              theName: ^Text;
+              theOptions: ^OptionList;
+           enter (theText[],theName[],theOptions[])
+           do &OptionListOption (# dname:: (# do theText[] -> value[]; #); #)[] -> theOption[];
+              theName[] -> theOption.theName[];
+              theOption.init;
+              theOptions[] -> theOption.theValue[];
+           exit theOption[]
+           #);
+         createBooleanOption:
+           (# theText: ^Text;
+              theName: ^Text;
+              theValue: ^BooleanObject;
+              theOption: ^BooleanOption;
+           enter (theText[],theName[],theValue[])
+           do &BooleanOption (# dname:: (# do theText[] -> value[]; #); #)[] -> theOption[];
+              theName[] -> theOption.theName[];
+              theOption.init;
+              theValue[] -> theOption.theValue[];
+              this(CPNet)[] -> theOption.attach;
+           exit theOption[]
+           #);
+         op: ^Option;
+         performanceOptions: ^OptionList;
+         simoptions: ^OptionList;
+         timedSimOptions: ^OptionList;
+         untimedSimOptions: ^OptionList;
+         repoptions: ^OptionList;
+         setOptionToTrue:
+           (# location: ^OptionList;
+              name: ^Text;
+              theOption: ^BooleanOption;
+           enter (name[],location[])
+           do name[] -> location.find -> theOption[];
+              true -> theOption.theValue;
+           #);
+      do options.init;
+         
+         &FolderPathOption (# dname:: (# do NamesOutputDirectory -> getGlobalNames -> value[]; #); #)[] -> private.outputOption[] -> op[];
+         'outputdirectory' -> op.name;
+         op.init;
+         '<same as model>' -> op.value;
+         op[] -> options.add;
+         this(CPNet)[] -> op.attach;
+         
+         (* 
+          * HV
+          * Added option for the real timestamp
+          *)
+         &BooleanOption (# dname:: (# do NamesRealTimestamp -> getGlobalNames -> value[]; #); #)[] -> private.timestampOption[] -> op[];
+         'realtimestamp' -> op.name;
+         op.init;
+         &falseObject[] -> op.value;
+         op[] -> options.add;
+         this(CPNet)[] -> op.attach;
+         
+         &OptionList[] -> performanceOptions[];
+         performanceOptions.init;
+         ('Performance report statistics','performanceReport',performanceOptions[]) 
+           -> createNewOptionListOption -> options.add;
+         
+         &OptionList[] -> simoptions[];
+         simoptions.init;
+         ('Simulation performance report','simreport',simoptions[]) 
+           -> createNewOptionListOption -> performanceOptions.add;
+         
+         &OptionList[] -> timedSimOptions[];
+         timedSimOptions.init;
+         ('Timed','timed',timedSimOptions[])
+           -> createNewOptionListOption -> simoptions.add;
+         timedSimOptions[] -> addTimedOptions;
+         
+         &OptionList[] -> untimedSimOptions[];
+         untimedSimOptions.init;
+         ('Untimed','untimed',untimedSimOptions[])
+           -> createNewOptionListOption -> simoptions.add;
+         untimedSimOptions[] -> addCommonOptions;
+                  
+         untimedSimOptions.scanOptionsRecursively
+         (# 
+         do 'untimed' -> current.theName.prepend;
+         #);
+         
+         &OptionList[] -> repoptions[];
+         repoptions.init;
+         ('Replication performance report','repreport',repoptions[]) 
+           -> createNewOptionListOption -> performanceOptions.add;
+         repoptions[] -> addCommonOptions;
+         
+         repOptions.scanOptionsRecursively
+         (# 
+         do 'rep' -> current.theName.prepend;
+         #);
+         
+         ('count',simoptions[]) -> setOptionToTrue;
+         ('min',simoptions[]) -> setOptionToTrue;
+         ('max',simoptions[]) -> setOptionToTrue;
+         ('avg',simoptions[]) -> setOptionToTrue;
+         
+         ('untimedcount',simoptions[]) -> setOptionToTrue;
+         ('untimedmin',simoptions[]) -> setOptionToTrue;
+         ('untimedmax',simoptions[]) -> setOptionToTrue;
+         ('untimedavg',simoptions[]) -> setOptionToTrue;
+         ('untimedsum',simoptions[]) -> setOptionToTrue;
+         
+         ('repmin',repoptions[]) -> setOptionToTrue;
+         ('repmax',repoptions[]) -> setOptionToTrue;
+         ('repavg',repoptions[]) -> setOptionToTrue;
+         ('repciavg',repoptions[]) -> setOptionToTrue;
+         ('repstddev',repoptions[]) -> setOptionToTrue;
+         
+         simoptions[] -> private.simreportOptions[];
+         repoptions[] -> private.repreportOptions[];
+         
+
+      #);
+   #);
+   
+-- CPNNetstatusMonitor: doPart --
+do (# old: @Integer;
+   do status -> old;
+      INNER statusMonitor;
+      (if old <> status then changed; if);
+   #);
+   
+-- CPNNetchangeStatus: doPart --
+do (if debugging and false then
+       'CPNet.changeStatus(%i, %i) Status = %i; Name = "%s" ' -> debugCheckerLoop(# do from -> i; to -> i; status -> i; name -> s; #);
+   if);
+   (if (status = from) or (from = any_status) then
+       to -> status;
+   if);   
+   
+-- CPNetOnAdded:DoPart --
+do (if source## <= AbstractMonitor## then
+       true -> private.monitorOrderChanged;
+       semanticChanged;
+   if);
+   
+-- CPNetOnChanged:DoPart --
+do (if source## <= FolderPathOption## then
+       source[] -> qua
+       (# as:: FolderPathOption;
+       do (if not (thisObj.theValue[] -> private.outputDir.equal) then
+              thisObj.theValue.copy -> private.outputDir[];
+              true -> private.modelDirChanged;
+              semanticChanged;
+          if);
+       #);
+   if);
+   (if source## <= BooleanOption## then
+       source[] -> qua
+       (# as:: BooleanOption;
+       do (if source[] = private.timestampOption[] then
+                (if (private.currentTimeType[] <> NONE) then
+                    (if (('real' -> private.currentTimeType.equalncs) and (not (private.timestampOption.theValue))) or
+                        (('intinf' -> private.currentTimeType.equalncs) and (private.timestampOption.theValue)) then
+                            (# status : ^StatusBubble;
+                            do ObjectPool.get(# Type:: StatusBubble; #) -> status[];
+                            'Please save the net, close it and reopen it for the change to take effect' -> status.error;
+                            #);
+                    if);
+                if); 
+          else
+                (if 'rep' -> ((1,3) -> thisObj.theName.sub).equal then
+                    true -> private.repreportOptionsChanged;
+                else
+                    true -> private.simreportoptionschanged;
+                if);
+          if);
+          semanticChanged;
+       #);
+   if);
+   
+   
+-- RemoveMessageBubble:DoPart --
+do (if target.qerror[] <> none then
+       target.qerror.presentation[] -> target.presentation.remove;
+       target.qerror.delete;
+       none -> target.qerror[];
+       target.changed;
+   if);
+   
+-- MLEvaluateExpression:doPart --
+do (# erroutput: ^Text;
+      fixedStatus: ^FixedStatusBubble;
+      showMessage:
+        (# target: ^PageElement;
+           message: ^Text;
+           error: @boolean;
+       bubble: ^MessageBubble;
+       (* WARNING: HACK follows: using qerror from Highlightable to display
+        *                        the evaluation result! Otherwise the message 
+        *                        disappears. Possibly something to do with
+        *                        HighlightableSheet???                      *)
+        enter (target[], message[], error)
+        do &MessageBubble
+           (#
+              onClicked::
+                (#
+                do presentation[] -> target.presentation.remove;
+                   this(MessageBubble).delete;
+                   none -> this(ShowMessage).target.qerror[];
+                   this(ShowMessage).target.changed;
+                #);
+              onChanged::
+                (# 
+                do (if source[]=target[] then
+                       ComputePosition;
+                   if);
+                #);
+              computeposition::
+                (# 
+                do (xmax,ymax) -> position;
+                #);
+           #)[]->target.qerror[];          
+           target[]->target.qerror.owner[]; 
+           target[]->target.qerror.target[];
+           target.qerror.init;
+           (if error then
+               ml_evaluate_error_color ->  target.qerror.setColor;
+            else
+               ml_evaluate_succes_color ->  target.qerror.setColor;
+           if);
+           target.qerror.present;
+           target.qerror.computeposition;
+           message[]->target.qerror.message;
+           target.qerror[]->target.qerror.target.attach;
+           target.changed;           
+           (* bubble.ComputePosition; *)
+           (* bubble.position -> view.localToGlobal -> bubble.position; *)
+           (* bubble.present -> foreground.add; *)
+        #);
+   do (* Send the text from the Inscription to the ML connection,
+       * and catch the Exception if something is wrong ML-wise
+       *)
+      ObjectPool.get(# Type:: FixedStatusBubble; #) -> fixedStatus[];
+      (if (getTextEditor).target[]=target[] then
+          stopTextEditor;
+          target[] -> makeTextEditor;
+      if);
+      'Evaluating expression' -> fixedStatus.running;
+      fixedStatus.start;
+      setBusyCursor;
+      theML.abortMultiFaseCommands;      
+      &Text[] -> output[];
+      &Text[] -> erroutput[];
+      'val _ = ()' -> theML.evaluate;
+      input[] -> theML.evaluate
+      (#
+         onMLException::
+           (#
+           do 'Error in ML expression:' -> erroutput.putline;
+              message[] -> erroutput.putline;
+              true -> mlError;
+           #)
+      #) -> output[];
+      
+      (if target.qerror[] <> NONE then
+          target[] -> removeMessageBubble;
+      if);
+                 
+      (if mlError then
+          erroutput[] -> output[];
+      if);
+      (if (target[] <> none) and
+          (mlError or (not mlError and feedbackOnSucces)) then
+          (target[], output[], mlError) -> showMessage;
+      if);
+      UnsetBusyCursor;
+      fixedStatus.stop;
+   #);
+
+-- BendPointPrivate:Descriptor --
+(#
+   theArc: ^Arc;
+#)
+
+-- BendPointGetNextBendPoint: doPart --
+do (# bends: ^BendPointList;
+      pos: @integer;;
+   do ((getArc).getBends) -> bends[];
+      THIS(BendPoint)[] -> bends.at -> pos;
+      (if pos < bends.size then
+          pos + 1 -> bends.get -> theBendPoint[];
+      if);
+   #);
+   
+-- BendPointGetPreviousBendPoint: doPart --
+do (# bends: ^BendPointList;
+      pos: @integer;
+   do (getArc).getBends -> bends[];
+      THIS(BendPoint)[] -> bends.at -> pos;
+      (if pos > 1 then
+          pos - 1 -> bends.get -> theBendPoint[];
+      if);
+   #);
+
+-- BendPointSetArc:doPart --
+do ('theArc[] <> NONE ', theArc[] <> NONE ) -> assert (# #);
+   theArc[] -> private.theArc[];
+
+-- BendPointGetArc:doPart --
+do private.theArc[] -> theArc[];
+
+-- BendPointNextPoint2d:doPart --
+do (# next: ^BendPoint;
+   do (if getNextBendPoint <> NONE then
+          (getNextBendPoint).getPoint2d -> p[];
+       else
+          (if (getArc<>NONE) AND ((getArc).placeEnd[]<>NONE) then
+              (if ((getArc).placeIncidentPoint[] <> NONE) and (not midpoint) then
+                  (getArc).placeIncidentPoint[] -> p[];
+               else
+                  (getArc).placeEnd.position -> MakePoint -> p[];
+              if);
+          if);
+      if);
+   #);
+
+-- BendPointPreviousPoint2d:doPart --
+do (if getPreviousBendPoint <> NONE then
+       (getPreviousBendPoint).getPoint2d-> p[];
+    else
+       (if (getArc<>NONE) AND ((getArc).transEnd[]<>NONE) then
+           (if ((getArc).transIncidentPoint[] <> NONE) and (not midpoint) then
+               (getArc).transIncidentPoint[] -> p[];
+            else
+               (getArc).transEnd.position -> MakePoint -> p[];
+           if);
+       if);
+   if);
+
+-- BendPointOnChanged:doPart --
+do INNER;
+   
+-- BendPointClone: doPart --
+do XY -> new.XY;
+   INNER;
+   
+-- BendPointSnap:doPart --
+do (if not excludeBendpoints then
+       (# snapList: ^PointList;
+          collectSnapList:
+            (# thePoint2d: ^Point2d;
+            do (if snaplist[]=NONE then
+                   &PointList[] -> snaplist[];
+                else
+                   snaplist.clear;
+               if);
+               (if debugging and not snaplist.empty then
+                   'bendpoint.collectSnapList: snaplist still has elements(should be empty)' -> debugcpnet;
+               if);
+               nextPoint2d -> thePoint2d[];
+               (if thePoint2d[]<>NONE then
+                   (*** thePoint2d[] -> snaplist.append; ***)
+               if);
+               true -> nextPoint2d -> thePoint2d[];
+               (if thePoint2d[]<>NONE then
+                   thePoint2d[] -> snaplist.append;
+               if);
+               previousPoint2d -> thePoint2d[];
+               (if thePoint2d[]<>NONE then
+                   (*** thePoint2d[] -> snaplist.append; ***)
+               if);
+               true -> previousPoint2d -> thePoint2d[];
+               (if thePoint2d[]<>NONE then
+                   thePoint2d[] -> snaplist.append;
+               if);
+            #);
+       do 10.0 -> xDistance;
+          10.0 -> yDistance;
+          collectSnapList;
+          snaplist.scan
+          (#
+          do (if ((x - current.x) -> fabs) < xDistance then
+                 current.x -> newx;
+                 ((x - current.x) -> fabs) -> xDistance;
+                 true -> snappedx;
+             if);
+             (if ((y - current.y) -> fabs) < yDistance then
+                 current.y -> newy;
+                 ((y - current.y) -> fabs) -> yDistance;
+                 true -> snappedy;
+             if);
+          #);
+          INNER snap;
+       #);
+   if);
+-- BendPointDelete:doPart --
+do (# oldBends: ^BendPointList;
+   do INNER delete;
+      (if getArc<>NONE then
+          (getArc).getBends -> oldBends[];
+          &BendPointList[] -> (getArc).setBends;
+          oldBends.scan
+          (# 
+          do (if current[]<>THIS(BendPoint)[] then
+                 current[] -> ((getArc).getBends).append;
+             if);
+          #);
+          (getArc).changed;
+          THIS(BendPoint)[] -> (getArc).removeBendPoint;
+      if);
+   #);
+
+-- BendPointListCopy:doPart --
+do &BendPointList[] -> new[];
+   scan
+     (# 
+     do current.clone -> new.append;
+     #);
+   
+-- PageElementPrivate:descriptor --
+(#
+   theCPNPage: ^CPNPage;
+   lolited: @boolean;
+   loliteStyle: ^Style;
+   hiliteStyle: ^Style;
+   
+   (*This apparentyly doesn't work for guidelines*)
+   getElementsToHiOrLowLiteWithThisElement:
+     (# theList: ^PageElementList;
+     do &PageElementList[] -> theList[];
+        (gethierarchyinfos).scan(# do current[] -> theList.append; #);
+        THIS(PageElement)[] -> theList.append;
+     exit theList[]
+     #);
+#)
+
+-- PageElementFadeError:doPart --
+do (if true
+    //qerror[] <> NONE then
+       2 -> qerror.fadeout
+       (# finished::< 
+            (# 
+            do 'PageElement: fadeError: finished: This should newer be called' -> fixme;
+               onSemanticChanged 
+            #);
+       #);
+    // debugging then
+       'hierarchyinstr: No perror' -> debugHierarchy;
+   if);
+   
+-- PageElementUpdateError:doPart --
+do (if qerror[] <> NONE then
+       (* due to change-structure in messagebubble, an error message on the a arc
+        * (annotation) will never recompute its position. Therefore we just do it here.
+        * #939 *)
+       qerror.ComputePosition;
+       (* qerror.update; *)
+   if);
+   
+-- PageElementHideError:doPart --  
+do (if qerror[] <> NONE then
+       qerror.hide;
+   if);
+   
+-- PageElementSetCPNPage:doPart --
+do theCPNPage[] -> private.theCPNPage[];
+   inner;
+
+-- PageElementGetCPNPage:doPart --
+do private.theCPNPage[] -> theCPNPage[];
+   inner;
+   
+-- PageElementGetCPNet:DoPart --
+do (if getCPNPage <> NONE then
+       (getCPNPage).net[] -> theCPNet[];
+   if);
+   
+-- PageElementNet: doPart --
+do (if getCPNPage <> NONE then
+       (getCPNPage).net[] -> theNet[];
+   if);
+   
+-- PageElementPositionForSave: doPart --   
+do x -> xx;
+   y -> yy;
+   INNER;
+   
+-- PageElementSetColor: doPart --
+do (if filled then
+       newColor[] -> fillColor[];
+       newColor[] -> lineColor[];
+    else
+       newColor[] -> LineColor[];
+       newColor[] -> TextColor[];
+   if);
+   INNER;
+   Changed;
+   
+-- PageElementGetColor: doPart --
+do linecolor[] -> theColor[];
+   
+-- PageElementsetFill: doPart --
+do (if filled then
+       lineColor[] -> fillColor[];
+       white[] -> Textcolor[];
+    else
+       white[] -> fillcolor[];
+       linecolor[] -> textcolor[];
+   if);
+   Changed;
+   
+-- PageElementGetInscriptions: doPart --
+do &InscriptionList[] -> theList[];
+   theList.init;
+   INNER;
+   
+   
+-- PageElementGetHierarchyInfos: doPart --
+do &HierarchyInfoList[] -> theList[];
+   INNER;
+
+-- PageElementGetSlaves: doPart --
+do &PageElementList[] -> theList[];   
+   INNER;
+   
+-- PageElementGetRegions:doPart --
+do (getInscriptions).scan
+   (#
+   do current[] -> theList.append;
+   #);
+   (gethierarchyinfos).scan
+   (#
+   do current[] -> theList.append;
+   #);
+   INNER;
+   
+-- PageElementprint: doPart --
+do &ItemType[] -> theItem[];
+   theItem.init;
+   INNER;
+   
+-- PageElementlolite: doPart --
+do (if not (THIS(PageElement)## <= GuideLine##) then (* HACK *)
+       (private.getElementsToHiOrLowLiteWithThisElement).scan
+       (#
+       do true -> current.private.lolited;
+          current.changed;
+       #);
+    else
+       INNER;
+       changed;
+   if);
+   
+-- PageElementhilite: doPart --
+do (if not (THIS(PageElement)## <= GuideLine##) then (* HACK *)
+       (private.getElementsToHiOrLowLiteWithThisElement).scan
+       (# 
+       do false -> current.private.lolited;
+          current.changed;
+       #);
+    else
+       INNER;
+       changed;
+   if);
+   
+
+-- PageElementIsLolited: doPart --
+do private.lolited -> value;
+   
+-- PageElementclone: doPart --
+do (if linecolor[] <> NONE then
+       &Color[] -> new.lineColor[];
+       linecolor.rgb -> new.linecolor;
+   if);
+   (if fillcolor[] <> NONE then
+       &Color[] -> new.fillColor[];
+       fillcolor.rgb -> new.fillcolor;
+   if);
+   (if textcolor[] <> NONE then
+       &Color[] -> new.textColor[];
+       textcolor.rgb -> new.textcolor;
+   if);
+   bold -> new.bold;
+   fillpattern.copy -> new.fillpattern[];
+   linetype.copy -> new.linetype[];
+   filled -> new.filled;
+   strokeWidth -> new.strokeWidth;
+   dx -> new.dx;
+   dy -> new.dy;
+   INNER;
+   
+-- PageElementinit: doPArt --
+do black[] -> lineColor[];
+   white[] -> fillColor[];
+   black[] -> textcolor[];
+   'Solid' -> linetype[];
+   'Solid' -> fillpattern[];
+   false -> bold;
+   0 -> strokeWidth;
+   0.1 -> &AlphaStyle -> private.loliteStyle[];
+   1.0 -> &AlphaStyle -> private.hiliteStyle[];
+   INNER;
+   
+-- PageElementDeleteFromPage:doPart --
+do (if getCPNPage <> NONE then
+       (getCPNPage).scanGroups
+         (#
+         do (if THIS(PageElement)[] -> current.isMember then
+                THIS(PageElement)[] -> current.RemoveElement;
+            if);
+         #);
+       (* THIS(PageElement)[] -> thePage.removePageElement; *)
+       (* code to remove the element from the page *)
+       inner;
+   if);
+
+-- PageElementdelete: doPart --
+do INNER;
+   deleteFromPage;
+   true -> deleted;
+   
+-- PageElementBounds: doPart --
+do x -> xmin -> xmax;
+   y -> ymin -> ymax;
+   INNER;
+   
+-- PageElementrecursiveBounds: doPart --
+do (# tmpX1,tmpY1,tmpX2,tmpY2: @Real
+    do bounds -> (boundX1,boundX2,boundY1,boundY2);
+       (gethierarchyinfos).scan
+       (#
+       do current.recursiveBounds -> (tmpX1,tmpX2,tmpY1,tmpY2);
+          (boundX1,tmpX1) -> min -> boundX1;
+          (boundY1,tmpY1) -> min -> boundY1;
+          (boundX2,tmpX2) -> max -> boundX2;
+          (boundY2,tmpY2) -> max -> boundY2;
+       #);
+       (getInscriptions).scan
+       (# 
+       do (if not current.isDefaultInscription then 
+              current.recursiveBounds -> (tmpX1,tmpX2,tmpY1,tmpY2);
+              (boundX1,tmpX1) -> min -> boundX1;
+              (boundY1,tmpY1) -> min -> boundY1;
+              (boundX2,tmpX2) -> max -> boundX2;
+              (boundY2,tmpY2) -> max -> boundY2;
+          if);
+       #);
+    #);
+   
+-- pageelementonchanged: doPart --
+do INNER;
+   (if presentation[] <> NONE then
+       update;
+   if);
+   
+   
+   
+-- PageElementmakeShape: doPart --
+do &ItemType[] -> theItem[];
+   theItem.init;
+   &CompositeStyle[] -> theItemStyle[];
+   &CompleteStyle[] -> theStyle[] -> theItemStyle.add;
+   &PatternStyle[] -> thePatternStyle[] -> theItemStyle.add;
+   lineColor[] -> theStyle.stroke[];
+   strokeWidth -> theStyle.strokewidth;
+   lineType[] -> thePatternStyle.pattern[];
+   theItemStyle[] -> theItem.theStyle[];
+   INNER;
+   
+-- PageElementupdate: doPart --
+do (if private.lolited then
+       private.loliteStyle[] -> presentation.theStyle[];
+    else 
+       private.hiliteStyle[] -> presentation.theStyle[];
+   if);
+   INNER;
+   
+-- PageElementStartTextEditor: doPart --
+do (if editable then
+       THIS(PageElement)[] -> target[];
+       INNER;
+       (if target[] <> NONE then
+           target[] -> makeTextEditor;
+       if);
+   if);
+   
+-- AssignmentInit: doPart --
+do ('not (socket.id[] -> port.id.equal)', not (socket.id[] -> port.id.equal)) -> assert (# #);
+   port[] -> private.port[];
+   socket[] -> private.socket[];
+   subtransition[] -> private.subtransition[];
+   (if not (this(Assignment)[] -> subtransition.socketPlaces.has) then        
+       this(Assignment)[] -> subtransition.socketPlaces.append; (* should not have an assignment twice, #1064*)
+   if);
+   this(Assignment)[] -> port.addAssignment;
+   this(Assignment)[] -> socket.addAssignment;
+   socket.onSemanticChanged;
+   
+-- AssignmentToString: doPart --
+do &Text[] -> str[];
+   private.port.thename.copy->port[];
+   private.socket.thename.copy->socket[];
+   private.subtransition.thename.copy->subtransition[];
+   'Assignment: Port: %s / Socket: %s/ SubTransition: %s '
+     -> str.putFormat (# 
+                      do port[] -> s;
+                         socket[] -> s;
+                         subtransition[] -> s;
+                      #);
+   
+-- AssignmentDelete: doPart --
+do this(Assignment)[] -> private.port.removeAssignment;
+   this(Assignment)[] -> private.socket.removeAssignment;
+   this(Assignment)[] -> private.subtransition.socketPlaces.at -> private.subtransition.socketPlaces.delete;
+   private.subtransition.semanticChanged;
+
+-- FusionSetPrivate:descriptor --
+(# places: ^PlaceList;
+   name: ^text;
+#)
+      
+-- FusionSetInit:doPart --
+do (if thePlaceList[] = NONE then
+       &PlaceList[] -> private.places[];
+    else
+       thePlaceList[] -> private.places[];
+   if);
+   private.places.init;
+   false -> propagatingChanges; (* -> private.setFusionTypeMethodCalled; *)
+
+-- FusionSetSize:doPart --
+do private.places.size -> value;
+
+-- FusionSetHas:doPart --
+do thePlace[] -> private.places.has -> value;
+      
+-- FusionSetSetName:doPart --
+do (if theName[] = NONE then
+       ('net[] <> NONE', net[] <> NONE) -> assert (# #);
+       net.newFusionName -> private.name[];
+    else
+       theName.copy -> private.name[];
+   if);
+   scanFusionSet
+   (#
+   do private.name.copy -> (current.getFusionInfo).setCPNML;
+   #);
+   
+-- FusionSetGetName:doPart --
+do private.name[] -> theName[];
+   
+-- FusionSetSetPlaceType:doPart --
+do (# cpnml: ^Text;
+   do thePlaceType.getInscription -> cpnml[];
+      scanFusionSet
+      (#
+      do cpnml.copy -> (current.getPlaceType).setInscription;
+         (current.getPlaceType).semanticChanged;
+      #);
+   #);
+
+-- FusionSetGetPlaceType:doPart --
+do ('size <> 0', size <> 0) -> assert (# #);
+   (private.places.first).getPlaceType -> thePlaceType[];
+
+-- FusionSetSetInitMark:doPart --
+do (# cpnml: ^Text;
+   do theInitMark.getInscription -> cpnml[];
+      scanFusionSet
+      (# 
+      do cpnml.copy -> (current.getInitMark).setInscription;         
+      #);
+   #);
+
+-- FusionSetGetInitMark:doPart --
+do ('size <> 0', size <> 0) -> assert (# #);
+   (private.places.first).getInitMark -> theInitMark[];
+
+-- FusionSetScanFusionSet:doPart --
+do private.places.scan
+   (# 
+   do current[] -> this(scanFusionSet).current[];
+      inner scanFusionSet;
+   #);
+
+-- FusionSetAddPlace : doPart --
+do (# setPlaceFusionSet:
+        (#
+        do thePlace[] -> private.places.append;
+           THIS(FusionSet)[] -> thePlace.setFusionSet;
+           (*private.name[] -> thePlace.createFusionInfo -> thePlace.setFusionInfo;*)
+        #);      
+      theInitMark: ^InitMark; 
+      thePlaceType: ^PlaceType;
+   do (if (net[] <> none) and
+          ((id[] -> net.lookupFusionSet) = none) then
+          this(FusionSet)[] -> net.addFusionSet;
+      if);
+      (if size = 0 then
+          thePlace.getInitMark -> theInitMark[]; 
+          thePlace.getPlaceType -> thePlaceType[];
+       else
+          (private.places.first).getInitMark -> theInitMark[];
+          (private.places.first).getPlaceType -> thePlaceType[];
+      if);
+      (if not (thePlace[] -> private.places.has) then (* do nothing if place already in set *)
+          setPlaceFusionSet;
+          (if not theInitMark.isDefaultInscription then
+              (theInitMark.getInscription).copy -> (thePlace.getInitMark).setInscription;           
+           else
+              (thePlace.getInitMark).delete;
+          if);
+          (if not thePlaceType.isDefaultInscription then
+              (thePlaceType.getInscription).copy -> (thePlace.getPlaceType).setInscription;           
+           else
+              (thePlace.getPlaceType).delete;
+          if);
+      if);
+   #);
+   
+-- FusionSetRemovePlace:doPart --
+do (if (thePlace[] -> private.places.has) then
+       thePlace[] -> private.places.at -> private.places.delete;
+       NONE -> thePlace.setFusionSet;
+       thePlace.semanticChanged;
+       thePlace.changed;
+   if);
+   (if private.places.empty and
+       (net[] <> none) then
+       private.name[] -> net.fusionSets.disassociate;
+       THIS(FusionSet)[] -> net.removeFusionSet;
+   if);
+   propagateChanges;
+
+-- FusionSetPropagateChanges:doPart --
+do true -> propagatingChanges;
+   private.places.scan (# do current.semanticChanged; #);
+   false -> propagatingChanges;
+
+-- XMLupdateStepAndTIme:dopart --
+do ml[] -> Mlgettimeandstep -> (currentStep, currentTime[]);
+   stepAndTimeNotifier.changed;
+   changed;
+   
+-- cpnetIncreaseModelTime:dopart --
+do (# reason: ^Text;
+   do ml[] -> MLIncreaseModelTime -> (timeIncreased,reason[]);
+      (if not timeIncreased then
+         reason[] -> (ObjectPool.get(# type:: StatusBubble; #)).message;
+      if);
+   #)
+
+-- CPNetTrim:doPart --
+  do (if not empty then
+         loop0: (for j: length repeat 
+                     (if not (j -> inxGet -> ascii.isWhiteSpace) then
+                         j -> i;
+                         leave loop0;
+                     if);
+                for);
+         length -> k;
+         loop0: (for j: length repeat 
+                     (if not ((length-(j-1)) -> inxGet -> ascii.isWhiteSpace) then
+                         j -> k;
+                         leave loop0;
+                     if);
+                for);
+         (i,(length-(k-1))) -> sub -> str[];
+         (if (str.length = 1) and (1 -> str.inxGet -> ascii.isWhiteSpace) then
+             '' -> str[];
+         if);
+      else
+         &Text[] -> str[];
+     if);
+
+-- CPNetContainsSubstring:doPart --
+  do (if length > substring.length then
+         (# j, match: @Integer;
+         do 1 -> j;
+            loop: 
+              (for i: length repeat
+                   (if j > substring.length then
+                       leave loop;
+                   if);
+                   (if (i -> inxGet) = (j -> substring.inxGet) then
+                       (if j = 1 then
+                           i -> match;
+                       if);
+                       j+1 -> j;
+                    else
+                       (if j > 1 then
+                           1 -> j;
+                           match -> i;
+                       if);
+                   if);
+              for);
+            (j > substring.length) -> value;
+         #);
+      else
+         substring[] -> equal -> value;
+     if);

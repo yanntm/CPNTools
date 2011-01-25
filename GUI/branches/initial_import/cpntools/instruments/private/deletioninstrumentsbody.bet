@@ -1,0 +1,205 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../deletioninstruments';
+
+-- DeleteNode:DoPart --
+do (# slaves: ^PageElementList;
+      clip: ^PageClip;
+      com: ^DeleteCommand;
+      theGroup: ^Group;
+      theNodeClipping: ^NodeClipping;
+      theCommandList: ^CommandList;
+      compositeCommand: ^Command;
+   do &CommandList[] -> theCommandList[];
+      theCommandList.init;
+      (theNode[],theCommandList[]) -> deleteMonitorsFromNode;
+      &PageClip[] -> clip[];
+      theNode[] -> ClippingFactory -> theNodeClipping[] -> clip.add;
+      theNode.scanArcs
+      (#
+      do current[] -> ClippingFactory -> clip.add;
+      #);
+      (* add members of the same group to the clipping, since the delete
+       tool should apply to a whole group. Bug #738 *)
+      (* Problems with the following: 1) PageElements are not syntax
+       checked after delete is undone, 2) ref-none exception under certain
+       circumstances with substitution transitions. *)
+
+      (*** apply delete command ***)
+      &DeleteCommand[] -> com[];
+      theNode.getCPNPage -> com.prepare;
+      clip[] -> com.apply;
+      com[] -> theCommandList.append;
+      
+      &Command
+      (# getName:: (# do com.getName -> name[]; #);
+         apply:: (# do redo; #);
+         undo:: 
+           (# 
+           do theCommandList.scanReverse
+              (# 
+              do current.undo;
+              #);
+           #);
+         redo:: (# do theCommandList.redo; #);
+      #)[] -> compositeCommand[];
+      
+      (theNode.getCPNet,compositeCommand[]) -> registerCommand;
+   #);
+   
+-- DeleteGroupElementsInstrumentRelevant:DoPart --
+do ( (not (((target.getCPNPage).getSelectedGroup).all)) and
+   ((target[] -> ((target.getCPNPage).getSelectedGroup).isMember) or
+   (target[] ->  ((target.getCPNPage).getSelectedGroup).hasHierarchyInfo))) -> value;
+   
+-- DeleteGroupElementsInstrumentApply:DoPart --
+do (# theGroup: ^Group;
+      theCommand: ^MultipleCommand;
+      theCommandList: ^CommandList;
+      removeMonitorCommandList: ^CommandList;
+      compositeCommand: ^Command;
+      removedElements: ^PageElementIDDictionary;
+      theNet: ^CPNet;
+   do (target.getCPNPage).getSelectedGroup -> theGroup[];
+
+      &CommandList[] -> theCommandList[];
+      theCommandList.init;
+      &CommandList[] -> removeMonitorCommandList[];
+      removeMonitorCommandList.init;
+      
+      &PageElementIDDictionary[] -> removedElements[];
+      removedElements.init;
+      theGroup.scanElements
+      (# removePageElement:
+           (# theClipping: ^Clipping;
+              theCommand: ^StandardRemoveCommand;
+              thePageElement: ^PageElement;
+              targetContainingPageElement: ^Highlightable;
+           enter (thePageElement[],targetContainingPageElement[])
+           do (if (thePageElement.id[] -> removedElements.lookup) = none then
+                  (thePageElement.id[], thePageElement[])
+                    -> removedElements.associate;
+                  thePageElement[] -> ClippingFactory -> theClipping[];
+                  &StandardRemoveCommand[] -> theCommand[];
+                  targetContainingPageElement[] -> theCommand.prepare;
+                  theClipping[] -> theCommand.clip[];
+                  theCommand[] -> theCommandList.append;
+              if);
+           #);
+         theNode: ^Node;
+      do (if current## <= Node## then
+             current[] -> theNode[];
+             theNode.scanArcs
+             (# 
+             do (if not (current[] -> theGroup.isMember) then
+                    (current[],current.getCPNPage) -> removePageElement;
+                if);
+             #);
+             (theNode[],removeMonitorCommandList[]) -> deleteMonitorsFromNode;
+         if);
+         (if not (current##<=Inscription##) then
+             (current[],current.getCPNPage) -> removePageElement; 
+         if);
+         (if current##<=PlaceInscription## then
+             current[] -> QUA
+             (# as:: PlaceInscription;
+             do (if not ((thisObj.getPlace) -> theGroup.isMember) then
+                    (thisObj[],thisObj.getPlace) -> removePageElement;
+                if);
+             #);
+         if);
+         (if current##<=TransitionInscription## then
+             current[] -> QUA
+             (# as:: TransitionInscription;
+             do (if not ((thisObj.getTransition) -> theGroup.isMember) then
+                    (thisObj[],thisObj.getTransition) -> removePageElement;
+                if);
+             #);
+         if);
+         (if current##<=Annotation## then
+             current[] -> QUA
+             (# as:: Annotation;
+             do (if ((thisOBj.getArc) -> theGroup.isMember) or
+                    (not (((thisObj.getArc).transEnd[] -> theGroup.isMember) or 
+                    ((thisObj.getArc).placeEnd[] -> theGroup.isMember))) then
+                    (thisObj[],thisObj.getArc) -> removePageElement;
+                if);
+             #);
+         if);
+      #);
+      &MultipleCommand
+      (# getName:: (# do 'Delete Elements ' -> name[]; #); #)[] -> theCommand[];
+      theCommandList[] -> theCommand.init;
+      theCommand.apply;
+      &Command
+      (# getName:: (# do theCommand.getName -> name[]; #);
+         apply:: (# do redo; #);
+         redo:: (# do removeMonitorCommandList.redo; theCommandList.redo; #);
+         undo:: (# do theCommandList.undo; removeMonitorCommandList.undo #);
+      #)[] -> compositeCommand[];
+      (target.getCPNPage).net[] -> theNet[];
+      (theNet[],compositeCommand[]) -> registerCommand;
+      finish;
+   #);
+   
+-- MultipleCommandApply:DoPart --
+do theCommandList.redo;
+    
+-- DeletePlaceInscription:DoPart --
+do (# theCommand: ^MultipleCommand;
+      theCommandList: ^CommandList;
+      theNet: ^CPNet;
+      makeCommand:
+        (# theClipping: ^PlaceInscriptionClipping;
+           theCommand: ^CommandType;
+           thePlace: ^Place;
+        enter thePlace[]
+        do thePlace[] -> getInscription -> ClippingFactory -> theClipping[];
+           &CommandType[] -> theCommand[];
+           theClipping[] -> theCommand.clip[];
+           thePlace[] -> theCommand.prepare;
+           theCommand[] -> theCommandList.append;
+        #);
+   do &MultipleCommand (* to remove all the placetypes in ReachablePlaces *)
+      (# getName:: (# do getTheName -> name[] #); #)[] -> theCommand[];
+      
+      &CommandList[] -> theCommandList[];
+      theCommandList.init;
+      
+      (if theInscription## <= InitMark## then
+          theInscription.getPlace -> makeCommand;
+       else          
+          (theInscription.getPlace).scanAllReachablePlaces
+          (# 
+          do current[] -> makeCommand;
+          #);
+      if);
+      
+      theCommandList[] -> theCommand.init;
+      theCommand.apply;
+      theInscription.getCPNet -> theNet[];
+      (theNet[],theCommand[]) -> registerCommand;
+   #); 

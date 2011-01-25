@@ -1,0 +1,167 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '~beta/postwimp/workspace';
+INCLUDE'~beta/containers/list';
+INCLUDE '~beta/xml/xml';
+INCLUDE 'xmlutilities';
+
+(* We need IdDictionary from cpnet. *)
+INCLUDE 'cpnet';
+
+-- WorkspaceLib: attributes --
+XmlEnvironment:
+  (#
+     objectXmlDict: @IdDictionary;
+     xmlObjectDict: @IdDictionary;
+     
+     init:<
+       (#
+       do objectXmlDict.init;
+          xmlObjectDict.init;
+          INNER;
+       #);
+     
+     lookupObject:
+       (# xmlId: ^Text;
+          obj: ^Object;
+       enter xmlId[]
+       do (if xmlId[] <> NONE then
+              xmlId[] -> xmlObjectDict.lookup -> obj[];
+          if);
+       exit obj[]
+       #);
+     
+     getObject:
+       (#
+          Type: ##Object;
+          xmlId: ^Text;
+          obj: ^Object;
+          
+       enter (Type##,xmlId[])
+       do (if xmlId[] <> NONE then
+              xmlId[] -> xmlObjectDict.lookup -> obj[];
+          if);
+          (if obj[] = NONE then
+              &Type[] -> obj[];
+              (if xmlId[] <> NONE then
+                  (xmlId[],obj[]) -> xmlObjectDict.associate;
+              if);
+          if);
+       exit obj[]
+       #);
+     
+  #);
+
+XmlConverter:
+  (#
+     Type:< Object;
+     
+     init:<
+       (#
+       do INNER;
+       #);
+     
+     rootElmName:<
+       (# value: ^Text;
+       do &Text[] -> value[];
+          INNER;
+       exit value[]
+       #);
+     
+     fromXml:<
+       (# elm: ^theXML.Element;
+          obj: ^Type;
+       enter elm[]
+       do INNER;
+       exit obj[]
+       #);
+     
+     toXml:<
+       (# elm: ^theXml.Element;
+          obj: ^Type;
+          
+       enter obj[]
+       do rootElmName -> theXML.createElement -> elm[];
+          INNER;
+       exit elm[]
+       #);
+  #);
+
+xmlConverterFactory:
+  (# Type:< Object;
+     ConverterType:< xmlConverter;
+     converters: @List(# element:: ConverterType #);
+     init:<
+       (#
+       do converters.init;
+          INNER;
+       #);
+     
+     createFromObject:
+       (# obj: ^Type;
+          converter: ^ConverterType;
+          error:< Exception;
+       enter obj[]
+       do converters.scan
+          (#
+          do (if obj## <= current.Type## then
+                 current[] -> converter[];
+             if);
+          #);
+          (if converter[] = NONE then
+              error;
+          if);
+       exit converter[]
+       #);
+     
+     createFromXml:<
+       (# elm: ^theXML.Element;
+          converter: ^ConverterType;
+          error:< Exception;
+       enter elm[]
+       do none -> converter[];
+          findConverter: converters.scan
+          (#
+          do (if elm.tag[] -> (current.rootElmName).equalNCS then
+                 current[] -> converter[];
+                 leave findConverter;
+             if);
+          #);
+          (if converter[] = NONE then
+              error;
+          if);
+       exit converter[]
+       #);
+     
+     register:
+       (# converter: ^ConverterType;
+       enter converter[]
+       do converter.init;
+          ('converter <> none', converter[] <> none) -> assert (# #);
+          converter[] -> converters.append;
+       #);
+
+  #);

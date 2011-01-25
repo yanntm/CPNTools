@@ -1,0 +1,691 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../cpnworkspace';
+INCLUDE '../resources/texts/texts';
+INCLUDE '../resources/figures/simulationfigures';
+INCLUDE 'cpninstrument';
+INCLUDE 'bindingdialoginstruments';
+INCLUDE 'workspaceinstruments';
+
+BODY 'private/simulationinstrumentsbody';
+
+-- CPNWorkSpaceLib: attributes --
+
+SimulationCommand: CPNCommand
+  (# notUndoable:: (# do true -> value #);
+  #);
+
+
+
+RewindInstrument: CPNInstrument
+  (#
+     CommandType:: RewindCommand;
+     FigureT:: RewindFigure;
+
+     init::
+       (#
+       do 'rewind'->helpname[];
+       #);
+
+     ToolTip::
+       (#
+       do NamesRewind -> getGlobalNames -> theTip[];
+       #);
+  #);
+
+RewindCommand: SimulationCommand
+  (#
+     TargetType:: CPNSheet;
+     relevant::
+       (#
+       do (target.content.thePage.net.status = compiled) -> value;
+       #);
+     apply::<
+       (# foundEnabled, timeIncreased: @boolean;
+          net: ^CPNet;
+       do target.content.thePage.net[] -> net[];
+          (if (net.status = compiled) then
+              false -> net.ML.isSimulating;
+              net.ML[] -> MLSetInitialState;
+              net.getAllMarkings;
+              L: (#
+                 do net.getAllEnabledTransitions -> foundEnabled;
+                    (if not foundEnabled then
+                        net.IncreaseModelTime -> timeIncreased;
+                        (if timeIncreased then
+                            restart L;
+                        if);
+                    if);
+                 #);
+              net.updateStepAndTime;
+              (* Needed for runtime errors, see bug #578 *)
+              net.runtimeErrorElements.scan
+              (# 
+              do current.removeError;
+                 (if current## <= ArcInstance## then
+                     current[] -> QUA
+                     (# as:: ArcInstance;
+                     do false -> thisObj.setSimulationError;
+                     #);
+                 if);
+              #);
+              net.runtimeErrorElements.clear;
+          if);
+       #);
+  #);
+
+(* This instrument stops the simulation *)
+StopInstrument: CPNInstrument
+  (# CommandType:: StopCommand;
+     FigureT:: StopFigure;
+
+     init::
+       (#
+       do 'stop'->helpname[];
+       #);
+
+     ToolTip::
+       (#
+       do NamesStop -> getGlobalNames -> theTip[];
+       #);
+
+  #);
+
+StopCommand: SimulationCommand
+  (# TargetType:: CpnSheet;
+
+     apply::<
+       (# thePageInstance: ^PageInstance;
+       do target.content[] -> thePageInstance[];
+          false -> thePageInstance.thePage.net.ML.isSimulating;
+       #);
+  #);
+
+
+OneStepWorkspaceInstrument: Instrument
+  (# TargetType::Workspace;
+     (* For relevance on more specific singlestep instruments to make sense
+      * this one needs to not be relevant when over a sheet or a binder*)
+     relevant::
+       (#
+       do true -> value;
+          searchforsheet: theHand.over.scan
+            (#
+            do current.scan
+               (# 
+               do (if (current## <= CPNSheet##) or
+                      (current## <= ExpanderTriangle##) or
+                      (current## <= folder##) then
+                      false -> value;
+                      leave searchforsheet;
+                  if);
+               #);
+            #);
+          (if value then
+              false -> value;
+              searchfornet: theIndex.theIndexNodes.scan
+                (# NN: ^theIndex.NetNode;
+                do (if current## <= theIndex.NetNode## then
+                       current[] -> NN[];
+                       (if (NN.net.status = compiled) then
+                           true -> value;
+                           leave searchfornet;
+                       if);
+                   if);
+                #);
+          if);
+       #);
+     apply:: (# <<SLOT OneStepWorkspaceInstrumentApply:doPart>> #);       
+  #);
+
+OneStepTransitionInstrument: Instrument
+  (#
+     TargetType:: Transition;
+     theTransitionInstance: ^TransitionInstance;
+     transitionInstanceIsEnabled: @boolean;
+     theInstance: ^PageInstance;
+     relevant::<
+       (# 
+       do (target.status = compiled) and (target.getSubpage = none) 
+          and ((target.getCPNet).status=compiled) -> value;
+          INNER;
+       #);
+     prepare::
+       (#
+       do search: theHand.selection.scan
+            (# theSheet: ^CPNSheet;
+            do current.scan
+               (#
+               do (if current## <= CPNSheet## then
+                      current[] -> theSheet[];
+                      theSheet.content[] -> theInstance[];
+                      leave search;
+                  if);
+               #);
+            #);
+          (theHand[],target[]) -> getTransitionInstance -> theTransitionInstance[];
+          (if theTransitionInstance[]<>NONE then
+              theTransitionInstance.enabled -> transitionInstanceIsEnabled
+          if);
+          ('theInstance[] <> NONE', theInstance[] <> NONE) -> assert (# #);
+       #);
+     apply:: (# <<SLOT OneStepTransitionInstrumentApply:doPart>> #);       
+  #);
+
+OneStepSubpageInfoInstrument: Instrument
+  (# TargetType:: SubpageInfo;
+     theTransitionInstance: ^TransitionInstance;    
+     relevant:: (# <<SLOT OneStepSubpageInfoInstrumentRelevant:DoPart>> #);
+     apply:: (# <<SLOT OneStepSubpageInfoInstrumentApply:DoPart>> #);
+  #);
+
+FireRandomTransitionOnPageInstance:
+  (# thePageInstance: ^PageInstance;
+  enter thePageInstance[]
+  <<SLOT FireRandomTransitionOnPageInstance:doPart>>     
+  #);
+
+FireTransitionAndUpdate:
+  (# theTransitionInstance: ^TransitionInstance;
+  enter theTransitionInstance[]
+  <<SLOT FireTransitionAndUpdate:doPart>>
+  #);
+
+OneStepCPNSheetInstrument: Instrument
+  (# TargetType:: CpnSheet;
+     relevant:: (# <<SLOT OneStepCPNSheetInstrumentRelevant:doPart>> #);
+     apply::
+       (# 
+       do target.content[] -> FireRandomTransitionOnPageInstance;
+          finish;
+       #);
+  #);
+
+OneStepInstanceNodeInstrument: Instrument
+  (# TargetType:: theIndex.InstanceNode;
+     
+     relevant::
+       (# theCPNPage: ^CPNPage;
+          theCPNet: ^CPNet;
+       do (target.instance).thePage[] -> theCPNPage[];
+          theCPNPage.net[] -> theCPNet[];
+          (theCPNet.status=compiled) -> value;
+       #);
+     
+     apply::
+       (# 
+       do target.instance -> FireRandomTransitionOnPageInstance;
+          finish;
+       #);
+  #);
+
+OneStepBinderInstrument: Instrument
+  (#
+     TargetType:: CPNBinder;
+
+     relevant::
+       (# 
+       do target.notIsToolBinder -> value;
+       #);
+     apply:: (# <<SLOT OneStepBinderInstrumentApply:DoPart>> #);       
+  #);
+
+OneStepInstrument: CPNGenericInstrument
+  (# theOneStepTransitionInstrument: @OneStepTransitionInstrument;
+     theOneStepCPNSheetInstrument: @OneStepCPNSheetInstrument;
+     theOneStepInstanceNodeInstrument: @OneStepInstanceNodeInstrument;
+     theOneStepWorkspaceInstrument: @OneStepWorkspaceInstrument;
+     theOneStepBinderInstrument: @OneStepBinderInstrument;
+     theOneStepSubpageInfoInstrument: @OneStepSubpageInfoInstrument;
+     theOneStepBindingDialogInstrument: @FireWithBindingInstrument;
+
+     FigureT:: OneStepFigure;
+
+     ToolTip:: (# do NamesOneStep -> getGlobalNames -> theTip[]; #);
+
+     init::
+       (#
+       do 'single_step' -> helpname[];
+
+          theOneStepTransitionInstrument.init;
+          theOneStepTransitionInstrument[] -> register;
+          
+          theOneStepSubpageInfoInstrument.init;
+          theOneStepSubpageInfoInstrument[] -> register;
+
+          theOneStepCPNSheetInstrument.init;
+          theOneStepCPNSheetInstrument[] -> register;
+          
+          theOneStepInstanceNodeInstrument.init;
+          theOneStepInstanceNodeInstrument[] -> register;
+          
+          theOneStepBindingDialogInstrument.init;
+          theOneStepBindingDialogInstrument[] -> register;
+
+	  theOneStepBinderInstrument.init;
+	  theOneStepBinderInstrument[] -> register;
+
+          theOneStepWorkspaceInstrument.init;
+          theOneStepWorkspaceInstrument[] -> register;
+       #);
+
+  #);
+
+MLEvaluateCommand: SimulationCommand
+  (* Abstract command that evaluates a piece of text as ML code.
+   * Subpatterns must setup theML and input in apply, as well as
+   * normal command stuff (target, relevant etc.)
+   *)
+  (#
+     apply::< 
+       (# theML: ^MLCom;       
+          input: ^Text;
+       <<SLOT MLEvaluateCommandApply:DoPart>>
+       #);
+  #);
+
+MLEvaluateInstrument: CPNInstrument
+  (# CommandType::< MLEvaluateCommand;
+     respectGroup:: (# do true -> value; #);
+  #);
+
+MLEvaluateInscriptionCommand: MLEvaluateCommand
+  (# TargetType:: Inscription;
+     relevant::
+       (#
+       do (not (
+          (target## <= PlaceType##) or
+          (target## <= TransTime##) or
+          (target## <= TransAction##))) and
+          ((target.getCPNPage).net.status = compiled) -> value;          
+       #);
+     apply::
+       (#
+       do (if ((target.getCPNPage).net.status = compiled) then
+              (target.getCPNPage).net.ML[] -> theML[];
+              target.getInscription -> input[];
+          if);
+       #);
+  #);
+
+MLEvaluateInscriptionInstrument: MLEvaluateInstrument
+  (# CommandType:: MLEvaluateInscriptionCommand;
+  #);
+
+MLEvaluateAuxLabelCommand: MLEvaluateCommand
+  (# TargetType:: Aux;
+     relevant::
+       (# 
+       do target.theShape## <= target.labelShape## -> value;          
+       #);
+     apply::
+       (# theLabelShape: ^Aux.labelShape;
+          thePage: ^CPNPage;
+       do target.theShape.getThePage -> thePage[];
+          thePage.net.ML[] -> theML[];          
+          target.theShape[] -> theLabelShape[];
+          theLabelShape.label.content[] -> input[];
+       #);
+  #);
+
+MLEvaluateAuxLabelInstrument: MLEvaluateInstrument
+  (# CommandType:: MLEvaluateAuxLabelCommand; #);
+
+GenericMLEvaluateInstrument: CPNGenericInstrument
+  (# theMLEvaluateInscriptionInstrument: @MLEvaluateInscriptionInstrument;
+     theMLEvaluateAuxLabelInstrument: @MLEvaluateAuxLabelInstrument;
+     FigureT:: MLEvaluateFigure;
+     ToolTip::
+       (#
+       do NamesMLEval -> getGlobalNames -> theTip[];
+       #);
+     feedbackOnSucces: @BooleanObject;
+     clone:: (# cloneOptions:: TrueObject; #);
+     init:: (# <<SLOT GenericMLEvaluateInstrumentInit:DoPart>> #);
+  #);
+
+PlayInstrument: CPNInstrument
+  (# CommandType:: Play;
+     FigureT:: PlayFigure;
+     nSteps, delay: @IntegerObject;     
+     init:: (# <<SLOT PlayInstrumentInit:DoPart>> #);
+     ToolTip:: (# do NamesPlay -> getGlobalNames -> theTip[]; #);
+  #);
+
+Play: SimulationCommand
+  (# TargetType:: CPNSheet;
+     tilist: @Sequence(# element:: transitionInstance; #);
+     thePageInstance: ^PageInstance;
+     relevant::
+       (#
+       do (target.content.thePage.net.status = compiled) -> value;
+       #);
+     apply:: (# <<SLOT PlayApply:DoPart>> #);
+     cancel::
+       (#
+       do (if thePageInstance[] <> NONE then
+              false -> thePageInstance.thePage.net.ML.isSimulating;
+          if);
+       #);
+  #);
+
+FastForwardInstrument: CPNInstrument
+  (#
+     CommandType:: FastForward;
+     FigureT:: FastForwardFigure;
+     nSteps: @IntegerObject;
+
+     init::
+       (#
+       do 'fast_forward'->helpname[];
+          50 -> nSteps;
+          ('numberofsteps','fastforward.numberofsteps')->options.setAddOptionWithDefault(# OptionType:: IntegerOption(# dname:: (# do 'Number of steps' -> value[]; #); #); #);
+       #);
+
+     ToolTip::
+       (#
+       do NamesFastForward -> getGlobalNames -> theTip[];
+       #);
+
+     apply::
+       (# hp: @Point2d;
+          cursor: @integer;
+
+       do setBusyCursor; (*** LOCK-INTERACTION ***)
+       #);
+
+     finish::<
+       (#
+       do INNER;
+          UnsetBusyCursor; (*** UNLOCK-INTERACTION ***)
+       #);
+
+  #);
+
+FastForward: SimulationCommand
+  (#
+     TargetType::CPNSheet;
+     numOfSteps: @integer;
+     theInstance: ^PageInstance;
+
+     relevant::
+       (#
+       do (target.content.thePage.net.status = compiled) -> value;
+       #);
+
+     apply::
+       (# sheetPage: ^PageInstance;
+          thePage: ^CPNPage;
+          theInstance: ^PageInstance;
+          foundEnabled, timeIncreased: @boolean;
+          tmpi: @integer;
+          tmps: ^Text;
+          stopReason: ^Text;
+       do (if (target.content.thePage.net.status = compiled) then
+              'numberofsteps'->options.lookupInteger -> numOfSteps;
+              (if numOfSteps > 0 then
+                  'Simulation fast forward in progress' -> fixedstatus.running;
+                  fixedstatus.start;
+                  target.content[] -> sheetPage[];
+                  (numOfSteps,0) -> sheetPage.thePage.net.setStopCriteria;
+                  sheetPage.thePage.net.ML[] -> MLRun -> (tmpi,tmps[],stopReason[]);
+                  sheetPage.thePage.net.getAllMarkings;
+                  L: (#
+                     do sheetPage.thePage.net.getAllEnabledTransitions -> foundEnabled;
+                        (if not foundEnabled then
+                            sheetPage.thePage.net.IncreaseModelTime -> timeIncreased;
+                            (if timeIncreased then
+                                restart L;
+                            if);
+                        if);
+                     #);
+                  sheetPage.thePage.net.updateStepAndTime;
+                  fixedstatus.stop;
+                  (if stopReason[]<>none then
+                      (if 'error' -> ((1,5) -> stopReason.sub).equalNCS then
+                          stopReason[] -> status.error;
+                       else
+                          stopReason[] -> status.message;
+                      if);
+                  if);
+  	      if);
+          if);
+       #);
+
+     cancel::
+       (#
+       do (if theInstance[] <> NONE then
+              false -> theInstance.thePage.net.ML.isSimulating;
+          if);
+       #);
+
+  #);
+BindManuallyInstrument: CPNGenericInstrument
+  (# theBindManuallyTransitionInstrument: @GetPossibleBindingsInstrumentAdapter;
+     theFireWithBindingTransitionInstrument: @FireWithBindingTransitionInstrument;
+     theBindManuallyBindingDialogInstrument: @GetPossibleBindingsInstrument;
+     theFireWhenBindingIsDoneInstrument: @FireWithBindingInstrumentInHandInstrument;
+     theCloseIndexInstrument: @CloseFiredIndexInstrumentInHandInstrument;
+     
+     FigureT:: BindManuallyFigure;
+     ToolTip:: (# do NamesBindManually -> getGlobalNames -> theTip[]; #);
+
+     init::
+       (#
+       do 'bindmanually' -> helpname[];
+          
+          theBindManuallyTransitionInstrument.init;
+          theBindManuallyTransitionInstrument[] -> register;
+          
+          theFireWithBindingTransitionInstrument.init;
+          theFireWithBindingTransitionInstrument[] -> register;
+          
+          theBindManuallyBindingDialogInstrument.init;
+          theBindManuallyBindingDialogInstrument[] -> register;
+          
+          theFireWhenBindingIsDoneInstrument.init;
+          theFireWhenBindingIsDoneInstrument[] -> register;
+          
+          theCloseIndexInstrument.init;
+          theCloseIndexInstrument[] -> register;
+       #);
+  #);
+FireWithBindingInstrumentInHandInstrument: CPNInstrument
+  (# 
+     CommandType:: FireWithBindingInstrumentInHandCommand;
+  #);
+FireWithBindingInstrumentInHandCommand: FireWithBindingCommand
+  (# 
+     relevant::
+       (# 
+       do value and target.isBindingDone -> value;
+       #);
+  #);
+CloseFiredIndexInstrumentInHandInstrument: CPNInstrument
+  (# 
+     CommandType:: CloseFiredIndexInstrumentInHandCommand;
+  #);
+CloseFiredIndexInstrumentInHandCommand: CloseFiredBindingIndexCommand
+  (# 
+     relevant::
+       (# 
+       do value and (target.theTransitionInstance[]).justFiredWithManualBinding
+          and ((target.theTransitionInstance[]).status <> isEnabled) -> value;
+       #);
+  #);
+FireWithBindingTransitionInstrument: Instrument
+  (# TargetType:: Transition;
+     theTransitionInstance: ^TransitionInstance;
+          
+     relevant::
+       (# 
+       do (theHand[],target[])->getTransitionInstance -> theTransitionInstance[];
+          (if (theTransitionInstance[]<>NONE) and (theTransitionInstance.theBindingDialog[]<>NONE) then
+              (theTransitionInstance.theBindingDialog[]).manualBindingStarted -> value;
+           else
+              false -> value;
+          if);
+       #);
+     
+     apply::
+       (# 
+       do (theTransitionInstance.theBindingDialog[]).fireWithCurrentChoices; 
+          (theTransitionInstance.theBindingDialog[]).update;
+          finish;
+       #);
+  #);
+FireAndShowBindingTransitionInstrument: Instrument
+  (# TargetType:: Transition;
+     theTransitionInstance: ^TransitionInstance;
+          
+     relevant::
+       (# 
+       do (theHand[],target[])->getTransitionInstance -> theTransitionInstance[];
+          (if (theTransitionInstance[]<>NONE) and (theTransitionInstance.theBindingDialog[]<>NONE) then
+              ((not theTransitionInstance.theBindingDialog.manualBindingStarted)
+              and (theTransitionInstance.status=isEnabled) 
+              and ((theTransitionInstance.net).status=compiled)) 
+              and ((target.getCPNPage).getSelectedGroup).all
+                -> value;
+           else
+              false -> value;
+          if);
+       #);
+     
+     apply::
+       (# 
+       do (theTransitionInstance.theBindingDialog[]).showPossibleBindings;
+          (theTransitionInstance.theBindingDialog[]).fireWithCurrentChoices; 
+          (theTransitionInstance.theBindingDialog[]).update;
+          finish;
+       #);     
+  #);
+
+GetPossibleBindingsInstrumentAdapter: Instrument
+  (# theGetPossibleBindingsInstrument: @GetPossibleBindingsInstrument;
+     
+     TargetType:: Transition;
+     theTransitionInstance: ^TransitionInstance;
+     
+     init:: (#  do theGetPossibleBindingsInstrument.init #);
+     
+     relevant::
+       (# 
+       do (theHand[],target[]) -> getTransitionInstance -> theTransitionInstance[];
+          (if (theTransitionInstance[]<>NONE) and (theTransitionInstance.theBindingDialog[] <> NONE) then
+              (theTransitionInstance.theBindingDialog[],theHand[])
+                -> theGetPossibleBindingsInstrument.relevant
+                -> value;
+           else
+              false -> value;
+          if);
+       #);
+     
+     prepare::
+       (# 
+       do (theHand[],theTransitionInstance.theBindingDialog[])
+            -> theGetPossibleBindingsInstrument.prepare;
+       #);
+     
+     apply::
+       (# 
+       do theHand[] -> theGetPossibleBindingsInstrument.apply;
+          finish;
+       #);
+  #);
+
+FireAndCloseInstrumentAdapter: Instrument
+  (# 
+     theFireAndCloseInstrument: @FireAndCloseInstrument;
+     
+     TargetType:: Transition;
+     theTransitionInstance: ^TransitionInstance;
+     
+     init:: (#  do theFireAndCloseInstrument.init #);
+     
+     relevant::
+       (# 
+       do (theHand[],target[]) -> getTransitionInstance -> theTransitionInstance[];
+          (if (theTransitionInstance[]<>NONE) and (theTransitionInstance.theBindingDialog[] <> NONE) then
+              (theTransitionInstance.theBindingDialog[],theHand[])
+                -> theFireAndCloseInstrument.relevant
+                -> value;
+           else
+              false -> value;
+          if);
+       #);
+     
+     prepare::
+       (# 
+       do (theHand[],theTransitionInstance.theBindingDialog[])
+            -> theFireAndCloseInstrument.prepare;
+       #);
+     
+     apply::
+       (# 
+       do theHand[] -> theFireAndCloseInstrument.apply;
+          finish;
+       #);
+  #);
+
+getTransitionInstance:
+  (# theHand: ^Hand;
+     target: ^Transition;
+     theTransitionInstance: ^TransitionInstance;
+  enter (theHand[],target[])
+  do search: theHand.over.scan
+       (# 
+       do current.scan
+          (# 
+          do (if current## <= CPNSheet## then
+                 current[] -> QUA
+                 (# as:: CPNSheet;
+                 do target.id[] 
+                      -> thisObj.content.lookupTransitionInstance
+                      -> theTransitionInstance[];
+                    leave search;
+                 #);
+             if);
+          #);
+       #);
+  exit theTransitionInstance[]     
+  #);
+
+EvaluateWithFeedback: Instrument
+  (# TargetType:: Aux;
+     apply::
+       (# ml: ^MLCom;
+          thePage: ^CPNPage;
+          expr: ^Text;
+       do target.theShape.getThePage -> thePage[];
+          thePage.net.ML[] -> ml[];          
+          target.getText -> expr[];
+          'evaluate ' -> puttext;
+          expr[] -> putline;
+          (target[], ml[], expr[], true) -> MLEvaluateExpression;
+          finish;
+       #);
+  #);

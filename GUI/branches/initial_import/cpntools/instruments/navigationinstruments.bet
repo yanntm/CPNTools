@@ -1,0 +1,202 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../cpnworkspace';
+
+INCLUDE 'cpncommands';
+INCLUDE 'cpninstrument';
+INCLUDE 'binderinstruments';
+
+BODY 'private/navigationinstrumentsbody';
+
+-- CpnWorkspaceLib: attributes --
+
+(*
+ * Global methods
+ *)
+
+ShowSocketPage:
+  (# theSocketInstance, thePortInstance: ^PageInstance;
+     foundTab: @boolean;
+     thePortBinder, theSocketBinder: ^Folder;
+     theMoveTabFocusCommand: ^MoveTabFocusCommand;
+     theOpenTabCommand: ^OpenTabCommand;
+     theCommand: ^Command;
+     theClipping: ^Clipping;
+     theSocketSheet, thePortSheet: ^CpnSheet;
+  enter thePortInstance[]
+  do ('thePortInstance[] <> none', thePortInstance[] <> none) -> assert (# #);
+     (if thePortInstance.getSuperpageInstance = none then
+         'Page instance has no superpage.\n'         
+         'Unable to show super page' -> status.error;
+      else 
+         thePortInstance.getSuperpageInstance -> theSocketInstance[];
+         
+         folderManager.theStandardLayer.folders.scan
+         (# theBinder: ^Folder;
+         do current[] -> theBinder[];
+            theBinder.sheets.scan
+            (# 
+            do (if current.content[] = theSocketInstance[] then 
+                   current[] -> theSocketSheet[];
+                   theBinder[] -> theSocketBinder[];
+                   true -> foundTab;
+               if);
+               (if current.content[] = thePortInstance[] then
+                   current[] -> thePortSheet[];
+                   theBinder[] -> thePortBinder[];
+               if);
+            #);
+         #);
+         
+         (if foundTab then
+             &MoveTabFocusCommand[] -> theMoveTabFocusCommand[];
+             (thePortSheet[], thePortBinder[], theSocketSheet[], theSocketBinder[]) -> theMoveTabFocusCommand.init;
+             theMoveTabFocusCommand.prepare;
+             theMoveTabFocusCommand.apply;
+             theMoveTabFocusCommand[] -> theCommand[];
+          else
+             &CPNSheet[] -> theSocketSheet[];
+             theSocketSheet.init;         
+             theSocketInstance[] -> theSocketSheet.setContent;
+             
+             &TabClipping[] -> theClipping[];
+             theSocketSheet[] -> theClipping.init;
+             
+             &OpenTabCommand[] -> theOpenTabCommand[];
+             theClipping[] -> theOpenTabCommand.init;
+             thePortBinder[] -> theOpenTabCommand.prepare;
+             theOpenTabCommand.apply;
+             theOpenTabCommand[] -> theCommand[];
+         if);
+         (theSocketSheet.getCPNet,theCommand[]) -> registerCommand;
+     if);
+  #);
+
+ShowSubPage:
+  (# theTransition: ^Transition;     
+     theSuperInstance: ^PageInstance;
+  enter (theTransition[], theSuperInstance[])
+  <<SLOT ShowSubPage:DoPart>> 
+  #);
+
+(*
+ * Instruments
+ *)
+
+ShowSocketPageInstrument: Instrument
+  (# TargetType:: PortType;
+     thePageInstance: ^PageInstance;     
+     relevant::
+       (# 
+       do search: theHand.over.scan
+            (# 
+            do current.scan
+               (# theSheet: ^CPNSheet;
+               do (if current## <= CPNSheet## then
+                      current[] -> theSheet[]; 
+                      theSheet.content[] -> thePageInstance[];
+                      leave search;
+                  if);
+               #);
+            #);
+       #);     
+     apply::
+       (#         
+       do thePageInstance[] -> ShowSocketPage;          
+       #);     
+  #);
+
+AbstractShowSubpageInstrument: Instrument
+  (# thePageInstance: ^PageInstance;
+     relevant::
+       (# 
+       do search: theHand.over.scan
+            (# 
+            do current.scan
+               (# theSheet: ^CPNSheet;
+               do (if current## <= CPNSheet## then
+                      current[] -> theSheet[];
+                      theSheet.content[] -> thePageInstance[];
+                      leave search;
+                  if);
+               #);
+            #);
+       #); 
+  #);
+
+ShowSubpageInstrument: AbstractShowSubpageInstrument
+  (# TargetType:: SubPageInfo;
+      apply::
+       (# 
+       do (target.getTransition, thePageInstance[]) -> ShowSubPage;
+       #);       
+  #);
+
+ShowSubpageIndexInstrument: AbstractShowSubpageInstrument
+  (# TargetType:: PortSocketDialog;
+     apply::
+       (# 
+       do (target.theTransitionInstance.theTransition[],thePageInstance[]) -> ShowSubPage;
+       #);
+  #);
+
+(*
+ * Commands
+ *)
+
+MoveTabFocusCommand: Command
+  (# fromSheet, toSheet: ^CpnSheet;
+     fromBinder, toBinder: ^Folder;
+     
+     init::
+       (# 
+       enter (fromSheet[], fromBinder[], toSheet[], toBinder[])
+       #);     
+     apply:
+       (# 
+       do redo;
+       #);
+     getName::
+       (#
+       do 'Navigate to Page' -> name[];
+       #);
+     
+     showSheet:
+       (# theSheet: ^Sheet;
+          theBinder: ^Folder;
+       enter (theSheet[], theBinder[])
+       do theBinder[] -> folderManager.raise;
+          theSheet[] -> theBinder.raise;
+       #);
+     undo::
+       (# 
+       do (fromSheet[], fromBinder[]) -> showSheet;
+       #);
+     redo::
+       (# 
+       do (toSheet[], toBinder[]) -> showSheet;
+       #);     
+  #);

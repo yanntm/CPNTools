@@ -1,0 +1,216 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '~beta/postwimp/workspace';
+
+INCLUDE '../cpntools/debug';
+INCLUDE '../cpntools/resources/texts/texts';
+
+BODY 'private/cpnetutilitiesbody';
+
+-- Workspacelib: Attributes --
+
+fabs:
+  (# r: @Real;
+  enter r
+  do (if (r < 0) then -r -> r; if);
+  exit r
+  #);
+
+FileObject: File
+  (#
+  #);
+
+calcArrow:
+  (# attach: ^Point2d;
+     start, end: ^Point2d;
+     thePath: ^PointList;
+  enter (start[], end[])
+  <<SLOT calcArrow:doPart>>
+  exit (thePath[], attach[])
+  #);
+
+smartList: List 
+  (# ElementType:< Object;
+     Element:: ElementType;
+     getter:
+       (# elm: ^ElementType;
+       do inner;
+       exit elm[]
+       #);
+     first: getter
+       (# 
+       do s: scan 
+            (# 
+            do current[] -> elm[];
+               leave s;
+            #);          
+       #);
+     last: getter
+     (# 
+     do s: scanReverse
+          (# 
+          do current[] -> elm[];
+             leave s;
+          #);
+     #);
+  #);
+
+lookup: 
+  (# Element:< Object;
+     id: ^Text;
+     result: ^Element;
+  enter id[] 
+  do INNER 
+  exit result[]
+  #);
+
+IdDictionary:
+  (# Element:< Object;
+     theDictionary: @Dictionary
+       (# Key:: Text;
+          hashFunction:: (# <<SLOT IdDictionaryhashFunction:doPart>> #);
+          keyEqual:: (# <<SLOT IdDictionarykeyEqual:doPart>> #);
+       #);
+     theList: @SmartList;
+     first: (# exit theList.first #);
+     init:
+       (#
+       do theDictionary.init;
+          theList.init;
+       #);
+     associate:
+       (# ID: ^Text;
+          elm: ^Element;
+          associated: @boolean;
+       enter (ID[], elm[])
+       <<SLOT IdDictionaryAssociate:doPart>>
+       exit associated
+       #);
+     disassociate:
+       (# ID: ^Text;
+          elm: ^Element;
+       enter ID[]
+       <<SLOT IdDictionaryDisassociate:doPart>>
+       exit elm[]
+       #);
+     clear:
+       (#
+       do theDictionary.clear;
+          theList.clear;
+       #);
+     empty: (# exit theList.empty #);
+     size:
+       (#
+       exit Thedictionary.size
+       #);
+     
+     containsKey:
+       (# key: ^Text;
+       enter key[]
+       exit (key[] -> lookup) <> NONE
+       #);
+     lookup:
+       (# ID: ^Text;
+          elm: ^Element;
+       enter ID[]
+       do ID[] -> theDictionary.lookup -> elm[];
+       exit elm[]
+       #);
+     realscan:
+       (# current: ^Element;
+       do theList.scan
+          (#
+          do current[] -> THIS(realscan).current[];
+             INNER realscan;
+          #);
+       #);
+     scan: realscan(# do INNER; #);
+     realscanassociations:
+       (# k: ^Text;
+          e: ^Element;
+       do theDictionary.scanassociations
+          (#
+          do k[] -> This(realscanassociations).k[];
+             e[] -> This(realscanassociations).e[];
+             INNER realscanassociations;
+          #);
+       #);
+     scanassociations: realscanassociations(# do INNER; #);
+  #);
+
+NotifierIDDictionary: IdDictionary
+  (# Element::< Notifier;
+     has:
+       (# elm: ^Element;
+       enter elm[]
+       exit (elm.ID[] -> containsKey)
+       #);
+  #);
+
+NotifierHashTable: HashTable
+  (# Element:: Notifier;
+  #);
+
+NameTable: HashTable
+  (# Element:: Text;     
+     rangeInitial:: (# do 117 -> value #);
+     hashFunction::
+       (# 
+       do e.scanAll
+          (# 
+          do (value %sll 1) -> value; 
+             value + ch -> value;
+             value mod range -> value;
+          #);
+       #);
+     equal::
+       (# 
+       do (left[] -> right.equal) -> value;
+       #);
+  #);
+
+TextList: List
+  (# element:: Text;
+     defined: booleanValue
+       (# name: ^Text;
+       enter name[]
+       <<SLOT TextListDefined:DoPart>>       
+       #);
+  #);
+
+SortedTextSequence: Sequence
+  (# element:: Text;
+     defined: booleanValue
+       (# name: ^Text;
+       enter name[]
+       <<SLOT SortedTextSequenceDefined:DoPart>>       
+       #);
+     textLess: lessFunction (# <<SLOT SortedTextSequenceTextLess:doPart>> #);
+     sortText: sort
+       (# less:: textLess;
+       #);
+  #);
+

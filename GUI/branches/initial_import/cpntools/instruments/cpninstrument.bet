@@ -1,0 +1,672 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../../cpnet/cpnet';
+INCLUDE '../../cpnet/xmlutilities';
+INCLUDE 'cpncommands';
+INCLUDE 'icon';
+INCLUDE '../cursors/standardcursors';
+INCLUDE '../resources/figures/figure';
+
+-- workspaceLib: Attributes --
+
+nonGenericInstrumentWithOptions: Instrument
+  (# options: ^OptionList;     
+  #);
+
+CPNsimpleinstrument: nonGenericInstrumentWithOptions
+  (# CommandType:< CPNCommand;
+     Command: ^CommandType;
+     options: ^OptionList;
+     position: ^PositionOption;
+     startPoint: @Point2d;
+     running: @boolean;
+
+     faraway: @boolean;
+     outside: @boolean;
+
+     movable:< booleanObject;
+
+     drop: (# do Command.drop; #);
+     
+     (* Instruments that modifies a net must override this method *)
+     getCPNet:<
+       (# theNet: ^CPNet;
+       do NONE -> theNet[];
+          INNER;
+       exit theNet[]
+       #);
+
+     prepare::
+       (#
+       do (theHand.x,theHand.y) -> startPoint;
+          (target[], theHand[]) -> Command.prepare;
+       #);
+
+     renewCommand:<
+       (#
+          tmpOptions: ^OptionList;
+       do &CommandType[]->Command[];
+          &OptionList[] -> tmpOptions[];
+          tmpOptions.init;
+          options.options.scan
+          (#
+          do (if not current.temporary then
+                 current[] -> tmpOptions.register;
+             if);
+          #);
+          
+          options.clear;
+          
+          tmpOptions.options.scan
+          (# 
+          do current[] -> options.register;
+          #);
+          options[] -> Command.init;
+          INNER;
+       #);
+
+     init::<
+       (# tmpPos: ^PositionOption;
+       do ('options', NONE) -> options.setaddoption;
+          'position' -> options.find -> tmpPos[];
+          (if tmpPos[] = NONE then
+              &PositionOption[] -> position[];
+              position.init;
+              'position' -> position.name;
+              position[] -> options.register;
+           else
+              tmpPos[] -> position[];
+          if);
+          renewCommand;
+          INNER;
+       #);
+
+     apply::<
+       (# manager: @HistoryCommandManager;
+       do (theHand.x,theHand.y) -> (position.value).XY;
+          position.changed;
+          (if (NOT movable) OR (NOT theHand.down) then
+              (getCPNet,Command[]) -> manager.execute;
+              Finish;
+              renewCommand;
+           else
+              true -> running;
+          if);
+          INNER;
+       #);
+     
+     pack::<
+       (#
+       do this(CPNsimpleinstrument)[] -> getpatternname -> theXML.createElement -> elm[];
+          options.options.scan
+          (#
+          do current.pack -> elm.addElement;
+          #);
+       #);
+     
+     unPack::<
+       (#
+       do elm.scanElements
+          (# aOption: ^Option;
+          do (if true
+              //'option' -> current.tag.equalNCS then
+                 &Option[] -> aOption[];
+              //'IntegerOption' -> current.tag.equalNCS then
+                 &IntegerOption[] -> aOption[];
+              //'BooleanOption' -> current.tag.equalNCS then
+                 &BooleanOption[] -> aOption[];
+              //'RealOption' -> current.tag.equalNCS then
+                 &RealOption[] -> aOption[];
+              //'TextOption' -> current.tag.equalNCS then
+                 &TextOption[] -> aOption[];
+              //'ColorOption' -> current.tag.equalNCS then
+                 &ColorOption[] -> aOption[];
+             if);
+             (if aOption[] <> none then
+                 current[] -> aOption.unPack;
+                 aOption[] -> options.register;
+             if);
+             none -> aOption[];
+          #);
+       #);
+     
+     cancel::
+       (# 
+       do renewCommand;
+          (if running then
+              finish;
+          if);
+       #);
+     
+     finish:: (# do false -> running; false -> outside; #);
+     
+     relevant::
+       (#
+       do target[] -> Command.relevant -> value;
+       #);
+     
+     onMouseFloat::
+       (# 
+       do (x, y) -> (position.value).XY;
+          position[] -> position.changed;
+          theHand[] -> command.float;
+       #);
+
+     onMouseUp::
+       (# 
+       do (if movable then
+              (if running then
+                  (if (startPoint.x-x)*(startPoint.x-x)+(startPoint.y-y)*(startPoint.y-y) > 10 then
+                      apply;
+                   else
+                      cancel;
+                  if);
+              if);
+           else
+              (if running then
+                  (if (startPoint.x-x)*(startPoint.x-x)+(startPoint.y-y)*(startPoint.y-y) > 10 then
+                      finish;
+                   else
+                      apply;
+                  if);
+              if);
+          if);
+       #);     
+     
+     onMouseMove:: 
+       (# 
+       do (if running then
+              theHand[] -> command.preview;
+          if);
+       #);
+  #);
+
+CPNGenericInstrument: GenericInstrument
+  (#  
+     FigureT:< Figure;
+     
+     IconType:: FigureIcon(# FigureType:: FigureT; #);
+     CursorType:: CPNCursor(# FigureType:: FigureT; #);
+     
+     
+     CommandType:< Command;
+     
+     
+     options: ^OptionList;
+     
+     changedOptions:<
+       (#
+       do INNER;
+       #);
+     
+     observeOptions: @Notifier
+       (# onChanged::
+            (#
+            do changedOptions;
+            #);
+       #);
+     
+     (* By default, clone gives a shallow copy of options *)
+     clone::<
+       (# theType::< CPNGenericInstrument;
+          cloneOptions:< BooleanObject;
+       do (if cloneOptions then
+              new.options.clear;
+              options.options.scan
+              (#
+              do current.clone->new.options.register;
+              #);
+           else
+              options[] -> new.options[];
+          if);
+          INNER;
+       #);
+     
+     present::<
+       (# 
+       do instrumentcursor.present -> presentation[];
+          INNER;
+       #);
+     
+     onMouseFloat::<
+       (# b: @boolean;
+       do (if theHand.over[] <> NONE then
+              L:theHand.over.scan
+                (# 
+                do current.scan
+                   (# 
+                   do (if (current[], theHand[]) -> relevant then
+                          true -> b;
+                          leave L;
+                      if);
+                      (if current## <= Folder## then
+                          leave L;
+                      if);
+                   #); 
+                #);
+          if);
+          b -> InstrumentCursor.setHighlighted;
+          INNER;
+       #);     
+     init::<
+       (# tmpFigure: ^FigureT;
+       do &FigureT[] -> tmpFigure[];
+          tmpFigure.init;
+          tmpFigure[] -> instrumentCursor.setFigure;
+          tmpFigure[] -> instrumentIcon.setFigure;
+          
+          (if options[] = none then
+              &OptionList[] -> options[];
+              options.init;
+          if);
+          INNER;
+          observeOptions[] -> options.attach;
+          options[] -> tmpFigure.setOptions;
+          options.changed;
+       #);
+  #);
+
+CPNinstrument: CPNGenericInstrument
+  (# 
+     CommandType::< CPNCommand;
+     Command: ^CommandType;
+
+     movable:< booleanObject;
+     
+     cancel::<
+       (# 
+       do registry.scan
+          (# theCPNsimpleInstrument: ^CPNsimpleInstrument;
+          do (if current## <= CPNsimpleInstrument## then
+                 current[] -> theCPNsimpleInstrument[];
+                 theCPNsimpleInstrument.drop;
+             if);
+          #);
+          INNER;
+       #);
+     
+     clone::<
+       (# theType::< CPNinstrument;
+       do INNER;
+       #);
+     
+     respectGuideline:< booleanValue
+       (#
+       do (Command.TargetType##<=PageElement##)->value;
+          INNER;
+       #);
+
+     respectGroup:< booleanValue
+       (#
+       do (Command.TargetType##<=PageElement##)->value;
+          INNER;
+       #);
+     
+     visitGlobalGroupBottomUp:< booleanValue
+       (# 
+       do false -> value;
+          INNER;
+       #);
+     
+     respectCPNPage:< booleanValue
+       (# 
+       do (Command.TargetType##<=CPNet##)->value;
+          INNER;
+       #);
+
+     respectGroupTab:< booleanValue
+       (#
+       do false->value;
+          INNER;
+       #);
+
+     respectIndexNode:< booleanValue
+       (#
+       do (Command.TargetType##<=CPNPage##)->value;
+          INNER;
+       #);
+
+     respectBinder:< booleanValue
+       (#
+       do false->value;
+          INNER;
+       #);
+
+     CPNnormalInstrument: CPNsimpleinstrument
+       (# movable:: THIS(CPNinstrument).movable;
+          CommandType:: THIS(CPNinstrument).CommandType;
+       #);
+
+     CPNGuidelineInstrument: CPNsimpleinstrument
+       (# movable:: THIS(CPNinstrument).movable;
+          CommandType:: _GuidelineCommand (# CommandType:: THIS(CPNinstrument).CommandType; #);
+       #);
+
+     CPNGroupInstrument: CPNsimpleinstrument
+       (# movable:: THIS(CPNinstrument).movable;
+          CommandType:: GroupCommand (# CommandType:: THIS(CPNinstrument).CommandType; #);
+       #);
+     
+     CPNGroupBottomUpInstrument: CPNsimpleinstrument
+       (# movable:: THIS(CPNinstrument).movable;
+          CommandType:: GroupBottomUpCommand (# CommandType:: THIS(CPNinstrument).CommandType; #);
+        #);
+
+
+     CPNCPNPageInstrument: CPNsimpleinstrument
+       (# movable:: THIS(CPNinstrument).movable;
+          CommandType:: CPNPageCommand (# CommandType:: THIS(CPNinstrument).CommandType; #);
+       #);
+     
+     CPNGroupTabInstrument: CPNsimpleinstrument
+       (# movable:: THIS(CPNinstrument).movable;
+          CommandType:: THIS(CPNinstrument).CommandType;
+       #);
+
+     CPNIndexNodeInstrument: CPNsimpleinstrument
+       (# movable:: THIS(CPNinstrument).movable;
+          CommandType:: THIS(CPNinstrument).CommandType;
+       #);
+
+     CPNBinderInstrument: CPNsimpleinstrument
+       (# movable:: THIS(CPNinstrument).movable;
+          CommandType:: THIS(CPNinstrument).CommandType;
+       #);
+     
+     pack::<
+       (# 
+       do this(CPNinstrument)[] -> getpatternname -> theXML.createElement -> elm[];
+          options.options.scan
+          (#
+          do current.pack -> elm.addElement;
+          #);
+       #);
+     
+     unPack::<
+       (# 
+       do elm.scanElements
+          (# aOption: ^Option;
+          do (if true
+              //'option' -> current.tag.equalNCS then
+                 &Option[] -> aOption[];
+              //'IntegerOption' -> current.tag.equalNCS then
+                 &IntegerOption[] -> aOption[];
+              //'BooleanOption' -> current.tag.equalNCS then
+                 &BooleanOption[] -> aOption[];
+              //'RealOption' -> current.tag.equalNCS then
+                 &RealOption[] -> aOption[];
+              //'TextOption' -> current.tag.equalNCS then
+                 &TextOption[] -> aOption[];
+              //'ColorOption' -> current.tag.equalNCS then
+                 &ColorOption[] -> aOption[];
+             if);
+             (if aOption[] <> none then
+                 current[] -> aOption.unPack;
+                 aOption[] -> options.register;
+             if);
+             none -> aOption[];
+          #);
+       #);
+     
+     init::<
+       (# tmpInstrument: ^CPNsimpleinstrument;
+       do &CommandType[] -> command[];
+          INNER;
+          (if respectCPNPage then
+              &CPNCPNPageInstrument[]->tmpInstrument[];
+              options[]->tmpInstrument.options[];
+              tmpInstrument.init;
+              tmpInstrument[]->register;
+          if);           
+          (if respectGuideline then
+              &CPNGuidelineInstrument[]->tmpInstrument[];
+              options[]->tmpInstrument.options[];
+              tmpInstrument.init;
+              tmpInstrument[]->register;
+          if);
+          (if respectGroup and visitGlobalGroupBottomUp then
+              &CPNGroupBottomUpInstrument[]->tmpInstrument[];
+              options[]->tmpInstrument.options[];
+              tmpInstrument.init;
+              tmpInstrument[]->register;
+           else (if respectGroup then
+                   &CPNGroupInstrument[]->tmpInstrument[];
+                    options[]->tmpInstrument.options[];
+                    tmpInstrument.init;
+                    tmpInstrument[]->register; 
+                 else
+                    &CPNnormalInstrument[]->tmpInstrument[];
+                    options[]->tmpInstrument.options[];
+                    tmpInstrument.init;
+                    tmpInstrument[]->register;
+                if);
+          if);
+       #);
+     
+  #);
+
+SimpleCpnInstrument: CPNGenericInstrument
+  (# applyCommand:<
+       (# targets: ^PageElementList;
+          theCommand: ^CommandType;
+          theNet: ^CPNet;
+       enter targets[]
+       do &CommandType[] -> theCommand[];
+          targets[] -> theCommand.prepare;
+          INNER;
+          (targets.first).getCPNet -> theNet[];
+          (theNet[],theCommand[]) -> registerCommand;
+       #);
+     
+     GuideLineInstrument: @Instrument
+       (# TargetType:: GuideLine;
+          apply::
+            (# targets: ^PageElementList;
+               seenArcs: @Set(# element:: Arc; #);
+            do &PageElementList[] -> targets[];
+               target.scanGuideElements
+               (#
+               do (if current## <= Node## then
+                      (# theNode: ^Node;
+                      do current[] -> theNode[];
+                         theNode.scanArcs
+                         (# 
+                         do (if (current[] -> seenArcs.has) then
+                                current[] -> targets.append;
+                             else
+                                current[] -> seenArcs.insert;
+                            if);
+                         #);
+                      #);
+                  if);
+                      current[] -> targets.append;
+               #);
+               targets[] -> applyCommand;
+               finish;
+            #);
+       #);
+     
+     GroupTabInstrument: @Instrument
+       (# TargetType:: Group;
+          apply::
+            (# targets: ^PageElementList;
+            do &PageElementList[] -> targets[];
+               (if NOT target.all then
+                   target.scanElements
+                   (#
+                   do current[] -> targets.append;
+                   #);
+               if);
+               targets[] -> applyCommand;
+               finish;
+            #);
+       #);
+             
+     PageElementInstrument: @Instrument
+       (# TargetType:: PageElement;
+	  relevant:: (# do target[] -> relevantPageElement -> value; #);
+          apply::
+            (# targets: ^PageElementList;
+               thePage: ^CPNPage;
+            do &PageElementList[] -> targets[];
+               target.getCPNPage -> thePage[];
+               target[] -> targets.append;
+               (if ((NOT (thePage.getSelectedGroup).all) AND
+                    (target[] -> (thePage.getSelectedGroup).isMember)) then
+                   (thePage.getSelectedGroup).scanElements
+                   (#
+                   do (if current[] <> target[] then
+                          current[] -> targets.append;
+                      if);
+                   #);
+               if);
+               targets[] -> applyCommand;
+               finish;
+            #);
+       #);
+     
+     relevantPageElement:< 
+       (# target: ^PageElement;
+          value: @Boolean;
+       enter target[]
+       do true -> value;
+          INNER;
+       exit value
+       #);
+     
+     init::<
+       (# 
+       do GuideLineInstrument.init;
+          GuideLineInstrument[] -> register;
+          GroupTabInstrument.init;
+          GroupTabInstrument[] -> register;
+          PageElementInstrument.init;
+          PageElementInstrument[] -> register;
+          INNER;
+       #);
+  #);
+
+FigureTInstrument: nonGenericInstrumentWithOptions
+  (# FigureT:< Figure;
+          
+     IconType:: FigureIcon(# FigureType:: FigureT; #);     
+     CursorType:: CPNCursor(# FigureType:: FigureT; #);
+     
+     observeOptions: @Notifier
+       (# onChanged::
+            (#
+            do changedOptions;
+            #);
+       #);
+     
+     present::<
+       (# 
+       do instrumentcursor.present -> presentation[];
+          INNER;
+       #);
+     
+     onMouseFloat::<
+       (# b: @boolean;
+       do (if theHand.over[] <> NONE then
+              L:theHand.over.scan
+                (# 
+                do current.scan
+                   (# 
+                   do (if (current[], theHand[]) -> relevant then
+                          true -> b;
+                          leave L;
+                      if);
+                      (if current## <= Folder## then
+                          leave L;
+                      if);
+                   #); 
+                #);
+          if);
+          b -> InstrumentCursor.setHighlighted;
+          INNER;
+       #);
+     
+     changedOptions:<
+       (#
+       do INNER;
+       #);
+      
+     init::<
+       (# tmpFigure: ^Figure;
+       do &FigureT[] -> tmpFigure[];
+          tmpFigure.init;
+          tmpFigure[] -> instrumentCursor.setFigure;
+          tmpFigure[] -> instrumentIcon.setFigure;
+          
+          &OptionList[] -> options[];
+          options.init;
+          options[] -> tmpFigure.setOptions;
+          INNER;
+          observeOptions[] -> options.attach;
+       #);
+  #);
+
+CursorScalingInstrument: FigureTInstrument
+  (# onMouseFloat::<
+       (#  
+       do (theHand[],InstrumentCursor.theFigure[]) -> scaleCursor;
+          INNER;
+       #);
+     
+  #);
+GenericCursorScalingInstrument: CPNGenericInstrument
+  (# onMouseFloat::<
+       (#  
+       do (theHand[],InstrumentCursor.theFigure[]) -> scaleCursor;
+          INNER;
+       #); 
+     
+  #);
+
+
+scaleCursor:
+  (# theHand: ^Hand;
+     theFigure: ^Figure;
+     zoomfactor: @real;
+  enter (theHand[],theFigure[])
+  do 1 -> zoomfactor;
+     (if theHand.over[] <> NONE then
+         findZoomFactorOfSheet:theHand.over.scan
+           (# 
+           do current.scan
+              (# 
+              do (if current## <= CPNSheet## then
+                     current[] -> QUA
+                     (# as:: CPNSheet;
+                     do thisObj.theZoom -> zoomFactor;
+                        leave findZoomFactorOfSheet;
+                     #);
+                 if);  
+              #); 
+           #);
+     if);      
+     zoomFactor -> theFigure.scale;
+  #);

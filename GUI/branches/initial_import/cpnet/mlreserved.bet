@@ -1,0 +1,247 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '~beta/basiclib/betaenv';
+INCLUDE '~beta/containers/hashTable';
+INCLUDE '~beta/basiclib/texthash';
+
+-- lib: attributes --
+
+getMLReserved: objectPool.get
+  (# type:: MLReserved;
+     init::
+       (#
+       do obj.prepare;
+       #);
+  #);
+MLReserved: HashTable
+  (# element:: Text;
+     hm: @HoneyMan;
+     hashFunction::
+       (#
+       do e[] -> hm.hash -> value;
+       #);
+     register:
+       (# word: ^Text;
+       enter word[]
+       do word[] -> insert;
+       #);
+     lookup:
+       (# word: ^Text;
+          found: @boolean;
+       enter word[]
+       do word[] -> hashFunction -> findIndexed
+          (# predicate::
+               (# do word[] -> current.equal -> value #);
+          do true -> found;
+          #);
+       exit found
+       #);
+     prepare:
+       (#
+       do init;
+          hm.init;
+          (* ML reserved words: *)
+          '#' -> register;
+          '*' -> register;
+          '->' -> register;
+          ':' -> register;
+          ':>' -> register;
+          '=' -> register;
+          '=>' -> register;
+          'abstype' -> register;
+          'and' -> register;
+          'as' -> register;
+          'case' -> register;
+          'datatype' -> register;
+          'do' -> register;
+          'else' -> register;         
+          'end' -> register;
+          'eqtype' -> register;
+          'exception' -> register;
+          'fn' -> register;
+          'fun' -> register;
+          'functor' -> register;
+          'funsig' -> register;
+          'handle' -> register;
+          'if' -> register;
+          'in' -> register;
+          'include' -> register;
+          'infix' -> register;
+          'infixr' -> register;
+          'let' -> register;
+          'local' -> register;
+          'nonfix' -> register;
+          'of' -> register;
+          'op' -> register;
+          'open' -> register;
+          'orelse' -> register;
+          'raise' -> register;
+          'rec' -> register;
+          'sharing' -> register;
+          'sig' -> register;
+          'signature' -> register;
+          'struct' 
+          'structure' 
+          'then' -> register;
+          'type' -> register;
+          'val' -> register;
+          'where' -> register;
+          'while' -> register;
+          'with' -> register;
+          '|' -> register;
+          '||' -> register;
+          '_' -> register;
+          '?' -> register;
+
+          (* ML predefined func *)
+          'o' -> register;
+          'ref' -> register;
+          '!' -> register;
+          ':=' -> register;
+
+          (* CPN keywords: *)
+          'action' -> register;
+          'all' -> register;
+          'by'   -> register;
+          'colset' -> register;
+          'colorset' -> register;
+          'empty' ->register;
+          'enumerate' -> register;
+          'len' -> register;
+          'declare' -> register;
+          'globref'  -> register;
+          'index'  -> register;
+          'input'  -> register;
+          'instref'  -> register;
+          'list'  -> register;
+          'no' -> register;
+          'output'  -> register;
+          'pageref'  -> register;
+          'product'  -> register;
+          'record'  -> register;
+          'subset'  -> register;
+          'var'  -> register;
+          'msvar'  -> register;
+          'definetime' -> register;
+          'timed' -> register;
+          'untimed' -> register;
+          'same' -> register;
+          'start' -> register;
+          'TIME' -> register;
+          'time' -> register;
+          '@' -> register;
+          (*this tabel does not hold: .. *)
+
+          (* ML types: *)
+          'int'  -> register;
+          'bool' -> register;
+          'unit' -> register;
+          'string' -> register;
+
+          (* Basic lib structs *)
+          'General' -> register;
+          'Option' -> register;
+          'Bool' -> register;
+          'Char' -> register;
+          'WideChar' -> register;
+          'String' -> register;
+          'WideString' -> register;
+          'Substring' -> register;
+          'WideSubstring' -> register;
+          'StringCvt' -> register;
+          'Byte' -> register;
+          'Int' -> register;
+          'Int8' -> register;
+          'FixedInt' -> register;
+          'LargeInt' -> register;
+          (* 'Int<n>' ??? *)
+          'Position' -> register;
+          'InfInt' -> register;
+          'Word' -> register;
+          'Word8' -> register;
+          'LargeWord' -> register;
+          (* 'Word<n>' ??? *)
+          'SysWord' -> register;
+          (* 'Pack<n>Big' ??? *)
+          (* 'Pack<n>Little' ??? *)
+          'Real' -> register;
+          'LargeReal' -> register;
+          (* 'Real<n>' ??? *)
+          'Math' -> register;
+          'IEEEReal' -> register;
+          'PackRealBig' -> register;
+          'PackRealLittle' -> register;
+          (* 'PackReal<n>Big' ??? *)
+          (* 'PackReal<n>Little' ??? *)
+          'List' -> register;
+          'ListPair' -> register;
+          'Vector' -> register;
+          'Word8Vector' -> register;
+          'CharVector' -> register;
+          'WideCharVector' -> register;
+          'BoolVector' -> register;
+          'IntVector' -> register;
+          'RealVector' -> register;
+          (* 'Int<n>Vector' ??? *)
+          (* 'Real<n>Vector' ??? *)
+          'Array' -> register;
+          'Word8Array' -> register;
+          'CharArray' -> register;
+          'WideCharArray' -> register;
+          'BoolArray' -> register;
+          'IntArray' -> register;
+          'RealArray' -> register;
+          (* 'Int<n>Array' ??? *)
+          (* 'Real<n>Array' ??? *)
+          'Array2' -> register;
+          'Word8Array2' -> register;
+          'CharArray2' -> register;
+          'WideCharArray2' -> register;
+          'BoolArray2' -> register;
+          'IntArray2' -> register;
+          'RealArray2' -> register;
+          (* 'Int<n>Array2' ??? *)
+          (* 'Real<n>Array2' ??? *)
+          'IO' -> register;
+          'TextIO' -> register;
+          'BinIO' -> register;
+          'ImperativeIO' -> register;
+          'StreamIO' -> register;
+          'PrimIO' -> register;
+          'OS' -> register;
+          'CommandLine' -> register;
+          'Unix' -> register;
+          'Date' -> register;
+          'Time' -> register;
+          'Timer' -> register;
+          'Posix' -> register;
+
+          (* CPN types *)
+          'ms' -> register;
+          'tms' -> register;
+
+       #);
+  #);

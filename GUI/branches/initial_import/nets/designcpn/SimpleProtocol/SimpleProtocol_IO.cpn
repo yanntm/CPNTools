@@ -1,0 +1,1058 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE workspaceElements PUBLIC "-//CPN//DTD CPNXML 1.0//EN" "http://www.daimi.au.dk/~cpntools/bin/DTD/2/cpn.dtd">
+<workspaceElements>
+<generator tool="Converter" version="0" format="2"/>
+<cpnet>
+<globbox>
+<errordecl>color INT = int;
+color DATA = string; 
+color INTxDATA = product INT * DATA
+           declare output_col, input_ms;
+var n, k : INT;
+var p,str : DATA;
+val stop = "########";
+
+color Ten0 = int with 0..10;
+color Ten1 = int with 1..10;
+var s : Ten0;  var r : Ten1;
+fun Ok(s:Ten0,r:Ten1) = (r&lt;=s);
+
+color E = with e; 
+var packets : INTxDATA ms;
+globref outfile = TextIO.stdOut;
+
+</errordecl>
+</globbox>
+<page id="id295">
+  <pageattr name="Top"/>
+  <mult insts="1"/>
+  <modeattr siminc="false" observe="false" propocc="false" interact="false" execcode="false"/>
+  <winattr open="true" width="733" height="678" xpos="120" ypos="122"/>
+  <lineattr type="solid" thick="0" colour="black"/>
+  <fillattr colour="White" pattern="Solid" filled="false"/>
+  <posattr x="0.00000" y="-0.00000"/>
+  <box h="274.10833" w="188.38333"/>
+  
+
+  
+  
+
+
+  
+  <trans id="id603">
+<posattr x="-73.55417" y="32.80833"/>
+<fillattr colour="White" pattern="Solid" filled="false"/>
+<lineattr type="solid" thick="2" colour="navy"/>
+<textattr font="helvetica" size="12" just="centered" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+<text>Send
+Packet - SendPack</text>
+<box h="13.40496" w="21.87130"/>
+</trans>
+
+
+  
+  <trans id="id600">
+<posattr x="-6.70278" y="32.80833"/>
+<fillattr colour="White" pattern="Solid" filled="false"/>
+<lineattr type="solid" thick="2" colour="teal"/>
+<textattr font="helvetica" size="12" just="centered" colour="teal" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+<text>Transmit
+Packet - TranPack</text>
+<box h="13.40496" w="21.87130"/>
+</trans>
+
+
+  
+  <trans id="id598">
+<posattr x="61.73611" y="1.41111"/>
+<fillattr colour="White" pattern="Solid" filled="false"/>
+<lineattr type="solid" thick="2" colour="navy"/>
+<textattr font="helvetica" size="12" just="centered" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+<text>Receive
+Packet - RecPack</text>
+<box h="13.40514" w="21.87163"/>
+<code id="id590">
+<posattr x="139.17170" y="17.99167"/>
+<fillattr colour="White" pattern="Solid" filled="false"/>
+<lineattr type="solid" thick="0" colour="blue"/>
+<textattr font="helvetica" size="10" just="left" colour="blue" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+<text>input (n,p,k);
+action
+if n=k
+then
+   (if n=1
+        then outfile:=TextIO.openOut("SimpleProtocol.SimRes")
+        else ();
+    output_col'INTxDATA(!outfile,(n,p));
+     if p=stop then TextIO.closeOut(!outfile) else ())
+else ();
+</text>
+</code>
+</trans>
+
+
+  
+  <trans id="id587">
+<posattr x="-73.55417" y="-27.86944"/>
+<fillattr colour="White" pattern="Solid" filled="false"/>
+<lineattr type="solid" thick="2" colour="navy"/>
+<textattr font="helvetica" size="12" just="centered" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+<text>Receive
+Acknow. - RecAck</text>
+<box h="13.40514" w="21.87163"/>
+</trans>
+
+
+  
+  <trans id="id583">
+<posattr x="-6.70278" y="-27.86944"/>
+<fillattr colour="White" pattern="Solid" filled="false"/>
+<lineattr type="solid" thick="2" colour="teal"/>
+<textattr font="helvetica" size="12" just="centered" colour="teal" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+<text>Transmit
+Acknow. - TranAck</text>
+<box h="13.40514" w="21.87163"/>
+</trans>
+
+
+  
+  <aux id="id574">
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="0" colour="blue"/>
+    <fillattr colour="White" pattern="Solid" filled="false"/>
+    <posattr x="-41.27500" y="-3.70417"/>
+    <line points="(-41.27500,45.50833)(-41.27500,-52.91667)"/>
+    <layering type="copy"/>
+    
+    
+  </aux>
+
+
+  
+  <place id="id576">
+<posattr x="-73.55417" y="63.85278"/>
+<fillattr colour="White" pattern="Solid" filled="false"/>
+<lineattr type="solid" thick="1" colour="navy"/>
+<textattr font="helvetica" size="12" just="centered" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+<text>Send</text>
+<ellipse h="8.46659" w="19.40276"/>
+<type id="id578">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="navy"/>
+      <fillattr colour="White" pattern="Solid" filled="false"/>
+      <posattr x="-85.57066" y="58.16424"/>
+      <textattr font="helvetica" size="9" just="left" colour="navy" bold="false" italic="true" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1480.90683" voffset="-180.67928"/>
+      
+      <text>INTxDATA</text>
+    </type>
+</place>
+
+
+  
+  <place id="id570">
+<posattr x="-73.55417" y="2.46944"/>
+<fillattr colour="White" pattern="Solid" filled="false"/>
+<lineattr type="solid" thick="1" colour="navy"/>
+<textattr font="helvetica" size="12" just="centered" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+<text>NextSend</text>
+<ellipse h="8.46659" w="26.10526"/>
+<type id="id572">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="navy"/>
+      <fillattr colour="White" pattern="Solid" filled="false"/>
+      <posattr x="-85.87665" y="-1.98437"/>
+      <textattr font="helvetica" size="9" just="left" colour="navy" bold="false" italic="true" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1480.90442" voffset="-180.67928"/>
+      
+      <text>INT</text>
+    </type>
+<initmark id="id569">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="navy"/>
+      <fillattr colour="White" pattern="Solid" filled="false"/>
+      <posattr x="-86.08880" y="7.01146"/>
+      <textattr font="helvetica" size="9" just="left" colour="navy" bold="false" italic="false" underlin="true" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1480.90442" voffset="-180.67928"/>
+      
+      <text>1</text>
+    </initmark>
+</place>
+
+
+  
+  <place id="id565">
+<posattr x="-41.09861" y="-27.86944"/>
+<fillattr colour="white" pattern="solid" filled="false"/>
+<lineattr type="solid" thick="2" colour="navy"/>
+<textattr font="helvetica" size="12" just="centered" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+<text>D</text>
+<ellipse h="8.46662" w="8.46665"/>
+<type id="id563">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="navy"/>
+      <fillattr colour="white" pattern="solid" filled="false"/>
+      <posattr x="-41.78331" y="-34.43995"/>
+      <textattr font="helvetica" size="9" just="left" colour="navy" bold="false" italic="true" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1481.27907" voffset="-180.67928"/>
+      
+      <text>INT</text>
+    </type>
+</place>
+
+
+  
+  <place id="id559">
+<posattr x="-41.09861" y="32.80833"/>
+<fillattr colour="white" pattern="solid" filled="false"/>
+<lineattr type="solid" thick="2" colour="navy"/>
+<textattr font="helvetica" size="12" just="centered" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+<text>A</text>
+<ellipse h="8.46662" w="8.46665"/>
+<type id="id557">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="navy"/>
+      <fillattr colour="white" pattern="solid" filled="false"/>
+      <posattr x="-40.65883" y="39.64338"/>
+      <textattr font="helvetica" size="9" just="left" colour="navy" bold="false" italic="true" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1480.90683" voffset="-180.67928"/>
+      
+      <text>INTxDATA</text>
+    </type>
+</place>
+
+
+  
+  <aux id="id553">
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="0" colour="blue"/>
+    <fillattr colour="White" pattern="Solid" filled="false"/>
+    <posattr x="24.78264" y="-3.70417"/>
+    <line points="(37.92361,45.50833)(37.92361,19.93194)(11.64167,13.22917)(11.64167,-8.11389)(37.92361,-16.22778)(37.92361,-52.91667)"/>
+    <layering type="copy"/>
+    
+    
+  </aux>
+
+
+  
+  <place id="id554">
+<posattr x="61.38333" y="63.85278"/>
+<fillattr colour="White" pattern="Solid" filled="false"/>
+<lineattr type="solid" thick="1" colour="navy"/>
+<textattr font="helvetica" size="12" just="centered" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+<text>Received</text>
+<ellipse h="8.46659" w="22.22483"/>
+<type id="id543">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="navy"/>
+      <fillattr colour="White" pattern="Solid" filled="false"/>
+      <posattr x="51.75980" y="57.98785"/>
+      <textattr font="helvetica" size="9" just="left" colour="navy" bold="false" italic="true" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1480.90442" voffset="-180.67928"/>
+      
+      <text>DATA</text>
+    </type>
+<initmark id="id537">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="navy"/>
+      <fillattr colour="White" pattern="Solid" filled="false"/>
+      <posattr x="48.63924" y="67.51285"/>
+      <textattr font="helvetica" size="9" just="left" colour="navy" bold="false" italic="false" underlin="true" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1480.90442" voffset="-180.67928"/>
+      
+      <text>""</text>
+    </initmark>
+</place>
+
+
+  
+  <place id="id538">
+<posattr x="29.10417" y="2.46944"/>
+<fillattr colour="white" pattern="solid" filled="false"/>
+<lineattr type="solid" thick="1" colour="navy"/>
+<textattr font="helvetica" size="12" just="centered" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+<text>NextRec</text>
+<ellipse h="8.46659" w="23.63590"/>
+<type id="id541">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="navy"/>
+      <fillattr colour="White" pattern="Solid" filled="false"/>
+      <posattr x="20.07713" y="-3.21910"/>
+      <textattr font="helvetica" size="9" just="left" colour="navy" bold="false" italic="true" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1481.27907" voffset="-180.67928"/>
+      
+      <text>INT</text>
+    </type>
+<initmark id="id542">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="navy"/>
+      <fillattr colour="White" pattern="Solid" filled="false"/>
+      <posattr x="19.06717" y="7.89340"/>
+      <textattr font="helvetica" size="9" just="left" colour="navy" bold="false" italic="false" underlin="true" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1481.27907" voffset="-180.67928"/>
+      
+      <text>1</text>
+    </initmark>
+</place>
+
+
+  
+  <place id="id534">
+<posattr x="38.10000" y="32.80833"/>
+<fillattr colour="white" pattern="solid" filled="false"/>
+<lineattr type="solid" thick="2" colour="navy"/>
+<textattr font="helvetica" size="12" just="centered" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+<text>B</text>
+<ellipse h="8.46662" w="8.46665"/>
+<type id="id536">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="navy"/>
+      <fillattr colour="white" pattern="solid" filled="false"/>
+      <posattr x="38.36339" y="39.64338"/>
+      <textattr font="helvetica" size="9" just="left" colour="navy" bold="false" italic="true" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1480.90683" voffset="-180.67928"/>
+      
+      <text>INTxDATA</text>
+    </type>
+</place>
+
+
+  
+  <place id="id124">
+<posattr x="38.10000" y="-27.86944"/>
+<fillattr colour="white" pattern="solid" filled="false"/>
+<lineattr type="solid" thick="2" colour="navy"/>
+<textattr font="helvetica" size="12" just="centered" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+<text>C</text>
+<ellipse h="8.46662" w="8.46665"/>
+<type id="id101">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="navy"/>
+      <fillattr colour="white" pattern="solid" filled="false"/>
+      <posattr x="37.06252" y="-34.43995"/>
+      <textattr font="helvetica" size="9" just="left" colour="navy" bold="false" italic="true" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1480.90442" voffset="-180.67928"/>
+      
+      <text>INT</text>
+    </type>
+</place>
+
+
+  
+  <aux id="id122">
+    <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+    <lineattr type="solid" thick="0" colour="navy"/>
+    <fillattr colour="White" pattern="Solid" filled="false"/>
+    <posattr x="-72.49583" y="-51.32917"/>
+    <textattr font="helvetica" size="14" just="left" colour="navy" bold="true" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+    <label/>
+    <layering type="copy"/>
+    
+    <text>Sender</text>
+  </aux>
+
+
+  
+  <aux id="id119">
+    <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+    <lineattr type="solid" thick="0" colour="teal"/>
+    <fillattr colour="White" pattern="Solid" filled="false"/>
+    <posattr x="1.05833" y="-51.32917"/>
+    <textattr font="helvetica" size="14" just="left" colour="teal" bold="true" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+    <label/>
+    <layering type="copy"/>
+    
+    <text>Network</text>
+  </aux>
+
+
+  
+  <aux id="id120">
+    <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+    <lineattr type="solid" thick="0" colour="navy"/>
+    <fillattr colour="White" pattern="Solid" filled="false"/>
+    <posattr x="62.61805" y="-51.32917"/>
+    <textattr font="helvetica" size="14" just="left" colour="navy" bold="true" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+    <label/>
+    <layering type="copy"/>
+    
+    <text>Receiver</text>
+  </aux>
+
+
+  
+  <place id="id99">
+<posattr x="-6.70278" y="10.58333"/>
+<fillattr colour="white" pattern="solid" filled="false"/>
+<lineattr type="solid" thick="1" colour="teal"/>
+<textattr font="helvetica" size="12" just="centered" colour="teal" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+<text>SP</text>
+<ellipse h="8.46662" w="8.46665"/>
+<type id="id434">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="teal"/>
+      <fillattr colour="White" pattern="Solid" filled="false"/>
+      <posattr x="-14.39894" y="6.83505"/>
+      <textattr font="helvetica" size="9" just="left" colour="teal" bold="false" italic="true" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1481.27907" voffset="-180.67928"/>
+      
+      <text>Ten0</text>
+    </type>
+<initmark id="id123">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="teal"/>
+      <fillattr colour="White" pattern="Solid" filled="false"/>
+      <posattr x="-11.82908" y="13.71424"/>
+      <textattr font="helvetica" size="9" just="left" colour="teal" bold="false" italic="false" underlin="true" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1481.27907" voffset="-180.67928"/>
+      
+      <text>8</text>
+    </initmark>
+</place>
+
+
+  
+  <place id="id430">
+<posattr x="-6.70278" y="-5.64444"/>
+<fillattr colour="white" pattern="solid" filled="false"/>
+<lineattr type="solid" thick="1" colour="teal"/>
+<textattr font="helvetica" size="12" just="centered" colour="teal" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+<text>SA</text>
+<ellipse h="8.46662" w="8.46665"/>
+<type id="id437">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="teal"/>
+      <fillattr colour="White" pattern="Solid" filled="false"/>
+      <posattr x="-13.69338" y="-9.39273"/>
+      <textattr font="helvetica" size="9" just="left" colour="teal" bold="false" italic="true" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1480.90683" voffset="-180.67928"/>
+      
+      <text>Ten0</text>
+    </type>
+<initmark id="id419">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="teal"/>
+      <fillattr colour="White" pattern="Solid" filled="false"/>
+      <posattr x="-12.00547" y="-2.16076"/>
+      <textattr font="helvetica" size="9" just="left" colour="teal" bold="false" italic="false" underlin="true" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1480.90683" voffset="-180.67928"/>
+      
+      <text>8</text>
+    </initmark>
+</place>
+
+
+  
+  <aux id="id424">
+    <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+    <lineattr type="solid" thick="0" colour="navy"/>
+    <fillattr colour="White" pattern="Solid" filled="false"/>
+    <posattr x="3.52772" y="-75.84722"/>
+    <textattr font="helvetica" size="32" just="left" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+    <label/>
+    <layering type="copy"/>
+    
+    <text>Simple Protocol with Input/Output</text>
+  </aux>
+
+
+  
+  <place id="id425">
+<posattr x="-73.55417" y="125.94166"/>
+<fillattr colour="white" pattern="solid" filled="false"/>
+<lineattr type="solid" thick="2" colour="navy"/>
+<textattr font="helvetica" size="12" just="centered" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+<text>Start</text>
+<ellipse h="8.11380" w="14.46367"/>
+<type id="id433">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="navy"/>
+      <fillattr colour="white" pattern="solid" filled="false"/>
+      <posattr x="-81.94467" y="121.92141"/>
+      <textattr font="helvetica" size="9" just="left" colour="navy" bold="false" italic="true" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1480.90442" voffset="-180.67928"/>
+      
+      <text>E</text>
+    </type>
+<initmark id="id429">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="blue"/>
+      <fillattr colour="White" pattern="Solid" filled="false"/>
+      <posattr x="-81.75625" y="130.66007"/>
+      <textattr font="helvetica" size="9" just="left" colour="blue" bold="false" italic="false" underlin="true" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1480.90442" voffset="-180.67928"/>
+      
+      <text>e</text>
+    </initmark>
+</place>
+
+
+  
+  <trans id="id427">
+<posattr x="-73.55417" y="94.89722"/>
+<fillattr colour="White" pattern="Solid" filled="false"/>
+<lineattr type="solid" thick="2" colour="navy"/>
+<textattr font="helvetica" size="12" just="centered" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+<text>Initialise
+Packets - InitPack</text>
+<box h="13.40496" w="21.87130"/>
+<code id="id407">
+<posattr x="2.91155" y="106.89167"/>
+<fillattr colour="White" pattern="Solid" filled="false"/>
+<lineattr type="solid" thick="0" colour="blue"/>
+<textattr font="helvetica" size="10" just="left" colour="blue" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+<text>output packets;
+action
+let
+   val infile=TextIO.openIn(DSFile_NameDialog
+                  {prompt="Select Input File", okButtonLabel="Load",
+                    path="", writeBox=false});
+   val message=input_ms'INTxDATA(infile)
+in
+   TextIO.closeIn(infile);
+   message
+end handle ? =&gt; empty;
+      </text>
+</code>
+</trans>
+
+  
+
+  
+  <arc id="id412" orientation="ttop">
+<fillattr colour="navy" pattern="solid" filled="false"/>
+<lineattr type="solid" thick="2" colour="navy"/>
+<transend idref="id603"/>
+<placeend idref="id559"/>
+<annot id="id426">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="navy"/>
+      <fillattr colour="White" pattern="Solid" filled="false"/>
+      <posattr x="-53.57812" y="35.80694"/>
+      <textattr font="helvetica" size="9" just="left" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="-180.67958" voffset="0.00000"/>
+      
+      <text>(n,p)</text>
+    </annot>
+</arc>
+
+
+  
+  <arc id="id411" orientation="ptot">
+<fillattr colour="teal" pattern="solid" filled="false"/>
+<lineattr type="solid" thick="2" colour="teal"/>
+<transend idref="id600"/>
+<placeend idref="id559"/>
+<annot id="id405">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="teal"/>
+      <fillattr colour="White" pattern="Solid" filled="false"/>
+      <posattr x="-28.26632" y="35.80694"/>
+      <textattr font="helvetica" size="9" just="left" colour="teal" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="-180.67958" voffset="0.00000"/>
+      
+      <text>(n,p)</text>
+    </annot>
+</arc>
+
+
+  
+  <arc id="id394" orientation="ttop">
+<fillattr colour="teal" pattern="solid" filled="false"/>
+<lineattr type="solid" thick="2" colour="teal"/>
+<transend idref="id600"/>
+<placeend idref="id534"/>
+<annot id="id402">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="teal"/>
+      <fillattr colour="White" pattern="Solid" filled="false"/>
+      <posattr x="18.98385" y="39.59930"/>
+      <textattr font="helvetica" size="9" just="left" colour="teal" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="-180.67958" voffset="0.00000"/>
+      
+      <text>if Ok(s,r)
+then 1`(n,p)
+else empty</text>
+    </annot>
+</arc>
+
+
+  
+  <arc id="id408" orientation="bothdir">
+<fillattr colour="navy" pattern="solid" filled="false"/>
+<lineattr type="solid" thick="0" colour="navy"/>
+<transend idref="id603"/>
+<placeend idref="id576"/>
+<annot id="id393">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="navy"/>
+      <fillattr colour="White" pattern="Solid" filled="false"/>
+      <posattr x="-77.74340" y="50.27083"/>
+      <textattr font="helvetica" size="9" just="left" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="-180.67958" voffset="0.00000"/>
+      
+      <text>(n,p)</text>
+    </annot>
+</arc>
+
+
+  
+  <arc id="id380" orientation="ptot">
+<fillattr colour="navy" pattern="solid" filled="false"/>
+<lineattr type="solid" thick="2" colour="navy"/>
+<transend idref="id598" endpoint="id596"/>
+<placeend idref="id534"/>
+<annot id="id375">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="navy"/>
+      <fillattr colour="White" pattern="Solid" filled="false"/>
+      <posattr x="51.19687" y="35.80684"/>
+      <textattr font="helvetica" size="9" just="left" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="-180.67958" voffset="0.00000"/>
+      
+      <text>(n,p)</text>
+    </annot>
+<bendpoint serial="1">
+<textattr colour="Black" bold="false"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<fillattr colour="White" pattern="Solid"/>
+<posattr x="59.26667" y="32.80833"/>
+</bendpoint>
+</arc>
+
+
+  
+  <arc id="id383" orientation="ttop">
+<fillattr colour="navy" pattern="solid" filled="false"/>
+<lineattr type="solid" thick="0" colour="navy"/>
+<transend idref="id598" endpoint="id585"/>
+<placeend idref="id554" endpoint="id544"/>
+<annot id="id376">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="navy"/>
+      <fillattr colour="White" pattern="Solid" filled="false"/>
+      <posattr x="77.41267" y="38.87483"/>
+      <textattr font="helvetica" size="9" just="left" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="-180.67958" voffset="0.00000"/>
+      
+      <text>if n=k
+andalso
+p&lt;&gt;stop
+then str^p
+else str</text>
+    </annot>
+</arc>
+
+
+  
+  <arc id="id382" orientation="ttop">
+<fillattr colour="navy" pattern="solid" filled="false"/>
+<lineattr type="solid" thick="2" colour="navy"/>
+<transend idref="id598" endpoint="id586"/>
+<placeend idref="id124"/>
+<annot id="id365">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="navy"/>
+      <fillattr colour="White" pattern="Solid" filled="false"/>
+      <posattr x="68.99010" y="-18.75591"/>
+      <textattr font="helvetica" size="9" just="left" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="-180.67958" voffset="0.00000"/>
+      
+      <text>if n=k
+then k+1
+else k</text>
+    </annot>
+<bendpoint serial="1">
+<textattr colour="Black" bold="false"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<fillattr colour="White" pattern="Solid"/>
+<posattr x="59.26667" y="-27.86944"/>
+</bendpoint>
+</arc>
+
+
+  
+  <arc id="id373" orientation="ptot">
+<fillattr colour="teal" pattern="solid" filled="false"/>
+<lineattr type="solid" thick="2" colour="teal"/>
+<transend idref="id583"/>
+<placeend idref="id124"/>
+<annot id="id377">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="teal"/>
+      <fillattr colour="White" pattern="Solid" filled="false"/>
+      <posattr x="20.92413" y="-30.51528"/>
+      <textattr font="helvetica" size="9" just="left" colour="teal" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="-180.67958" voffset="0.00000"/>
+      
+      <text>n</text>
+    </annot>
+</arc>
+
+
+  
+  <arc id="id367" orientation="ptot">
+<fillattr colour="navy" pattern="solid" filled="false"/>
+<lineattr type="solid" thick="0" colour="navy"/>
+<transend idref="id598"/>
+<placeend idref="id538"/>
+<annot id="id359">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="navy"/>
+      <fillattr colour="White" pattern="Solid" filled="false"/>
+      <posattr x="43.39167" y="11.11250"/>
+      <textattr font="helvetica" size="9" just="left" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="-180.67958" voffset="0.00000"/>
+      
+      <text>k</text>
+    </annot>
+<bendpoint serial="1">
+<textattr colour="Black" bold="false"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<fillattr colour="White" pattern="Solid"/>
+<posattr x="42.86250" y="8.11389"/>
+</bendpoint>
+</arc>
+
+
+  
+  <arc id="id353" orientation="ttop">
+<fillattr colour="navy" pattern="solid" filled="false"/>
+<lineattr type="solid" thick="0" colour="navy"/>
+<transend idref="id598"/>
+<placeend idref="id538"/>
+<annot id="id354">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="navy"/>
+      <fillattr colour="White" pattern="Solid" filled="false"/>
+      <posattr x="47.55885" y="-8.55486"/>
+      <textattr font="helvetica" size="9" just="left" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="-180.67958" voffset="0.00000"/>
+      
+      <text>if n=k
+then k+1
+else k</text>
+    </annot>
+<bendpoint serial="1">
+<textattr colour="Black" bold="false"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<fillattr colour="White" pattern="Solid"/>
+<posattr x="43.56805" y="-2.11667"/>
+</bendpoint>
+</arc>
+
+
+  
+  <arc id="id355" orientation="ttop">
+<fillattr colour="teal" pattern="solid" filled="false"/>
+<lineattr type="solid" thick="2" colour="teal"/>
+<transend idref="id583"/>
+<placeend idref="id565"/>
+<annot id="id348">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="teal"/>
+      <fillattr colour="White" pattern="Solid" filled="false"/>
+      <posattr x="-23.59201" y="-35.01319"/>
+      <textattr font="helvetica" size="9" just="left" colour="teal" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="-180.67958" voffset="0.00000"/>
+      
+      <text>if Ok(s,r)
+then 1`n
+else empty</text>
+    </annot>
+</arc>
+
+
+  
+  <arc id="id349" orientation="ptot">
+<fillattr colour="navy" pattern="solid" filled="false"/>
+<lineattr type="solid" thick="2" colour="navy"/>
+<transend idref="id587"/>
+<placeend idref="id565"/>
+<annot id="id7">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="navy"/>
+      <fillattr colour="White" pattern="Solid" filled="false"/>
+      <posattr x="-52.10087" y="-30.51528"/>
+      <textattr font="helvetica" size="9" just="left" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="-180.67958" voffset="0.00000"/>
+      
+      <text>n</text>
+    </annot>
+</arc>
+
+
+  
+  <arc id="id343" orientation="ptot">
+<fillattr colour="navy" pattern="solid" filled="false"/>
+<lineattr type="solid" thick="0" colour="navy"/>
+<transend idref="id587"/>
+<placeend idref="id570"/>
+<annot id="id317">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="navy"/>
+      <fillattr colour="White" pattern="Solid" filled="false"/>
+      <posattr x="-78.05208" y="-11.11250"/>
+      <textattr font="helvetica" size="9" just="left" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="-180.67958" voffset="0.00000"/>
+      
+      <text>k</text>
+    </annot>
+<bendpoint serial="1">
+<textattr colour="Black" bold="false"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<fillattr colour="White" pattern="Solid"/>
+<posattr x="-77.08194" y="-9.87778"/>
+</bendpoint>
+</arc>
+
+
+  
+  <arc id="id11" orientation="ttop">
+<fillattr colour="navy" pattern="solid" filled="false"/>
+<lineattr type="solid" thick="0" colour="navy"/>
+<transend idref="id587"/>
+<placeend idref="id570"/>
+<annot id="id13">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="navy"/>
+      <fillattr colour="White" pattern="Solid" filled="false"/>
+      <posattr x="-67.44670" y="-11.11250"/>
+      <textattr font="helvetica" size="9" just="left" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="-180.67958" voffset="0.00000"/>
+      
+      <text>n</text>
+    </annot>
+<bendpoint serial="1">
+<textattr colour="Black" bold="false"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<fillattr colour="White" pattern="Solid"/>
+<posattr x="-69.85000" y="-12.70000"/>
+</bendpoint>
+</arc>
+
+
+  
+  <arc id="id333" orientation="ptot">
+<fillattr colour="navy" pattern="solid" filled="false"/>
+<lineattr type="solid" thick="0" colour="navy"/>
+<transend idref="id603"/>
+<placeend idref="id570"/>
+<annot id="id321">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="navy"/>
+      <fillattr colour="White" pattern="Solid" filled="false"/>
+      <posattr x="-78.55920" y="17.10972"/>
+      <textattr font="helvetica" size="9" just="left" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="-180.67958" voffset="0.00000"/>
+      
+      <text>n</text>
+    </annot>
+<bendpoint serial="1">
+<textattr colour="Black" bold="false"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<fillattr colour="White" pattern="Solid"/>
+<posattr x="-77.61111" y="16.05139"/>
+</bendpoint>
+</arc>
+
+
+  
+  <arc id="id325" orientation="ttop">
+<fillattr colour="navy" pattern="solid" filled="false"/>
+<lineattr type="solid" thick="0" colour="navy"/>
+<transend idref="id603"/>
+<placeend idref="id570"/>
+<annot id="id20">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="navy"/>
+      <fillattr colour="White" pattern="Solid" filled="false"/>
+      <posattr x="-67.44670" y="17.10972"/>
+      <textattr font="helvetica" size="9" just="left" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="-180.67958" voffset="0.00000"/>
+      
+      <text>n</text>
+    </annot>
+<bendpoint serial="1">
+<textattr colour="Black" bold="false"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<fillattr colour="White" pattern="Solid"/>
+<posattr x="-70.02639" y="16.05139"/>
+</bendpoint>
+</arc>
+
+
+  
+  <arc id="id331" orientation="ptot">
+<fillattr colour="navy" pattern="solid" filled="false"/>
+<lineattr type="solid" thick="0" colour="navy"/>
+<transend idref="id598" endpoint="id593"/>
+<placeend idref="id554" endpoint="id545"/>
+<annot id="id17">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="navy"/>
+      <fillattr colour="White" pattern="Solid" filled="false"/>
+      <posattr x="62.50967" y="39.15826"/>
+      <textattr font="helvetica" size="9" just="left" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="-180.67958" voffset="0.00000"/>
+      
+      <text>str</text>
+    </annot>
+</arc>
+
+
+  
+  <arc id="id36" orientation="bothdir">
+<fillattr colour="teal" pattern="solid" filled="false"/>
+<lineattr type="solid" thick="0" colour="teal"/>
+<transend idref="id583"/>
+<placeend idref="id430"/>
+<annot id="id21">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="teal"/>
+      <fillattr colour="White" pattern="Solid" filled="false"/>
+      <posattr x="-4.32153" y="-15.34583"/>
+      <textattr font="helvetica" size="9" just="left" colour="teal" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="-180.67958" voffset="0.00000"/>
+      
+      <text>s</text>
+    </annot>
+</arc>
+
+
+  
+  <arc id="id27" orientation="bothdir">
+<fillattr colour="teal" pattern="solid" filled="false"/>
+<lineattr type="solid" thick="0" colour="teal"/>
+<transend idref="id600"/>
+<placeend idref="id99"/>
+<annot id="id41">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="teal"/>
+      <fillattr colour="White" pattern="Solid" filled="false"/>
+      <posattr x="-3.79236" y="20.81389"/>
+      <textattr font="helvetica" size="9" just="left" colour="teal" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="-180.67958" voffset="0.00000"/>
+      
+      <text>s</text>
+    </annot>
+</arc>
+
+
+  
+  <arc id="id6" orientation="ptot">
+<fillattr colour="navy" pattern="solid" filled="false"/>
+<lineattr type="solid" thick="0" colour="navy"/>
+<transend idref="id427"/>
+<placeend idref="id425"/>
+<annot id="id53">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="navy"/>
+      <fillattr colour="White" pattern="Solid" filled="false"/>
+      <posattr x="-75.93542" y="112.18333"/>
+      <textattr font="helvetica" size="9" just="left" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="-180.67958" voffset="0.00000"/>
+      
+      <text>e</text>
+    </annot>
+</arc>
+
+
+  
+  <arc id="id40" orientation="ttop">
+<fillattr colour="navy" pattern="solid" filled="false"/>
+<lineattr type="solid" thick="0" colour="navy"/>
+<transend idref="id427"/>
+<placeend idref="id576"/>
+<annot id="id311">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="navy"/>
+      <fillattr colour="White" pattern="Solid" filled="false"/>
+      <posattr x="-80.34514" y="81.84444"/>
+      <textattr font="helvetica" size="9" just="left" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="-180.67958" voffset="0.00000"/>
+      
+      <text>packets</text>
+    </annot>
+</arc>
+
+</page>
+</cpnet>
+</workspaceElements>

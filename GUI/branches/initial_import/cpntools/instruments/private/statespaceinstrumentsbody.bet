@@ -1,0 +1,484 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../statespaceinstruments';
+
+-- EnterStateSpaceCommandEnterStateSpace:DoPart --
+do (# sheetPage: ^PageInstance;
+   do setBusyCursor; (*** LOCK-INTERACTION ***)
+      L: (# error_msg: ^Text;
+            ogpath, tmpogpath: ^text;
+            switchfile: ^text;
+            netHasTransitions, pageNameCollision, invalidMLPageName: @boolean;
+            table: ^NameTable;
+         do CannotEnterStateSpace -> getGlobalNames -> error_msg[];
+            error_msg.newline;
+            false -> netHasTransitions;
+            false -> pageNameCollision;
+            false -> invalidMLPageName;
+            target.content[] -> sheetPage[];
+            &NameTable[] -> table[];
+            sheetPage.thePage.net.scanCPNPages
+            (# theName: ^Text;
+               tmpErrorMsg: ^Text;
+               appendIllegalIdentifierTextToErrorAndLeaveLoop:
+                 (# typeThatDoesNotHaveLegalName: ^Text;
+                    illegalName: ^Text;
+                 enter (typeThatDoesNotHaveLegalName[],illegalName[])
+                 do &Text[]->tmpErrorMsg[];
+                    PagesMustBeMLIDs -> getGlobalNames -> tmpErrorMsg.putFormat
+                    (# 
+                    do typeThatDoesNotHaveLegalName[] -> s;
+                       illegalName[] -> s;
+                    #);                   
+                    tmpErrorMsg[]  -> error_msg.puttext;
+                    error_msg[] -> status.error;
+                    leave L;
+                 #);
+            do current.name -> theName[];
+               theName.reset;
+               (theName.copy).trim -> theName[];
+               (if (theName[] -> table.has) then 
+                   true -> pageNameCollision;
+                   PageNamesMustBeUnique -> getGlobalNames -> error_msg.puttext;
+                   error_msg[] -> status.error;
+                   leave L;
+                else 
+                   theName[] -> table.insert; 
+               if);
+
+               (if (current.name_error) or not (theName.isLegalMLIdentifier) then 
+                   ('Page',theName[]) -> appendIllegalIdentifierTextToErrorAndLeaveLoop;
+               if);
+
+               current.scanTransitions   
+               (# theTransition: ^Transition;
+               do  (* Nets without transitions cannot enter statespace
+                    * (bug 830) *)
+                  current[] -> theTransition[];
+                  (if theTransition.status=compiled then
+                      true -> netHasTransitions;
+                  if);
+                  (if theTransition.namestatus = incorrect then    
+                      &Text[] -> tmpErrorMsg[];
+                      TransitionNamesMustBeUnique -> getGlobalNames -> tmpErrorMsg.putFormat
+                      (# 
+                      do current.theName[] -> s;
+                      #);                      
+                      tmpErrorMsg[] -> error_msg.puttext;
+                      error_msg[] -> status.error;
+                      leave L;
+                  if);
+                  (if not (theTransition.theName.isLegalMLIdentifier) then
+                      ('Transition',theTransition.theName[]) 
+                        -> appendIllegalIdentifierTextToErrorAndLeaveLoop;
+                  if);
+                      
+               #);
+               
+               current.scanNodes
+               (# theNode: ^Node;
+               do (* Node names must be unique up to first whitespace.
+                   Non-unique names have red halo (highlight 3) *)
+                  current[] -> theNode[];
+                  (if theNode.namestatus = incorrect then
+                      &Text[] -> tmpErrorMsg[];
+                      PlaceNamesMustBeUnique -> getGlobalNames -> tmpErrorMsg.putFormat
+                      (# 
+                      do current.theName[] -> s;
+                      #); 
+                      tmpErrorMsg[] -> error_msg.puttext;
+                      error_msg[] -> status.error;
+                      leave L;
+                  if);
+                  (if (theNode.theName[] = NONE) OR (theNode.theName.length = 0) then
+                      AllNodesMustHaveNames -> getGlobalNames -> error_msg.puttext;
+                      error_msg[] -> status.error;
+                      leave L;
+                  if);
+                  (if not (theNode.theName.isLegalMLIdentifier) then
+                      ('Place',theNode.theName[]) 
+                        -> appendIllegalIdentifierTextToErrorAndLeaveLoop;
+                  if);
+                  
+               #);
+               current.scanSSArcs
+               (#
+               do true -> current.dead;
+               #);
+               current.scanSSNodes
+               (#
+               do true -> current.dead;
+               #);
+            #);
+
+            (if (not netHasTransitions) then
+                NetMustContainTransitions -> getGlobalNames -> error_msg.puttext;
+                error_msg[] -> status.error;
+                leave L;
+            if);
+            
+
+            &text[] -> ogpath[];
+            'val ogpath = "' -> ogpath.puttext;
+            'ogpath' -> options.lookuptext -> tmpogpath[];
+            (if tmpogpath[] = NONE then
+		    'cpnsim/statespacefiles/' -> relativeFile -> ogpath.puttext;
+            else
+            	    tmpogpath[] -> ogpath.puttext;
+            if);
+	    '";' -> ogpath.puttext;
+            ogpath[] -> sheetPage.thePage.net.ML.evaluate
+            (#
+               onMLException::
+                 (# 
+                 do ErrorSettingStatespacePath -> getGlobalNames -> error_msg.puttext;
+                    ' ' -> error_msg.puttext;
+                    ogpath[] -> error_msg.putline;
+                    message[] -> error_msg.putline;
+                    error_msg[] -> status.error;
+                    leave L;
+                 #)
+            #);
+            'Entering state space tool' -> fixedStatus.running;
+            fixedStatus.start;
+            (# mes: ^Text;
+            do (for i: 8 repeat
+                    EnteringStateSpaceMessage -> getGlobalNames -> mes[];
+                    ' [' -> mes.puttext;
+                    i -> mes.putint;
+                    ':8]' -> mes.puttext;
+                    mes[] -> fixedStatus.running;
+                    mes[] -> screen.putline;
+                    
+                    &text[] -> switchfile[];
+                    'use (ogpath^"switch' -> switchfile.puttext;
+                    i -> switchfile.putint;
+                    '.sml")' -> switchfile.puttext;
+                    
+                    switchfile[] -> sheetPage.thePage.net.ML.evaluate
+                    (#
+                       onMLException::
+                         (# 
+                         do MLErrorEnteringStateSpace -> getGlobalNames -> error_msg[];
+                            error_msg.newline;
+                            message[] -> error_msg.putline;
+                            error_msg[] -> status.error;
+                            leave L;
+                         #)
+                    #);
+               for);
+            #);
+            true -> sheetPage.thePage.net.statespaceEntered;
+            StateSpaceEnteredMessage -> getGlobalNames -> status.message;
+         #);      
+      fixedStatus.stop;
+      (if (sheetPage.thePage.net.stateSpaceNumber <> 0) then
+	  sheetPage.thePage.net.stateSpaceNumber + 1 -> sheetPage.thePage.net.stateSpaceNumber;
+       else
+	  1 -> sheetPage.thePage.net.stateSpaceNumber;
+      if);
+      UnsetBusyCursor; (*** UNLOCK-INTERACTION ***)
+   #);
+   
+-- EnterStateSpaceCommandApply:DoPart --
+do (# error_msg: ^Text;
+   do CannotEnterStateSpace -> getGlobalNames -> error_msg[];
+      error_msg.newline;
+      
+      (if true 
+       // target.content.thePage.net.status <> compiled then
+          NodesAreBeingCompiled -> getGlobalNames -> error_msg.puttext;
+          error_msg[] -> status.error;
+       else
+          EnterStateSpace;
+      if);
+   #);
+   
+-- SaveReportCommandApply:DoPart --
+do (# dialog: ^saveDialog;
+      sheetPage: ^PageInstance;
+      t, theText: ^Text;
+      noMLError: @boolean;
+   do (if (target.content.thePage.net.status = compiled) then
+          'Saving report' -> fixedStatus.running;
+          fixedStatus.start;
+          setBusyCursor;
+          target.content[] -> sheetPage[];
+          &Text[] -> theText[];
+          'OGSaveReport.SaveReport(' -> theText.putText;
+          (if ('stats' -> options.lookupBoolean) then 'true,' -> theText.putText else 'false,' -> theText.putText if);
+          (if ('intbounds' -> options.lookupBoolean) then 'true,' -> theText.putText else 'false,' -> theText.putText  if);
+          (if ('multbounds' -> options.lookupBoolean) then 'true,' -> theText.putText else 'false,' -> theText.putText if);
+          (if ('homemark' -> options.lookupBoolean) then 'true,' -> theText.putText else 'false,' -> theText.putText if);
+          (if ('deadmark' -> options.lookupBoolean) then 'true,' -> theText.putText else 'false,' -> theText.putText if);
+          (if ('deadTI' -> options.lookupBoolean) then 'true,' -> theText.putText else 'false,' -> theText.putText if);
+          (if ('liveTI' -> options.lookupBoolean) then 'true,' -> theText.putText else 'false,' -> theText.putText if);
+          (if ('fairness' -> options.lookupBoolean) then 'true,"' -> theText.putText else 'false,"' -> theText.putText if);
+          &saveDialog[] -> dialog[];
+          false -> noMLError;
+          dialog -> t[];
+          (if t[] <> NONE then
+              t[] -> convertBSlashToSlash -> theText.putText;
+              '")' -> theText.putText;
+              theText[] -> sheetPage.thePage.net.ML.evaluate
+              (# onMLException::
+                   (# theMsg: ^Text;
+                   do &Text[] -> theMsg[];
+                      'Error generating report:' -> theMsg.putline;
+                      message.reset;
+                      'Exception' -> message.findText
+                      (#
+                      do (inx,message.length) -> message.sub -> theMsg.putline;
+                      #);
+                      theMsg[] -> status.error;
+                      fixedstatus.stop;
+                      UnsetBusyCursor;
+                      true -> noMLError;
+                   #);
+              #);
+          if);
+          (if not noMLError then
+              fixedstatus.stop;
+              UnsetBusyCursor;
+              (if t[]<>none then
+                  'Report saved'->status.message;
+              if);
+          if);
+      if);
+   #);
+   
+-- SStoSimCommandRelevant:doPart --
+do (target.content.thePage.net.status = compiled) and
+   target.content.thePage.net.statespaceEntered 
+     -> value;
+   
+-- SimtoSSCommandRelevant:doPart --
+do ((target.content.thePage.net.status = compiled) and 
+   target.content.thePage.net.statespaceEntered) 
+     -> value;
+
+     (*************************************The new ml interface*****************************************)
+--SSMLHelperGetNodesSend:doPart--
+do 800 -> bis.putInt;
+   10 -> bis.putInt;
+   'nothing' -> bis.putString;
+   (for i: nodeNumbers.range repeat
+      nodeNumbers[i] -> bis.putInt;
+   for);
+   
+--SSMLHelperGetNodesRecieve:doPart--
+do (# exists, ssGenerated: @Boolean;
+      node: ^SSNode;
+   do ssIsGenerated -> ssGenerated;
+      bis.getInt -> nodes;
+      bis.getString;
+      &SSNodeList[] -> nodeList[];
+      nodeList.init;
+      (for i: nodes repeat
+      (bis[], ssGenerated) -> getNodeWithML -> (node[], exists);
+           (if exists then
+	       node[] -> nodeList.append;
+           if)
+      for);
+   #);
+   
+--SSMLHelperGetNodeWithML:doPart--
+do  (# 
+    do &SSNode[] -> theNode[];
+       theNode.init;
+       bis.getInt -> theNode.number;
+       bis.getBool -> exists;
+       (if exists then
+           bis.getBool -> theNode.processed;
+           bis.getBool -> theNode.fullyProcessed;
+	   bis.getInt -> theNode.MLXPos;
+	   bis.getInt -> theNode.MLYPos;
+           bis.getInt -> theNode.pred;
+           bis.getInt -> theNode.suc;
+           bis.getString -> theNode.descriptor[];
+           ssGenerated -> theNode.completeSS;
+       if);
+    #);
+   
+--SSMLHelperGetOutsSend:doPart--
+do 800 -> bis.putInt;
+   12 -> bis.putInt;
+   nodeNumber -> bis.putInt;
+   'nothing' -> bis.putString;
+   
+--SSMLHelperGetOutsReceive:doPart--
+do 
+   
+--SSMLHelperGetSuccessorsSend:doPart--
+do 800 -> bis.putInt;
+   12 -> bis.putInt;
+   nodeNumber -> bis.putInt;
+   'nothing' -> bis.putString;
+   
+--SSMLHelperGetPredecessorsSend:doPart--
+do 800 -> bis.putInt;
+   13 -> bis.putInt;
+   nodeNumber -> bis.putInt;
+   'nothing' -> bis.putString;
+   
+--SSMLHelperGetSuccessorsOrPredecessorsRecieve:doPart--
+do (# exists, ssGenerated: @Boolean;
+      arcs, nodes: @Integer;
+      arc: ^SSArc;
+      node: ^SSNode;
+      owner: ^SSNode;
+   do (*get rid of ssid*)
+      bis.getString;
+      
+      ssIsGenerated -> ssGenerated;
+      (bis[], ssGenerated) -> getNodeWithML -> (node[], exists);
+      (if exists then
+    	  bis.getInt -> arcs;
+    	  bis.getInt -> nodes;
+    	  &SSArcList[] -> arcList[];
+    	  arcList.init;
+    	  (for i: arcs repeat
+	     bis[] -> getArcWithML -> (arc[], exists);
+  	     (if exists then
+  		 arc[] -> arcList.append;
+  	     if);
+          for);
+	  &SSNodeList[] -> nodeList[]; 
+    	  nodeList.init;
+    	  (for i: nodes repeat
+    	     (bis[], ssGenerated) -> getNodeWithML -> (node[], exists);
+  	     (if exists then
+  		 node[] -> nodeList.append;
+  	     if)
+          for);
+      if);
+   #);
+ 
+--SSMLHelperGetArcWithML:doPart--
+do (# 
+      bendpoints, i: @Integer;
+      theBendPoint: ^BendPoint;
+   do &SSArc[] -> theArc[];
+      theArc.init;
+      bis.getInt -> theArc.number;
+      bis.getBool -> exists;
+      (if exists then
+          bis.getInt -> bendpoints;
+          (for i: bendpoints repeat
+               &Bendpoint[] -> theBendPoint[];
+               (bis.getInt, bis.getInt) -> theBendPoint.XY;
+               theArc[] -> theBendPoint.setArc;
+          for);
+          bis.getInt -> theArc.srcNode;
+          bis.getInt -> theArc.destNode;
+          bis.getString -> theArc.descriptor[];       
+      if);
+   #);
+   
+--SSMLHelperSSIsGeneratedSend:doPart--
+do 800 -> bis.putInt;
+   7 -> bis.putInt;
+   'nothing' -> bis.putString;
+
+--SSMLHelperSSIsGeneratedReceive:doPart--
+do (if bis.getInt = 1 then bis.getBool -> isGenerated if);
+
+--SSMLHelperGetArcsFromExpSend:doPart--
+do 800 -> bis.putInt;
+   15 -> bis.putInt;
+   'nothing' -> bis.putString;
+   MLExp[] -> bis.putString;
+
+--SSMLHelperGetArcsFromExpReceive:doPart--
+do (# arc: ^SSArc;
+      node: ^SSNode;
+      numArcs: @Integer;
+      exists, inList, ssGenerated: @Boolean;
+   do &SSArcList[] -> arcList[];
+      arcList.init;
+      &SSNodeList[] -> nodeList[];
+      nodeList.init;
+      ssIsGenerated -> ssGenerated;
+      (*get rid of ssid from string list*)
+      bis.getString;
+      bis.getBool -> success;
+      (if success then
+	  '' -> errorMessage[];
+	  bis.getInt -> numArcs;
+	  (for i: numArcs repeat
+	     bis[] -> getArcWithMl -> (arc[], exists);
+	     (if exists then
+		arc[] -> arcList.append;
+		(*put node in list if it is not allready there for both pred and suc node*)
+		(for i: 2 repeat
+		   false -> inList;
+		   (bis[], ssGenerated) -> getNodeWithML -> (node[], exists);
+		   nodeList.scan(# do inList OR (node.number = current.number) -> inList; #);
+		   (if exists AND (NOT inList) then
+		      node[] -> nodeList.append;
+		   if);
+		for);
+	     if);
+	  for);
+      else
+	 bis.getString -> errorMessage[];
+      if);
+   #);
+
+--SSMLHelperGetNodesFromExpSend:doPart--
+do 800 -> bis.putInt;
+   14 -> bis.putInt;
+   'nothing' -> bis.putString;
+   MLExp[] -> bis.putString;
+
+--SSMLHelperGetNodesFromExpReceive:doPart--
+do (# node: ^SSNode;
+      numNodes: @Integer;
+      exists, inList, ssGenerated: @Boolean;
+   do &SSNodeList[] -> nodeList[];
+      nodeList.init;
+      true -> ssGenerated;
+      (*get rid of ssid from string list*)
+      bis.getString;
+      bis.getBool -> success;
+      (if success then
+	  '' -> errorMessage[];
+	  bis.getInt -> numNodes;
+	  (for i: numNodes repeat
+	     (bis[], ssGenerated) -> getNodeWithMl -> (node[], exists);
+	     (if exists then
+		(*put node in list if it is not allready there*)
+		false -> inList;
+		nodeList.scan(# do inList OR (node.number = current.number) -> inList; #);
+		(if exists AND (NOT inList) then
+		    node[] -> nodeList.append;
+		if);
+	     if);
+	  for);
+      else
+	 bis.getString -> errorMessage[];
+      if);
+   #);

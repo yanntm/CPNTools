@@ -1,0 +1,1633 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../creationinstruments';
+
+INCLUDE '../deletioninstruments';
+
+-- ArcClippingInit:DoPart --
+do (if elm.getOrientation = TtoP then
+       thePlace.position -> (originalX, originalY);
+    else
+       theTransition.position -> (originalX, originalY);
+   if);
+   (if theTransition.isSubstituationTransition then
+       thePlace.scanAssignments
+       (# 
+       do (if current.getSubTransition = theTransition[] then
+              &AssignmentClipping[] -> theAssignmentClipping[];
+              (current.getPort, current.getSubTransition)
+                -> theAssignmentClipping.init;
+          if);
+       #);
+   if);   
+
+-- ArcClippingInsert:DoPart --
+do thePlace[] -> elm.setPlaceEnd;
+   theTransition[] -> elm.setTransEnd;
+   elm[] -> context.addArc;
+   elm[] -> thePlace.addArc;
+   elm[] -> theTransition.addArc;
+   elm.normalizeOrder;
+   
+   storage.scan
+   (#             
+   do elm[] -> current.insert;
+   #);
+   
+   (elm.getAnnotation).computePosition; 
+   
+   (if theAssignmentClipping[] <> none then
+       thePlace[] -> theAssignmentClipping.insert;
+   if);
+      
+-- ArcClippingRemove:DoPart --
+do storage.scanReverse
+   (#
+   do elm[] -> current.remove;
+   #);
+   elm[] -> context.removeArc;
+   elm[] -> thePlace.removeArc;
+   elm[] -> theTransition.removeArc;
+   (if theAssignmentClipping[] <> none then
+       thePlace[] -> theAssignmentClipping.remove;
+   if);
+   
+-- SSArcClippingInit:DoPart --
+do
+
+-- SSArcClippingInsert:DoPart --
+do (# ISSE: @Boolean;
+   do
+      source[] -> elm.setTransEnd;
+      destination[] -> elm.setPlaceEnd;
+      elm[] -> context.addSSArc;
+      elm[] -> source.addArc;
+      elm[] -> destination.addArc;
+      elm.normalizeOrder;
+      context.net.ignoreStateSpaceExit -> ISSE;
+      true -> context.net.ignoreStateSpaceExit;
+      storage.scan
+     	(#             
+     	do elm[] -> current.insert;
+     	#);
+      ISSE -> context.net.ignoreStateSpaceExit;
+      
+      (elm.getAnnotation).computePosition;
+      (if (NOT elm.deadInfo) AND ((context.Net.stateSpaceNumber <> ssNumber) OR (NOT context.net.stateSpaceEntered)) then
+	  true -> elm.dead;
+      if);
+   #);
+   
+-- SSArcClippingRemove:DoPart --
+do storage.scanReverse
+     (#
+     do elm[] -> current.remove;
+     #);
+
+   elm[] -> context.removeSSArc;
+   elm[] -> source.removeArc;
+   elm[] -> destination.removeArc;
+   
+-- InscriptionClippingInsert:DoPart --
+do context.semanticchanged;
+   inner insert;
+   elm[] -> context.onChanged;
+   
+-- InscriptionClippingRemove:DoPart --
+do (if NOT (context## = SSArc##) then  context.semanticChanged; if);
+   inner remove;
+   elm[] -> context.onChanged;
+   
+-- TransActionClippingRemove:DoPart --
+do theOriginal[] -> context.setTransAction;
+
+-- TransChannelClippingRemove:DoPart --
+do theOriginal[] -> context.setTransChannel;
+   
+-- PlaceTypeClippingInsert:doPart --
+do context.getPlaceType -> theOriginal[];   
+   elm[] -> context.setPlaceType; 
+      
+-- PlaceTypeClippingRemove:doPart --
+do theOriginal[] -> context.setPlaceType; 
+   
+-- InitMarkClippingInsert:doPart --
+do context.getInitMark -> theOriginal[];
+   elm[] -> context.setInitMark;
+   context[] -> thePlace[];
+   
+-- InitMarkClippingRemove:doPart --
+do theOriginal[] -> context.setInitMark;
+   context[] -> thePlace[];
+   
+-- PortTypeClippingInsert:DoPart --
+do elm[] -> context.setPortType;
+   context.semanticChanged;
+   
+-- PortTypeClippingRemove:DoPart --
+do NONE -> context.setPortType;
+   context.semanticChanged;
+   
+-- ClippingFactory:doPart --
+do (# createClipping:
+        (# Element:< Object;
+           ClippingType:< Clipping;
+           elm: ^Element;
+           theClipping: ^ClippingType;
+        enter elm[]
+        do &ClippingType[] -> theClipping[];
+           inner
+        exit theClipping[]
+        #);
+      
+      createTransitionClipping: createClipping
+        (# Element:: Transition;
+           ClippingType:: TransitionClipping;
+           groups: ^GroupList;
+           guides: ^GuideLineList;
+        do elm[] -> MakeBelongToGroupList -> groups[];
+           elm[] -> MakeBelongToGuideList -> guides[];
+           (elm[], groups[], guides[]) -> theClipping.init;
+           elm.getTransGuard -> ClippingFactory -> theClipping.add;
+           elm.getTransTime -> ClippingFactory -> theClipping.add;
+           elm.getTransAction -> ClippingFactory -> theClipping.add;
+           elm.getTransChannel -> ClippingFactory -> theClipping.add;
+           elm.getTransPriority -> ClippingFactory -> theClipping.add;
+        #);
+      createAuxClipping: createClipping
+        (# Element:: Aux;
+           ClippingType:: AuxClipping;
+           groups: ^GroupList;
+           guides: ^GuideLineList;
+        do elm[] -> MakeBelongToGroupList -> groups[];
+           elm[] -> MakeBelongToGuideList -> guides[];
+           (elm[], groups[], guides[]) -> theClipping.init;
+        #);
+      createPlaceClipping: createClipping
+        (# Element:: Place;
+           ClippingType:: PlaceClipping;
+           groups: ^GroupList;
+           guides: ^GuideLineList;
+        do elm[] -> MakeBelongToGroupList -> groups[];
+           elm[] -> MakeBelongToGuideList -> guides[];
+           (elm[], groups[], guides[]) -> theClipping.init;
+           elm.getInitMark -> ClippingFactory -> theClipping.add;
+           elm.getPlaceType -> ClippingFactory -> theClipping.add;
+           (if elm.getPortType <> none then
+               elm.getPortType -> ClippingFactory -> theClipping.add;
+           if);
+           (if elm.getFusionInfo <> NONE then
+               elm.getFusionInfo -> ClippingFactory -> theClipping.add;
+           if);
+        #);
+      createArcClipping: createClipping
+        (# Element:: Arc;
+           ClippingType:: ArcClipping;
+        do (elm[], elm[] -> MakeBelongToGroupList, NONE, elm.placeEnd[], elm.transEnd[]) -> theClipping.init;
+           elm.getAnnotation -> ClippingFactory ->  theClipping.add;
+           (elm.getBends).scan
+           (# theBendPointClipping: ^BendPointClipping;
+              guides: ^GuideLineList;
+           do &BendPointClipping[] -> theBendPointClipping[];
+              current[] -> MakeBelongToGuideList -> guides[];
+              (current[], inx, guides[]) -> theBendPointClipping.init;
+              theBendPointClipping[] -> theClipping.add;
+           #);
+           elm.scanBendPoints
+           (#
+           do current[] -> elm.removeBendPoint;
+           #);
+           &BendPointList[] -> elm.setBends;
+        #);
+      createSSArcClipping: createClipping
+        (# Element:: SSArc;
+           ClippingType:: SSArcClipping;
+	do (elm[], elm[] -> MakeBelongToGroupList, NONE, elm.transEnd[], elm.placeEnd[], (elm.getCPNPage).net.stateSpaceNumber) -> theClipping.init;
+           elm.getAnnotation -> ClippingFactory ->  theClipping.add;
+           (elm.getBends).scan
+           (# theBendPointClipping: ^BendPointClipping;
+              guides: ^GuideLineList;
+           do &BendPointClipping[] -> theBendPointClipping[];
+              current[] -> MakeBelongToGuideList -> guides[];
+              (current[], inx, guides[]) -> theBendPointClipping.init;
+              theBendPointClipping[] -> theClipping.add;
+           #);
+           elm.scanBendPoints
+           (#
+           do current[] -> elm.removeBendPoint;
+           #);
+           &BendPointList[] -> elm.setBends;
+        #);
+      createSSNodeClipping: createClipping
+	(# Element:: SSNode;
+	   ClippingType:: SSNodeClipping;
+           groups: ^GroupList;
+           guides: ^GuideLineList;
+           number: @integer;
+        do elm[] -> MakeBelongToGroupList -> groups[];
+           elm[] -> MakeBelongToGuideList -> guides[];
+           (if elm.getCPNPage <> NONE then
+               (if (elm.getCPNPage).net[] <>  NONE then
+                   (elm.getCPNPage).net.stateSpaceNumber -> number;
+               if);
+           if);
+	   (elm[], groups[], guides[], number) -> theClipping.init;
+	#);
+      createPlaceTypeClipping: createClipping
+        (# Element:: PlaceType;
+           ClippingType:: PlaceTypeClipping;
+        do elm[] -> theClipping.init;
+        #);
+      createInitMarkClipping: createClipping
+        (# Element:: InitMark;
+           ClippingType:: InitMarkClipping;
+        do elm[] -> theClipping.init;
+        #);
+      createAnnotationClipping: createClipping
+        (# Element:: Annotation;
+           ClippingType:: AnnotationClipping;
+        do elm[] -> theClipping.init;
+        #);
+      createTransGuardClipping: createClipping
+        (# Element:: TransGuard;
+           ClippingType:: TransGuardClipping;
+        do elm[] -> theClipping.init;
+        #);
+      createTransPriorityClipping: createClipping
+        (# Element:: TransPriority;
+           ClippingType:: TransPriorityClipping;
+        do elm[] -> theClipping.init;
+        #);
+      createTransTimeClipping: createClipping
+        (# Element:: TransTime;
+           ClippingType:: TransTimeClipping;
+        do elm[] -> theClipping.init;
+        #);
+      createTransActionClipping: createClipping
+        (# Element:: TransAction;
+           ClippingType:: TransActionClipping;
+        do elm[] -> theClipping.init;
+        #);
+      createTransChannelClipping: createClipping
+        (# Element:: TransChannel;
+           ClippingType:: TransChannelClipping;
+        do elm[] -> theClipping.init;
+        #);
+      createPortTypeClipping: createClipping
+        (# Element:: PortType;
+           ClippingType:: PortTypeClipping;
+        do elm[] -> theClipping.init;
+        #);
+      createFusionInfoClipping: createClipping
+        (# Element:: FusionInfo;
+           ClippingType:: FusionInfoClipping;
+        do elm[] -> theClipping.init;
+        #);
+      createSubpageInfoClipping: createClipping
+        (# Element:: Entity;
+           ClippingType:: SubpageInfoClipping;
+        do elm[] -> theClipping.init;
+        #);
+      createGuideLineClipping: createClipping
+        (# Element:: Guideline;
+           ClippingType:: GuidelineCLipping;
+        do (elm[], none, none) -> theClipping.init;
+        #);
+      createDefaultClipping: createClipping
+        (# Element:: Entity;
+           ClippingType:: DefaultClipping;
+        do (elm[], NONE, NONE) -> theClipping.init;
+        #);
+         do (if elm##
+       //Transition## then
+          elm[] -> createTransitionClipping -> theClipping[];
+       //Place## then
+          elm[] -> createPlaceClipping -> theClipping[];
+       //Arc## then
+          elm[] -> createArcClipping -> theClipping[];
+       //Aux## then
+          elm[] -> createAuxClipping -> theClipping[];
+       //PortType## then
+          elm[] -> createPortTypeClipping -> theClipping[];
+       //FusionInfo## then
+          elm[] -> createFusionInfoClipping -> theClipping[];
+       //PlaceType## then
+          elm[] -> createPlaceTypeClipping -> theClipping[];
+       //SSNode## then
+          elm[] -> createSSNodeClipping -> theClipping[];
+       //SSArc## then
+          elm[] -> createSSArcClipping -> theClipping[];
+       //InitMark## then
+          elm[] -> createInitMarkClipping -> theClipping[];
+       //Annotation## then
+          elm[] -> createAnnotationClipping -> theClipping[];
+       //TransAction## then
+          elm[] -> createTransActionClipping -> theClipping[];
+       //TransChannel## then
+          elm[] -> createTransChannelClipping -> theClipping[];
+       //TransTime## then
+          elm[] -> createTransTimeClipping -> theClipping[];
+       //TransGuard## then
+          elm[] -> createTransGuardClipping -> theClipping[];
+       //TransPriority## then
+          elm[] -> createTransPriorityClipping -> theClipping[];
+       //SubPageInfo## then
+          elm[] -> createSubPageInfoClipping -> theClipping[];
+       //VerticalGuideline## 
+       //HorizontalGuideline## then
+          elm[] -> createGuideLineClipping -> theClipping[];
+       else
+          (if elm## <= Inscription## then
+              'Unknown inscription in clippingFactory: %s ' -> debug
+              (# do elm[] -> getPatternName -> s; #);
+           else
+              elm[] -> createDefaultClipping -> theClipping[];             
+          if);
+      if);
+   #);
+   ('theClipping[] <> none', theClipping[] <> none) -> assert (# #);
+  
+-- SetArcOrientationUndo:DoPart --
+do previousOrientation -> target.setOrientation;
+   target.SemanticChanged;
+   
+-- SetArcOrientationRedo:DoPart --
+do target.getOrientation -> previousOrientation;
+   (previousOrientation + 1) MOD 3 + BothDir -> target.setOrientation;
+   target.SemanticChanged;
+   
+-- CloneNode:doPart --
+do (# useGroupElementInstrument:
+        (# psuedoGroup: ^Group;
+           theGroupElementsInstrument: ^GroupElementsInstrument;
+	do &Group[] -> psuedoGroup[];
+           theTarget[] -> psuedoGroup.addElement;
+           prototype.getCPNPage -> theTarget.setCPNPage;
+           (if prototype##<=Transition## then
+               prototype[] -> QUA
+               (# as:: Transition;
+                  theTransitionTarget: ^Transition;
+               do theTarget[] -> theTransitionTarget[];
+                  thisObj.getSubpage -> theTransitionTarget.setSubpage;
+                  thisObj.getSubpageinfo -> theTransitionTarget.setSubpageinfo;
+               #);
+           if);
+	   (if prototype## <= SSArc## then
+	       prototype[] -> QUA
+               (# as:: SSArc;
+		  theSSArcTarget: ^SSArc;
+		  a, b: ^Node;
+	       do theTarget[] -> theSSArcTarget[];
+		  theSSArcTarget.placeEnd.clone -> a[];
+		  theSSArcTarget.transEnd.clone -> b[];
+		  prototype.getCPNPage -> a.setCPNPage;
+		  prototype.getCPNPage -> b.setCPNPage;
+		  a[] -> psuedoGroup.addElement;
+		  b[] -> psuedogroup.addElement;
+	       #);
+	   if);
+           prototype.getCPNPage -> psuedoGroup.setCPNPage;
+           &GroupElementsInstrument[] -> theGroupElementsInstrument[];
+	   (*******ERROR HERE - psuedogroup.size = 1, thePageElementsSize = 0*******)
+	   psuedoGroup[] -> theGroupElementsInstrument.init;
+	   theGroupElementsInstrument[] -> picker.activateInstrument;
+	#);
+      theTarget: ^PageElement;
+      theArcInstrument: ^ArcInstrument;
+      theInscriptionInstrument: ^InscriptionInstrument;      
+      picker: ^PickInstrument;            
+   do prototype.clone -> theTarget[];
+      (0, 0) -> theTarget.position;
+      theHand.active[] -> picker[];
+      (if true
+       // (theTarget## <= Arc##) AND (NOT(theTarget## <= SSArc##)) then
+          &ArcInstrument[] -> theArcInstrument[];
+	  theTarget[] -> theArcInstrument.init;
+	  theArcInstrument[] -> picker.activateInstrument;
+       // theTarget## <= Place## then
+	  useGroupElementInstrument;          
+       // theTarget## <= Aux## then
+	  useGroupElementInstrument;
+       // theTarget## <= Transition## then
+	  useGroupElementInstrument;
+       // theTarget## <= Annotation## then
+	  &AnnotationInstrument[] -> theInscriptionInstrument[];
+	  theTarget[] -> theInscriptionInstrument.init;
+	  theInscriptionInstrument[] -> picker.activateInstrument;  
+       // theTarget## <= PlaceType## then
+	  &PlaceTypeInstrument[] -> theInscriptionInstrument[];
+	  theTarget[] -> theInscriptionInstrument.init;
+	  theInscriptionInstrument[] -> picker.activateInstrument;  
+       // theTarget## <= InitMark## then
+	  &InitMarkInstrument[] -> theInscriptionInstrument[];
+	  theTarget[] -> theInscriptionInstrument.init;
+	  theInscriptionInstrument[] -> picker.activateInstrument;
+       // theTarget## <= TransAction## then
+	  &TransActionInstrument[] -> theInscriptionInstrument[];
+	  theTarget[] -> theInscriptionInstrument.init;
+	  theInscriptionInstrument[] -> picker.activateInstrument;
+       // theTarget## <= TransChannel## then
+	  &TransChannelInstrument[] -> theInscriptionInstrument[];
+	  theTarget[] -> theInscriptionInstrument.init;
+	  theInscriptionInstrument[] -> picker.activateInstrument;
+       // theTarget## <= TransTime## then
+	  &TransTimeInstrument[] -> theInscriptionInstrument[];
+	  theTarget[] -> theInscriptionInstrument.init;
+	  theInscriptionInstrument[] -> picker.activateInstrument;
+       // theTarget## <= TransPriority## then
+	  &TransPriorityInstrument[] -> theInscriptionInstrument[];
+	  theTarget[] -> theInscriptionInstrument.init;
+	  theInscriptionInstrument[] -> picker.activateInstrument;
+       // theTarget## <= TransGuard## then
+	  &TransGuardInstrument[] -> theInscriptionInstrument[];
+	  theTarget[] -> theInscriptionInstrument.init;
+	  theInscriptionInstrument[] -> picker.activateInstrument;
+       // theTarget## <= FusionInfo## then
+	  theTarget[] -> QUA 
+	  (# as::FusionInfo;
+	     theFusionInstrument: ^CloneFusionTagInstrument;
+	     fi: ^FusionInfo;
+	  do &CloneFusionTagInstrument[] -> theFusionInstrument[];
+	     prototype[] -> fi[];
+	     (thisObj[],fi.getPlace) -> theFusionInstrument.init;
+	     theFusionInstrument[] -> picker.activateInstrument;
+	  #);
+       // theTarget## <= PortType## then
+	  theTarget[] -> QUA
+	  (# as::PortType;
+	     theClonePortTypeInstrument: ^ClonePortTypeInstrument;
+	  do &ClonePortTypeInstrument[] -> theClonePortTypeInstrument[];
+	     (thisObj[],(thisObj.getCPNML).copy) ->theClonePortTypeInstrument.init;
+	     theClonePortTypeInstrument[] -> picker.activateInstrument;
+	  #);
+       // theTarget## <=SubPageInfo## then
+	  theTarget[] -> QUA
+	  (# as::SubPageInfo;
+	     theCloneSubpageTagInstrument: ^CloneSubpageTagInstrument;
+	     spi: ^SubPageInfo;
+	  do &CloneSubpageTagInstrument[] -> theCloneSubpageTagInstrument[];
+	     prototype[] -> spi[];
+	     (thisObj[],(spi.getTransition).getSubpage) -> theCloneSubpageTagInstrument.init;
+	     theCloneSubpageTagInstrument[] -> picker.activateInstrument;
+	  #);
+	// theTarget## <= SSNode## then
+	  useGroupElementInstrument;
+	// theTarget## <= SSArc## then
+	  useGroupElementInstrument; 
+       else
+	  'Tried to clone something unknown: %s' -> debugTemp
+	    (# do theTarget[] -> getPatternName -> s; #);
+      if);   
+   #);
+   
+	-- InscriptionCommandSwap:DoPart --
+	do INNER;
+	   (if not (InscriptionType## <= Annotation##) then
+	       theOldInscription.snap_id -> theNewInscription.snap_id;
+	       theOldInscription.anchorHorizontal -> theNewInscription.anchorHorizontal;
+	       theOldInscription.anchorVertical -> theNewInscription.anchorVertical;
+	       theOldInscription.x -> theNewInscription.x;
+	       theOldInscription.y -> theNewInscription.y;
+	   if);
+	   theOldInscription[] -> thePageElement.changed; (* to hide the old inscription *)
+	   theNewInscription[] -> thePageElement.changed; (* to display the new inscription *)
+	   thePageElement.semanticChanged;
+	   
+	-- ClonePlaceTypeCommandSwap:DoPart --
+	do theNewInscription[] -> thePageElement.setPlaceType;
+	   theNewInscription.onTextUpdated;
+	   
+	-- CloneInitMarkCommandSwap:DoPart --
+	do theNewInscription[] -> thePageElement.setInitMark;
+	   
+	-- IndexClonePageCommandApply:doPart --
+	do (# theInstanceNode: ^theIndex.InstanceNode;
+	      seenCPNPages: @IDDictionary (# Element:: CPNPage #);
+	      net: ^CPNet;
+	      assignNetToPageInstanceTree:
+		(# thePageInstance: ^PageInstance;
+		enter thePageInstance[]
+		do (if (thePageInstance.thePage.id[] -> seenCPNPages.lookup) = none then
+		       (thePageInstance.thePage.id[], thePageInstance.thePage[])
+			 -> seenCPNPages.associate;
+		       (if (thePageInstance.thePage.id[] -> net.lookupCPNPage) = NONE then
+			   thePageInstance.thePage[] ->  net.addCPNPage; 
+		       if);
+		       thePageInstance.thePage.scanPlaces
+		       (# 
+		       do (if current.getFusionSet <> none then
+			      current.getFusionSet -> net.addFusionSet;
+			  if);
+		       #);
+		       thePageInstance.scanSubpageInstances
+		       (# 
+		       do current[] -> assignNetToPageInstanceTree;
+		       #);
+		   if);
+		#);
+	   do true -> (target.instance->QUA(# as::PageInstance#)).thePage.clone -> new[];
+	      seenCPNPages.init;
+	      (target.instance->QUA(# as::PageInstance#)).thePage.net[] -> net[];      
+	      new[] -> net.addCPNPage; 
+	      new.createPageInstance -> theInstance[] -> assignNetToPageInstanceTree;
+	      new.semanticChangedOnCPNPageGraph;      
+	      theInstance[] -> new.prime[];
+	      true -> theInstance.notMLinstance;
+	      theInstance[] -> new.addPageInstance;
+	      &theIndex.InstanceNode[] -> theInstanceNode[];
+	      theInstance[] -> theInstanceNode.init;
+	      scan: theIndex.scanIndexNodes
+	      (# 
+	      do (if current## <= theIndex.netNode## then
+		     current[] -> theNode[];
+		     (if theNode.net[] = new.net[] then
+			 theInstanceNode[] -> theNode.addIndexNode;
+			 theIndex.layout;
+			 leave scan;
+		     if);
+		 if);
+	      #);
+	      &PageInstanceClipping[] -> theClipping[];
+	      (theInstance[], none) -> theClipping.init;
+	      theInstance.thePage.scanSubpageTree
+	      (# 
+	      do current.scanPlaces
+		 (# 
+		 do current.changedAssignmentToSocket;
+		 #);
+	      #);
+	      theInstanceNode[] -> makeTextEditor;
+	   #);
+	   
+	-- MakeBelongToGroupList:DoPart --
+	do &GroupList[] -> groups[];
+	   (if elm.getCPNPage <> NONE then (* the elm may not be on a page *)
+	       (elm.getCPNPage).scanGroups
+	       (# theGroup: ^Group;
+	       do current[] -> theGroup[];
+		  (if elm[] -> theGroup.isMember then
+		      theGroup[] -> groups.append;
+		  if);
+	       #);
+	   if);
+	   (if elm.getCPNet <> NONE then
+	       (elm.getCPNet).scanGlobalGroups
+	       (# theGroup: ^Group;
+	       do current[] -> theGroup[];
+		  (if elm[] -> theGroup.isMember then
+		      theGroup[] -> groups.append;
+		  if);
+	       #);
+	   if);
+	   
+	-- CreateGroupElements:doPart --
+	do (# clip: ^PageClip;
+	      com: ^CreateCommand;      
+	      thePageElementClipping: ^PageElementClipping;
+	      cloneElements: 
+		(* clones the elements, either by cloning subpages(to different net) 
+		 * or by making new instances for the subpages. /omega
+		 *)
+		(#            
+		do keepInstances 
+		     -> protoTypeElements.clone
+		     -> thePageElements[];
+		     thePageElements[] -> centerPageElements;
+		#);
+	      mergeFusionSets:
+		(# theFusionSet: ^FusionSet;
+		   getFusionSet: 
+		     (# name: ^Text;
+			theFusionSet: ^FusionSet;
+		     enter name[]
+		     do search: context.net.scanFusionSets
+			  (# 
+			  do (if current.getName -> name.equal then
+				 current[] -> theFusionSet[];
+				 leave search;
+			     if);
+			  #);
+		     exit theFusionSet[]
+		     #);
+		   addPlaceToFusionSet:
+		     (# thePlace: ^Place;
+		     enter thePlace[]
+		     do  (if thePlace.isFusionPlace then
+			     (thePlace.getFusionSet).getName
+			       -> getFusionSet
+			       -> theFusionSet[]; 
+			     (if theFusionSet[] <> none then
+				 thePlace[] -> (thePlace.getFusionSet).removePlace;
+				 thePlace[] -> theFusionSet.addPlace;
+			     if);
+			 if);
+		     #);
+		do clip.storage.scan
+		   (# 
+		   do (if true 
+		       // current.elm## <= Place## then
+			  current.elm[] -> addPlaceToFusionSet;
+		       // current.elm## <= Transition## then
+			  current.elm[] -> QUA
+			  (# as:: Transition;
+			  do (if thisObj.isSubstituationTransition then
+				 (thisObj.getSubpage).scanSubpageTree
+				 (# 
+				 do current.scanFusionPlaces
+				    (# 
+				    do current[] -> addPlaceToFusionSet;
+				    #);
+				 #);
+			     if);
+			  #);
+		      if);
+		   #);
+		#);
+	   do &PageClip[] -> clip[];
+	      context[] -> protoTypeElements.setCPNPage;
+	      cloneElements;      
+	      thePageElements.scan
+	      (# 
+	      do (if (current## <= Node##) or (current## <= Arc##) or (current## <= Aux##) then
+		     (if not (current## <= Arc##) then
+			 (current.x + at.x, current.y + at.y) -> current.position;
+		      else
+			 current[] -> QUA
+			 (# as::Arc;
+			 do thisObj.scanBendPoints
+			    (#
+			    do (current.x + at.x, current.y + at.y) -> current.position;
+			    #);
+			 #);
+		     if);
+		     current[] -> ClippingFactory -> thePageElementClipping[] -> clip.add;
+		     context[] -> MakeGroupList -> thePageElementClipping.groups[];
+		 if);         
+	      #);
+	      mergeFusionSets;
+	      thePageElements.scanFusionPlaces
+	      (# 
+	      do context.net[] -> (current.getFusionSet).net[];         
+	      #);      
+	      (* Here we have a context; a page, which is in a net, 
+	       * therefore, it is now possible to set the net for
+	       * all subpages *)
+	      thePageElements.scanSubstitutionTransitions
+	      (# 
+	      do context.net[] -> (current.getSubPage).setNet; 
+	      #);
+	      &CreateCommand 
+	      (# getName::< (# do 'Create elements' -> name[]; #); #)[] -> com[];
+	      com.init;
+	      context[] -> com.prepare;
+	      clip[] -> com.apply;
+	      (context.net[],com[]) -> registerCommand;
+	      (* starting text editoring, if we only have a single Node *)
+	      (if thePageElements.size = 1 then 
+		  (# aNode: ^PageElement;
+		  do thePageElements.first -> aNode[];
+		     (if aNode## <= Node## then
+			 aNode.startTextEditor;
+		     if);
+		  #);
+	      if);      
+	   #);
+	   
+	-- CreateArc:DoPart --
+	do (# theArcClipping: ^ArcClipping;
+	      clip: ^PageClip;
+	      thePlace: ^Place;
+	      theTransition: ^Transition;
+	      com: ^CreateCommand;
+	      groups: ^GroupList;
+	      slaves: ^PageElementList;
+	   do thePrototype.clone -> theArc[];
+	      (if source## = Place## then
+		  (if theArc.getOrientation <> BothDir then
+		      PtoT -> theArc.setOrientation;
+		  if);
+		  source[] -> thePlace[];
+		  destination[] -> theTransition[];
+	       else
+		  destination[] -> thePlace[];
+		  source[] -> theTransition[];
+		  (if theArc.getOrientation <> BothDir then
+		      TtoP -> theArc.setOrientation;
+		  if);
+	      if);
+	      &ArcClipping[] -> theArcClipping[];
+	      context[] -> MakeGroupList -> groups[];
+	      (theArc[], groups[], NONE, thePlace[], theTransition[]) -> theArcClipping.init;
+	      &PageClip[] -> clip[];
+	      theArcClipping[] -> clip.add;
+	      bends.scan
+	      (# theBendPointClipping: ^BendPointClipping;
+		 guides: ^GuideLineList;
+		 i: @integer;
+		 bend: ^BendPoint;
+	      do (if source## = Transition## then
+		     i + 1 -> i;
+		  else
+		     1 -> i;
+		 if);
+		 (context[], current.x, current.y) -> MakeGuideList -> (guides[], current.x, current.y);
+		 &BendPointClipping[] -> theBendPointClipping[];
+		 &BendPoint[] -> bend[];
+		 bend.init;
+		 current -> (bend.x, bend.y);
+		 (bend[], i, guides[]) -> theBendPointClipping.init;
+		 theBendPointClipping[] -> theArcClipping.add;
+	      #);
+	      theArc.getSlaves -> slaves[];
+	      slaves.scanReverse
+	      (#
+	      do (if NOT (current## <= BendPoint##) then
+		     current[] -> ClippingFactory -> clip.add;
+		 if);
+	      #);
+	      &CreateCommand[] -> com[];
+	      context[] -> com.prepare;
+	      clip[] -> com.apply;
+	      (context.net[],com[]) -> registerCommand;
+	      
+	      theArc.startTextEditor;
+	   #);
+	   
+	--CreateConnector:doPart--
+	do (#
+	   do &Arc[] -> theArc[];
+	      theArc.init;
+	      theArc.setAnnotation;
+	      true -> theArc.ignore;
+	      source[] -> theArc.setTransEnd;
+	      destination[] -> theArc.setPlaceEnd;
+	      theArc[] -> source.addArc;
+	      theArc[] -> destination.addArc;
+	      TtoP -> theArc.setOrientation;
+	      theArc[] -> context.addArc;
+	   #);
+
+--CreateSSConnector:doPart--
+do (# clipping: ^SSArcClipping;
+      clip: ^PageClip;
+      groups: ^GroupList;
+
+   do false -> allreadyInserted;
+      theScan: context.scanSSArcs
+      (#
+      do (if (NOT (current.dead)) AND (thePrototype.number = current.number) then
+	     true -> allreadyInserted;
+	     leave theScan;
+	 if);
+      #);
+      (if (NOT allreadyInserted) then
+    	  &SSArc[] -> theArc[];
+    	  thePrototype.number -> theArc.number;
+    	  thePrototype.srcNode -> theArc.srcNode;
+    	  thePrototype.destNode -> theArc.destNode;
+    	  thePrototype.descriptor[] -> theArc.descriptor[];
+    	  theArc.init;
+    	  theArc.setAnnotation;
+    	  COMPILED -> theArc.status;
+    	  true -> theArc.ignore;
+    	  TtoP -> theArc.setOrientation;
+    	  
+    	  (if source[] = destination[] then
+      		(# bend: ^BendPoint;
+      		   bends: ^BendPointList;
+      		   x, y: @real;
+      		do &BendPointList[] -> bends[];
+      		   source.position -> (x, y);
+      		   &BendPoint[] -> bend[];
+      		   bend.init;
+      		   (x + source.width / 2 + 20, y) -> bend.XY;
+      		   bend[] -> theArc.addBendPoint;
+      		   bend[] -> bends.append;
+      		   
+      		   &BendPoint[] -> bend[];
+      		   bend.init;
+      		   (x + source.width / 2 + 20, y + source.height / 2 + 20) -> bend.XY;
+      		   bend[] -> theArc.addBendPoint;
+      		   bend[] -> bends.append;
+      		   
+      		   &BendPoint[] -> bend[];
+      		   bend.init;
+      		   (x, y + source.height / 2 + 20) -> bend.XY;
+      		   bend[] -> theArc.addBendPoint;
+      		   bend[] -> bends.append;
+      		   bends[] -> theArc.setBends;
+      		#);
+    	  if);
+    	  
+    	  &SSArcClipping[] -> clipping[];
+    	  context[] -> MakeGroupList -> groups[];
+	  (theArc[], groups[], NONE, source[], destination[], context.net.stateSpaceNumber) -> clipping.init;
+    	  &PageClip[] -> clip[];
+    
+	  clipping[] -> clip.add;
+    	  
+    	  &CreateCommand[] -> com[];
+    	  context[] -> com.prepare;
+    	  clip[] -> com.apply;
+    	  (if doRegisterCommand then (context.net[],com[]) -> registerCommand; if);
+      if);
+   #);
+   
+	-- GroupElementsInstrumentApply:doPart --
+	do (# context: ^CPNPage;
+	      at: ^Point2D;
+	      elementsWillCauseCircularityInModel: BooleanValue
+		(# thePageElements: ^PageElementList;
+		enter thePageElements[]
+		do false -> value;
+		   thePageElements.scanSubstitutionTransitions
+		   (# 
+		   do value or
+		      (current.getSubpage -> context.hasInTopCPNPageTree)
+			-> value;
+		   #);
+		#);
+	      originalPageAndNewPageIsTheSame: BooleanValue
+		(# 
+		do (theGroup.getCPNet=context.net[]) -> value;
+		#);
+	      keepInstances: @boolean;
+	   do target.content.thePage[] -> context[];            
+	      originalPageAndNewPageIsTheSame -> keepInstances;
+	      &Point2D[] -> at[];
+	      theHand.anchor -> target.globalToLocal -> at;
+	      (if thePageElements[] -> elementsWillCauseCircularityInModel then
+		  'Operation not performed: Operation will cause circularity in the hierachy'
+      		  -> status.error; 
+	       else              
+		  (context[], 
+		  at[],           
+		  thePageElements[],
+		  keepInstances) 
+      		  -> CreateGroupElements;              
+	      if);
+	      finish;
+	   #);
+     
+-- GroupElementsInstrumentInit:doPart --
+do (# tmpFigure: ^FigureT;      
+do    &FigureT[] -> tmpFigure[];
+      true 
+        -> theGroup.cloneGroupElements
+        -> thePageElements[]
+        -> tmpFigure.init;
+      thePageElements[] -> centerPageElements;
+      tmpFigure[] -> instrumentCursor.setFigure;
+      tmpFigure[] -> instrumentIcon.setFigure;
+   #);
+   
+-- GroupElementsInstrumentCancel:doPart --
+do thePageElements.scanFusionPlaces
+   (# 
+   do current[] -> (current.getFusionSet).removePlace;
+   #);
+   
+-- CenterPageElements:doPart --
+do (# xc,yc: @real;
+   do thePageElements.calcAvgXY -> (xc,yc);
+      thePageElements.scan 
+      (#
+      do (if not (current## <= Arc##) then
+             (current.x - xc, current.y - yc) -> current.position;
+             (current.getRegions).scan 
+             (# 
+             do (current.x - xc, current.y - yc) -> current.position; 
+             #);
+         if);
+         (if current## <= Arc## then
+             current[] -> QUA
+             (# as::Arc;
+             do thisObj.scanBendPoints 
+                (# 
+                do (current.x - xc, current.y - yc) -> current.position; 
+                #);
+                (thisObj.getAnnotation).computePosition;
+             #);             
+         if);
+      #);
+   #);
+   
+-- PageElementClippingInsert:DoPart --
+do INNER;
+   (if groups[] <> NONE then
+       groups.scan
+       (# theGroup: ^Group;
+       do current[] -> theGroup[];
+          elm[] -> theGroup.addElement;
+          (theGroup[] -> elm.getElementsToAddToGroupWithThisElement).scan
+          (# 
+          do current[] -> theGroup.addElement;
+          #);
+       #);
+   if);
+   (if guides[] <> NONE then
+       guides.scan
+       (#
+       do elm[] -> current.AddGuideElement;
+       #);
+   if);
+   
+-- PageElementClippingRemove:DoPart --
+do (if guides[] <> NONE then
+       guides.scan
+       (#
+       do elm[] -> current.RemoveGuideElement;
+       #);
+   if);
+   (if groups[] <> NONE then
+       groups.scan
+       (# theGroup: ^Group;
+       do current[] -> theGroup[];
+          elm[] -> theGroup.removeElement;
+          (theGroup[] -> elm.getElementsToAddToGroupWithThisElement).scan
+          (# 
+          do current[] -> theGroup.removeElement;
+          #);
+       #);
+   if);
+   INNER;
+   
+-- PlaceClippingInit:DoPart --
+do elm.scanAssignments
+   (# theAssignment: ^Assignment;
+      theClipping: ^AssignmentClipping;
+      theCommand: ^AssignPortSocketCommand;
+   do current[] -> theAssignment[];
+      &AssignmentClipping[] -> theClipping[];
+      (theAssignment.getPort, theAssignment.getSubTransition) -> theClipping.init;
+      
+      &AssignPortSocketCommand[] -> theCommand[];
+      theAssignment.getSocket -> theCommand.prepare;
+      theClipping[] -> theCommand.clip[];
+      theCommand[] -> theAssignmentCommands.append;
+   #);
+   
+-- PlaceClippingRemove:DoPart --
+do storage.scanReverse
+   (#
+   do elm[] -> current.remove;
+   #);
+   theAssignmentCommands.scan
+   (# 
+   do current.undo;
+   #);
+   elm.delete;
+   
+-- deletepage:doPart--
+do (theTransition[], thePage[], true) -> CreateDeletePageCommand -> theCommand[]; 
+   &CommandList[] -> removeMonitors[];
+   thePage.scanNodes
+   (# 
+   do (current[],removeMonitors[]) -> deleteMonitorsFromNode;
+   #);
+   theCommand.apply;
+   &Command
+   (# getName:: (# do theCommand.getName -> name[] #);
+      apply:: (# do redo; #);
+      redo:: (# do removeMonitors.redo; theCommand.redo; #);
+      undo:: (# do theCommand.undo; removeMonitors.undo; #);
+   #)[] -> compositeCommand[];
+   (thePage.net[],compositeCommand[]) -> registerCommand;
+   
+-- TransitionClippingInsert:doPart --
+do elm[] -> context.addTransition;
+   storage.scan
+   (#
+   do elm[] -> current.insert;
+   #);
+   (if (theDeletePageCommand[] = none) and
+       (elm.getSubpage <> none) then
+       
+       (elm[], elm.getSubpage, false) -> CreateDeletePageCommand -> theDeletePageCommand[];
+   if);
+   (if theDeletePageCommand[] <> none then
+       theDeletePageCommand.undo;
+   if);
+   
+-- TransitionClippingRemove:doPart --
+do storage.scanReverse
+   (# 
+   do elm[] -> current.remove;
+   #);
+   (if (theDeletePageCommand[] = none) and
+       (elm.getSubpage <> none) then
+       (elm[], elm.getSubpage, true) -> CreateDeletePageCommand -> theDeletePageCommand[];
+   if);
+   (if theDeletePageCommand[] <> none then
+       theDeletePageCommand.redo;
+   if);
+   elm.delete;
+   
+-- CloneGroupElementsInstrumentDanglingArcs:DoPart --
+do search: theGroup.scanElements
+     (#
+     do (if current## <= Arc## then
+            current[] -> QUA
+            (# as::Arc;
+            do (if (not (thisObj.placeEnd[] -> theGroup.isMember)) or 
+                   (not (thisObj.transEnd[] -> theGroup.isMember)) then
+                   true -> value;
+                   leave search;
+               if);
+            #);
+        if);
+     #);
+   
+-- CloneGroupElementsInstrumentRelevant:DoPart --
+do (not ((target.getCPNPage).getSelectedGroup).isGlobal) and
+   (not ((target.getCPNPage).getSelectedGroup).all) and 
+   ((target[] -> ((target.getCPNPage).getSelectedGroup).isMember) or
+   (target[] -> ((target.getCPNPage).getSelectedGroup).hasHierarchyInfo)) -> value;
+   
+-- MoveToSubPageInstrumentMoveTransitionToSubpageInstrument:DoPart --
+do ((target.getCPNPage).getSelectedGroup).all and
+   target.hasArcs 
+     -> value;
+      
+-- MoveGroupToSubpage:DoPart --
+do (# theMoveGroupToSubpageCommand: ^MoveGroupToSubpageCommand;
+      theNet: ^CPNet;
+   do theGroup[] 
+        -> BuildMoveGroupToSubpage
+        -> theMoveGroupToSubpageCommand[];
+      (if theMoveGroupToSubpageCommand[] <> none then
+          (theGroup.getCPNPage).net[] -> theNet[];
+          theMoveGroupToSubpageCommand.apply;
+          (theNet[],theMoveGroupToSubpageCommand[]) -> registerCommand;
+       else
+          GroupNotValidForAMoveToSubpageOperation 
+            -> getGlobalNames
+            -> status.error;
+      if);
+   #);
+   
+-- BuildMoveGroupToSubpageGenerateNewName:DoPart --
+do (# thePageElement: ^PageElement;
+      ok: @boolean;
+      convertNewlines:
+        (# theText: ^Text;
+           pre: @Pcre;
+           ok: @boolean;
+        enter theText[]
+        do '[\n]' -> pre;
+           (if theText[] -> pre.match then
+               (theText[], ' ') -> pre.replaceAll -> (ok, theText[]);
+           if);
+        exit theText[]
+        #);
+   do theGroup.firstElement -> thePageElement[];
+      (if (theGroup.numberOfElements = 1) and
+          (thePageElement## = Transition##) then
+          thePageElement[] -> QUA
+          (# as:: Transition;
+          do (if '' -> thisObj.theName.equal then
+                 'New Subpage' -> theNameOfTransition[];
+                 'New Subpage' -> theNameOfSubpage[];
+              else
+                 thisObj.theName.copy -> theNameOfTransition[];
+                 thisObj.theName.copy 
+                   -> convertNewlines
+                   -> theNameOfSubpage[];
+             if);
+          #);
+       else
+          theGroup.theName.copy -> theNameOfTransition[];
+          theGroup.theName.copy -> theNameOfSubpage[];
+      if);   
+   #);
+   
+-- MoveGroupToSubpageCalculateInternalAndExternalArcs:doPart --
+do (# groupElements: @IDDictionary;     
+      ArcDictionary: IDDictionary (# Element:: Arc; #);
+      internals, externals: ^ArcDictionary;
+   do groupElements.init;
+      &ArcDictionary[] -> internals[];
+      internals.init;
+      &ArcDictionary[] -> externals[];
+      externals.init;
+      
+      places.scan
+      (# 
+      do (current.id[], current[]) -> groupElements.associate;
+      #);
+      transitions.scan
+      (# 
+      do (current.id[], current[]) -> groupElements.associate;
+      #);        
+      
+      places.scan
+      (# 
+      do current.scanArcs
+         (# 
+         do (if (current.transEnd.id[] -> groupElements.lookup) <> none then
+                (current.id[], current[]) -> internals.associate;
+             else
+                (current.id[], current[]) -> externals.associate;
+            if);
+         #);
+      #);
+      transitions.scan
+      (# 
+      do current.scanArcs
+         (# 
+         do (if ((current.id[] -> internals.lookup) = none) and
+                ((current.id[] -> externals.lookup) = none) then
+                (if (current.placeEnd.id[] -> groupElements.lookup) <> none then
+                    (current.id[], current[]) -> internals.associate;
+                 else
+                    (current.id[], current[]) -> externals.associate;
+                if);
+            if);
+         #);
+      #);
+      
+      &ArcList[] -> internalArcs[];
+      internalArcs.init;        
+      internals.scanAssociations
+      (# 
+      do e[] -> internalArcs.append;
+      #);
+      
+      &ArcList[] -> externalArcs[];
+      externalArcs.init;
+      externals.scanAssociations
+      (# 
+      do e[] -> externalArcs.append;
+      #);
+   #);
+   
+-- MoveGroupToSubpageIsValid:doPart --   
+do (# hasMonitor:
+        (# theNode: ^Node;
+           result: @boolean;
+        enter theNode[]
+        do false -> result;
+           findMonitor:theNode.scanNodeInstances
+           (# 
+           do current.scanMonitors
+              (# 
+              do true -> result;
+                 leave findMonitor;
+              #);
+           #);
+        exit result
+        #);
+   (* All edge nodes of group must be transitions and
+    * places connected to the group must not be fusion places
+    *)
+   do externalArcs.size > 0 -> value;
+      (if value then
+          scan: externalArcs.scan
+            (# 
+            do (if (current.placeEnd[] -> theGroup.isMember) or
+                   ((current.getPlaceEnd).getFusionSet <> none) or 
+                   ((current.placeEnd[] -> theGroup.isMember) and
+                   ((current.getPlaceEnd).hasPortType)) then
+                   false -> value;
+                   leave scan;
+               if);
+            #);          
+      if);
+      (if value then
+          findMonitorsOnNodes:
+            (# 
+            do thePlaceList.scan
+               (# 
+               do (if (current[] -> hasMonitor) then
+                      false -> value;
+                      leave findMonitorsOnNodes;
+                  if);
+               #);
+               theTransitionList.scan
+               (# 
+               do (if (current[] -> hasMonitor) then
+                      false -> value;
+                      leave findMonitorsOnNodes;
+                  if);
+               #);
+            #);
+      if);
+   #);
+   
+-- MoveGroupToSubpageRemoveGroupFromPage:doPart --
+do theGroup[] -> MakeDeleteGroupCommand -> theDeleteGroupCommand[];
+      
+-- MoveGroupToSubpageRemoveGroupElements:doPart --
+do (* Remove group from page *)    
+   &PageClip[] -> theRemoveFromPageClip[];
+   &CommandList[] -> theRemovedSubpageCommands[];
+   externalArcs.scan
+   (# 
+   do current[] -> ClippingFactory -> theRemoveFromPageClip.add;
+   #);
+   internalArcs.scan
+   (# 
+   do current[] -> ClippingFactory -> theRemoveFromPageClip.add;
+   #);
+   thePlaceList.scan
+   (# 
+   do current[] -> ClippingFactory -> theRemoveFromPageClip.add;
+   #);
+   theTransitionList.scan
+   (# 
+   do current[] -> ClippingFactory -> theRemoveFromPageClip.add;
+      (if current.isSubstituationTransition then
+          (current[], current.getSubpage, true)
+            -> CreateDeletePageCommand 
+            -> theRemovedSubpageCommands.append;
+          (* Assignments are removed when a page is removed *)
+      if);
+   #);   
+   otherPageElements.scan
+   (# 
+   do current[] -> ClippingFactory -> theRemoveFromPageClip.add;
+   #);
+   
+-- MoveGroupToSubpageCalculateAverage:doPart --   
+do (* Calculate position of new substitution transition *)
+   (# count: @integer;
+   do 0 -> xPos -> yPos;
+      0 -> count;
+      theTransitionList.scan
+      (# 
+      do current.x + xPos -> xPos;
+         current.y + yPos -> yPos;
+         count + 1 -> count;
+      #);
+      thePlaceList.scan
+      (# 
+      do current.x + xPos -> xPos;
+         current.y + yPos -> yPos;
+         count + 1 -> count;
+      #);
+      otherPageElements.scan
+      (# 
+      do current.x + xPos -> xPos;
+         current.y + yPos -> yPos;
+         count + 1 -> count;
+      #);
+      xPos / count -> xPos;
+      yPos / count -> yPos;
+   #);
+   
+-- MoveGroupToSubpageInsertInsteadOfGroupElements:doPart --
+do (* Insert the new substitution transition and connect it to the surrounding places with arcs.
+      This is put on the page where the group is *)
+   (# theSubTransitionClipping: ^TransitionClipping;
+      thePageElement: ^PageElement;
+      width, height: @real;
+      createdArcsFromNodes: @NodeIDDictionary;
+   do &PageClip[] -> theInsertToPageClip[];
+      
+      theGroup.firstElement -> thePageElement[];
+      (if (theGroup.numberOfElements = 1) and
+          (thePageElement## = Transition##) then
+          thePageElement.clone -> theSubTransition[]
+       else
+          defaultTransition.clone -> theSubTransition[];
+      if);
+      theNameOfTransition.copy -> theSubTransition.theName[];
+      theSubTransition.theName[] -> arial.measureText -> (width, height);
+      (if width > theSubTransition.width then
+          width + 5 -> theSubTransition.width;
+      if);
+      (if height > theSubTransition.width then
+          height -> theSubTransition.width;
+      if);
+      calculateAverage -> theSubTransition.position;
+      theSubTransition[] -> ClippingFactory -> theSubTransitionClipping[];
+      theSubTransitionClipping[] -> theInsertToPageClip.add;
+      
+      createdArcsFromNodes.init;
+      externalArcs.scan
+      (# theArc: ^Arc;         
+         orientation: @integer;
+         calculatePortType:
+           (# thePlace: ^Place;
+              theTransition: ^Transition;
+              hasIn, hasOut: @boolean;              
+              orientation: @integer;
+           enter (thePlace[], theTransition[])
+           do false -> hasIn -> hasOut;
+              theTransition.scanArcs
+              (# 
+              do (if current.placeEnd[] = thePlace[] then
+                     (if current.getOrientation
+                      // PtoT then true -> hasIn;
+                      // TtoP then true -> hasOut;
+                      // BothDir then true -> hasIn -> hasOut;
+                     if);                            
+                 if);
+              #);
+              (if true
+               // hasIn and hasOut then BothDir -> orientation;
+               // hasIn then PtoT -> orientation;
+               // hasOut then TtoP -> orientation;
+              if);
+           exit orientation
+           #);
+      do (if ((current.placeEnd.id[] -> createdArcsFromNodes.lookup) = none) then             
+             -1 -> orientation;
+             scan: current.placeEnd.scanArcs
+             (# theOrientation: @integer;
+             do (if current.transEnd[] -> theGroup.isMember then
+                    (current.placeEnd[], current.transEnd[])
+                      -> calculatePortType
+                      -> theOrientation;
+                    (if true
+                     // (BothDir = theOrientation) then BothDir -> orientation; leave scan;
+                     // (PtoT = theOrientation) and (orientation = -1) then PtoT -> orientation;
+                     // (TtoP = theOrientation) and (orientation = -1) then TtoP -> orientation;
+                     // (PtoT = theOrientation) and (orientation = TtoP) then BothDir -> orientation; leave scan;
+                     // (TtoP = theOrientation) and (orientation = PtoT) then BothDir -> orientation; leave scan;
+                    if);
+                if);
+             #);
+             (current.placeEnd.id[], current.placeEnd[]) -> createdArcsFromNodes.associate;
+             defaultArc.clone -> theArc[];
+             current.placeEnd[] -> theArc.setPlaceEnd;
+             theSubTransition[] -> theArc.setTransEnd;
+             theArc[] -> ClippingFactory -> theInsertToPageClip.add;
+             orientation -> theArc.setOrientation;
+         if);
+      #);
+   #);
+   
+-- MoveGroupToSubpageInsertGroupElementsOnSubpage:doPart --
+do (# createdNodes: @IDDictionary;
+   do &CommandList[] -> theNewPortSocketAssignments[];
+      &CommandList[] -> theSetPortTypeCommands[];   
+      &CommandList[] -> theInsertedSubpageCommands[];
+      &CommandList[] -> theInsertedAssignmentCommands[];
+      createdNodes.init;
+      &PageClip[] -> theSubpageClip[];
+      
+      (* Clone internal structure of group *)
+      thePlaceList.scan
+      (# thePlaceClone: ^Place;
+      do current.clone -> thePlaceClone[];
+         (current.id[], thePlaceClone[]) -> createdNodes.associate;                    
+         thePlaceClone[] -> ClippingFactory -> theSubpageClip.add;
+      #);
+      theTransitionList.scan
+      (# theTransitionClone: ^Transition;
+      do current.clone -> theTransitionClone[];
+         (current.id[], theTransitionClone[]) -> createdNodes.associate;
+         theTransitionClone[] -> ClippingFactory -> theSubpageClip.add;
+      #);
+      otherPageElements.scan
+      (# thePageElementClone: ^PageElement;
+      do current.clone -> thePageElementClone[];
+         (current.id[], thePageElementClone[]) -> createdNodes.associate;
+         thePageElementClone[] -> ClippingFactory -> theSubpageClip.add;
+      #);
+      internalArcs.scan
+      (# thePlaceClone: ^Place;
+         theTransitionClone: ^Transition;
+         theArcClone: ^Arc;
+      do current.placeEnd.id[] -> createdNodes.lookup -> thePlaceClone[];
+         current.transEnd.id[] -> createdNodes.lookup -> theTransitionClone[];
+         
+         current.clone -> theArcClone[];
+         thePlaceClone[] -> theArcClone.setPlaceEnd;
+         theTransitionClone[] -> theArcClone.setTransEnd;
+         current.id[] -> theBendpointLists.lookup -> theArcClone.setBends;
+         theArcClone[] -> ClippingFactory -> theSubpageClip.add;         
+      #);             
+      
+      (*
+       * Clone ports from the surrounding sockets of the substitution transitions.
+       * Assign newly cloned port and to the existing socket.
+       * Connect port with group (a transition in the group) with same orientation as the
+       * socket connected to the substitution transition.
+        *)
+      externalArcs.scan
+      (# thePlaceClone: ^Place;
+         theAssignmentClipping: ^AssignmentClipping;
+         theAssignPortSocketCommand: ^AssignPortSocketCommand;
+         thePortClipping: ^PortClipping;
+         theSetPortTypeCommand: ^SetPortTypeCommand;
+         theTransitionClone: ^Transition;
+         theArcClone: ^Arc;
+         calculatePortType:
+           (# thePlace: ^Place;
+              thePortType: ^Text;
+              hasIn, hasOut: @Boolean;
+           enter thePlace[]
+           do false -> hasIn -> hasOut;
+              thePlace.scanArcs
+              (# 
+              do (if current.transEnd[] -> theGroup.isMember then
+                     hasIn or 
+                     (current.getOrientation = PtoT) or
+                     (current.getOrientation = BothDir) -> hasIn;
+                     hasOut or 
+                     (current.getOrientation = TtoP) or
+                     (current.getOrientation = BothDir) -> hasOut;
+                 if);
+              #);
+              (if hasIn and hasOut then
+                  'I/O' -> thePortType[];
+               else
+                  (if hasIn then
+                      'In' -> thePortType[];
+                   else
+                      'Out' -> thePortType[];           
+                  if);
+              if);
+           exit thePortType[]
+           #);
+      do current.placeEnd.id[] -> createdNodes.lookup -> thePlaceClone[];
+         (if thePlaceClone[] = none then
+             current.placeEnd.clone -> thePlaceClone[] -> ClippingFactory -> theSubpageClip.add;  
+             (current.placeEnd.id[], thePlaceClone[]) -> createdNodes.associate;
+             
+             &PortClipping[] -> thePortClipping[];
+             (thePlaceClone[], none) -> thePortClipping.init;
+             &SetPortTypeCommand[] -> theSetPortTypeCommand[];
+             current.placeEnd[] 
+               -> calculatePortType
+               -> theSetPortTypeCommand.prepare;
+             thePortClipping[] -> theSetPortTypeCommand.clip[];
+             theSetPortTypeCommand[] -> theSetPortTypeCommands.append;
+             
+             &AssignmentClipping[] -> theAssignmentClipping[];
+             (thePlaceClone[], theSubTransition[]) -> theAssignmentClipping.init;
+             &AssignPortSocketCommand[] -> theAssignPortSocketCommand[];
+             current.placeEnd[] -> theAssignPortSocketCommand.prepare;
+             theAssignmentClipping[] -> theAssignPortSocketCommand.clip[];
+             theAssignPortSocketCommand[] -> theNewPortSocketAssignments.append;
+         if);
+         
+         current.transEnd.id[] -> createdNodes.lookup -> theTransitionClone[];
+         current.clone -> theArcClone[];
+         current.getOrientation -> theArcClone.setOrientation;
+         thePlaceClone[] -> theArcClone.setPlaceEnd;
+         theTransitionClone[] -> theArcClone.setTransEnd;
+         
+         current.id[] -> theBendpointLists.lookup -> theArcClone.setBends;
+         theArcClone[] -> ClippingFactory -> theSubpageClip.add;
+      #);             
+      
+      (* 
+       * Insert subpages on substitution transition if any in the newly cloned
+       * substitution transition on the subpage.
+       * Recreate assignments from surrounding sockets to ports on subpage.
+       *)
+      theTransitionList.scan
+      (# theTransition, theTransitionClone: ^Transition;                
+      do (if current.isSubstituationTransition then
+             current.id[] -> createdNodes.lookup -> theTransitionClone[];
+             theSubpage[] -> theTransitionClone.setCPNPage;    
+             (current.getSubpage, theTransitionClone[])
+               -> CreateSubpageCommand
+               -> theInsertedSubpageCommands.append;
+             
+             current[] -> theTransition[];
+             (current.getSubpage).scanPlaces
+             (# 
+             do current.scanAssignments
+                (# 
+                do (if current.getSubTransition = theTransition[] then
+                       (current.getPort, 
+                       (current.getSocket).id[] -> createdNodes.lookup, 
+                       theTransitionClone[])
+                         -> buildAssignmentCommand
+                         -> theInsertedAssignmentCommands.append;
+                   if);
+                #);
+             #);
+         if);
+      #);
+   #);
+      
+-- MoveGroupToSubpageInsertSubpage:doPart --
+do (# theCPNPageClipping: ^CPNPageClipping;
+   do &CPNPageClipping[] -> theCPNPageClipping[];
+      &CPNPage[] -> theSubpage[];
+      theNameOfSubpage.copy -> theSubpage.theName[];            
+      (theGroup.getCPNPage).net[] -> theSubpage.init;
+      theSubpage[] -> theCPNPageClipping.init;
+      &SetSubpageCommand[] -> theSetSubpageCommand[];
+      theSubTransition[] -> theSetSubpageCommand.prepare;
+      theCPNPageClipping[] -> theSetSubpageCommand.clip[];            
+   #);
+    
+-- BuildMoveGroupToSubpage:doPart --
+do (# theDeleteGroupCommand: ^GroupRemovalCommand;      
+      theSetSubpageCommand: ^SetSubpageCommand;     
+      theInsertToPageClip, theRemoveFromPageClip, theSubpageClip: ^PageClip;
+      theNewPortSocketAssignments, theSetPortTypeCommands: ^CommandList;
+      theRemovedSubpageCommands, theInsertedSubpageCommands: ^CommandList;
+      theInsertedAssignmentCommands: ^CommandList;
+      copyBendPoints:
+        (# theArc: ^Arc;
+        enter theArc[]
+        do (theArc.id[], (theArc.getBends).copy) -> theBendpointLists.associate;
+        #);
+   do thePlaceList.init;
+      theTransitionList.init;
+      otherPageElements.init;
+      theBendpointLists.init;
+      theGroup.scanElements
+      (# 
+      do (if true
+          // current## <= Place## then current[] -> thePlaceList.append;
+          // current## <= Transition## then current[] -> theTransitionList.append;
+          // not (current## <= Arc##) and
+             not (current## <= Bendpoint##) and
+             not (current## <= Inscription##) then 
+             current[] -> otherPageElements.append;
+         if);
+      #);
+      (thePlaceList[], theTransitionList[])
+        -> CalculateInternalAndExternalArcs
+        -> (internalArcs[], externalArcs[]);
+      
+      (if isValid then
+          internalArcs.scan (# do current[] -> copyBendPoints; #); 
+          externalArcs.scan (# do current[] -> copyBendPoints; #); 
+          generateNewName;
+
+          removeGroupFromPage -> theDeleteGroupCommand[];
+          
+          removeGroupElements -> (theRemoveFromPageClip[], theRemovedSubpageCommands[]);
+          
+          insertInsteadOfGroupElements -> theInsertToPageClip[];
+          
+          insertSubpage -> theSetSubpageCommand[];                        
+          
+          insertGroupElementsOnSubpage ->
+          (theSubpageClip[], theNewPortSocketAssignments[], 
+          theSetPortTypeCommands[], theInsertedSubpageCommands[],
+          theInsertedAssignmentCommands[]);
+          
+          &MoveGroupToSubpageCommand[] -> theMoveGroupToSubpageCommand[];
+          (theGroup[], theDeleteGroupCommand[], theRemoveFromPageClip[],
+          theInsertToPageClip[], theSetSubpageCommand[],
+          theSubpageClip[], theSetPortTypeCommands[],
+          theNewPortSocketAssignments[], theSubpage[],
+          theGroup.getCPNPage, theRemovedSubpageCommands[],
+          theInsertedSubpageCommands[], theInsertedAssignmentCommands[]) 
+            -> theMoveGroupToSubpageCommand.init;         
+      if);
+   #);
+   
+-- MoveGroupToSubpageCommandRedo:doPart --
+do theDeleteGroupCommand.redo;
+   theSuperpage[] -> theRemoveFromPageClip.remove;
+   theSuperpage[] -> theInsertToPageClip.insert;
+   theSetSubpageCommand.redo;
+   theSubpage[] -> theSubpageClip.insert;
+   theInsertedSubpageCommands.redo;          
+   theSetPortTypeCommands.redo;
+   theNewPortSocketAssignments.redo;
+   theInsertedAssignmentCommands.redo;
+   
+-- MoveGroupToSubpageCommandUndo:doPart --
+do theInsertedAssignmentCommands.undo;
+   theNewPortSocketAssignments.undo;
+   theSetPortTypeCommands.undo;
+   theInsertedSubpageCommands.undo;
+   theSubpage[] -> theSubpageClip.remove;
+   theSetSubpageCommand.undo;
+   theSuperpage[] -> theInsertToPageClip.remove;
+   theSuperpage[] -> theRemoveFromPageClip.insert;
+   theDeleteGroupCommand.undo;          
+
+-- ToogleExplicitUndo:DoPart --
+do previousChoiceType -> target.setExplicit;
+   target.SemanticChanged;
+   
+-- ToogleExplicitRedo:DoPart --
+do target.isExplicit -> previousChoiceType;
+   (NOT previousChoiceType) -> target.setExplicit;
+   target.SemanticChanged;

@@ -1,0 +1,337 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../cpnet';
+
+INCLUDE '../../cpntools/wselements/cpnbinder';
+
+-- GroupTabPrivate: descriptor --
+(# theGroup: ^Group;
+#)
+
+-- GroupTabSetGroup: doPart --
+do theGroup[] -> private.theGroup[];
+   
+-- GroupTabGetGroup: doPart --
+do private.theGroup[] -> theGroup[];
+
+-- GroupTabUpdate:DoPart --
+do private.theGroup.theName[] -> label[];
+   (if father[] <> NONE then
+       father.UpdateTabs;
+   if);
+   
+-- GroupTabEditable: doPart --
+do (if private.theGroup[] <> NONE then
+       not private.theGroup.all -> isEditable;
+   if);
+   
+-- GroupTabinit: doPart --
+do BOTTOM -> placement;
+   (if private.theGroup[] <> NONE then
+       private.theGroup[] -> setGroup;
+   if);
+   
+-- GroupTabGetCPNPage:doPart --
+do THIS(GroupTab).father[] -> qua
+   (# as:: CPNSheet;
+   do thisObj.content.thePage[] -> thePage[];
+   #);
+   
+-- GroupPrivate:descriptor --
+(# theCPNPage: ^CPNPage;
+   theCPNet: ^CPNet;
+   groupElements: @PageElementIDDictionary;
+   groupTabs: @GroupTabIDDictionary; (* relation from sheet.id to grouptab *)
+   elmCanBelongToGroup:
+     (# elm: ^PageElement;
+     enter elm[]
+     exit ((elm## <= Arc##) or (elm## <= Node##) or (elm## <= Aux##) or (elm##<=Inscription##))
+     #);
+   init:
+     (# 
+     do groupElements.init;
+        groupTabs.init;
+     #);
+#)
+
+-- GroupContainsSSElement:DoPart --
+do false -> result;
+   scan:
+   private.groupElements.scan
+     (#
+     do
+  	(if (current## <= SSNode##) OR (Current## <= SSArc##) then
+  	    true -> result;
+	    leave scan;
+  	if)
+     #);
+
+-- GroupScanElements:doPart --
+do private.groupElements.scan
+   (# 
+   do current[] -> this(scanElements).current[];
+      inner scanElements;
+   #);
+   
+-- GroupScanNodes:DoPart --
+do private.groupElements.scan
+   (# 
+   do (if current## <= Node## then
+          current[] -> this(scanNodes).current[];
+          inner scanNodes;
+      if);
+   #);
+   
+-- GroupScanNodeInstances:DoPart --
+do private.groupElements.scan
+   (# thePlace: ^Place;
+      theTransition: ^Transition;
+   do (if true
+       // current## <= Place## then
+          current[] -> thePlace[];
+          thePlace.scanInstances
+          (# 
+          do current[] -> this(scanNodeInstances).current[];
+             inner scanNodeInstances;
+          #);
+       // current## <= Transition## then
+          current[] -> theTransition[];
+          theTransition.scanInstances
+          (# 
+          do current[] -> this(scanNodeInstances).current[];
+             inner scanNodeInstances;
+          #);
+      if);
+   #);
+   
+-- GroupNumberOfElements:DoPart --
+do private.groupElements.size -> value;
+   
+-- GroupFirstElement:DoPart --
+do private.groupElements.first -> thePageElement[];
+   
+-- GroupIsMember:doPart --
+do (thePageElement.id[] -> private.groupElements.lookup) <> none -> value;
+
+-- GroupHasHierarchyInfo:doPart --
+do (if true
+    // aPageElement## <= FusionInfo## then
+       (aPageElement[] -> QUA(# as::FusionInfo #)).getPlace
+       -> private.groupElements.has -> value;
+    // aPageElement## <= PortType## then
+       (aPageElement[] -> QUA(# as::PortType #)).getPlace
+       -> private.groupElements.has -> value;
+    // aPageElement## <= SubPageInfo## then
+       (aPageElement[] -> QUA(# as::SubPageInfo #)).getTransition
+       -> private.groupElements.has -> value;
+   if); 
+
+-- GroupSetCPNPage:doPart --
+do theCPNPage[] -> private.theCPNPage[];     
+
+-- GroupGetCPNPage:doPart --
+do private.theCPNPage[] -> theCPNPage[];
+   
+-- GroupSetCPNet:DoPart --
+do theCPNet[] -> private.theCPNet[];
+   
+-- GroupGetCPNet:DoPart --
+do (if private.theCPNet[] <> none then
+       private.theCPNet[] -> theCPNet[];
+    else
+       (if private.theCPNPage[] <>  none then
+           private.theCPNPage.net[] -> theCPNet[];
+       if);
+   if);
+   
+-- GroupIsGlobal:doPart --
+do private.theCPNPage[]=NONE -> value;
+   
+-- Groupdelete: doPart --
+do (if IsGlobal then
+       THIS(Group)[] -> private.theCPNet.removeGlobalGroup;
+    else
+       THIS(Group)[] -> private.theCPNPage.removeGroup;
+   if);
+   
+-- GroupAddElement: doPart --
+do
+   (if not all then
+       (if (elm.id[] -> private.groupElements.lookup) = none then
+           (elm.id[], elm[]) -> private.groupElements.associate;
+           (if IsGlobal or
+               ((private.theCPNPage[] <> none) and 
+               (private.theCPNPage.getSelectedGroup = THIS(Group)[])) then               
+               elm.hilite;
+           if);
+       if);
+       (if elm## <= Arc## then
+           elm[] -> QUA
+           (# as::Arc;
+           do thisObj.scanBendPoints
+              (#
+              do current[] -> addElement;
+              #);
+           #);
+       if);
+   if);
+   
+-- GroupRemoveElement: doPart --
+do (if not all then
+       (if (elm.id[] -> private.groupElements.lookup) <> none then
+           elm.id[] -> private.groupElements.disassociate;
+           (if IsGlobal or
+               ((private.theCPNPage[] <> none) and 
+               (private.theCPNPage.getSelectedGroup = THIS(Group)[])) then
+               elm.lolite;
+           if);
+       if);
+       (elm.gethierarchyinfos).scan
+       (# elm: ^PageElement;
+       do current[] -> elm[];
+          (if (elm.id[] -> private.groupElements.lookup) <> none then
+              elm.lolite;
+          if);
+       #);
+       elm.getSlaves -> theList[];
+       theList.scan
+       (# theArc: ^Arc;
+       do (if current## <= Arc## then
+              current[] -> theArc[];
+              (if (theArc.id[] -> private.groupElements.lookup) <> none then
+                  theArc[] -> removeElement;
+              if);
+          if);
+       #);
+   if);
+   
+-- Groupclone: doPart --
+do (name).copy -> new.name;
+   (if all then
+       (getCPNPage).scanPageElements
+       (#
+       do (if (current[] -> private.elmCanBelongToGroup) then
+              current[] -> new.addElement;
+              (current.getinscriptions).scan (*Inscriptions are not included in scan 
+                                              * pageelements!*)
+              (# 
+              do current[] -> new.addElement;
+              #);
+          if);
+       #);
+    else 
+       (if not private.groupElements.empty then
+           private.groupElements.scan
+           (# 
+           do (if (current[] -> private.elmCanBelongToGroup) then
+                  current[] -> new.addElement;
+              if);
+           #);
+       if);
+   if);
+   
+-- GroupCloneGroupElements:DoPart --
+do &PageElementList[] -> groupElements[];
+   private.groupElements.scan
+   (# 
+   do current[] -> groupElements.append;
+   #);
+   keepInstances -> groupElements.clone -> groupElements[];
+   
+-- GrouponSelect: doPart --
+do (# appendHighlight:
+        (# thePageElement: ^PageElement;
+        enter thePageElement[]
+        do (if all then
+               thePageElement.hilite;
+            else
+               (if (thePageElement.id[] -> private.groupElements.lookup) = none then
+                   thePageElement.lolite;
+                else
+                   thePageElement.hilite;
+               if);
+           if);
+        #);
+   do highAndLowLight:theCPNPage.scanPageElements
+	(#
+	do
+	 (if (current[] -> private.elmCanBelongToGroup) then
+             current[] -> appendHighlight;
+             (current.getinscriptions).scan (*Inscriptions are not included in scanpagelements*)
+             (# 
+             do current[] -> appendHighlight;
+             #);
+         if);
+      #);
+      raiseGroupTapAndSendElementsNotBelongingToTheGroupToTheBack:private.groupTabs.scan
+      (# theSheet: ^CPNSheet;
+      do (if current.father[] <> none then
+             current.father[] -> qua
+             (# as:: CPNSheet;
+             do (if thisObj.content.thePage[] = theCPNPage[] then
+                    thisObj[] -> theSheet[];
+                    current[] -> theSheet.raiseTab;
+                    sendOtherElementsBackInLayer:theCPNPage.scanPageElements
+                      (# 
+                      do (if (current.id[] -> private.groupElements.lookup)=NONE then
+                             (current.getInscriptions).scan
+                             (# 
+                             do current[] -> QUA
+                                (# as:: Inscription; 
+                                do (if not thisObj.isDefaultInscription then
+                                       thisObj[] -> theSheet.mainlayer.sendToBack;
+                                   if)
+                                #);
+                             #);
+                             current[] -> theSheet.mainlayer.sendToBack;
+                         if);
+                      #);
+                if);
+             #);
+         if);
+      #);
+   #);
+   
+-- GrouponChanged: doPart --
+do (if source[] = THIS(Group)[] then
+       update;
+   if);
+   
+-- GroupPresent:DoPart --
+do theSheet.id[] -> private.groupTabs.lookup -> theTab[];
+   (if theTab[] = none then
+       &GroupTab[] -> theTab[];
+       THIS(Group)[] -> theTab.setGroup;
+       theTab.init;   
+       theName[] -> theTab.label[];
+       (theSheet.id[], theTab[]) -> private.groupTabs.associate;
+   if);   
+   
+-- Groupinit: doPart --
+do private.init;
+   &Text[] -> theName[];
+   'None' -> theName[];
+

@@ -1,0 +1,492 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../cpnworkspace';
+INCLUDE '../instruments/cpninstrument';
+INCLUDE '../instruments/netinstruments';
+INCLUDE '../resources/texts/texts_tooltips';
+INCLUDE '~beta/sysutils/pathhandler';
+INCLUDE '../../cpnet/cpnetxml';
+INCLUDE '~beta/postwimp/common/standardpath';
+
+-- LIB: Attributes --
+
+LocalDefaultPath: (# exit true #);
+
+-- CPNWorkspaceScanBinders: doPart --
+do foldermanager.theStandardLayer.folders.scan
+   (#
+   do current[] -> THIS(scanBinders).current[];
+      INNER scanBinders;
+   #);
+--loadprocessCPNet:doPart--
+do &CPNet[] -> net[];
+   
+   &theIndex.LoadNode[] -> theLoadNode[];
+   theLoadNode.init;
+   theLoadNode[] -> theIndex.addIndexNode;
+   theIndex.layout;
+   theLoadNode[] -> net.attach;
+   
+   
+   localsim -> net.localsim;
+   host[] -> net.host[];
+   port -> net.port;
+   image[] -> net.image[];
+   
+   (* set the sim options in the net according to the one in the index. #703 *)
+     (# option: ^BooleanOption;
+     do 'save_bindings' -> (getGlobalOptions).find -> option[];
+        option.theValue -> net.simulationOptions.report_binds;
+        'save_report' -> (getGlobalOptions).find -> option[];
+        option.theValue -> net.simulationOptions.report_trans;
+     #);
+   
+   filename[] -> entry.path;
+   entry.path.head -> theDir[];
+   '\\'->theDir.findAll (# do ('/',inx)->theDir.inxPut; #);
+   
+   (if 'templates' ->relativeFile -> theDir.equalNCS then
+           NONE -> theDir[];
+   if);
+   
+   theDir[]->net.path[];
+   entry.path.name -> net.name;
+   
+   (# theNetLoader: @CPNetLoader;
+      success: ^CPNet;
+   do ((elm[],net[]) -> theNetLoader.load) -> success[];
+      theLoadNode[] -> net.detach;
+      theLoadNode[] -> theIndex.removeIndexNode;
+      (if success[]=none  then
+          none -> net[]; 
+      if);
+   #);   
+   
+--WorkspaceElementsunPack:doPart--
+do 
+   VersionTest:
+     (# generator: ^theXML.Element;
+        tool: ^Text;
+        format: @Integer;
+        
+        VersionTestNotification: Exception
+          (# 
+          do toolname -> msg.puttext;
+             NamesStatusBubbleLoadFailed1 -> getGlobalNames -> msg.puttext;
+             INNER;
+             NamesStatusBubbleLoadFailed2 -> getGlobalNames -> msg.puttext;
+             toolname -> msg.puttext;
+             '.' -> msg.put;
+             
+             msg[] -> status.error;
+             true -> reportedError;
+             true -> continue;
+             leave VersionTest;
+          #);
+        NoGeneratorElementNotification: VersionTestNotification
+          (# 
+          do NamesStatusBubbleLoadFailed3 -> getGlobalNames -> msg.puttext;
+          #);
+        WrongToolNotification: VersionTestNotification
+          (# othertool: ^Text;
+             enter othertool[]
+          do othertool[] -> msg.puttext;
+             NamesStatusBubbleLoadFailed4 -> getGlobalNames -> msg.puttext;
+          #);
+        WrongXMLFormatNotification: VersionTestNotification
+          (# 
+          do NamesStatusBubbleLoadFailed5 -> getGlobalNames -> msg.puttext;
+          #);
+        
+     do 'generator' -> elm.getChild -> generator[];
+        (if generator[] = none then
+            NoGeneratorElementNotification
+        if);
+        'tool' -> generator.lookupText -> tool[];
+        (if tool[] = none then
+            NoGeneratorElementNotification
+        if);
+        'format' -> generator.lookupInt -> format;
+        (* Workaround for nets created before <generator ... format="..."/>
+         * was implemented, see bug #584 *)
+        (if format = 0 then
+            (if ('CPN Tools' -> tool.equal) then
+                2 -> format;
+             else
+                tool[] -> WrongToolNotification;
+            if);
+        if);
+
+        (if format = 2 then
+            true -> doscale;
+         else
+            (if not (xmlformat >= format) then
+                WrongXMLFormatNotification;
+            if);
+            false -> doscale;
+        if);
+        
+        elm.scanElements
+        (# aToolBox: ^CPNToolBox;
+        do (if true
+            //'cpnet' -> current.tag.equalNCS then
+               (filename[], current[]) -> processCPNet -> res[];
+               (if res[]=none then
+                   true -> reportedError;
+               if);
+            //'toolbox' -> current.tag.equalNCS then
+               &CPNToolBox[] -> aToolBox[];
+               current[] -> aToolBox.unPack -> res[];
+               aToolBox[] -> theIndex.setContent;
+           if);
+        #);
+        false -> doscale;
+     #);
+--parseArguments: doPart--      
+do (# filename: ^Text;
+      filenames: @List (# Element:: Text #);
+      arg: ^text;
+      theDiskEntry:@DiskEntry;
+      theLoadInstrument: ^CPNInstrument;
+      inx: @integer;
+   do true -> localsim;
+      0 -> inx;
+      filenames.init;
+      loop:
+        (if inx < NoOfArguments then
+            inx + 1 -> inx;
+            (if inx > 1 then
+                inx -> arguments -> arg[];
+                (if true
+                 // '-software' -> arg.equal then
+                    
+                 // '-help' -> arg.equal then
+                    'Usage: cpntools [OPTION]... [FILE]...' -> userinfo;
+                    '  -software       use software rendering'->userinfo;
+                    '  -help           display help'->userinfo;
+                    stop;
+                 else
+                    (* assume it's a file *)
+                    arg[] -> filename[];
+                    (# ph: @PathHandler;
+                    do (filename[], currentDirectory) -> ph.convertfilepath -> filenames.append;
+                    #);
+                if);
+            if);
+            restart loop;
+        if);
+      
+      (* load the given files *)
+      filenames.scan
+      (# 
+      do 'LoadInstrument' -> theXML.createElement -> theInstrumentFactory.make -> theLoadInstrument[];
+         ('filename', current[]) -> theLoadInstrument.options.setAddOption(# OptionType:: TextOption; #); 
+         (&Object[], &Hand[]) -> theLoadInstrument.relevant;
+         (&Hand[], NONE) -> theLoadInstrument.prepare;
+         theLoadInstrument.apply;
+      #);      
+   #);   
+   
+--OnSheetDropped:doPart--
+do (if (source[] <> NONE) and (destination[] <> NONE) and (source[] <> destination[]) then
+       (theSheet[], source[], destination[]) -> MoveTab;
+       source[] -> source.onRemoved;
+   if);
+   
+-- CPNWorkspacePreparePrepareLibraries:doPart --
+do &XMLLibrary[] -> theXMLLibrary[];
+   'templates/xmllibrary.xml' -> theXMLLibrary.init;
+   theXMLLibrary[] -> objectpool.put;
+   'Language/default.txt' -> setGlobalNames;
+
+   &Place[] -> defaultPlace[];
+   defaultPlace.init;
+   
+   &PlaceType[] -> defaultPlaceType[];
+   defaultPlaceType.init;
+   &InitMark[] -> defaultInitMark[];
+   defaultInitMark.init;
+   
+   defaultPlaceType[] -> defaultPlace.setPlaceType;
+   defaultPlace[] -> defaultPlaceType.setPlace;
+      
+   defaultInitMark[] -> defaultPlace.setInitMark;
+   defaultPlace[] -> defaultInitMark.setPlace;
+   
+   
+   &Transition[] -> defaultTransition[];
+   defaultTransition.init;
+   
+   &TransGuard[] -> defaultTransGuard[];
+   defaultTransGuard.init;
+   &TransTime[] -> defaultTransTime[];
+   defaultTransTime.init;
+   &TransAction[] -> defaultTransAction[];
+   defaultTransAction.init;
+   &TransChannel[] -> defaultTransChannel[];
+   defaultTransChannel.init;
+   &TransPriority[] -> defaultTransPriority[];
+   defaultTransPriority.init;
+   
+   defaultTransGuard[] -> defaultTransition.setTransGuard;
+   defaultTransition[] -> defaultTransGuard.setTransition;
+   
+   defaultTransTime[] -> defaultTransition.setTransTime;
+   defaultTransition[] -> defaultTransTime.setTransition;
+   
+   defaultTransAction[] -> defaultTransition.setTransAction;
+   defaultTransition[] -> defaultTransAction.setTransition;
+   
+   defaultTransChannel[] -> defaultTransition.setTransChannel;
+   defaultTransition[] -> defaultTransChannel.setTransition;
+   
+   defaultTransPriority[] -> defaultTransition.setTransPriority;
+   defaultTransition[] -> defaultTransPriority.setTransition;
+   
+   &Arc[] -> defaultArc[];
+   defaultArc.init;
+   
+   &SSNode[] -> defaultSSNode[];
+   defaultSSNode.init;
+   COMPILED -> defaultSSNode.status;
+   
+   &Annotation[] -> defaultAnnotation[];
+   defaultAnnotation.init;
+
+   defaultAnnotation[] -> defaultArc.setAnnotation;
+   defaultArc[] -> defaultAnnotation.setArc;
+
+   defaultAnnotation[] -> defaultArc.computeInitialAttachPoint;
+
+   &Aux[] -> defaultAuxBox[];
+   &defaultAuxBox.boxShape[] -> defaultAuxBox.theShape[];
+   &Aux[] -> defaultAuxEllipse[];
+   &defaultAuxEllipse.ellipseShape[] -> defaultAuxEllipse.theShape[];
+   &Aux[] -> defaultAuxLabel[];
+   &defaultAuxLabel.labelShape[] -> defaultAuxLabel.theShape[];
+
+   60 -> defaultTransition.width;
+   40 -> defaultTransition.height;
+   60 -> defaultPlace.width;
+   40 -> defaultPlace.height;
+   
+   60 -> defaultSSNode.width;
+   40 -> defaultSSNode.height;
+
+   60 -> defaultAuxBox.theShape.width;
+   60 -> defaultAuxBox.theShape.height;
+   60 -> defaultAuxEllipse.theShape.width;
+   60 -> defaultAuxEllipse.theShape.height;
+   60 -> defaultAuxLabel.theShape.width;
+   60 -> defaultAuxLabel.theShape.height;
+
+   'black' -> colorTable.lookup -> defaultTransition.lineColor[];
+   'white' -> colorTable.lookup -> defaultTransition.fillColor[];
+   1 -> defaultTransition.strokeWidth;
+   'black' -> colorTable.lookup -> defaultTransition.textColor[];
+   false -> defaultTransition.filled;
+   'Solid' -> defaultTransition.linetype[];
+   '' -> defaultTransition.fillpattern[];
+
+   'black' -> colorTable.lookup -> defaultPlace.lineColor[];
+   'white' -> colorTable.lookup -> defaultPlace.fillColor[];
+   1 -> defaultPlace.strokeWidth;
+   'black' -> colorTable.lookup -> defaultPlace.textColor[];
+   false -> defaultPlace.filled;
+   'Solid' -> defaultPlace.linetype[];
+   '' -> defaultPlace.fillpattern[];
+
+   'black' -> colorTable.lookup -> defaultArc.lineColor[];
+   'white' -> colorTable.lookup -> defaultArc.fillColor[];
+   1 -> defaultArc.strokeWidth;
+   'black' -> colorTable.lookup -> defaultArc.textColor[];
+   false -> defaultArc.filled;
+   'Solid' -> defaultArc.linetype[];
+   1.2 -> defaultArc.arrowHeadSize;
+   '' -> defaultArc.fillpattern[];
+   PtoT -> defaultArc.setOrientation;
+
+   true -> defaultSSNode.dead;
+   'black' -> colorTable.lookup -> defaultSSNode.lineColor[];
+   'white' -> colorTable.lookup -> defaultSSNode.fillColor[];
+   1 -> defaultSSNode.strokeWidth;
+   'black' -> colorTable.lookup -> defaultSSNode.textColor[];
+   false -> defaultSSNode.filled;
+   'Solid' -> defaultSSNode.linetype[];
+   '' -> defaultSSNode.fillpattern[];
+   
+   'black' -> colorTable.lookup -> defaultAuxBox.lineColor[];
+   'white' -> colorTable.lookup -> defaultAuxBox.fillColor[];
+   1 -> defaultAuxBox.strokeWidth;
+   'black' -> colorTable.lookup -> defaultAuxBox.textColor[];
+   false -> defaultAuxBox.filled;
+   'Solid' -> defaultAuxBox.linetype[];
+   '' -> defaultAuxBox.fillpattern[];
+
+   'black' -> colorTable.lookup -> defaultAuxEllipse.lineColor[];
+   'white' -> colorTable.lookup -> defaultAuxEllipse.fillColor[];
+   1 -> defaultAuxEllipse.strokeWidth;
+   'black' -> colorTable.lookup -> defaultAuxEllipse.textColor[];
+   false -> defaultAuxEllipse.filled;
+   'Solid' -> defaultAuxEllipse.linetype[];
+   '' -> defaultAuxEllipse.fillpattern[];
+
+   'black' -> colorTable.lookup -> defaultAuxLabel.lineColor[];
+   'white' -> colorTable.lookup -> defaultAuxLabel.fillColor[];
+   1 -> defaultAuxLabel.strokeWidth;
+   'black' -> colorTable.lookup -> defaultAuxLabel.textColor[];
+   false -> defaultAuxLabel.filled;
+   'Solid' -> defaultAuxLabel.linetype[];
+   '' -> defaultAuxLabel.fillpattern[];
+   'Text' -> defaultAuxLabel.setText;
+
+   defaultPlaceType.defaultSnap;
+   defaultInitMark.defaultSnap;
+   defaultTransGuard.defaultSnap;
+   defaultTransAction.defaultSnap;   
+   defaultTransChannel.defaultSnap;   
+   defaultTransPriority.defaultSnap;   
+   defaultTransTime.defaultSnap;
+   2 -> defaultPlace.tokenSnapId;
+   
+---   CpnWorkspaceOnquit: doPart ---
+do askSave: 
+     scanNets 
+     (#
+     do (if current[] -> promptSaveOrDiscard then
+            false -> ok;
+            leave askSave;
+        if);
+     #);
+   (if ok then
+       theIndex.scanIndexNodes
+       (# theNode: ^theIndex.netNode;
+       do (if current## <= theIndex.netNode## then
+              current[] -> theNode[];
+              theNode.net.ML.stop;
+          if);
+       #);
+       savePreferences: 
+         (# path: ^Text;
+            tmpPath: ^Text;
+            oldPrefs: @saveFile;
+            appDir: @Directory;
+            theFile: @saveFile
+              (#
+                 myError::
+                   (#
+                   do msg[] -> debugTemp;
+                   #);
+              #);
+            elm: ^theXML.Element;
+         do ApplicationDataPath -> appDir.name;
+            appDir.touch;
+            
+            'CPN Tools' -> appDir.createDir
+            (# exists::(# do true -> continue; #);
+            #);
+            ApplicationDataPath -> path[];
+            DirectoryChar -> path.put;
+            'CPN Tools' -> path.append;
+            
+            DirectoryChar -> path.put;
+            'preferences.xml' -> path.append;
+            path.copy -> tmpPath[];
+            '.tmp' -> tmpPath.append;
+            tmpPath.copy -> theFile.name;
+            thefile.openWrite;
+            this(CPNWorkspace)[] -> WorkspaceSaver -> elm[];
+            (elm[], theFile[]) -> theXML.print;
+            theFile.close;
+            path.copy -> oldPrefs.name;
+            (if oldPrefs.entry.exists then
+                oldPrefs.delete;
+            if);
+            path.copy -> theFile.entry.rename;
+         #);
+   if);
+   (if debugging then 
+       'Workspace.onQuit: (OK)' -> debugWorkspace; 
+   if);
+   INNER;
+   
+-- CPNWorkspaceLoadDefaults: doPart --
+do load:
+   (# defaultsFile: ^saveFile;
+      defaultsElm: ^theXML.Element;
+   do &saveFile
+      (# myError:: 
+           (#
+           do 'Error loading defaults' -> FIXME;
+              leave load;
+           #);
+      #)[] -> defaultsFile[];
+      'defaults.xml' -> relativeFile -> defaultsFile.name;
+      (if defaultsFile.entry.exists then
+          defaultsFile.openRead;
+          defaultsFile[] -> theXML.parse
+          (# onError::
+               (#
+               do 'Error parsing defaults' -> FIXME;
+                  true -> continue;
+                  leave load;
+               #);
+          #) -> defaultsElm[];
+          defaultsElm[] -> DefaultsLoader;
+      if);
+   #);
+   
+-- CPNWorkspaceLoadPreferences: doPart --
+do load: 
+     (# path: ^Text;
+        prefsFile: ^saveFile;
+        workspaceElm: ^theXML.Element;
+     do &saveFile
+        (# myError::
+             (#
+             do leave load;
+             #);
+        #)[] -> prefsFile[];
+        ApplicationDataPath -> path[];
+        DirectoryChar -> path.put;
+        'CPN Tools' -> path.append;
+        DirectoryChar -> path.put;
+        'preferences.xml' -> path.append;
+        path.copy -> prefsFile.name;
+        (if prefsFile.entry.exists then
+            prefsFile.openRead;
+            prefsFile[] -> theXML.parse
+            (# onError::
+                 (#
+                 do true -> continue;
+                    leave load;
+                 #);
+            #) -> workspaceElm[];
+            (workspaceElm[], THIS(CPNWorkspace)[]) -> WorkspaceLoader;
+            prefsFile.close;
+        if);
+     #);
+   

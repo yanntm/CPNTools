@@ -1,0 +1,205 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../index';
+
+INCLUDE '../../instruments/monitoringinstruments';
+
+-- AbstractMonitorNodeExpandFathers:DoPart --
+do (# visitFather:
+        (# theMonitor: ^AbstractMonitorNode;
+        enter theMonitor[]
+        do (if theMonitor[] <> none then
+               true -> theMonitor.expanded;
+               theMonitor.fatherMonitor[] -> visitFather;
+           if);
+        #);
+   do this(AbstractMonitorNode)[] -> visitFather;
+   #);
+
+-- AbstractMonitorNodeOnChanged:DoPart --
+do (if (getMonitor).disabled then
+       dim;
+    else
+       undim;
+   if);
+   (getMonitor).getCurrentHighlight -> hilite_color[];
+   inner;
+
+-- MonitorBlockNodePrivate:Descriptor --
+(# theMonitor: ^MonitorBlock;
+   init: (# #);
+#)
+
+-- MonitorBlockNodeInit:DoPart --
+do private.init;
+   theMonitor[] -> private.theMonitor[];
+   this(MonitorBlockNode)[] -> theMonitor.attach;
+   (if not IsGlobal then
+       private.theMonitor.name[] -> majorTextItem.content[];
+   if);
+   buildIndex;
+   
+-- MonitorBlockNodeGetName:DoPart --
+do private.theMonitor.name[] -> name[];
+   
+-- MonitorBlockNodeBuildIndex:DoPart --
+do clearIndexNodes;
+   private.theMonitor.scanAbstractMonitors
+   (# theMonitorNode: ^MonitorNode;
+      theMonitorBlockNode: ^MonitorBlockNode;   
+      theAbstractNode: ^AbstractMonitorNode;
+   do (if current## <= Monitor## then
+          &MonitorNode[] -> theMonitorNode[];
+          current[] -> theMonitorNode.init;
+          theMonitorNode[] -> theAbstractNode[];
+       else
+          &MonitorBlockNode[] -> theMonitorBlockNode[];
+          (current[], false) -> theMonitorBlockNode.init;
+          theMonitorBlockNode[] -> theAbstractNode[];             
+      if);
+      this(MonitorBlockNode)[] -> theAbstractNode.fatherMonitor[];
+      theAbstractNode[] -> addIndexNode;
+   #);
+   layout;
+   
+-- MonitorBlockNodeGetMonitor:DoPart --
+do private.theMonitor[] -> theMonitor[];
+   
+-- MonitorBlockDropRelevant:DoPart --
+do true -> value;
+   (if true
+    // target[] = this(MonitorBlockNode)[] then
+       false -> value;
+    // target## <= MonitorBlockNode## then
+       target[] -> QUA
+       (# as:: MonitorBlockNode;
+       do not thisObj.IsGlobal -> value;
+       #);
+   if);
+   
+-- MonitorBlockNodeDropAccept:DoPart --
+do (# afterNode: ^AbstractMonitorNode;
+      beforeMonitor: ^AbstractMonitor;      
+      SwapMonitorPositions: WithCommandManager
+        (# theMonitor, beforeMonitor: ^AbstractMonitor;
+           newFather: ^MonitorBlock;
+        enter (theMonitor[], newFather[], beforeMonitor[])
+        do (# removeClip, insertClip: ^MonitorClipping;
+              oldFather: ^MonitorBlock;
+              com: ^Command;
+           do theMonitor.getFatherMonitor -> oldFather[];
+              &MonitorClipping[] -> removeClip[];
+              (theMonitor[], theMonitor[] -> oldFather.previousMonitor)
+                -> removeClip.init;
+              &MonitorClipping[] -> insertClip[];
+              (theMonitor[], beforeMonitor[]) -> insertClip.init;
+              &Command
+              (# getName:: 
+                   (# msg: ^Text;
+                   do 'Drag ' -> name[]; 
+                      theMonitor.name[] -> name.puttext;
+                   #);
+                 apply:: (# do redo #);
+                 undo:: 
+                   (# 
+                   do newFather[] -> insertClip.remove;
+                      oldFather[] -> removeClip.insert;
+                   #);
+                 redo::
+                   (# 
+                   do oldFather[] -> removeClip.remove;
+                      newFather[] -> insertClip.insert;
+                   #);
+              #)[] -> com[];
+              com.apply;
+              (theMonitor.theCPNet[], com[]) -> registerCommand;
+           #);   
+       #);
+   do (if after[] <> none then
+          after[] -> afterNode[];
+          afterNode.getMonitor -> beforeMonitor[]
+      if);
+      (if beforeMonitor[]<>target.getMonitor then
+          (target.getMonitor, private.theMonitor[], beforeMonitor[]) -> SwapMonitorPositions;
+      if);
+   #);
+   
+-- MonitorBlockNodeScanAbstractNodeTree:DoPart --
+do (# visitNode:
+        (# 
+        enter current[]
+        do inner scanAbstractNodeTree;
+           (if current## <= MonitorBlockNode## then
+               current[] -> qua
+               (# as:: MonitorBlockNode;
+               do thisObj.scanIndexNodes
+                  (# 
+                  do current[] -> visitNode;
+                  #);
+               #);
+           if);
+        #);
+   do this(MonitorBlockNode)[] -> visitNode;
+   #);
+   
+-- MonitorBlockNodeScanMonitorNodeTree:DoPart --
+do scanAbstractNodeTree
+   (# 
+   do (if current## <= MonitorNode## then
+          current[] -> this(scanMonitorNodeTree).current[];
+          inner scanMonitorNodeTree;
+      if);
+   #);
+   
+-- MonitorBlockNodeScanMonitorBlockNodeTree:DoPart --
+do scanAbstractNodeTree
+   (# 
+   do (if current## <= MonitorBlockNode## then
+          current[] -> this(scanMonitorBlockNodeTree).current[];
+          inner scanMonitorBlockNodeTree;
+      if);
+   #);
+   
+-- MonitorBlockNodeOnAdded:DoPart --
+do (if source## <= AbstractMonitor## then
+       source[] -> qua
+       (# as:: AbstractMonitor;
+       do (if thisObj.getFatherMonitor = private.theMonitor[] then
+              buildIndex;           
+          if);
+       #);
+       expandFathers;
+   if);
+   
+-- MonitorBlockNodeOnRemoved:DoPart --
+do (if (source## <= AbstractMonitor##) then
+       source[] -> qua
+       (# as:: AbstractMonitor;
+       do (if thisObj.getFatherMonitor = private.theMonitor[] then
+              buildIndex;
+          if);
+       #);
+   if);

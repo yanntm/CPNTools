@@ -1,0 +1,485 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN 'mlcom';
+INCLUDE '../../cpntools/debug';
+
+BODY 'private/mlcommandsbody';
+
+-- SystemLib: Attributes --
+
+CPNMLCommand: MLCommand
+  (# onError::< 
+       (# handled: @Boolean;
+          errorMsg: ^Text;
+       <<SLOT CPNMLCommandOnError:DoPart>>       
+       #);
+     testReasonForError:
+       (# t,r: ^Text;
+       enter r[]
+       do &Text[]->t[];
+          r.reset;
+          (if r.length > 5 then
+              (for x: 5 repeat
+                   r.get->t.put;
+              for);
+          if);
+          (if 'error' -> t.equalNCS then
+              r[] -> onError;
+          if);
+       #);
+  do handler.abortMultiFaseCommands;     
+     INNER;
+  #);
+
+MLBootstrap: CPNMLCommand
+  (# timeType: ^Text;
+     startTime: ^Text;
+     codeFilename: ^Text;
+     
+     Send:: 
+       (# 
+       do (if debugging then 'mlcommands.bet: MLBootStrap.Send: Bootstrap'->debugDocument; if);
+          timeType[]->bis.PutString;
+          startTime[]->bis.PutString;
+          codeFilename[]->bis.PutString;
+          100->bis.PutInt; (* CPN bootstrap command. *)
+       #);
+     Receive:: 
+       (# 
+       do (if debugging then 'Bootstrap (OK)'->debugDocument; if);
+       #); 
+     
+     onError::
+       (#
+       do (if debugging then 'Bootstrap (FAILED)'->debugDocument; if);
+          true->continue;
+       #);
+     
+  enter (timeType[], startTime[], codeFilename[])
+  #);
+
+MLClearReport: CPNMLCommand
+  (# Send::
+       (# 
+       do (if debugging then 'mlcommands.bet: MLClearReport.Send: Clear report'->debugDocument; if);
+          500->bis.PutInt; (* CPN simulate command. *)
+          42->bis.PutInt; (* Clear report command. *)
+       #);
+     Receive::
+       (#
+       do (if debugging then 'Clear report (OK)'->debugDocument; if);
+       #);
+     
+     onError::
+       (#
+       do (if debugging then 'Clear report (FAILED)'->debugDocument; if);
+          true->continue;
+       #);
+  #);
+
+MLSaveReport: CPNMLCommand
+  (# filename: ^Text;
+     
+     Send::
+       (# 
+       do (if debugging then 'mlcommands.bet: MLSaveReport.Send: Save report'->debugDocument; if);
+          Filename[]->bis.PutString;
+          500->bis.PutInt; (* CPN simulate command. *)
+          41->bis.PutInt; (* Clear report command. *)
+       #);
+     Receive::
+       (#
+       do (if debugging then 'Save report (OK)'->debugDocument; if);
+       #);
+     
+     onError::
+       (#
+       do (if debugging then 'Save report (FAILED)'->debugDocument; if);
+          true->continue;
+       #);
+     
+  enter filename[]
+  #);
+
+MLInitSyntaxCheck: CPNMLCommand
+  (# Send::
+       (# 
+       do (if debugging then 'mlcommands.bet: MLInitSyntaxCheck.Send: Init syntax check'->debugDocument; if);
+          400->bis.PutInt; (* CPN syntax check diagram command. *)
+          1->bis.PutInt; (* Init syntax check command. *)
+       #);
+     Receive::
+       (#
+       do (if debugging then 'Init syntax check (OK)'->debugDocument; if);
+       #);
+     
+     onError::
+       (#
+       do (if debugging then 'Init syntax check (FAILED)'->debugDocument; if);
+          true->continue;
+       #);
+  #);
+
+MLCheckMarking: CPNMLCommand
+  (# marking: ^Text;
+     colorset: ^Text;
+     isLegal: @Boolean;
+     
+     Send::
+       (#
+       do (if debugging then 'mlcommands.bet: MLCheckMarking.Send: Check marking'->debugDocument; if);
+          marking[]->bis.PutString;
+          colorset[]->bis.PutString;
+          400->bis.PutInt;
+          3->bis.PutInt;
+       #);
+     Receive::
+       (#
+       do (if debugging then 'Check marking (OK)'->debugDocument; if);
+          bis.GetBool->isLegal;
+       #);
+     
+     onError::
+       (#
+       do (if debugging then 'Check marking (FAILED)'->debugDocument; if);
+          'there was an error in MLCheckMarking ' -> DEBUGTemp;
+	  true->continue;
+       #);
+     
+  enter (marking[], colorset[])
+  exit isLegal   
+  #);
+
+MLChangeMarking: CPNMLCommand
+  (* Before using this command you have to use the CheckMarkingCommand.
+   * The CheckMarkingCommand puts the marking in a temporary value on the
+   * ML-side that is used to change the marking. 
+   *)
+  (# placeID: ^Text;
+     instance: @Integer;
+     ifError : @boolean;
+     
+     Send::
+       (# 
+       do 'MLChangeMarkingSend' -> debugSyntaxCheck;
+          (if debugging then 'mlcommands.bet: MLChangeMarking.Send: Change marking'->debugDocument; if);
+          placeID[]->bis.PutString;
+          500->bis.PutInt;
+          22->bis.PutInt;
+          1->bis.PutInt;
+          instance->bis.PutInt;
+          false->bis.PutBool;
+          'END MLChangeMarkingSend' -> debugSyntaxCheck;
+       #);
+     Receive::
+       (#
+       do (if debugging then 'Change marking (OK)'->debugDocument; if);
+       #);
+     
+     onError::
+       (#
+       do (if debugging then 'Change marking (FAILED)'->debugDocument; if);
+	  true -> ifError;
+	  'There was an error ' -> DEBUGTemp;
+          true->continue;
+       #);
+     
+  enter (placeID[], instance)
+  exit ifError
+  #);
+
+MLInitCodeGeneration: CPNMLCommand
+  (# Send::
+       (# 
+       do (if debugging then 'mlcommands.bet: MLInitCodeGeneration.Send: Init code generation'->debugDocument; if);
+          400->bis.PutInt; (* CPN syntax check diagram command. *)
+          5->bis.PutInt; (* Init code generation command. *)
+          false->bis.PutBool; (* Don't do code generation. *)
+       #);
+     Receive::
+       (#
+       do (if debugging then 'MLInitCodeGeneration.Receive (OK)'->debugDocument; if);
+       #);
+     
+     onError::
+       (#
+       do (if debugging then 'MLInitCodeGeneration (FAILED)'->debugDocument; if);
+          true->continue;
+       #);
+  #);
+
+MLSetSimulationOptions: CPNMLCommand
+  (# pauseBefore: @Boolean;
+     pauseAfter: @Boolean;
+     pauseShow: @Boolean;
+     reportTransitions: @Boolean;
+     reportBindings: @Boolean;
+     showMarkings: @Boolean;
+     showEnablings: @Boolean;
+     untilStep: ^Text;
+     addStep: ^Text;
+     untilTime: ^Text;
+     addTime: ^Text;
+     pauseContinue: ^Text;
+     reportFunction: ^Text;
+     
+     Send::
+       (# 
+       do (if debugging then 'mlcommands.bet: MLSetSimulationOptions.Send: Set simulation options'->debugDocument; if);
+          200->bis.PutInt; (* CPN miscellaneous command. *)
+          10->bis.PutInt; (* Set simulation options command. *)
+          pauseBefore->bis.PutBool;
+          pauseAfter->bis.PutBool;
+          pauseShow->bis.PutBool;
+          reportTransitions->bis.PutBool;
+          reportBindings->bis.PutBool;
+          showMarkings->bis.PutBool;
+          showEnablings->bis.PutBool;
+          untilStep[]->bis.PutString;
+          addStep[]->bis.PutString;
+          untilTime[]->bis.PutString;
+          addTime[]->bis.PutString;
+          pauseContinue[]->bis.PutString;
+          reportFunction[]->bis.PutString;
+       #);
+     Receive::
+       (#
+       do (if debugging then 'MLSetSimulationOptions.Receive: (OK)'->debugDocument; if);
+       #);
+     
+     onError::
+       (#
+       do (if debugging then 'MLSetSimulationOptions (FAILED)'->debugDocument; if);
+          true->continue;
+       #);
+     
+  enter (pauseBefore, pauseAfter, pauseShow, reportTransitions, reportBindings, showMarkings, showEnablings, 
+     untilStep[], addStep[], untilTime[], addTime[], pauseContinue[], reportFunction[])
+  #);
+
+MLSetInitialState: CPNMLCommand
+ (# Send::
+       (# 
+       do (if debugging then 'mlcommands.bet: MLSetInitialState: Set initial state'->debugDocument; if);
+          500->bis.PutInt; (* CPN simulate command. *)
+          21->bis.PutInt; (* Set initial state command. *)
+       #);
+     Receive::
+       (#
+       do (if debugging then 'Set initial state (OK)'->debugDocument; if);
+       #);
+     
+     onError::
+       (#
+       do (if debugging then 'Set initial state (FAILED)'->debugDocument; if);
+          true->continue;
+       #);
+  #);
+
+MLSetInitialisationSimulationOptions: CPNMLCommand
+  (# resetRan: @Boolean;
+     resetRef: @Boolean;
+     seed: ^Text;
+     
+     Send::
+       (# 
+       do (if debugging then 'mlcommands.bet: MLSetInitialisationSimulationOptions.Send: Set initialisation simulation options'->debugDocument; if);
+          200->bis.PutInt; (* CPN miscellaneous command. *)
+          11->bis.PutInt; (* Set initialisation simulation options command. *)
+          resetRan->bis.PutBool;
+          resetRef->bis.PutBool;
+          seed[]->bis.PutString;
+       #);
+     Receive::
+       (#
+       do (if debugging then 'Set initialisation simulation options (OK)'->debugDocument; if);
+       #);
+     
+     onError::
+       (#
+       do (if debugging then 'Set initialisation simulation options (FAILED)'->debugDocument; if);
+          true->continue;
+       #);
+     
+  enter (resetRan, resetRef, seed[])
+  #);
+
+MLCreateScheduler: CPNMLCommand
+  (# Send::
+       (#
+       do (if debugging then 'mlcommands.bet: MLCreateScheduler.Send: Create scheduler' -> debugDocument; if);
+          500 -> bis.putInt;
+          5 -> bis.putInt;
+       #);
+     Receive::
+       (#
+       do (if debugging then 'Create scheduler (OK)' -> debugDocument; if);
+       #);
+     onError::
+       (#
+       do (if debugging then 'Create scheduler (FAILED)' -> debugDocument; if);
+          true -> continue;
+       #);
+  #);
+
+MLResetScheduler: CPNMLCommand
+  (# Send::
+       (#
+       do (if debugging then 'mlcommands.bet: MLResetScheduler.Send: Reset scheduler' -> debugDocument; if);
+          500 -> bis.putInt;
+          43 -> bis.putInt;
+       #);
+     Receive::
+       (#
+       do (if debugging then 'Reset scheduler (OK)' -> debugDocument; if);
+       #);
+     onError::
+       (#
+       do (if debugging then 'Reset scheduler (FAILED)' -> debugDocument; if);
+          true -> continue;
+       #);
+  #);
+
+MLRun: CPNMLCommand
+  (# step: @Integer;
+     reason: ^Text;
+     time: ^Text;
+     
+     Send::
+       (# 
+       do (if debugging then 'mlcommands.bet: MLRun.Send: Run'->debugDocument; if);
+          500->bis.PutInt; (* CPN simulate command. *)
+          11->bis.PutInt; (* Run command. *)
+       #);
+     Receive::
+       (# tmp: ^Text;
+       do (if debugging then 'Run (OK)'->debugDocument; if);
+          bis.GetString->tmp[];
+          tmp.Reset;
+          tmp.GetInt->step;
+          bis.GetString->time[];
+          bis.GetString->reason[];
+          reason[] -> testReasonForError;
+          #);
+     
+     onError::
+       (#
+       do (if debugging then 
+              'Run (FAILED)' -> debugCPNet;
+              what[] -> debugCPNet;
+          if);
+          true->continue;
+       #);
+     
+  exit (step, time[], reason[])
+  #);
+
+
+MLGetTimeAndStep: CPNMLCommand
+  (# step: @integer;
+     time: ^Text;
+     
+     Send::
+       (# 
+       do (if debugging then 'mlcommands.bet: MLGetTimeAndStep ...' -> debugDocument; if);
+          500 -> bis.putInt;
+          2->bis.putInt;
+       #);
+     
+     Receive::
+       (# tmp: ^Text;
+       do (if debugging then 'MLGetTimeAndStep (OK)' -> debugDocument; if);
+          bis.GetString -> time[];
+          bis.GetString -> tmp[];
+          (if (tmp[] <> NONE) and (tmp.length > 0) then
+              tmp.reset;
+              tmp.GetInt -> step;
+           else
+              0 -> step;
+          if);
+       #);
+     
+     onError::
+       (# 
+       do (if debugging then 'MLGetTimeAndStep (FAILED)' -> debugDocument; if);
+          true -> continue;
+       #);
+  exit (step, time[])
+  #);
+
+MLIncreaseModelTime: CPNMLCommand
+  (# timeIncreased: @boolean;
+     reason: ^Text;
+     
+     Send::
+       (# 
+       do (if debugging then 'mlcommands.bet: MLIncreaseModelTime ...' -> debugDocument; if);
+          500 -> bis.putInt;
+          24 -> bis.putInt;
+       #);
+     
+     Receive::
+       (# 
+       do (if debugging then 'MLIncreaseModelTime (OK)' -> debugDocument; if);
+          bis.getBool -> timeIncreased;
+          bis.getString -> reason[];
+       #);
+     
+     onError::
+       (# 
+       do (if debugging then 'MLIncreaseModelTime (FAILED)' -> debugDocument; if);
+          true -> continue;
+          'An error happened' -> reason[];
+       #);
+     
+     exit (timeIncreased,reason[])
+  #);
+
+MLDeleteDeclaration: CPNMLCommand
+  (# id: ^Text;
+     
+     Send::
+       (# 
+       do (if debugging then 'mlcommands.bet: MLDeleteDeclaration.Send: Delete declaration'->debugDocument; if);
+          300->bis.PutInt;
+          1->bis.putInt;
+          18->bis.PutInt; (* ML decl. *)
+          id[]->bis.putString;
+          ''->bis.putString;
+       #);
+     Receive::
+       (# 
+       do (if debugging then 'Delete declaration (OK)'->debugDocument; if);
+       #);
+     
+     onError::
+       (#
+       do (if debugging then 'Delete declaration (FAILED)'->debugDocument; if);
+          true->continue;
+       #);
+     
+  enter id[]
+  #);

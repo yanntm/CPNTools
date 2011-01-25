@@ -1,0 +1,616 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../cpnbinder';
+INCLUDE '../../instruments/declinstruments';
+INCLUDE '../../instruments/binderinstruments';
+INCLUDE '../../../cpnet/netvisitor';
+-- CPNSheetLib: Attributes --
+
+showPlaceInstance:
+  (# instance: ^PlaceInstance;
+  enter instance[]
+  do instance[] -> simlayer.show;
+     instance.getToken -> simlayer.show;
+     instance.getPlaceMarking -> simlayer.show;
+  #);
+hidePlaceInstance:
+  (# instance: ^PlaceInstance;
+  enter instance[]
+  do (if instance.markingVisible then
+	     instance.getPlaceMarking -> simlayer.hide;
+	     instance.getToken -> simlayer.hide;
+     if);
+     instance[] -> simlayer.hide;
+  #);
+refreshSimLayer:
+  (# deletionList: @List
+       (# Element:: NodeInstance;
+          
+       #);
+     
+  do simlayer.content.scan
+     (#
+     do (if current## <= NodeInstance## then
+            current[] -> deletionList.append;
+        if);
+     #);
+     deletionList.scan
+     (#
+     do (if current.deleted then
+            (if current## <= PlaceInstance## then
+                current[] -> hidePlaceInstance;
+             else
+                current[] -> simlayer.hide;
+            if);
+        if);
+     #);
+  #);
+
+-- HighlightableSheetSetTabColor:doPart --
+do NONE -> topTab.hilite_color[];
+   (if content[]<>NONE then
+       content.getCurrentHighlight -> topTab.hilite_color[];
+       (* Since update on the top tab is called before the correct hilite color is set,
+        * update is done again now.
+        *)
+       topTab.update;
+   if);
+   
+-- HighlightableSheetContentChanged:doPart --
+do (# processHighlightable:
+        (# source: ^Highlightable;
+        enter source[]
+        do (if source.qerror[] <> NONE then
+               source[] -> addError;
+            else
+               source[] -> removeError;
+           if);
+        #);
+   do setTabColor;
+      (if source[] <> NONE then
+          (if source## <= Highlightable## then
+              source[] -> processHighlightable;
+          if);
+      if);
+   #);
+   
+-- CPNSheetInit:doPart --
+do &SimulationLayer[] -> simlayer[];
+   simlayer.init;
+   &SheetLayer[] -> guidelinelayer[];
+   guidelinelayer.init;
+   true  -> simlayer.clipping;
+   true -> simlayer.clickable;
+   simlayer[] -> add;
+   true  -> guidelinelayer.clipping;
+   true -> guidelinelayer.clickable;
+   guidelinelayer[] -> add;
+   guidelinelayer[] -> layers.sendToBack;          
+   errorlayer[] -> layers.bringToFront;
+   
+-- CPNSheetShow:doPart --
+do (if true
+    // source## <= Guideline## then
+       source[] -> guidelinelayer.show;
+    // source## <= Transition## then
+       source.id[] 
+         -> content.lookupTransitionInstance
+         -> simlayer.show;
+    // source## <= Place## then
+       source.id[]
+         -> content.lookupPlaceinstance
+         -> showPlaceInstance;
+    // (source## <= Arc##) AND (not (source## <= SSArc##))  then
+       source.id[]
+         -> content.lookupArcInstance
+         -> simlayer.show;
+    // source## <= Inscription## then
+       source[] -> QUA
+       (# as:: Inscription;
+       do (if thisObj.isVisible then
+              source[] ->  mainlayer.show;
+           else
+              source[] -> mainlayer.hide;
+          if);
+       #);
+    // source## <= HierarchyInfo## then
+       source[] -> mainlayer.show;
+   if);
+   
+-- CPNSheetHide:doPart --
+do (if source## <= Guideline## then 
+       source[] -> guidelinelayer.hide;
+   if);
+   (if source## <= Inscription## then
+       source[] -> mainlayer.hide;
+   if);
+   (if source## <= HierarchyInfo## then
+       source[] -> mainlayer.hide;
+   if);
+   (if source## <= Arc## then
+       refreshSimLayer;
+       source[] -> mainlayer.hide;
+       source[] -> QUA
+       (# as:: Arc;
+       do thisObj.getAnnotation -> mainlayer.hide;
+       #);
+   if);
+   (if source## <= Place## then
+       refreshSimLayer;
+       source[] -> QUA
+       (# as:: Place;
+       do (thisObj.getRegions).scan (# do current[] -> mainlayer.hide; #);
+       #);
+   if);
+   (if source## <= Transition## then
+       refreshSimLayer;
+       source[] -> QUA
+       (# as:: Transition;
+       do (thisObj.getRegions).scan (# do current[] -> mainlayer.hide; #);
+       #);
+   if);
+   
+-- CPNSheetOnTestAdd:DoPart --
+do (if source## <= Group## then
+       source[] -> QUA
+       (# as:: Group;
+       do (this(CPNSheet)[] -> thisObj.present, maxInt, not thisObj.isGlobal) 
+            -> addTab; 
+       #);
+   if);
+   
+-- CPNSheetOnTestRemove:DoPart --
+do (# removeGroup:
+        (# theGroup: ^Group;
+        enter theGroup[]
+        do scanTabs
+           (#
+           do (if current.getGroup = theGroup[] then
+                  current[] -> removeTab;
+              if);
+           #);
+           
+           folderManager.layers.scan
+           (#
+           do current.folders.scan
+              (# 
+              do (if current## <= CPNBinder## then
+                     current[] -> QUA
+                     (# as:: CPNBinder;
+                     do thisObj.scanCPNSheets
+                        (#
+                        do current.updatePageTab;
+                           current.changed;
+                        #);   
+                     #);
+                 if);
+              #);
+           #);
+        #);
+   do (if source## <= Group## then
+          source[] -> removeGroup;
+      if);
+   #);
+   
+-- CPNSheetSetContent:doPart --   
+do (# ShowVisitor: NetVisitor
+        (# 
+           visitCPNPage::< 
+             (#
+             do current.scanPlaces
+                (#
+                do current[] -> visitPlace;
+                #);
+                current.scanTransitions
+                (#
+                do current[] -> visitTransition;
+                #);
+                current.scanArcs
+                (#
+                do current[] -> visitArc;
+                #);
+                current.scanSSNodes
+                (#
+                do current[] -> visitSSNode;
+                #);
+                current.scanSSArcs
+                (#
+                do current[] -> visitSSArc;
+                #);
+                current.scanGuideLines
+                (# do current[] -> show; #);
+                current.scanAuxs
+                (# 
+                do current[] -> visitAux;
+                #);
+                
+             #);
+           visitPlace::< 
+             (# 
+             do current[] -> show;
+                current.getPlaceType -> visitPlaceType;
+                current.getInitMark -> visitInitMark;
+                (if current.getPortType <> NONE then
+                    current.getPortType -> visitPortType;
+                if);
+                (if current.getFusionInfo <> NONE then
+                    current.getFusionInfo -> visitFusionInfo;
+                if);
+             #);
+           visitSSNode::<
+             (#
+             do current[] -> show;
+             #);
+           visitPlaceType::< 
+             (# 
+             do (if current.isVisible then
+                    current[] -> show;
+                if);
+             #);
+           visitInitMark::< 
+             (# 
+             do (if current.isVisible then
+                    current[] -> show;
+                if);
+             #);
+           visitPortType::< (# do current[] -> show; #);
+           visitFusionInfo::< (# do current[] -> show; #);
+           visitTransition::< 
+             (# 
+             do current[] -> show;
+                current.getTransTime -> visitTransTime;
+                current.getTransGuard -> visitTransGuard;
+                current.getTransAction -> visitTransAction;
+                current.getTransChannel -> visitTransChannel;
+                current.getTransPriority -> visitTransPriority;
+                (if current.getSubPageInfo <> NONE then
+                    current.getSubpageInfo -> visitSubpageInfo;
+                if);
+             #);
+           visitSubPageInfo::< (# do current[] -> show; #);
+           visitTransTime::<
+             (# 
+             do (if current.isVisible then
+                    current[] -> show;
+                if);
+             #);
+           visitTransGuard::< 
+             (# 
+             do (if current.isVisible then
+                    current[] -> show;
+                if);
+             #);
+           visitTransAction::< 
+             (# 
+             do (if current.isVisible then
+                    current[] -> show;
+                if);
+             #);
+           visitTransChannel::< 
+             (# 
+             do (if current.isVisible then
+                    current[] -> show;
+                if);
+             #);
+           visitTransPriority::< 
+             (# 
+             do (if current.isVisible then
+                    current[] -> show;
+                if);
+             #);
+           visitArc::< 
+             (# 
+             do 
+                current[] -> show; 
+                current.getAnnotation -> visitAnnotation;
+                current.scanBendPoints
+                (# do current[] -> visitBendPoint; #);
+             #);
+           visitSSArc::< 
+             (# 
+             do current[] -> show; 
+                current.scanBendPoints
+                (# do current[] -> visitBendPoint; #);
+             #);
+           visitAnnotation::< 
+             (# 
+             do (if current.isVisible then
+                    current[] -> show;
+                if);
+             #);
+           visitBendPoint::< (# do current[] -> show; #);
+           visitAux::< (# do current[] -> show; #);
+        #);
+   do (# theVisitor: ^ShowVisitor;
+      do &ShowVisitor[] -> theVisitor[];
+         content.thePage[] -> theVisitor.visitCPNPage;
+      #);
+      updatePageTab;
+      content.thepage.scanGroups
+      (# 
+      do (this(CPNSheet)[] -> current.present, maxInt, true)
+           -> addTab;
+      #);
+      content.thePage.net.scanGlobalGroups
+      (# 
+      do (this(CPNSheet)[] -> current.present, maxInt, false)
+           -> addTab;
+      #);
+      content.thepage.scanPageElements
+      (# 
+      do (if current.qerror[] <> NONE then
+             current[] -> addError;
+         if);
+      #);
+      computeInitialPan;
+      this(CPNSheet)[] -> content.attach;
+   #);     
+
+-- CPNSheetOnChanged:doPart --
+do (# theInscription: ^Inscription;
+   do 
+      (if (source[] = content[])  then
+          updatePageTab;
+          toptab.changed;
+      if);
+      
+      (if source## <= Inscription## then
+          source[] -> theInscription[];
+          (if theInscription.isVisible then
+              theInscription[] -> show;
+           else
+              theInscription[] -> hide;
+          if);
+      if);
+      (* To update the graphics for region elements *)
+      (if source## <= Place## then
+          source[] -> QUA
+            (# as:: Place;
+               fi: ^FusionInfo;
+               pt: ^PortType;
+            do (if thisObj.getFusionInfo = NONE then
+                   mainlayer.content.scan
+                   (#
+                   do (if current## <= FusionInfo## then
+                          current[] -> fi[];
+                          (if fi.getPlace = thisObj[] then
+                              fi[] -> mainlayer.hide;
+                          if);
+                      if);
+                   #);
+                else
+                   thisObj.getFusionInfo -> mainLayer.show;
+               if);
+               (if thisObj.getPortType = NONE then
+                   mainlayer.content.scan
+                   (#
+                   do (if current## <= PortType## then
+                          current[] -> pt[];
+                          (if pt.getPlace = thisObj[] then
+                              pt[] -> mainlayer.hide;
+                          if);
+                      if);
+                   #);
+                else
+                   thisObj.getPortType -> mainLayer.show;
+               if)
+            #);
+      if);
+      (if source## <= Transition## then
+          source[] -> QUA
+          (# as:: Transition;
+             si: ^SubPageInfo;
+          do (if thisObj.getSubPageInfo = NONE then
+                 mainlayer.content.scan
+                 (#
+                 do (if current## <= SubPageInfo## then
+                        current[] -> si[];
+                        (if si.getTransition = thisObj[] then
+                            si[] -> mainlayer.hide;
+                        if);
+                    if);
+                 #);
+              else
+                 mainlayer.content.scan
+                 (#
+                 do (if current## <= SubPageInfo## then
+                        current[] -> si[];
+                        (if (si[] <> thisObj.getSubPageInfo) and
+                            (si.getTransition = thisObj[]) then
+                            si[] -> mainlayer.hide;
+                        if);
+                    if);
+                 #);
+                 thisObj.getSubPageInfo -> mainLayer.show;
+             if);
+          #);
+      if);
+
+   #);
+   
+-- CPNSheetOnRemoved:doPart --
+do 
+   (if source[] = content[] then
+       content.thePage.scanInstances
+       (# 
+       do current[] -> current.onChanged;
+       #);
+   if);
+   
+-- CPNSheetUpdatePageTab:doPart --
+do (# secondary: ^Text;         
+   do this(CpnSheet)[] -> toptab.theSheet[]; 
+      content.thePage.name -> toptab.label[];
+      
+      &Text[] -> secondary[];
+      (if content.thePage.numberOfInstances > 1 then              
+          (if content.mlInstanceNumber <> 0 then
+              '(' -> secondary.puttext;
+              content.mlInstanceNumber -> secondary.putint;
+              ')' -> secondary.puttext;
+           else
+              '(?)' -> secondary.puttext;
+          if);
+          secondary[] -> toptab.secondary[];     
+       else 
+          (if (toptab.secondary[] <> none) and (not ('' -> toptab.secondary.equal)) then
+              &Text[] -> toptab.secondary[];
+          if);
+      if);
+      (if father[] <> none then 
+          father.arrangeSheets; 
+      if);
+   #);
+   
+-- CPNBinderScanHighlightableSheets:DoPart --
+do sheets.scan
+   (# 
+   do (if current## <= HighlightableSheet## then
+          current[] -> this(scanHighlightableSheets).current[];
+          inner scanHighlightableSheets;
+      if);
+   #);
+   
+-- CPNBinderScanTextSheets:DoPart --
+do scanHighlightableSheets
+   (# 
+   do (if current## <= TextSheet## then
+          current[] -> this(scanTextSheets).current[];
+          inner scanTextSheets;
+      if);
+   #);
+   
+-- CPNBinderScanCPNSheets:DoPart --
+do scanHighlightableSheets
+   (# 
+   do (if current## <= CPNSheet## then
+          current[] -> this(scanCPNSheets).current[];
+          inner scanCPNSheets;
+      if);
+   #);
+   
+-- CPNBinderOnSheetRaised: doPart --
+do (# theRaiseTabCommand: ^CPNWorkSpace.RaiseTabCommand;
+      theCPNWorkspace: ^CPNWorkSpace;
+   do (if (prevRaised[] <> NONE) and (prevRaised## <= CpnSheet##) then
+          THIS(Workspace)[] -> theCPNWorkspace[];
+          &theCPNWorkspace.RaiseTabCommand[] -> theRaiseTabCommand[];
+          (THIS(CPNBinder)[], prevRaised[]) -> theRaiseTabCommand.init;
+          (theNet[],theRaiseTabCommand[]) -> theCPNWorkspace.registerCommand;
+      if);
+   #);
+   
+-- DeclarationTextAdapterNext:DoPart --
+do (# theBinder: ^CPNBinder;
+      theTextSheet: ^TextSheet;
+      takeNextSheet, nextTaken: @boolean;      
+   do THIS(DeclarationTextAdapter)[] -> elm[];
+      sheet.father[] -> theBinder[];
+      false -> takeNextSheet;
+      scan: theBinder.scanTextSheets
+      (# 
+      do current[] -> theTextSheet[];
+         (if takeNextSheet then
+             true -> nextTaken;
+             leave scan;
+         if);
+         (if theTextSheet[] = sheet[] then
+             true -> takeNextSheet;
+         if);         
+      #);
+      (if not nextTaken then
+          scan: theBinder.scanTextSheets
+          (# 
+          do current[] -> theTextSheet[];
+             leave scan;
+          #);
+      if);
+      theTextSheet.adapter.sheet[] -> theBinder.raise;
+      theTextSheet.adapter[] -> elm[];
+   #);
+   
+-- DeclarationtextAdapterForceNext:doPart --
+do (# theBinder: ^CPNBinder;
+      newDecl: ^Declaration;
+      theFather: ^Declaration;
+      newSheet: ^TextSheet;
+      theCPNWorkspace: ^CPNWorkspace;
+      clip: ^theCPNWorkspace.DeclarationClipping;
+      com: ^theCPNWorkspace.DeclarationClippingCommand;
+      tabClip: ^theCPNWorkspace.TabClipping;
+      theOpenTabCom: ^theCPNworkspace.OpenTabCommand;
+      combinedCommand: ^Command;
+      
+   do (if content.getParent <> none then
+      THIS(Workspace)[] -> theCPNWorkspace[];
+      (* Create a new declaration *)
+      (if newDecl[] = NONE then
+          &Declaration[] -> newDecl[];
+      if);
+      newDecl.init;
+            
+      (* Insert the new declaration right after the active one *)
+      content.getParent -> theFather[];
+      &theCPNWorkspace.DeclarationClipping[] -> clip[];
+      (theFather[],content[],newDecl[]) -> clip.prepare;
+      &theCPNWorkspace.DeclarationClippingCommand[] -> com[];
+      clip[] -> com.apply;
+      
+      (* Create a new sheet, insert the declaration, and open
+       * the sheet in the active binder
+       *)
+      &TextSheet[] -> newSheet[];
+      newSheet.init;
+      newDecl[] -> newSheet.setContent;
+      sheet.father[] -> theBinder[];
+      
+      &theCPNWorkspace.TabClipping[] -> tabClip[];
+      (newSheet[],theBinder.father[]) -> tabClip.init;
+      &theCPNWorkspace.OpenTabCommand[] -> theOpenTabCom[];
+      tabClip[] -> theOpenTabCom.init;
+      theBinder[] -> theOpenTabCom.prepare;
+      theOpenTabCom.apply;
+      &Command
+      (# getName::
+           (#
+           do 'New Declaration' -> name[];
+           #);
+         
+         undo::
+           (#
+           do theOpenTabCom.undo;
+              com.undo;
+           #);
+         redo::
+           (# 
+           do com.redo;
+              theOpenTabCom.redo;
+           #);
+      #)[] -> combinedCommand[];
+          (theBinder.theNet[],combinedCommand[]) -> registerCommand;
+      if);
+   #);
+      
