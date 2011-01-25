@@ -1,0 +1,2477 @@
+<generator tool="Design/CPN" version="3.1.2">
+<!-- File /users/sorenchr/wwwdiag.int/DiningPhilosophers_OG/DiningPhilosophers_OG.int2 -->
+<!-- Verbose_Level = 2 -->
+<!-- 14 page(s) were found -->
+
+<!-- Page 1 of the net -->
+<page id=id17>
+  <pageattr name="Search3" number=12 visbor=TRUE palette=FALSE>
+  <mult insts=0>
+  <modeattr siminc=FALSE observe=FALSE propocc=FALSE interact=FALSE execcode=FALSE>
+  <winattr open=FALSE width=493 height=288 xpos=243 ypos=133>
+  <lineattr type=Solid thick=0 colour=black>
+  <fillattr pattern=None colour=black>
+  <posattr x="0.00000" y="-0.00000">
+  <box h="2561.16675" w="1933.22217">
+  <!-- 3 node(s) were found -->
+
+  <!-- Node 1 of page -->
+  <aux id=id186>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=0 colour=black>
+    <fillattr pattern=None colour=black>
+    <posattr x="-306.00006" y="970.00000">
+    <textattr font=Courier size=12 just=Left colour=black bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <box h="292.73645" w="1192.32080">
+    <layering type=Copy>
+    <!-- 0 regions(s) were found -->
+    <text>fun TakeChopstisks (p:PH) : Arc list
+= PredAllArcs(fn a =>
+  case ArcToBE a
+		of Bind.System'Take (1,{p=p'}) => p=p'
+		 | _ => false);</text>
+  </aux>
+
+
+  <!-- Node 2 of page -->
+  <aux id=id181>
+    <flags mask=FALSE omit=FALSE nobound=TRUE nosizing=TRUE visible=TRUE>
+    <lineattr type=Solid thick=0 colour=black>
+    <fillattr pattern=None colour=black>
+    <posattr x="-730.00000" y="1165.00000">
+    <textattr font=Helvetica size=12 just=Left colour=black bold=TRUE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <label>
+    <layering type=Copy>
+    <!-- 0 regions(s) were found -->
+    <text>TakeChopsticks</text>
+  </aux>
+
+
+  <!-- Node 3 of page -->
+  <aux id=id193>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=0 colour=black>
+    <fillattr pattern=None colour=black>
+    <posattr x="-559.00000" y="612.00000">
+    <textattr font=Courier size=12 just=Left colour=black bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <box h="82.89739" w="696.71906">
+    <layering type=Copy>
+    <!-- 0 regions(s) were found -->
+    <text>TakeChopstisks (ph(3));</text>
+  </aux>
+
+  <!-- 0 connector(s) were found -->
+</page>
+
+
+<!-- Page 2 of the net -->
+<page id=id21>
+  <pageattr name="SimStrOp" number=20 visbor=TRUE palette=FALSE>
+  <mult insts=0>
+  <modeattr siminc=FALSE observe=FALSE propocc=FALSE interact=FALSE execcode=FALSE>
+  <winattr open=FALSE width=573 height=452 xpos=144 ypos=200>
+  <lineattr type=Solid thick=0 colour=black>
+  <fillattr pattern=None colour=black>
+  <posattr x="0.00000" y="-0.00000">
+  <box h="2561.16675" w="1933.22217">
+  <!-- 3 node(s) were found -->
+
+  <!-- Node 1 of page -->
+  <aux id=id10>
+    <flags mask=FALSE omit=FALSE nobound=TRUE nosizing=TRUE visible=TRUE>
+    <lineattr type=Solid thick=0 colour=black>
+    <fillattr pattern=None colour=black>
+    <posattr x="-605.00000" y="1215.00000">
+    <textattr font=Helvetica size=12 just=Left colour=black bold=TRUE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <label>
+    <layering type=Copy>
+    <!-- 0 regions(s) were found -->
+    <text>Set Simple String Options</text>
+  </aux>
+
+
+  <!-- Node 2 of page -->
+  <aux id=id13>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=0 colour=black>
+    <fillattr pattern=None colour=black>
+    <posattr x="-225.00006" y="493.00006">
+    <textattr font=Courier size=12 just=Left colour=black bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <box h="1343.99658" w="1315.80164">
+    <layering type=Copy>
+    <!-- 0 regions(s) were found -->
+    <text>(* Remove Instance Numbers *)
+OGSet.StringRepOptions'PI(
+fn (CPN'page, CPN'place, CPN'inst) => CPN'place);
+
+OGSet.StringRepOptions'TI(
+fn (CPN'page, CPN'trans, CPN'inst) => CPN'trans);
+
+
+(* Remove Empty Markings *)
+OGSet.StringRepOptions'Mark(
+fn (CPN'PI, CPN'mark) =>
+if CPN'mark="empty" orelse CPN'mark="tempty" 
+then ""
+else (CPN'PI^": "^CPN'mark^NEWLINE));
+
+
+(* Remove Node and Arc Numbers *)
+OGSet.NodeDescriptorOptions(
+      fn (CPN'n:Node) =>
+      (st_Mark.System'Unused 1 CPN'n)^
+      (st_Mark.System'Think 1 CPN'n)^
+      (st_Mark.System'Eat 1 CPN'n));
+
+OGSet.ArcDescriptorOptions(fn (CPN'a:Arc) =>
+ (st_BE(ArcToBE CPN'a)));</text>
+  </aux>
+
+
+  <!-- Node 3 of page -->
+  <aux id=id5>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=0 colour=black>
+    <fillattr pattern=None colour=black>
+    <posattr x="1984.00000" y="-359.00006">
+    <textattr font=Helvetica size=12 just=Centered colour=black bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <box h="2945.61792" w="1562.80188">
+    <layering type=Copy>
+    <!-- 0 regions(s) were found -->
+    <text>(* Short String Representations *)
+
+OGSet.StringRepOptions'Node(
+fn (CPN'node) => CPN'node);
+
+OGSet.StringRepOptions'Arc(
+fn (CPN'arc, CPN'source, CPN'dest) => CPN'arc^":"^CPN'source^"->"^CPN'dest);
+
+OGSet.StringRepOptions'PI(
+fn (CPN'page, CPN'place, CPN'inst) => CPN'place);
+
+OGSet.StringRepOptions'TI(
+fn (CPN'page, CPN'trans, CPN'inst) => CPN'trans);
+
+OGSet.StringRepOptions'BE(
+fn (CPN'TI, CPN'bind) => CPN'TI^": "^CPN'bind);
+
+OGSet.StringRepOptions'Mark(
+fn (CPN'PI, CPN'mark) => CPN'PI^": "^CPN'mark^NEWLINE);
+
+OGSet.NodeDescriptorOptions(
+      fn (CPN'n:Node) =>
+      (st_Node CPN'n)^NEWLINE^
+      (st_Mark.System'Unused 1 CPN'n)^
+      (st_Mark.System'Think 1 CPN'n)^
+      (st_Mark.System'Eat 1 CPN'n));
+
+OGSet.ArcDescriptorOptions(fn (CPN'a:Arc) =>
+ (st_Arc CPN'a)^NEWLINE^
+(st_BE(ArcToBE CPN'a)));
+
+(* Ultra Short *)
+
+OGSet.StringRepOptions'Mark(
+fn (CPN'PI, CPN'mark) =>
+if CPN'mark="empty" orelse CPN'mark="tempty" 
+then ""
+else (CPN'PI^": "^CPN'mark^NEWLINE));
+
+OGSet.NodeDescriptorOptions(
+      fn (CPN'n:Node) =>
+      (st_Mark.System'Unused 1 CPN'n)^
+      (st_Mark.System'Think 1 CPN'n)^
+      (st_Mark.System'Eat 1 CPN'n));
+
+OGSet.ArcDescriptorOptions(fn (CPN'a:Arc) =>
+ (st_BE(ArcToBE CPN'a)));</text>
+  </aux>
+
+  <!-- 0 connector(s) were found -->
+</page>
+
+
+<!-- Page 3 of the net -->
+<hierpage id=id38>
+  <pageattr name="Hierarchy" number=10010 visbor=FALSE palette=FALSE>
+  <winattr open=TRUE width=209 height=262 xpos=855 ypos=92>
+  <lineattr type=None thick=0 colour=black>
+  <fillattr pattern=None colour=black>
+  <posattr x="0.00000" y="-0.00000">
+  <box h="1763.88892" w="1763.88892">
+  <!-- 14 node(s) were found -->
+
+  <!-- Node 1 of page -->
+  <pagenode pageref=id21 id=id7>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Dotted thick=2 colour=maroon>
+    <fillattr pattern=None colour=maroon>
+    <posattr x="-432.00000" y="192.00002">
+    <textattr font=Helvetica size=10 just=Centered colour=maroon bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <rbox h="63.50000" w="264.58334" curv=15>
+    <layering type=Copy>
+    <!-- 0 regions(s) were found -->
+    <text>SimStrOp#20</text>
+  </pagenode>
+
+
+  <!-- Node 2 of page -->
+  <pagenode pageref=id38 id=id16>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=2 colour=teal>
+    <fillattr pattern=Solid colour=white>
+    <posattr x="-686.00000" y="827.00000">
+    <textattr font=Helvetica size=10 just=Centered colour=teal bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <rbox h="63.50000" w="328.08075" curv=15>
+    <layering type=Copy>
+    <!-- 0 regions(s) were found -->
+    <text>Hierarchy#10010</text>
+  </pagenode>
+
+
+  <!-- Node 3 of page -->
+  <pagenode pageref=id223 id=id19>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Dotted thick=2 colour=maroon>
+    <fillattr pattern=None colour=maroon>
+    <posattr x="-432.00000" y="269.00006">
+    <textattr font=Helvetica size=10 just=Centered colour=maroon bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <rbox h="63.50000" w="264.58334" curv=15>
+    <layering type=Copy>
+    <!-- 0 regions(s) were found -->
+    <text>SetStrOp#19</text>
+  </pagenode>
+
+
+  <!-- Node 4 of page -->
+  <pagenode pageref=id214 id=id27>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Dotted thick=2 colour=red>
+    <fillattr pattern=None colour=red>
+    <posattr x="-717.00006" y="672.00000">
+    <textattr font=Helvetica size=10 just=Centered colour=red bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <rbox h="63.50000" w="264.58334" curv=15>
+    <layering type=Copy>
+    <!-- 0 regions(s) were found -->
+    <text>Graph#2</text>
+  </pagenode>
+
+
+  <!-- Node 5 of page -->
+  <pagenode pageref=id117 id=id53>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Dotted thick=2 colour=blue>
+    <fillattr pattern=None colour=blue>
+    <posattr x="-717.00006" y="583.00006">
+    <textattr font=Helvetica size=10 just=Centered colour=blue bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <rbox h="63.50000" w="264.58334" curv=15>
+    <layering type=Copy>
+    <!-- 0 regions(s) were found -->
+    <text>Reachabilty#4</text>
+  </pagenode>
+
+
+  <!-- Node 6 of page -->
+  <pagenode pageref=id120 id=id102>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Dotted thick=2 colour=blue>
+    <fillattr pattern=None colour=blue>
+    <posattr x="-717.00006" y="425.00000">
+    <textattr font=Helvetica size=10 just=Centered colour=blue bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <rbox h="63.50000" w="264.58334" curv=15>
+    <layering type=Copy>
+    <!-- 0 regions(s) were found -->
+    <text>Home#6</text>
+  </pagenode>
+
+
+  <!-- Node 7 of page -->
+  <pagenode pageref=id109 id=id110>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=DotDashed thick=2 colour=red>
+    <fillattr pattern=Solid colour=white>
+    <posattr x="-717.00006" y="749.00006">
+    <textattr font=Helvetica size=10 just=Centered colour=red bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <rbox h="63.50000" w="264.58334" curv=15>
+    <layering type=Copy>
+    <!-- 1 regions(s) were found -->
+
+    <!-- Region 1 of node -->
+    <pgmodkey id=id46>
+      <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+      <lineattr type=Solid thick=0 colour=red>
+      <fillattr pattern=None colour=red>
+      <posattr x="-541.00006" y="749.00006">
+      <textattr font=Helvetica size=9 just=Centered colour=red bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+      <box h="49.38889" w="49.38889">
+      <layering type=Copy>
+      <regattr colorap=TRUE sizewp=TRUE hoffset="0.00086" voffset="0.00086">
+      <!-- 1 regions(s) were found -->
+
+      <!-- Region 1 of region -->
+      <pagemode id=id44>
+        <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+        <lineattr type=Solid thick=0 colour=red>
+        <fillattr pattern=Solid colour=white>
+        <posattr x="-444.00003" y="749.00006">
+        <textattr font=Helvetica size=9 just=Left colour=red bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+        <box h="49.38889" w="123.47157">
+        <layering type=Copy>
+        <regattr colorap=TRUE sizewp=TRUE hoffset="115850.25000" voffset="0.00086">
+        <!-- 0 regions(s) were found -->
+        <text>Prime</text>
+      </pagemode>
+      <text>M</text>
+    </pgmodkey>
+    <text>System#1</text>
+  </pagenode>
+
+
+  <!-- Node 8 of page -->
+  <pagenode pageref=id63 id=id124>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Dotted thick=2 colour=blue>
+    <fillattr pattern=None colour=blue>
+    <posattr x="-717.00006" y="502.00006">
+    <textattr font=Helvetica size=10 just=Centered colour=blue bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <rbox h="63.50000" w="264.58334" curv=15>
+    <layering type=Copy>
+    <!-- 0 regions(s) were found -->
+    <text>Bounds#5</text>
+  </pagenode>
+
+
+  <!-- Node 9 of page -->
+  <pagenode pageref=id141 id=id134>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Dotted thick=2 colour=blue>
+    <fillattr pattern=None colour=blue>
+    <posattr x="-717.00006" y="347.00003">
+    <textattr font=Helvetica size=10 just=Centered colour=blue bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <rbox h="63.50000" w="264.58334" curv=15>
+    <layering type=Copy>
+    <!-- 0 regions(s) were found -->
+    <text>Liveness#7</text>
+  </pagenode>
+
+
+  <!-- Node 10 of page -->
+  <pagenode pageref=id148 id=id142>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Dotted thick=2 colour=fucia>
+    <fillattr pattern=None colour=fucia>
+    <posattr x="-432.00000" y="583.00006">
+    <textattr font=Helvetica size=10 just=Centered colour=fucia bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <rbox h="63.50000" w="264.58334" curv=15>
+    <layering type=Copy>
+    <!-- 0 regions(s) were found -->
+    <text>Search1#10</text>
+  </pagenode>
+
+
+  <!-- Node 11 of page -->
+  <pagenode pageref=id196 id=id174>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Dotted thick=2 colour=blue>
+    <fillattr pattern=None colour=blue>
+    <posattr x="-717.00006" y="269.00006">
+    <textattr font=Helvetica size=10 just=Centered colour=blue bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <rbox h="63.50000" w="264.58334" curv=15>
+    <layering type=Copy>
+    <!-- 0 regions(s) were found -->
+    <text>Livenes2#8</text>
+  </pagenode>
+
+
+  <!-- Node 12 of page -->
+  <pagenode pageref=id192 id=id184>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Dotted thick=2 colour=fucia>
+    <fillattr pattern=None colour=fucia>
+    <posattr x="-432.00000" y="502.00006">
+    <textattr font=Helvetica size=10 just=Centered colour=fucia bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <rbox h="63.50000" w="264.58334" curv=15>
+    <layering type=Copy>
+    <!-- 0 regions(s) were found -->
+    <text>Search2#11</text>
+  </pagenode>
+
+
+  <!-- Node 13 of page -->
+  <pagenode pageref=id200 id=id207>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Dotted thick=2 colour=blue>
+    <fillattr pattern=None colour=blue>
+    <posattr x="-717.00006" y="192.00002">
+    <textattr font=Helvetica size=10 just=Centered colour=blue bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <rbox h="63.50000" w="264.58334" curv=15>
+    <layering type=Copy>
+    <!-- 0 regions(s) were found -->
+    <text>Fairness#9</text>
+  </pagenode>
+
+
+  <!-- Node 14 of page -->
+  <pagenode pageref=id17 id=id231>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Dotted thick=2 colour=fucia>
+    <fillattr pattern=None colour=fucia>
+    <posattr x="-432.00000" y="425.00000">
+    <textattr font=Helvetica size=10 just=Centered colour=fucia bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <rbox h="63.50000" w="264.58334" curv=15>
+    <layering type=Copy>
+    <!-- 0 regions(s) were found -->
+    <text>Search3#12</text>
+  </pagenode>
+
+  <!-- 0 connector(s) were found -->
+</hierpage>
+
+
+<!-- Page 4 of the net -->
+<page id=id63>
+  <pageattr name="Bounds" number=5 visbor=TRUE palette=FALSE>
+  <mult insts=0>
+  <modeattr siminc=FALSE observe=FALSE propocc=FALSE interact=FALSE execcode=FALSE>
+  <winattr open=FALSE width=549 height=420 xpos=186 ypos=239>
+  <lineattr type=Solid thick=0 colour=black>
+  <fillattr pattern=None colour=black>
+  <posattr x="0.00000" y="-0.00000">
+  <box h="2561.16675" w="1933.22217">
+  <!-- 6 node(s) were found -->
+
+  <!-- Node 1 of page -->
+  <aux id=id59>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=0 colour=black>
+    <fillattr pattern=None colour=black>
+    <posattr x="-388.00000" y="687.00006">
+    <textattr font=Courier size=12 just=Left colour=black bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <box h="130.49979" w="948.92102">
+    <layering type=Copy>
+    <!-- 0 regions(s) were found -->
+    <text>UpperMultiSet (Mark.System'Eat 1);
+LowerMultiSet (Mark.System'Eat 1);</text>
+  </aux>
+
+
+  <!-- Node 2 of page -->
+  <aux id=id121>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=0 colour=black>
+    <fillattr pattern=None colour=black>
+    <posattr x="-201.00000" y="119.00005">
+    <textattr font=Courier size=12 just=Left colour=black bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <box h="88.16344" w="1315.82874">
+    <layering type=Copy>
+    <!-- 0 regions(s) were found -->
+    <text>mkst_ms'PH (UpperMultiSet (Mark.System'Eat 1));</text>
+  </aux>
+
+
+  <!-- Node 3 of page -->
+  <aux id=id60>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=0 colour=black>
+    <fillattr pattern=None colour=black>
+    <posattr x="-389.00006" y="1033.00000">
+    <textattr font=Courier size=12 just=Left colour=black bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <box h="137.55341" w="938.33075">
+    <layering type=Copy>
+    <!-- 0 regions(s) were found -->
+    <text>UpperInteger (Mark.System'Eat 1);
+LowerInteger (Mark.System'Think 1);</text>
+  </aux>
+
+
+  <!-- Node 4 of page -->
+  <aux id=id61>
+    <flags mask=FALSE omit=FALSE nobound=TRUE nosizing=TRUE visible=TRUE>
+    <lineattr type=Solid thick=0 colour=black>
+    <fillattr pattern=None colour=black>
+    <posattr x="-691.00000" y="1165.00000">
+    <textattr font=Helvetica size=12 just=Left colour=black bold=TRUE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <label>
+    <layering type=Copy>
+    <!-- 0 regions(s) were found -->
+    <text>Integer Bounds</text>
+  </aux>
+
+
+  <!-- Node 5 of page -->
+  <aux id=id74>
+    <flags mask=FALSE omit=FALSE nobound=TRUE nosizing=TRUE visible=TRUE>
+    <lineattr type=Solid thick=0 colour=black>
+    <fillattr pattern=None colour=black>
+    <posattr x="-543.00000" y="816.00006">
+    <textattr font=Helvetica size=12 just=Left colour=black bold=TRUE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <label>
+    <layering type=Copy>
+    <!-- 0 regions(s) were found -->
+    <text>Examples (Multi-set Bounds)</text>
+  </aux>
+
+
+  <!-- Node 6 of page -->
+  <aux id=id55>
+    <flags mask=FALSE omit=FALSE nobound=TRUE nosizing=TRUE visible=TRUE>
+    <lineattr type=Solid thick=0 colour=black>
+    <fillattr pattern=None colour=black>
+    <posattr x="-395.00000" y="209.00006">
+    <textattr font=Helvetica size=12 just=Left colour=black bold=TRUE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <label>
+    <layering type=Copy>
+    <!-- 0 regions(s) were found -->
+    <text>A more readable representation of the result</text>
+  </aux>
+
+  <!-- 0 connector(s) were found -->
+</page>
+
+
+<!-- Page 5 of the net -->
+<page id=id109>
+  <pageattr name="System" number=1 visbor=FALSE palette=FALSE>
+  <mult insts=1>
+  <modeattr siminc=FALSE observe=FALSE propocc=FALSE interact=FALSE execcode=FALSE>
+  <winattr open=TRUE width=448 height=489 xpos=349 ypos=124>
+  <lineattr type=None thick=0 colour=black>
+  <fillattr pattern=None colour=black>
+  <posattr x="0.00000" y="-0.00000">
+  <box h="2741.08325" w="1883.83337">
+  <!-- 7 node(s) were found -->
+
+  <!-- Node 1 of page -->
+  <place id=id79>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=2 colour=fucia>
+    <fillattr pattern=Solid colour=white>
+    <posattr x="-493.00006" y="776.00000">
+    <textattr font=Helvetica size=10 just=Centered colour=fucia bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <ellipse h="70.55534" w="176.38760">
+    <layering type=Copy>
+    <!-- 3 regions(s) were found -->
+
+    <!-- Region 1 of node -->
+    <type id=id81>
+      <flags mask=FALSE omit=FALSE nobound=TRUE nosizing=TRUE visible=TRUE>
+      <lineattr type=Solid thick=0 colour=fucia>
+      <fillattr pattern=None colour=fucia>
+      <posattr x="-599.00006" y="752.00006">
+      <textattr font=Helvetica size=9 just=Left colour=fucia bold=FALSE italic=TRUE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+      <label>
+      <layering type=Copy>
+      <regattr colorap=TRUE sizewp=TRUE hoffset="0.00086" voffset="0.00086">
+      <!-- 0 regions(s) were found -->
+      <text>PH</text>
+    </type>
+
+    <!-- Region 2 of node -->
+    <initmark id=id33>
+      <flags mask=FALSE omit=FALSE nobound=TRUE nosizing=TRUE visible=TRUE>
+      <lineattr type=Solid thick=0 colour=fucia>
+      <fillattr pattern=None colour=fucia>
+      <posattr x="-595.00006" y="816.00006">
+      <textattr font=Helvetica size=9 just=Left colour=fucia bold=FALSE italic=FALSE underlin=TRUE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+      <label>
+      <layering type=Copy>
+      <regattr colorap=TRUE sizewp=TRUE hoffset="0.00086" voffset="0.00086">
+      <!-- 0 regions(s) were found -->
+      <text>PH</text>
+    </initmark>
+
+    <!-- Region 3 of node -->
+    <mark-key id=id82>
+      <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+      <lineattr type=Solid thick=0 colour=red>
+      <fillattr pattern=None colour=red>
+      <posattr x="-398.99997" y="851.00006">
+      <textattr font=Helvetica size=9 just=Centered colour=red bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+      <ellipse h="56.44444" w="56.44444">
+      <layering type=Copy>
+      <regattr colorap=TRUE sizewp=TRUE hoffset="0.00086" voffset="0.00086">
+      <!-- 1 regions(s) were found -->
+
+      <!-- Region 1 of region -->
+      <mark id=id316>
+        <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+        <lineattr type=None thick=0 colour=red>
+        <fillattr pattern=None colour=red>
+        <posattr x="-197.00003" y="800.00006">
+        <textattr font=Helvetica size=9 just=Left colour=red bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+        <box h="171.97701" w="341.00803">
+        <layering type=Copy>
+        <regattr colorap=TRUE sizewp=TRUE hoffset="0.00000" voffset="0.00086">
+        <!-- 0 regions(s) were found -->
+        <text>1`ph(1)+ 1`ph(2)+ 1`ph(3)+ 1`ph(4)+ 1`ph(5)</text>
+      </mark>
+      <text>5</text>
+    </mark-key>
+    <text>Think</text>
+  </place>
+
+
+  <!-- Node 2 of page -->
+  <place id=id301>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=2 colour=fucia>
+    <fillattr pattern=Solid colour=white>
+    <posattr x="-493.00006" y="437.00003">
+    <textattr font=Helvetica size=10 just=Centered colour=fucia bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <ellipse h="70.55534" w="176.38673">
+    <layering type=Copy>
+    <!-- 2 regions(s) were found -->
+
+    <!-- Region 1 of node -->
+    <mark-key id=id302>
+      <flags mask=FALSE omit=TRUE nobound=FALSE nosizing=FALSE visible=FALSE>
+      <lineattr type=None thick=0 colour=red>
+      <fillattr pattern=None colour=red>
+      <posattr x="-380.00006" y="481.00006">
+      <textattr font=Helvetica size=9 just=Centered colour=red bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+      <ellipse h="56.44444" w="56.44444">
+      <layering type=Copy>
+      <regattr colorap=TRUE sizewp=TRUE hoffset="0.00086" voffset="0.00086">
+      <!-- 1 regions(s) were found -->
+
+      <!-- Region 1 of region -->
+      <mark id=id306>
+        <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+        <lineattr type=None thick=0 colour=red>
+        <fillattr pattern=None colour=red>
+        <posattr x="-260.00006" y="380.00006">
+        <textattr font=Helvetica size=9 just=Left colour=black bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+        <box h="273.40063" w="176.38933">
+        <layering type=Copy>
+        <regattr colorap=TRUE sizewp=TRUE hoffset="0.00086" voffset="0.00086">
+        <!-- 0 regions(s) were found -->
+        <!-- no text was found -->
+      </mark>
+      <text>0</text>
+    </mark-key>
+
+    <!-- Region 2 of node -->
+    <type id=id300>
+      <flags mask=FALSE omit=FALSE nobound=TRUE nosizing=TRUE visible=TRUE>
+      <lineattr type=Solid thick=0 colour=fucia>
+      <fillattr pattern=None colour=fucia>
+      <posattr x="-599.00006" y="412.99997">
+      <textattr font=Helvetica size=9 just=Left colour=fucia bold=FALSE italic=TRUE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+      <label>
+      <layering type=Copy>
+      <regattr colorap=TRUE sizewp=TRUE hoffset="0.00086" voffset="0.00086">
+      <!-- 0 regions(s) were found -->
+      <text>PH</text>
+    </type>
+    <text>Eat</text>
+  </place>
+
+
+  <!-- Node 3 of page -->
+  <trans id=id80>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=2 colour=fucia>
+    <fillattr pattern=Solid colour=white>
+    <posattr x="-493.00006" y="606.00006">
+    <textattr font=Helvetica size=10 just=Centered colour=fucia bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <box h="112.88867" w="211.66623">
+    <layering type=Copy>
+    <!-- 2 regions(s) were found -->
+
+    <!-- Region 1 of node -->
+    <aux-endp id=id70>
+      <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+      <lineattr type=None thick=0 colour=black>
+      <fillattr pattern=None colour=black>
+      <posattr x="-423.00003" y="655.00006">
+      <textattr font=Helvetica size=9 just=Left colour=black bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+      <box h="18.81561" w="18.24716">
+      <layering type=Copy>
+      <regattr colorap=TRUE sizewp=TRUE hoffset="0.00086" voffset="0.00086">
+      <!-- 0 regions(s) were found -->
+      <!-- no text was found -->
+    </aux-endp>
+
+    <!-- Region 2 of node -->
+    <aux-enab id=id303>
+      <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+      <lineattr type=Solid thick=4 colour=fucia>
+      <fillattr pattern=None colour=fucia>
+      <posattr x="-493.00006" y="606.00006">
+      <textattr font=Chicago size=0 just=Left colour=black bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+      <box h="120.41492" w="218.96510">
+      <layering type=Copy>
+      <regattr colorap=TRUE sizewp=TRUE hoffset="0.00086" voffset="0.00086">
+      <!-- 0 regions(s) were found -->
+      <!-- no text was found -->
+    </aux-enab>
+    <text>Take Chopsticks</text>
+  </trans>
+
+
+  <!-- Node 4 of page -->
+  <trans id=id73>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=2 colour=fucia>
+    <fillattr pattern=Solid colour=white>
+    <posattr x="-493.00006" y="268.00000">
+    <textattr font=Helvetica size=10 just=Centered colour=fucia bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <box h="112.88803" w="211.66623">
+    <layering type=Copy>
+    <!-- 2 regions(s) were found -->
+
+    <!-- Region 1 of node -->
+    <aux-endp id=id72>
+      <flags mask=FALSE omit=TRUE nobound=FALSE nosizing=FALSE visible=FALSE>
+      <lineattr type=None thick=0 colour=black>
+      <fillattr pattern=None colour=black>
+      <posattr x="-423.00003" y="230.00006">
+      <textattr font=Helvetica size=9 just=Left colour=black bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+      <box h="31.35790" w="18.24716">
+      <layering type=Copy>
+      <regattr colorap=TRUE sizewp=TRUE hoffset="0.00086" voffset="0.00086">
+      <!-- 0 regions(s) were found -->
+      <!-- no text was found -->
+    </aux-endp>
+
+    <!-- Region 2 of node -->
+    <aux-enab id=id78>
+      <flags mask=FALSE omit=TRUE nobound=FALSE nosizing=FALSE visible=FALSE>
+      <lineattr type=None thick=4 colour=fucia>
+      <fillattr pattern=None colour=fucia>
+      <posattr x="-493.00006" y="268.00000">
+      <textattr font=Chicago size=0 just=Left colour=black bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+      <box h="120.41427" w="218.96510">
+      <layering type=Copy>
+      <regattr colorap=TRUE sizewp=TRUE hoffset="0.00086" voffset="0.00086">
+      <!-- 0 regions(s) were found -->
+      <!-- no text was found -->
+    </aux-enab>
+    <text>Put Down Chopsticks</text>
+  </trans>
+
+
+  <!-- Node 5 of page -->
+  <place id=id298>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=1 colour=blue>
+    <fillattr pattern=Solid colour=white>
+    <posattr x="-44.00001" y="437.00003">
+    <textattr font=Helvetica size=10 just=Centered colour=blue bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <ellipse h="123.47157" w="229.30511">
+    <layering type=Copy>
+    <!-- 3 regions(s) were found -->
+
+    <!-- Region 1 of node -->
+    <type id=id75>
+      <flags mask=FALSE omit=FALSE nobound=TRUE nosizing=TRUE visible=TRUE>
+      <lineattr type=Solid thick=0 colour=blue>
+      <fillattr pattern=None colour=blue>
+      <posattr x="79.99996" y="391.00003">
+      <textattr font=Helvetica size=9 just=Left colour=blue bold=FALSE italic=TRUE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+      <label>
+      <layering type=Copy>
+      <regattr colorap=TRUE sizewp=TRUE hoffset="0.00086" voffset="0.00086">
+      <!-- 0 regions(s) were found -->
+      <text>CS</text>
+    </type>
+
+    <!-- Region 2 of node -->
+    <initmark id=id71>
+      <flags mask=FALSE omit=FALSE nobound=TRUE nosizing=TRUE visible=TRUE>
+      <lineattr type=Solid thick=0 colour=blue>
+      <fillattr pattern=None colour=blue>
+      <posattr x="84.00004" y="500.00006">
+      <textattr font=Helvetica size=9 just=Left colour=blue bold=FALSE italic=FALSE underlin=TRUE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+      <label>
+      <layering type=Copy>
+      <regattr colorap=TRUE sizewp=TRUE hoffset="0.00086" voffset="0.00086">
+      <!-- 0 regions(s) were found -->
+      <text>CS</text>
+    </initmark>
+
+    <!-- Region 3 of node -->
+    <mark-key id=id218>
+      <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+      <lineattr type=Solid thick=0 colour=red>
+      <fillattr pattern=None colour=red>
+      <posattr x="157.00000" y="474.00006">
+      <textattr font=Helvetica size=9 just=Centered colour=red bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+      <ellipse h="56.44444" w="56.44444">
+      <layering type=Copy>
+      <regattr colorap=TRUE sizewp=TRUE hoffset="0.00086" voffset="0.00086">
+      <!-- 1 regions(s) were found -->
+
+      <!-- Region 1 of region -->
+      <mark id=id215>
+        <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+        <lineattr type=None thick=0 colour=red>
+        <fillattr pattern=None colour=red>
+        <posattr x="361.99997" y="433.00006">
+        <textattr font=Helvetica size=9 just=Left colour=red bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+        <box h="142.17802" w="345.97263">
+        <layering type=Copy>
+        <regattr colorap=TRUE sizewp=TRUE hoffset="0.00000" voffset="0.00086">
+        <!-- 0 regions(s) were found -->
+        <text>1`cs(1)+ 1`cs(2)+ 1`cs(3)+ 1`cs(4)+ 1`cs(5)</text>
+      </mark>
+      <text>5</text>
+    </mark-key>
+    <text>Unused
+Chopsticks</text>
+  </place>
+
+
+  <!-- Node 6 of page -->
+  <globdecl id=id216>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=1 colour=red>
+    <fillattr pattern=Solid colour=white>
+    <posattr x="-261.00000" y="1130.00000">
+    <textattr font=Helvetica size=10 just=Left colour=red bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <box h="243.39729" w="1023.01770">
+    <layering type=Copy>
+    <!-- 0 regions(s) were found -->
+    <text>val n = 5; 
+color PH = index ph with 1..n   declare ms;
+color CS = index cs with 1..n   declare ms;
+var p : PH;
+fun Chopsticks(ph(i)) = 1`cs(i)+1`cs(if i=n then 1 else i+1);</text>
+  </globdecl>
+
+
+  <!-- Node 7 of page -->
+  <aux id=id212>
+    <flags mask=FALSE omit=FALSE nobound=TRUE nosizing=TRUE visible=TRUE>
+    <lineattr type=Solid thick=0 colour=blue>
+    <fillattr pattern=None colour=blue>
+    <posattr x="-356.00003" y="-44.00001">
+    <textattr font=Helvetica size=24 just=Left colour=blue bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <label>
+    <layering type=Copy>
+    <!-- 0 regions(s) were found -->
+    <text>Dining Philosophers</text>
+  </aux>
+
+  <!-- 6 connector(s) were found -->
+
+  <!-- Connector 1 of page -->
+  <arc id=id151 orientation=PtoT>
+    <connattr hdwidth=4 hdheight=8 txtwidth=64 txtheight=32>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=2 colour=fucia>
+    <fillattr pattern=Solid colour=fucia>
+    <textattr font=Helvetica size=9 just=Centered colour=black bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <seg-conn curv=15 points="">
+    <layering type=Copy>
+    <placeend idref=id79>
+    <transend idref=id80>
+
+    <!-- Region 1 of connector -->
+    <annot id=id220>
+      <flags mask=FALSE omit=FALSE nobound=TRUE nosizing=TRUE visible=TRUE>
+      <lineattr type=Solid thick=0 colour=fucia>
+      <fillattr pattern=None colour=fucia>
+      <posattr x="-511.00006" y="723.00000">
+      <textattr font=Helvetica size=10 just=Left colour=fucia bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+      <label>
+      <layering type=Copy>
+      <regattr colorap=TRUE sizewp=FALSE hoffset="222191.65625" voffset="222191.65625">
+      <!-- 0 regions(s) were found -->
+      <text>p</text>
+    </annot>
+    <!-- no text was found -->
+  </arc>
+
+
+  <!-- Connector 2 of page -->
+  <arc id=id87 orientation=TtoP>
+    <connattr hdwidth=4 hdheight=8 txtwidth=64 txtheight=32>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=2 colour=fucia>
+    <fillattr pattern=Solid colour=fucia>
+    <textattr font=Helvetica size=9 just=Centered colour=black bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <seg-conn curv=15 points="">
+    <layering type=Copy>
+    <placeend idref=id301>
+    <transend idref=id80>
+
+    <!-- Region 1 of connector -->
+    <annot id=id224>
+      <flags mask=FALSE omit=FALSE nobound=TRUE nosizing=TRUE visible=TRUE>
+      <lineattr type=Solid thick=0 colour=fucia>
+      <fillattr pattern=None colour=fucia>
+      <posattr x="-508.00000" y="529.00000">
+      <textattr font=Helvetica size=10 just=Left colour=fucia bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+      <label>
+      <layering type=Copy>
+      <regattr colorap=TRUE sizewp=FALSE hoffset="222191.65625" voffset="222191.65625">
+      <!-- 0 regions(s) were found -->
+      <text>p</text>
+    </annot>
+    <!-- no text was found -->
+  </arc>
+
+
+  <!-- Connector 3 of page -->
+  <arc id=id86 orientation=PtoT>
+    <connattr hdwidth=4 hdheight=8 txtwidth=64 txtheight=32>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=2 colour=fucia>
+    <fillattr pattern=Solid colour=fucia>
+    <textattr font=Helvetica size=9 just=Centered colour=black bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <seg-conn curv=15 points="">
+    <layering type=Copy>
+    <placeend idref=id301>
+    <transend idref=id73>
+
+    <!-- Region 1 of connector -->
+    <annot id=id226>
+      <flags mask=FALSE omit=FALSE nobound=TRUE nosizing=TRUE visible=TRUE>
+      <lineattr type=Solid thick=0 colour=fucia>
+      <fillattr pattern=None colour=fucia>
+      <posattr x="-508.00000" y="381.00000">
+      <textattr font=Helvetica size=10 just=Left colour=fucia bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+      <label>
+      <layering type=Copy>
+      <regattr colorap=TRUE sizewp=FALSE hoffset="222191.65625" voffset="222191.65625">
+      <!-- 0 regions(s) were found -->
+      <text>p</text>
+    </annot>
+    <!-- no text was found -->
+  </arc>
+
+
+  <!-- Connector 4 of page -->
+  <arc id=id89 orientation=TtoP>
+    <connattr hdwidth=4 hdheight=8 txtwidth=64 txtheight=32>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=2 colour=fucia>
+    <fillattr pattern=Solid colour=fucia>
+    <textattr font=Helvetica size=9 just=Centered colour=black bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <seg-conn curv=15 points="(-493.88889,-878.41669)(-709.08331,-878.41669)(-709.08331,-137.58333)(-493.88889,-137.58333)">
+    <layering type=Copy>
+    <placeend idref=id79>
+    <transend idref=id73>
+
+    <!-- Region 1 of connector -->
+    <annot id=id229>
+      <flags mask=FALSE omit=FALSE nobound=TRUE nosizing=TRUE visible=TRUE>
+      <lineattr type=Solid thick=0 colour=fucia>
+      <fillattr pattern=None colour=fucia>
+      <posattr x="-663.00000" y="529.00000">
+      <textattr font=Helvetica size=10 just=Left colour=fucia bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+      <label>
+      <layering type=Copy>
+      <regattr colorap=TRUE sizewp=FALSE hoffset="222191.65625" voffset="222191.65625">
+      <!-- 0 regions(s) were found -->
+      <text>p</text>
+    </annot>
+    <!-- no text was found -->
+  </arc>
+
+
+  <!-- Connector 5 of page -->
+  <arc id=id92 orientation=TtoP>
+    <connattr hdwidth=4 hdheight=8 txtwidth=64 txtheight=32>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=0 colour=blue>
+    <fillattr pattern=Solid colour=blue>
+    <textattr font=Helvetica size=9 just=Centered colour=black bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <seg-conn curv=15 points="(-292.80554,-169.33333)(-425.77936,-169.33333)">
+    <layering type=Copy>
+    <placeend idref=id298>
+    <transend idref=id73 endpoint=id72>
+
+    <!-- Region 1 of connector -->
+    <annot id=id202>
+      <flags mask=FALSE omit=FALSE nobound=TRUE nosizing=TRUE visible=TRUE>
+      <lineattr type=Solid thick=0 colour=blue>
+      <fillattr pattern=Solid colour=white>
+      <posattr x="-109.99996" y="262.00006">
+      <textattr font=Helvetica size=10 just=Left colour=blue bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+      <label>
+      <layering type=Copy>
+      <regattr colorap=TRUE sizewp=FALSE hoffset="222191.65625" voffset="222191.65625">
+      <!-- 0 regions(s) were found -->
+      <text>Chopsticks(p)</text>
+    </annot>
+    <!-- no text was found -->
+  </arc>
+
+
+  <!-- Connector 6 of page -->
+  <arc id=id91 orientation=PtoT>
+    <connattr hdwidth=4 hdheight=8 txtwidth=64 txtheight=32>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=0 colour=blue>
+    <fillattr pattern=Solid colour=blue>
+    <textattr font=Helvetica size=9 just=Centered colour=black bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <seg-conn curv=15 points="(-289.27777,-726.72223)(-425.77936,-726.72223)">
+    <layering type=Copy>
+    <placeend idref=id298>
+    <transend idref=id80 endpoint=id70>
+
+    <!-- Region 1 of connector -->
+    <annot id=id197>
+      <flags mask=FALSE omit=FALSE nobound=TRUE nosizing=TRUE visible=TRUE>
+      <lineattr type=Solid thick=0 colour=blue>
+      <fillattr pattern=Solid colour=white>
+      <posattr x="-102.99996" y="634.50006">
+      <textattr font=Helvetica size=10 just=Left colour=blue bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+      <label>
+      <layering type=Copy>
+      <regattr colorap=TRUE sizewp=FALSE hoffset="222191.65625" voffset="222191.65625">
+      <!-- 0 regions(s) were found -->
+      <text>Chopsticks(p)</text>
+    </annot>
+    <!-- no text was found -->
+  </arc>
+
+</page>
+
+
+<!-- Page 6 of the net -->
+<page id=id117>
+  <pageattr name="Reachabilty" number=4 visbor=TRUE palette=FALSE>
+  <mult insts=0>
+  <modeattr siminc=FALSE observe=FALSE propocc=FALSE interact=FALSE execcode=FALSE>
+  <winattr open=FALSE width=530 height=299 xpos=172 ypos=188>
+  <lineattr type=Solid thick=0 colour=black>
+  <fillattr pattern=None colour=black>
+  <posattr x="0.00000" y="-0.00000">
+  <box h="2561.16675" w="1933.22217">
+  <!-- 5 node(s) were found -->
+
+  <!-- Node 1 of page -->
+  <aux id=id50>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=0 colour=black>
+    <fillattr pattern=None colour=black>
+    <posattr x="-622.00006" y="1040.00000">
+    <textattr font=Courier size=12 just=Left colour=black bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <box h="201.06697" w="536.20758">
+    <layering type=Copy>
+    <!-- 0 regions(s) were found -->
+    <text>Reachable (5,3);
+SccReachable (5,3);
+AllReachable ();</text>
+  </aux>
+
+
+  <!-- Node 2 of page -->
+  <aux id=id49>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=0 colour=black>
+    <fillattr pattern=None colour=black>
+    <posattr x="-613.00006" y="756.00006">
+    <textattr font=Courier size=12 just=Left colour=black bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <box h="141.08075" w="536.20758">
+    <layering type=Copy>
+    <!-- 0 regions(s) were found -->
+    <text>Reachable' (5,3);
+
+</text>
+  </aux>
+
+
+  <!-- Node 3 of page -->
+  <aux id=id129>
+    <flags mask=FALSE omit=FALSE nobound=TRUE nosizing=TRUE visible=TRUE>
+    <lineattr type=Solid thick=0 colour=black>
+    <fillattr pattern=None colour=black>
+    <posattr x="-642.00000" y="1187.00000">
+    <textattr font=Helvetica size=12 just=Left colour=black bold=TRUE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <label>
+    <layering type=Copy>
+    <!-- 0 regions(s) were found -->
+    <text>Reachability Properties</text>
+  </aux>
+
+
+  <!-- Node 4 of page -->
+  <aux id=id52>
+    <flags mask=FALSE omit=FALSE nobound=TRUE nosizing=TRUE visible=TRUE>
+    <lineattr type=Solid thick=0 colour=black>
+    <fillattr pattern=None colour=black>
+    <posattr x="-707.00000" y="869.00006">
+    <textattr font=Helvetica size=12 just=Left colour=black bold=TRUE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <label>
+    <layering type=Copy>
+    <!-- 0 regions(s) were found -->
+    <text>Chatty Versions</text>
+  </aux>
+
+
+  <!-- Node 5 of page -->
+  <aux id=id47>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=0 colour=black>
+    <fillattr pattern=None colour=black>
+    <posattr x="-617.00000" y="575.00000">
+    <textattr font=Courier size=12 just=Left colour=black bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <box h="183.41582" w="536.20758">
+    <layering type=Copy>
+    <!-- 0 regions(s) were found -->
+    <text>SccReachable' (5,3);</text>
+  </aux>
+
+  <!-- 0 connector(s) were found -->
+</page>
+
+
+<!-- Page 7 of the net -->
+<page id=id120>
+  <pageattr name="Home" number=6 visbor=TRUE palette=FALSE>
+  <mult insts=0>
+  <modeattr siminc=FALSE observe=FALSE propocc=FALSE interact=FALSE execcode=FALSE>
+  <winattr open=FALSE width=543 height=332 xpos=182 ypos=312>
+  <lineattr type=Solid thick=0 colour=black>
+  <fillattr pattern=None colour=black>
+  <posattr x="0.00000" y="-0.00000">
+  <box h="2561.16675" w="1933.22217">
+  <!-- 4 node(s) were found -->
+
+  <!-- Node 1 of page -->
+  <aux id=id85>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=0 colour=black>
+    <fillattr pattern=None colour=black>
+    <posattr x="-564.00000" y="903.00000">
+    <textattr font=Courier size=12 just=Left colour=black bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <box h="398.59689" w="631.41235">
+    <layering type=Copy>
+    <!-- 0 regions(s) were found -->
+    <text>HomeSpace [2,6];
+MinimalHomeSpace ();
+HomeMarking (6);
+ListHomeMarkings ();
+ListHomeScc ();
+HomeMarkingExists ();
+InitialHomeMarking ();</text>
+  </aux>
+
+
+  <!-- Node 2 of page -->
+  <aux id=id119>
+    <flags mask=FALSE omit=FALSE nobound=TRUE nosizing=TRUE visible=TRUE>
+    <lineattr type=Solid thick=0 colour=black>
+    <fillattr pattern=None colour=black>
+    <posattr x="-689.00006" y="1150.00000">
+    <textattr font=Helvetica size=12 just=Left colour=black bold=TRUE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <label>
+    <layering type=Copy>
+    <!-- 0 regions(s) were found -->
+    <text>Home Properties</text>
+  </aux>
+
+
+  <!-- Node 3 of page -->
+  <aux id=id147>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=0 colour=black>
+    <fillattr pattern=None colour=black>
+    <posattr x="-557.00000" y="449.00006">
+    <textattr font=Courier size=12 just=Left colour=black bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <box h="190.45349" w="631.41235">
+    <layering type=Copy>
+    <!-- 0 regions(s) were found -->
+    <text>HomeSpace' [];
+</text>
+  </aux>
+
+
+  <!-- Node 4 of page -->
+  <aux id=id128>
+    <flags mask=FALSE omit=FALSE nobound=TRUE nosizing=TRUE visible=TRUE>
+    <lineattr type=Solid thick=0 colour=black>
+    <fillattr pattern=None colour=black>
+    <posattr x="-698.00006" y="601.00006">
+    <textattr font=Helvetica size=12 just=Left colour=black bold=TRUE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <label>
+    <layering type=Copy>
+    <!-- 0 regions(s) were found -->
+    <text>Chatty Versions</text>
+  </aux>
+
+  <!-- 0 connector(s) were found -->
+</page>
+
+
+<!-- Page 8 of the net -->
+<page id=id141>
+  <pageattr name="Liveness" number=7 visbor=TRUE palette=FALSE>
+  <mult insts=0>
+  <modeattr siminc=FALSE observe=FALSE propocc=FALSE interact=FALSE execcode=FALSE>
+  <winattr open=FALSE width=558 height=403 xpos=173 ypos=344>
+  <lineattr type=Solid thick=0 colour=black>
+  <fillattr pattern=None colour=black>
+  <posattr x="0.00000" y="-0.00000">
+  <box h="2561.16675" w="1933.22217">
+  <!-- 4 node(s) were found -->
+
+  <!-- Node 1 of page -->
+  <aux id=id136>
+    <flags mask=FALSE omit=FALSE nobound=TRUE nosizing=TRUE visible=TRUE>
+    <lineattr type=Solid thick=0 colour=black>
+    <fillattr pattern=None colour=black>
+    <posattr x="-666.00006" y="1176.00000">
+    <textattr font=Helvetica size=12 just=Left colour=black bold=TRUE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <label>
+    <layering type=Copy>
+    <!-- 0 regions(s) were found -->
+    <text>Liveness Properties</text>
+  </aux>
+
+
+  <!-- Node 2 of page -->
+  <aux id=id135>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=0 colour=black>
+    <fillattr pattern=None colour=black>
+    <posattr x="-319.00003" y="897.00006">
+    <textattr font=Courier size=12 just=Left colour=black bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <box h="440.89600" w="1146.41516">
+    <layering type=Copy>
+    <!-- 0 regions(s) were found -->
+    <text>DeadMarking (8);
+ListDeadMarkings ();
+SccListDeadMarkings ();
+TIsDead ([TI.System'Take 1],4);
+BEsDead ([Bind.System'Take (1,{p=ph(3)})],4);
+ListDeadTIs ();
+TIsLive [TI.System'Take 1];
+BEsLive [Bind.System'Take (1,{p=ph(3)})];
+
+
+</text>
+  </aux>
+
+
+  <!-- Node 3 of page -->
+  <aux id=id69>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=0 colour=black>
+    <fillattr pattern=None colour=black>
+    <posattr x="-321.00000" y="418.00000">
+    <textattr font=Courier size=12 just=Left colour=black bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <box h="384.45242" w="1146.41516">
+    <layering type=Copy>
+    <!-- 0 regions(s) were found -->
+    <text>BEsStrictlyLive	[
+  Bind.System'Take (1,{p=ph(1)}),
+	 Bind.System'Take (1,{p=ph(2)}),
+	 Bind.System'Take (1,{p=ph(3)}),
+	 Bind.System'Take (1,{p=ph(4)}),
+	 Bind.System'Take (1,{p=ph(5)})];
+
+</text>
+  </aux>
+
+
+  <!-- Node 4 of page -->
+  <aux id=id103>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=0 colour=black>
+    <fillattr pattern=None colour=black>
+    <posattr x="-672.00000" y="123.00003">
+    <textattr font=Courier size=12 just=Left colour=black bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <box h="109.27649" w="437.31610">
+    <layering type=Copy>
+    <!-- 0 regions(s) were found -->
+    <text>ListLiveTIs ();</text>
+  </aux>
+
+  <!-- 0 connector(s) were found -->
+</page>
+
+
+<!-- Page 9 of the net -->
+<page id=id148>
+  <pageattr name="Search1" number=10 visbor=TRUE palette=FALSE>
+  <mult insts=0>
+  <modeattr siminc=FALSE observe=FALSE propocc=FALSE interact=FALSE execcode=FALSE>
+  <winattr open=FALSE width=512 height=478 xpos=287 ypos=272>
+  <lineattr type=Solid thick=0 colour=black>
+  <fillattr pattern=None colour=black>
+  <posattr x="0.00000" y="-0.00000">
+  <box h="2561.16675" w="1933.22217">
+  <!-- 6 node(s) were found -->
+
+  <!-- Node 1 of page -->
+  <aux id=id137>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=0 colour=black>
+    <fillattr pattern=None colour=black>
+    <posattr x="-456.00006" y="1035.00000">
+    <textattr font=Courier size=12 just=Left colour=black bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <box h="183.38933" w="892.44061">
+    <layering type=Copy>
+    <!-- 0 regions(s) were found -->
+    <text>fun Eating (p:PH) : Node list
+= PredAllNodes (fn n =>
+  cf(p,Mark.System'Eat 1 n) > 0);</text>
+  </aux>
+
+
+  <!-- Node 2 of page -->
+  <aux id=id139>
+    <flags mask=FALSE omit=FALSE nobound=TRUE nosizing=TRUE visible=TRUE>
+    <lineattr type=Solid thick=0 colour=black>
+    <fillattr pattern=None colour=black>
+    <posattr x="-827.00000" y="1172.00000">
+    <textattr font=Helvetica size=12 just=Left colour=black bold=TRUE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <label>
+    <layering type=Copy>
+    <!-- 0 regions(s) were found -->
+    <text>Eating</text>
+  </aux>
+
+
+  <!-- Node 3 of page -->
+  <aux id=id66>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=0 colour=black>
+    <fillattr pattern=None colour=black>
+    <posattr x="-208.00002" y="347.00003">
+    <textattr font=Courier size=12 just=Left colour=black bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <box h="345.65677" w="1368.77783">
+    <layering type=Copy>
+    <!-- 0 regions(s) were found -->
+    <text>fun MaxTIEnabled () : int
+= SearchAllNodes(
+	  fn _ => true,
+	  fn n => length(remdupl(map ArcToTI(OutArcs n))),
+	  0,
+	  max);</text>
+  </aux>
+
+
+  <!-- Node 4 of page -->
+  <aux id=id100>
+    <flags mask=FALSE omit=FALSE nobound=TRUE nosizing=TRUE visible=TRUE>
+    <lineattr type=Solid thick=0 colour=black>
+    <fillattr pattern=None colour=black>
+    <posattr x="-739.00000" y="580.00000">
+    <textattr font=Helvetica size=12 just=Left colour=black bold=TRUE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <label>
+    <layering type=Copy>
+    <!-- 0 regions(s) were found -->
+    <text>MaxTIEnabled</text>
+  </aux>
+
+
+  <!-- Node 5 of page -->
+  <aux id=id123>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=0 colour=black>
+    <fillattr pattern=None colour=black>
+    <posattr x="-605.00000" y="730.00000">
+    <textattr font=Courier size=12 just=Left colour=black bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <box h="84.60939" w="606.68951">
+    <layering type=Copy>
+    <!-- 0 regions(s) were found -->
+    <text>Eating (ph(3));</text>
+  </aux>
+
+
+  <!-- Node 6 of page -->
+  <aux id=id132>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=0 colour=black>
+    <fillattr pattern=None colour=black>
+    <posattr x="-589.00000" y="-35.00002">
+    <textattr font=Courier size=12 just=Left colour=black bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <box h="84.60939" w="606.68951">
+    <layering type=Copy>
+    <!-- 0 regions(s) were found -->
+    <text>MaxTIEnabled ();</text>
+  </aux>
+
+  <!-- 0 connector(s) were found -->
+</page>
+
+
+<!-- Page 10 of the net -->
+<page id=id192>
+  <pageattr name="Search2" number=11 visbor=TRUE palette=FALSE>
+  <mult insts=0>
+  <modeattr siminc=FALSE observe=FALSE propocc=FALSE interact=FALSE execcode=FALSE>
+  <winattr open=FALSE width=521 height=563 xpos=269 ypos=232>
+  <lineattr type=Solid thick=0 colour=black>
+  <fillattr pattern=None colour=black>
+  <posattr x="0.00000" y="-0.00000">
+  <box h="2561.16675" w="1933.22217">
+  <!-- 6 node(s) were found -->
+
+  <!-- Node 1 of page -->
+  <aux id=id35>
+    <flags mask=FALSE omit=FALSE nobound=TRUE nosizing=TRUE visible=TRUE>
+    <lineattr type=Solid thick=0 colour=black>
+    <fillattr pattern=None colour=black>
+    <posattr x="-617.00000" y="111.00001">
+    <textattr font=Helvetica size=12 just=Left colour=black bold=TRUE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <label>
+    <layering type=Copy>
+    <!-- 0 regions(s) were found -->
+    <text>InvariantViolations</text>
+  </aux>
+
+
+  <!-- Node 2 of page -->
+  <aux id=id57>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=0 colour=black>
+    <fillattr pattern=None colour=black>
+    <posattr x="-128.99998" y="-88.00002">
+    <textattr font=Courier size=12 just=Left colour=black bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <box h="253.92355" w="1444.54248">
+    <layering type=Copy>
+    <!-- 0 regions(s) were found -->
+    <text>fun InvariantViolation ()
+= PredAllNodes(fn n =>
+    Mark.System'Unused 1 n +
+	   ext_ms Chopsticks (Mark.System'Eat 1 n) <><> CS);</text>
+  </aux>
+
+
+  <!-- Node 3 of page -->
+  <aux id=id36>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=0 colour=black>
+    <fillattr pattern=None colour=black>
+    <posattr x="-141.00000" y="811.00000">
+    <textattr font=Courier size=12 just=Left colour=black bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <box h="589.06671" w="1361.62292">
+    <layering type=Copy>
+    <!-- 0 regions(s) were found -->
+    <text>local
+  fun next(ph(i)) = ph(if i<n then i+1 else 1)
+in
+fun EatingNeighbours () : Node list
+= PredAllNodes(fn n =>
+	  let
+		    val Eating = Mark.System'Eat 1 n
+	  in
+		    not(Eating + ext_col next Eating <<= PH)
+	  end)
+end;</text>
+  </aux>
+
+
+  <!-- Node 4 of page -->
+  <aux id=id106>
+    <flags mask=FALSE omit=FALSE nobound=TRUE nosizing=TRUE visible=TRUE>
+    <lineattr type=Solid thick=0 colour=black>
+    <fillattr pattern=None colour=black>
+    <posattr x="-642.00000" y="1162.00000">
+    <textattr font=Helvetica size=12 just=Left colour=black bold=TRUE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <label>
+    <layering type=Copy>
+    <!-- 0 regions(s) were found -->
+    <text>EatingNeighbours</text>
+  </aux>
+
+
+  <!-- Node 5 of page -->
+  <aux id=id127>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=0 colour=black>
+    <fillattr pattern=None colour=black>
+    <posattr x="-518.00006" y="303.00003">
+    <textattr font=Courier size=12 just=Left colour=black bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <box h="95.16646" w="613.63263">
+    <layering type=Copy>
+    <!-- 0 regions(s) were found -->
+    <text>EatingNeighbours ();</text>
+  </aux>
+
+
+  <!-- Node 6 of page -->
+  <aux id=id138>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=0 colour=black>
+    <fillattr pattern=None colour=black>
+    <posattr x="-511.00006" y="-448.00000">
+    <textattr font=Courier size=12 just=Left colour=black bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <box h="88.11349" w="613.63263">
+    <layering type=Copy>
+    <!-- 0 regions(s) were found -->
+    <text>InvariantViolation ();</text>
+  </aux>
+
+  <!-- 0 connector(s) were found -->
+</page>
+
+
+<!-- Page 11 of the net -->
+<page id=id196>
+  <pageattr name="Livenes2" number=8 visbor=TRUE palette=FALSE>
+  <mult insts=0>
+  <modeattr siminc=FALSE observe=FALSE propocc=FALSE interact=FALSE execcode=FALSE>
+  <winattr open=FALSE width=458 height=601 xpos=153 ypos=139>
+  <lineattr type=Solid thick=0 colour=black>
+  <fillattr pattern=None colour=black>
+  <posattr x="0.00000" y="-0.00000">
+  <box h="2561.16675" w="1933.22217">
+  <!-- 5 node(s) were found -->
+
+  <!-- Node 1 of page -->
+  <aux id=id187>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=0 colour=black>
+    <fillattr pattern=None colour=black>
+    <posattr x="-206.00003" y="1072.00000">
+    <textattr font=Courier size=12 just=Left colour=black bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <box h="81.08700" w="1344.02124">
+    <layering type=Copy>
+    <!-- 0 regions(s) were found -->
+    <text>TIsDead' ([TI.System'Take 1],4);
+</text>
+  </aux>
+
+
+  <!-- Node 2 of page -->
+  <aux id=id179>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=0 colour=black>
+    <fillattr pattern=None colour=black>
+    <posattr x="-197.00003" y="211.00005">
+    <textattr font=Courier size=12 just=Left colour=black bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <box h="88.14169" w="1340.49854">
+    <layering type=Copy>
+    <!-- 0 regions(s) were found -->
+    <text>TIsLive' [];
+</text>
+  </aux>
+
+
+  <!-- Node 3 of page -->
+  <aux id=id182>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=0 colour=black>
+    <fillattr pattern=None colour=black>
+    <posattr x="-197.00003" y="642.00000">
+    <textattr font=Courier size=12 just=Left colour=black bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <box h="81.08635" w="1340.49854">
+    <layering type=Copy>
+    <!-- 0 regions(s) were found -->
+    <text>BEsDead' ([Bind.System'Take (1,{p=ph(3)})],4);
+</text>
+  </aux>
+
+
+  <!-- Node 4 of page -->
+  <aux id=id159>
+    <flags mask=FALSE omit=FALSE nobound=TRUE nosizing=TRUE visible=TRUE>
+    <lineattr type=Solid thick=0 colour=black>
+    <fillattr pattern=None colour=black>
+    <posattr x="-700.00000" y="1172.00000">
+    <textattr font=Helvetica size=12 just=Left colour=black bold=TRUE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <label>
+    <layering type=Copy>
+    <!-- 0 regions(s) were found -->
+    <text>Chatty Versions</text>
+  </aux>
+
+
+  <!-- Node 5 of page -->
+  <aux id=id171>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=0 colour=black>
+    <fillattr pattern=None colour=black>
+    <posattr x="-195.00006" y="-261.00000">
+    <textattr font=Courier size=12 just=Left colour=black bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <box h="88.14169" w="1344.02124">
+    <layering type=Copy>
+    <!-- 0 regions(s) were found -->
+    <text>BEsLive' [];
+</text>
+  </aux>
+
+  <!-- 0 connector(s) were found -->
+</page>
+
+
+<!-- Page 12 of the net -->
+<page id=id200>
+  <pageattr name="Fairness" number=9 visbor=TRUE palette=FALSE>
+  <mult insts=0>
+  <modeattr siminc=FALSE observe=FALSE propocc=FALSE interact=FALSE execcode=FALSE>
+  <winattr open=FALSE width=527 height=323 xpos=190 ypos=213>
+  <lineattr type=Solid thick=0 colour=black>
+  <fillattr pattern=None colour=black>
+  <posattr x="0.00000" y="-0.00000">
+  <box h="2561.16675" w="1933.22217">
+  <!-- 3 node(s) were found -->
+
+  <!-- Node 1 of page -->
+  <aux id=id209>
+    <flags mask=FALSE omit=FALSE nobound=TRUE nosizing=TRUE visible=TRUE>
+    <lineattr type=Solid thick=0 colour=black>
+    <fillattr pattern=None colour=black>
+    <posattr x="-686.00000" y="1180.00000">
+    <textattr font=Helvetica size=12 just=Left colour=black bold=TRUE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <label>
+    <layering type=Copy>
+    <!-- 0 regions(s) were found -->
+    <text>Fairness Properties</text>
+  </aux>
+
+
+  <!-- Node 2 of page -->
+  <aux id=id213>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=0 colour=black>
+    <fillattr pattern=None colour=black>
+    <posattr x="-253.00006" y="1052.00000">
+    <textattr font=Courier size=12 just=Left colour=black bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <box h="135.78586" w="1303.43213">
+    <layering type=Copy>
+    <!-- 0 regions(s) were found -->
+    <text>TIsFairness [TI.System'Take 1];
+BEsFairness [Bind.System'Take (1,{p=ph(1)})];
+</text>
+  </aux>
+
+
+  <!-- Node 3 of page -->
+  <aux id=id189>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=0 colour=black>
+    <fillattr pattern=None colour=black>
+    <posattr x="-654.00000" y="670.00000">
+    <textattr font=Courier size=12 just=Left colour=black bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <box h="186.90483" w="521.98511">
+    <layering type=Copy>
+    <!-- 0 regions(s) were found -->
+    <text>ListImpartialTIs ();
+ListFairTIs ();
+ListJustTIs ();
+</text>
+  </aux>
+
+  <!-- 0 connector(s) were found -->
+</page>
+
+
+<!-- Page 13 of the net -->
+<page id=id214>
+  <pageattr name="Graph" number=2 visbor=TRUE palette=FALSE>
+  <mult insts=0>
+  <modeattr siminc=FALSE observe=FALSE propocc=FALSE interact=FALSE execcode=FALSE>
+  <winattr open=FALSE width=579 height=774 xpos=1 ypos=1>
+  <lineattr type=Solid thick=0 colour=black>
+  <fillattr pattern=None colour=black>
+  <posattr x="0.00000" y="-0.00000">
+  <box h="2561.16675" w="1933.22217">
+  <!-- 12 node(s) were found -->
+
+  <!-- Node 1 of page -->
+  <aux id=id2>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=1 colour=red>
+    <fillattr pattern=Solid colour=white>
+    <posattr x="-58.99995" y="123.00003">
+    <textattr font=Courier size=10 just=Centered colour=red bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <rbox h="123.47222" w="123.47222" curv=21>
+    <layering type=Copy>
+    <!-- 0 regions(s) were found -->
+    <text>1 
+5:5</text>
+  </aux>
+
+
+  <!-- Node 2 of page -->
+  <aux id=id204>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=1 colour=red>
+    <fillattr pattern=Solid colour=white>
+    <posattr x="-58.99995" y="430.00003">
+    <textattr font=Courier size=10 just=Centered colour=red bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <rbox h="123.47222" w="123.47222" curv=21>
+    <layering type=Copy>
+    <!-- 0 regions(s) were found -->
+    <text>2 
+3:3</text>
+  </aux>
+
+
+  <!-- Node 3 of page -->
+  <aux id=id201>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=1 colour=red>
+    <fillattr pattern=Solid colour=white>
+    <posattr x="-351.00000" y="218.00005">
+    <textattr font=Courier size=10 just=Centered colour=red bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <rbox h="123.47222" w="123.47222" curv=21>
+    <layering type=Copy>
+    <!-- 0 regions(s) were found -->
+    <text>3 
+3:3</text>
+  </aux>
+
+
+  <!-- Node 4 of page -->
+  <aux id=id172>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=1 colour=red>
+    <fillattr pattern=Solid colour=white>
+    <posattr x="-240.00000" y="-123.99997">
+    <textattr font=Courier size=10 just=Centered colour=red bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <rbox h="123.47222" w="123.47222" curv=21>
+    <layering type=Copy>
+    <!-- 0 regions(s) were found -->
+    <text>4 
+3:3</text>
+  </aux>
+
+
+  <!-- Node 5 of page -->
+  <aux id=id173>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=1 colour=red>
+    <fillattr pattern=Solid colour=white>
+    <posattr x="120.00000" y="-123.99997">
+    <textattr font=Courier size=10 just=Centered colour=red bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <rbox h="123.47222" w="123.47222" curv=21>
+    <layering type=Copy>
+    <!-- 0 regions(s) were found -->
+    <text>5 
+3:3</text>
+  </aux>
+
+
+  <!-- Node 6 of page -->
+  <aux id=id158>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=1 colour=red>
+    <fillattr pattern=Solid colour=white>
+    <posattr x="231.00000" y="218.00005">
+    <textattr font=Courier size=10 just=Centered colour=red bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <rbox h="123.47222" w="123.47222" curv=21>
+    <layering type=Copy>
+    <!-- 0 regions(s) were found -->
+    <text>6 
+3:3</text>
+  </aux>
+
+
+  <!-- Node 7 of page -->
+  <aux id=id155>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=1 colour=red>
+    <fillattr pattern=Solid colour=white>
+    <posattr x="-643.00006" y="313.00006">
+    <textattr font=Courier size=10 just=Centered colour=red bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <rbox h="123.47222" w="123.47222" curv=21>
+    <layering type=Copy>
+    <!-- 0 regions(s) were found -->
+    <text>7 
+2:2</text>
+  </aux>
+
+
+  <!-- Node 8 of page -->
+  <aux id=id228>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=1 colour=red>
+    <fillattr pattern=Solid colour=white>
+    <posattr x="523.00006" y="313.00006">
+    <textattr font=Courier size=10 just=Centered colour=red bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <rbox h="123.47222" w="123.47222" curv=21>
+    <layering type=Copy>
+    <!-- 0 regions(s) were found -->
+    <text>8 
+2:2</text>
+  </aux>
+
+
+  <!-- Node 9 of page -->
+  <aux id=id222>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=1 colour=red>
+    <fillattr pattern=Solid colour=white>
+    <posattr x="-420.00000" y="-373.00006">
+    <textattr font=Courier size=10 just=Centered colour=red bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <rbox h="123.47222" w="123.47222" curv=21>
+    <layering type=Copy>
+    <!-- 1 regions(s) were found -->
+
+    <!-- Region 1 of node -->
+    <aux-std id=id198>
+      <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+      <lineattr type=Solid thick=1 colour=red>
+      <fillattr pattern=Solid colour=white>
+      <posattr x="-423.00003" y="-535.00006">
+      <textattr font=Courier size=10 just=Left colour=red bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+      <box h="155.22115" w="702.01440">
+      <layering type=Copy>
+      <regattr colorap=TRUE sizewp=TRUE hoffset="0.00086" voffset="0.00086">
+      <!-- 0 regions(s) were found -->
+      <text>Unused: 1`cs(1)
+Think: 1`ph(1)+ 1`ph(3)+ 1`ph(5)
+Eat: 1`ph(2)+ 1`ph(4)
+</text>
+    </aux-std>
+    <text>9 
+2:2</text>
+  </aux>
+
+
+  <!-- Node 10 of page -->
+  <aux id=id20>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=1 colour=red>
+    <fillattr pattern=Solid colour=white>
+    <posattr x="-58.99995" y="737.00000">
+    <textattr font=Courier size=10 just=Centered colour=red bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <rbox h="123.47222" w="123.47222" curv=21>
+    <layering type=Copy>
+    <!-- 1 regions(s) were found -->
+
+    <!-- Region 1 of node -->
+    <aux-std id=id28>
+      <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+      <lineattr type=Solid thick=1 colour=red>
+      <fillattr pattern=Solid colour=white>
+      <posattr x="-58.99995" y="891.00000">
+      <textattr font=Courier size=10 just=Left colour=red bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+      <box h="155.22028" w="702.02283">
+      <layering type=Copy>
+      <regattr colorap=TRUE sizewp=TRUE hoffset="0.00086" voffset="0.00086">
+      <!-- 0 regions(s) were found -->
+      <text>Unused: 1`cs(3)
+Think: 1`ph(2)+ 1`ph(3)+ 1`ph(5)
+Eat: 1`ph(1)+ 1`ph(4)
+</text>
+    </aux-std>
+    <text>10 
+2:2</text>
+  </aux>
+
+
+  <!-- Node 11 of page -->
+  <aux id=id37>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=1 colour=red>
+    <fillattr pattern=Solid colour=white>
+    <posattr x="300.00000" y="-373.00006">
+    <textattr font=Courier size=10 just=Centered colour=red bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <rbox h="123.47222" w="123.47222" curv=21>
+    <layering type=Copy>
+    <!-- 1 regions(s) were found -->
+
+    <!-- Region 1 of node -->
+    <aux-std id=id24>
+      <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+      <lineattr type=Solid thick=1 colour=red>
+      <fillattr pattern=Solid colour=white>
+      <posattr x="303.00003" y="-535.00006">
+      <textattr font=Courier size=10 just=Left colour=red bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+      <box h="155.21985" w="702.01831">
+      <layering type=Copy>
+      <regattr colorap=TRUE sizewp=TRUE hoffset="0.00086" voffset="0.00086">
+      <!-- 0 regions(s) were found -->
+      <text>Unused: 1`cs(5)
+Think: 1`ph(2)+ 1`ph(4)+ 1`ph(5)
+Eat: 1`ph(1)+ 1`ph(3)
+</text>
+    </aux-std>
+    <text>11 
+2:2</text>
+  </aux>
+
+
+  <!-- Node 12 of page -->
+  <aux id=id29>
+    <flags mask=FALSE omit=FALSE nobound=TRUE nosizing=TRUE visible=TRUE>
+    <lineattr type=Solid thick=0 colour=red>
+    <fillattr pattern=None colour=red>
+    <posattr x="-382.00006" y="1121.00000">
+    <textattr font=Helvetica size=24 just=Left colour=red bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <label>
+    <layering type=Copy>
+    <!-- 0 regions(s) were found -->
+    <text>Occurrence Graph</text>
+  </aux>
+
+  <!-- 30 connector(s) were found -->
+
+  <!-- Connector 1 of page -->
+  <aux-conn id=id156 orientation=1to2>
+    <connattr hdwidth=4 hdheight=8 txtwidth=64 txtheight=32>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=1 colour=blue>
+    <fillattr pattern=Solid colour=blue>
+    <textattr font=Helvetica size=9 just=Centered colour=black bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <seg-conn curv=15 points="">
+    <layering type=Copy>
+    <node1 idref=id2>
+    <node2 idref=id204>
+    <!-- no text was found -->
+  </aux-conn>
+
+
+  <!-- Connector 2 of page -->
+  <aux-conn id=id162 orientation=1to2>
+    <connattr hdwidth=4 hdheight=8 txtwidth=64 txtheight=32>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=1 colour=blue>
+    <fillattr pattern=Solid colour=blue>
+    <textattr font=Helvetica size=9 just=Centered colour=black bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <seg-conn curv=15 points="">
+    <layering type=Copy>
+    <node1 idref=id2>
+    <node2 idref=id201>
+    <!-- no text was found -->
+  </aux-conn>
+
+
+  <!-- Connector 3 of page -->
+  <aux-conn id=id168 orientation=1to2>
+    <connattr hdwidth=4 hdheight=8 txtwidth=64 txtheight=32>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=1 colour=blue>
+    <fillattr pattern=Solid colour=blue>
+    <textattr font=Helvetica size=9 just=Centered colour=black bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <seg-conn curv=15 points="">
+    <layering type=Copy>
+    <node1 idref=id2>
+    <node2 idref=id172>
+    <!-- no text was found -->
+  </aux-conn>
+
+
+  <!-- Connector 4 of page -->
+  <aux-conn id=id167 orientation=1to2>
+    <connattr hdwidth=4 hdheight=8 txtwidth=64 txtheight=32>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=1 colour=blue>
+    <fillattr pattern=Solid colour=blue>
+    <textattr font=Helvetica size=9 just=Centered colour=black bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <seg-conn curv=15 points="">
+    <layering type=Copy>
+    <node1 idref=id2>
+    <node2 idref=id173>
+    <!-- no text was found -->
+  </aux-conn>
+
+
+  <!-- Connector 5 of page -->
+  <aux-conn id=id160 orientation=1to2>
+    <connattr hdwidth=4 hdheight=8 txtwidth=64 txtheight=32>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=1 colour=blue>
+    <fillattr pattern=Solid colour=blue>
+    <textattr font=Helvetica size=9 just=Centered colour=black bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <seg-conn curv=15 points="">
+    <layering type=Copy>
+    <node1 idref=id2>
+    <node2 idref=id158>
+    <!-- no text was found -->
+  </aux-conn>
+
+
+  <!-- Connector 6 of page -->
+  <aux-conn id=id157 orientation=1to2>
+    <connattr hdwidth=4 hdheight=8 txtwidth=64 txtheight=32>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=1 colour=blue>
+    <fillattr pattern=Solid colour=blue>
+    <textattr font=Helvetica size=9 just=Centered colour=black bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <seg-conn curv=15 points="">
+    <layering type=Copy>
+    <node1 idref=id204>
+    <node2 idref=id155>
+    <!-- no text was found -->
+  </aux-conn>
+
+
+  <!-- Connector 7 of page -->
+  <aux-conn id=id150 orientation=1to2>
+    <connattr hdwidth=4 hdheight=8 txtwidth=64 txtheight=32>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=1 colour=blue>
+    <fillattr pattern=Solid colour=blue>
+    <textattr font=Helvetica size=9 just=Centered colour=black bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <seg-conn curv=15 points="">
+    <layering type=Copy>
+    <node1 idref=id204>
+    <node2 idref=id228>
+    <!-- no text was found -->
+  </aux-conn>
+
+
+  <!-- Connector 8 of page -->
+  <aux-conn id=id149 orientation=1to2>
+    <connattr hdwidth=4 hdheight=8 txtwidth=64 txtheight=32>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=1 colour=blue>
+    <fillattr pattern=Solid colour=blue>
+    <textattr font=Helvetica size=9 just=Centered colour=black bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <seg-conn curv=15 points="">
+    <layering type=Copy>
+    <node1 idref=id204>
+    <node2 idref=id2>
+    <!-- no text was found -->
+  </aux-conn>
+
+
+  <!-- Connector 9 of page -->
+  <aux-conn id=id118 orientation=1to2>
+    <connattr hdwidth=4 hdheight=8 txtwidth=64 txtheight=32>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=1 colour=blue>
+    <fillattr pattern=Solid colour=blue>
+    <textattr font=Helvetica size=9 just=Centered colour=black bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <seg-conn curv=15 points="">
+    <layering type=Copy>
+    <node1 idref=id201>
+    <node2 idref=id222>
+    <!-- no text was found -->
+  </aux-conn>
+
+
+  <!-- Connector 10 of page -->
+  <aux-conn id=id163 orientation=1to2>
+    <connattr hdwidth=4 hdheight=8 txtwidth=64 txtheight=32>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=1 colour=blue>
+    <fillattr pattern=Solid colour=blue>
+    <textattr font=Helvetica size=9 just=Centered colour=black bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <seg-conn curv=15 points="">
+    <layering type=Copy>
+    <node1 idref=id201>
+    <node2 idref=id2>
+    <!-- no text was found -->
+  </aux-conn>
+
+
+  <!-- Connector 11 of page -->
+  <aux-conn id=id165 orientation=1to2>
+    <connattr hdwidth=4 hdheight=8 txtwidth=64 txtheight=32>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=1 colour=blue>
+    <fillattr pattern=Solid colour=blue>
+    <textattr font=Helvetica size=9 just=Centered colour=black bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <seg-conn curv=15 points="">
+    <layering type=Copy>
+    <node1 idref=id172>
+    <node2 idref=id155>
+    <!-- no text was found -->
+  </aux-conn>
+
+
+  <!-- Connector 12 of page -->
+  <aux-conn id=id166 orientation=1to2>
+    <connattr hdwidth=4 hdheight=8 txtwidth=64 txtheight=32>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=1 colour=blue>
+    <fillattr pattern=Solid colour=blue>
+    <textattr font=Helvetica size=9 just=Centered colour=black bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <seg-conn curv=15 points="">
+    <layering type=Copy>
+    <node1 idref=id172>
+    <node2 idref=id37>
+    <!-- no text was found -->
+  </aux-conn>
+
+
+  <!-- Connector 13 of page -->
+  <aux-conn id=id83 orientation=1to2>
+    <connattr hdwidth=4 hdheight=8 txtwidth=64 txtheight=32>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=1 colour=blue>
+    <fillattr pattern=Solid colour=blue>
+    <textattr font=Helvetica size=9 just=Centered colour=maroon bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <seg-conn curv=15 points="">
+    <layering type=Copy>
+    <node1 idref=id172>
+    <node2 idref=id2>
+    <!-- no text was found -->
+  </aux-conn>
+
+
+  <!-- Connector 14 of page -->
+  <aux-conn id=id169 orientation=1to2>
+    <connattr hdwidth=4 hdheight=8 txtwidth=64 txtheight=32>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=1 colour=blue>
+    <fillattr pattern=Solid colour=blue>
+    <textattr font=Helvetica size=9 just=Centered colour=black bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <seg-conn curv=15 points="">
+    <layering type=Copy>
+    <node1 idref=id173>
+    <node2 idref=id228>
+    <!-- no text was found -->
+  </aux-conn>
+
+
+  <!-- Connector 15 of page -->
+  <aux-conn id=id180 orientation=1to2>
+    <connattr hdwidth=4 hdheight=8 txtwidth=64 txtheight=32>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=1 colour=blue>
+    <fillattr pattern=Solid colour=blue>
+    <textattr font=Helvetica size=9 just=Centered colour=black bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <seg-conn curv=15 points="">
+    <layering type=Copy>
+    <node1 idref=id173>
+    <node2 idref=id222>
+    <!-- no text was found -->
+  </aux-conn>
+
+
+  <!-- Connector 16 of page -->
+  <aux-conn id=id177 orientation=1to2>
+    <connattr hdwidth=4 hdheight=8 txtwidth=64 txtheight=32>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=1 colour=blue>
+    <fillattr pattern=Solid colour=blue>
+    <textattr font=Helvetica size=9 just=Centered colour=red bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <seg-conn curv=15 points="">
+    <layering type=Copy>
+    <node1 idref=id173>
+    <node2 idref=id2>
+    <!-- no text was found -->
+  </aux-conn>
+
+
+  <!-- Connector 17 of page -->
+  <aux-conn id=id114 orientation=1to2>
+    <connattr hdwidth=4 hdheight=8 txtwidth=64 txtheight=32>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=1 colour=blue>
+    <fillattr pattern=Solid colour=blue>
+    <textattr font=Helvetica size=9 just=Centered colour=fucia bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <seg-conn curv=15 points="">
+    <layering type=Copy>
+    <node1 idref=id158>
+    <node2 idref=id37>
+    <!-- no text was found -->
+  </aux-conn>
+
+
+  <!-- Connector 18 of page -->
+  <aux-conn id=id93 orientation=1to2>
+    <connattr hdwidth=4 hdheight=8 txtwidth=64 txtheight=32>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=1 colour=blue>
+    <fillattr pattern=Solid colour=blue>
+    <textattr font=Helvetica size=9 just=Centered colour=gray bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <seg-conn curv=15 points="">
+    <layering type=Copy>
+    <node1 idref=id158>
+    <node2 idref=id2>
+    <!-- no text was found -->
+  </aux-conn>
+
+
+  <!-- Connector 19 of page -->
+  <aux-conn id=id126 orientation=1to2>
+    <connattr hdwidth=4 hdheight=8 txtwidth=64 txtheight=32>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=1 colour=blue>
+    <fillattr pattern=Solid colour=blue>
+    <textattr font=Helvetica size=9 just=Centered colour=silver bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <seg-conn curv=15 points="">
+    <layering type=Copy>
+    <node1 idref=id155>
+    <node2 idref=id172>
+    <!-- no text was found -->
+  </aux-conn>
+
+
+  <!-- Connector 20 of page -->
+  <aux-conn id=id154 orientation=1to2>
+    <connattr hdwidth=4 hdheight=8 txtwidth=64 txtheight=32>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=1 colour=blue>
+    <fillattr pattern=Solid colour=blue>
+    <textattr font=Helvetica size=9 just=Centered colour=black bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <seg-conn curv=15 points="">
+    <layering type=Copy>
+    <node1 idref=id155>
+    <node2 idref=id204>
+    <!-- no text was found -->
+  </aux-conn>
+
+
+  <!-- Connector 21 of page -->
+  <aux-conn id=id98 orientation=1to2>
+    <connattr hdwidth=4 hdheight=8 txtwidth=64 txtheight=32>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=1 colour=blue>
+    <fillattr pattern=Solid colour=blue>
+    <textattr font=Helvetica size=9 just=Centered colour=gray bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <seg-conn curv=15 points="">
+    <layering type=Copy>
+    <node1 idref=id228>
+    <node2 idref=id173>
+    <!-- no text was found -->
+  </aux-conn>
+
+
+  <!-- Connector 22 of page -->
+  <aux-conn id=id115 orientation=1to2>
+    <connattr hdwidth=4 hdheight=8 txtwidth=64 txtheight=32>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=1 colour=blue>
+    <fillattr pattern=Solid colour=blue>
+    <textattr font=Helvetica size=9 just=Centered colour=purple bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <seg-conn curv=15 points="">
+    <layering type=Copy>
+    <node1 idref=id228>
+    <node2 idref=id204>
+    <!-- no text was found -->
+  </aux-conn>
+
+
+  <!-- Connector 23 of page -->
+  <aux-conn id=id144 orientation=1to2>
+    <connattr hdwidth=4 hdheight=8 txtwidth=64 txtheight=32>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=1 colour=blue>
+    <fillattr pattern=Solid colour=blue>
+    <textattr font=Helvetica size=9 just=Centered colour=red bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <seg-conn curv=15 points="">
+    <layering type=Copy>
+    <node1 idref=id222>
+    <node2 idref=id173>
+    <!-- no text was found -->
+  </aux-conn>
+
+
+  <!-- Connector 24 of page -->
+  <aux-conn id=id97 orientation=1to2>
+    <connattr hdwidth=4 hdheight=8 txtwidth=64 txtheight=32>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=1 colour=blue>
+    <fillattr pattern=Solid colour=blue>
+    <textattr font=Helvetica size=9 just=Centered colour=black bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <seg-conn curv=15 points="">
+    <layering type=Copy>
+    <node1 idref=id222>
+    <node2 idref=id201>
+
+    <!-- Region 1 of connector -->
+    <aux-std id=id26>
+      <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+      <lineattr type=Solid thick=1 colour=blue>
+      <fillattr pattern=Solid colour=white>
+      <posattr x="-521.00006" y="-123.99997">
+      <textattr font=Courier size=10 just=Left colour=blue bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+      <box h="63.49892" w="321.02521">
+      <layering type=Copy>
+      <regattr colorap=TRUE sizewp=TRUE hoffset="222191.65625" voffset="222191.65625">
+      <!-- 0 regions(s) were found -->
+      <text>Put: {p=ph(2)}</text>
+    </aux-std>
+    <!-- no text was found -->
+  </aux-conn>
+
+
+  <!-- Connector 25 of page -->
+  <aux-conn id=id96 orientation=1to2>
+    <connattr hdwidth=4 hdheight=8 txtwidth=64 txtheight=32>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=1 colour=blue>
+    <fillattr pattern=Solid colour=blue>
+    <textattr font=Helvetica size=9 just=Centered colour=fucia bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <seg-conn curv=15 points="">
+    <layering type=Copy>
+    <node1 idref=id20>
+    <node2 idref=id158>
+    <!-- no text was found -->
+  </aux-conn>
+
+
+  <!-- Connector 26 of page -->
+  <aux-conn id=id105 orientation=1to2>
+    <connattr hdwidth=4 hdheight=8 txtwidth=64 txtheight=32>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=1 colour=blue>
+    <fillattr pattern=Solid colour=blue>
+    <textattr font=Helvetica size=9 just=Centered colour=gray bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <seg-conn curv=15 points="">
+    <layering type=Copy>
+    <node1 idref=id158>
+    <node2 idref=id20>
+
+    <!-- Region 1 of connector -->
+    <aux-std id=id31>
+      <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+      <lineattr type=Solid thick=1 colour=blue>
+      <fillattr pattern=Solid colour=white>
+      <posattr x="169.00003" y="546.00006">
+      <textattr font=Courier size=10 just=Left colour=blue bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+      <box h="63.49957" w="342.18948">
+      <layering type=Copy>
+      <regattr colorap=TRUE sizewp=TRUE hoffset="222191.65625" voffset="222191.65625">
+      <!-- 0 regions(s) were found -->
+      <text>Take: {p=ph(4)}</text>
+    </aux-std>
+    <!-- no text was found -->
+  </aux-conn>
+
+
+  <!-- Connector 27 of page -->
+  <aux-conn id=id143 orientation=1to2>
+    <connattr hdwidth=4 hdheight=8 txtwidth=64 txtheight=32>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=1 colour=blue>
+    <fillattr pattern=Solid colour=blue>
+    <textattr font=Helvetica size=9 just=Centered colour=black bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <seg-conn curv=15 points="">
+    <layering type=Copy>
+    <node1 idref=id20>
+    <node2 idref=id201>
+    <!-- no text was found -->
+  </aux-conn>
+
+
+  <!-- Connector 28 of page -->
+  <aux-conn id=id95 orientation=1to2>
+    <connattr hdwidth=4 hdheight=8 txtwidth=64 txtheight=32>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=1 colour=blue>
+    <fillattr pattern=Solid colour=blue>
+    <textattr font=Helvetica size=9 just=Centered colour=maroon bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <seg-conn curv=15 points="">
+    <layering type=Copy>
+    <node1 idref=id201>
+    <node2 idref=id20>
+
+    <!-- Region 1 of connector -->
+    <aux-std id=id30>
+      <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+      <lineattr type=Solid thick=1 colour=blue>
+      <fillattr pattern=Solid colour=white>
+      <posattr x="-285.99997" y="546.00006">
+      <textattr font=Courier size=10 just=Left colour=blue bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+      <box h="63.49957" w="342.18948">
+      <layering type=Copy>
+      <regattr colorap=TRUE sizewp=TRUE hoffset="222191.65625" voffset="222191.65625">
+      <!-- 0 regions(s) were found -->
+      <text>Take: {p=ph(1)}</text>
+    </aux-std>
+    <!-- no text was found -->
+  </aux-conn>
+
+
+  <!-- Connector 29 of page -->
+  <aux-conn id=id90 orientation=1to2>
+    <connattr hdwidth=4 hdheight=8 txtwidth=64 txtheight=32>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=1 colour=blue>
+    <fillattr pattern=Solid colour=blue>
+    <textattr font=Helvetica size=9 just=Centered colour=black bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <seg-conn curv=15 points="">
+    <layering type=Copy>
+    <node1 idref=id37>
+    <node2 idref=id158>
+
+    <!-- Region 1 of connector -->
+    <aux-std id=id34>
+      <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+      <lineattr type=Solid thick=1 colour=blue>
+      <fillattr pattern=Solid colour=white>
+      <posattr x="398.99997" y="-123.99997">
+      <textattr font=Courier size=10 just=Left colour=blue bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+      <box h="63.49957" w="321.02368">
+      <layering type=Copy>
+      <regattr colorap=TRUE sizewp=TRUE hoffset="222191.65625" voffset="222191.65625">
+      <!-- 0 regions(s) were found -->
+      <text>Put: {p=ph(3)}</text>
+    </aux-std>
+    <!-- no text was found -->
+  </aux-conn>
+
+
+  <!-- Connector 30 of page -->
+  <aux-conn id=id104 orientation=1to2>
+    <connattr hdwidth=4 hdheight=8 txtwidth=64 txtheight=32>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=1 colour=blue>
+    <fillattr pattern=Solid colour=blue>
+    <textattr font=Helvetica size=9 just=Centered colour=black bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <seg-conn curv=15 points="">
+    <layering type=Copy>
+    <node1 idref=id37>
+    <node2 idref=id172>
+    <!-- no text was found -->
+  </aux-conn>
+
+</page>
+
+
+<!-- Page 14 of the net -->
+<page id=id223>
+  <pageattr name="SetStrOp" number=19 visbor=TRUE palette=FALSE>
+  <mult insts=0>
+  <modeattr siminc=FALSE observe=FALSE propocc=FALSE interact=FALSE execcode=FALSE>
+  <winattr open=FALSE width=568 height=647 xpos=219 ypos=134>
+  <lineattr type=Solid thick=0 colour=black>
+  <fillattr pattern=None colour=black>
+  <posattr x="0.00000" y="-0.00000">
+  <box h="2561.16675" w="1933.22217">
+  <!-- 2 node(s) were found -->
+
+  <!-- Node 1 of page -->
+  <aux id=id22>
+    <flags mask=FALSE omit=FALSE nobound=TRUE nosizing=TRUE visible=TRUE>
+    <lineattr type=Solid thick=0 colour=black>
+    <fillattr pattern=None colour=black>
+    <posattr x="-739.00000" y="1204.00000">
+    <textattr font=Helvetica size=12 just=Left colour=black bold=TRUE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <label>
+    <layering type=Copy>
+    <!-- 0 regions(s) were found -->
+    <text>String Options</text>
+  </aux>
+
+
+  <!-- Node 2 of page -->
+  <aux id=id25>
+    <flags mask=FALSE omit=FALSE nobound=FALSE nosizing=FALSE visible=TRUE>
+    <lineattr type=Solid thick=0 colour=black>
+    <fillattr pattern=None colour=black>
+    <posattr x="-319.00003" y="125.00002">
+    <textattr font=Courier size=12 just=Left colour=black bold=FALSE italic=FALSE underlin=FALSE outline=FALSE shadow=FALSE condense=FALSE extend=FALSE scbar=TRUE>
+    <box h="1922.58289" w="1118.28503">
+    <layering type=Copy>
+    <!-- 0 regions(s) were found -->
+    <text>OGSet.StringRepOptions'Node(
+fn (CPN'node) => CPN'node);
+
+OGSet.StringRepOptions'Arc(
+fn (CPN'arc, CPN'source, CPN'dest) => CPN'arc^":"^CPN'source^"->"^CPN'dest);
+
+OGSet.StringRepOptions'PI(
+fn (CPN'page, CPN'place, CPN'inst) => CPN'page^"'"^CPN'place^" "^CPN'inst);
+
+OGSet.StringRepOptions'TI(
+fn (CPN'page, CPN'trans, CPN'inst) => CPN'page^"'"^CPN'trans^" "^CPN'inst);
+
+OGSet.StringRepOptions'BE(
+fn (CPN'TI, CPN'bind) => CPN'TI^": "^CPN'bind);
+
+OGSet.StringRepOptions'Mark(
+fn (CPN'PI, CPN'mark) => CPN'PI^": "^CPN'mark^NEWLINE);
+
+OGSet.NodeDescriptorOptions(
+      fn (CPN'n:Node) =>
+      (st_Node CPN'n)^NEWLINE^
+      (st_Mark.System'Unused 1 CPN'n)^
+      (st_Mark.System'Think 1 CPN'n)^
+      (st_Mark.System'Eat 1 CPN'n));
+
+OGSet.ArcDescriptorOptions(fn (CPN'a:Arc) =>
+ (st_Arc CPN'a)^NEWLINE^
+(st_BE(ArcToBE CPN'a)));</text>
+  </aux>
+
+  <!-- 0 connector(s) were found -->
+</page>
+
