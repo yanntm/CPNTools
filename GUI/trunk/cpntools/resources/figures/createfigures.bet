@@ -1,0 +1,1068 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../../cpnworkspace';
+INCLUDE 'figure';
+INCLUDE 'stylefigures';
+INCLUDE 'standardfigures';
+INCLUDE '~beta/basiclib/math';
+
+-- CPNWorkspacelib: attributes --
+
+ScaleableFigure: Figure
+  (# theComposite: ^Composite;
+     
+     update::<
+       (# 
+       do theComposite.clear;
+          INNER;
+       #);
+     init::<
+       (# 
+       do &Composite[] -> theComposite[];
+          theComposite.init;
+          theComposite[] -> add;
+          INNER;
+          update;
+       #);
+  #);
+
+InscriptionFigure: ScaleableFigure
+  (# theInscription: ^Inscription;
+          
+     update::
+       (# createText:
+            (# str: ^Text;
+               theTextItem: ^TextItem;
+               c: ^Color;
+            enter (str[],c[])
+            do &TextItem[] -> theTextItem[];
+               theTextItem.init;
+               str[] -> theTextItem.content[];
+               c[] -> &StrokeStyle -> theTextItem.theStyle[];
+            exit theTextItem[]
+            #);
+       do (if (theInscription[]<>NONE) and (theInscription.getInscription<>NONE) then
+              (theInscription.getInscription,theInscription.textColor[])
+                -> createText -> theComposite.add;
+          if);              
+       #);
+     
+     init::
+       (# 
+       enter theInscription[]
+       #);
+     
+  #);
+
+PageElementFigure: ScaleableFigure
+  (# thePageElement: ^PageElement;
+
+     update::
+       (# presentedPageElement: ^Composite;
+       do (if thePageElement[] <> NONE then
+	      thePageElement.changed;
+              thePageElement.present -> presentedPageElement[];
+              presentedPageElement[] -> theComposite.add;
+              (thePageElement.getInscriptions).scan
+	      (# 
+              do (if current.isVisible then
+                     current.changed;
+                     current.present -> theComposite.add;
+                 if);
+	      #);
+              (thePageElement.gethierarchyinfos).scan
+              (#
+	      do current.changed;
+	         current.present -> theComposite.add;
+	      #);
+              (-presentedPageElement.x,-presentedPageElement.y) 
+                -> (theComposite.x,theComposite.y);
+	  if);
+       #);
+     
+     init::<
+       (#
+       enter thePageElement[]
+       #);
+  #);
+
+GroupFigure: ScaleableFigure
+  (# theGroup: ^PageElementlist;
+     
+     update::
+       (#
+       do (if theGroup[] <> NONE then
+              theGroup.scan
+              (# theItem: ^Composite;
+              do current.changed;
+                 current.present -> theComposite.add;
+                 
+                 (current.getInscriptions).scan
+                 (# 
+                 do (if current.isVisible then
+                        current.changed;
+                        current.present -> theComposite.add;
+                    if);
+                 #);
+                 (current.gethierarchyinfos).scan
+                 (#
+                 do current.changed;
+                    current.present -> theComposite.add;
+                 #);
+                 current.changed;
+              #);
+          if);
+       #);
+
+     init::<
+       (#
+       enter theGroup[]
+       do (if theGroup[] <> NONE then
+              theGroup.scanArcs
+              (#
+              do current[] -> current.transEnd.addArc;
+                 current[] -> current.placeEnd.addArc;
+              #);
+              theGroup.scanArcs
+              (# 
+              do compiled -> current.status;
+              #);
+          if);
+       #);
+  #);
+
+TransitionFigure: Figure
+  (#
+     theBox: ^Rect;
+     
+     update::
+       (#
+       do 'width' -> options.lookupInteger -> theBox.width;
+          'height' -> options.lookupInteger -> theBox.height;
+          
+       #);
+     init::<
+       (#
+       do &Rect[]->theBox[];
+          theBox[]->add;
+          120 -> theBox.width;
+          60 -> theBox.height;
+          INNER;   
+       #);
+  #);
+
+PlaceFigure: Figure
+  (#
+     theEllipse: ^Ellipse;
+     update::
+       (#
+       do 'width' -> options.lookupInteger -> theEllipse.width;
+          'height' -> options.lookupInteger -> theEllipse.height;
+          
+       #);
+     init::<
+       (#
+       do &Ellipse[]->theEllipse[];
+          theEllipse[]->add;
+          120 -> theEllipse.width;
+          60 -> theEllipse.height;
+          INNER;   
+       #);
+  #);
+
+ArcFigure: Figure
+  (# useDefaultHotspot::(# do true -> value; #);
+     theArrow: ^Line;
+     
+     
+     init::<
+       (#
+          point: ^Point2d;
+       do &Line[]->theArrow[];
+          theArrow[]->add;
+          &PointList[]->theArrow.points[];
+          (for 2 repeat &Point2d[]->point[]->theArrow.points.append; for);     
+          
+          1->theArrow.points.get->point[];
+          (18,18)->point;          
+          2->theArrow.points.get->point[];
+          (0,0)->point; 
+          
+          INNER;   
+       #);
+  #);
+
+CycleArcFigure: CycleFigure
+  (# arrows: ^Composite;
+     leftArrow: ^Line;
+     rightArrow: ^Line;
+     
+     Init::< 
+       (# 
+       do &Composite[]->arrows[];
+          &Line[]->leftArrow[];
+          &Line[]->rightArrow[];
+          
+          &PointList[]->leftArrow.points[];
+          &PointList[]->rightArrow.points[];
+          
+          (for 2 repeat &Point2d[]->leftArrow.points.append for); 
+          (for 2 repeat &Point2d[]->rightArrow.points.append for); 
+          
+          leftArrow[]->arrows.add;
+          rightArrow[]->arrows.add;
+          Layout;
+          arrows[]->add;
+       #);   
+     
+     Layout: 
+       (# 
+          theBasicStyle: ^CompleteStyle;   
+          point: ^Point2d;
+       do &CompleteStyle[]->theBasicStyle[];
+          0.8->theBasicStyle.arrowHeadSize;
+          (Black[],NONE,1,ARROW_END)->theBasicStyle;
+          theBasicStyle[]->leftArrow.theStyle[];
+          theBasicStyle[]->rightArrow.theStyle[];
+          
+          1->leftArrow.points.get->point[];
+     	  (8,5)->point;  
+          2->leftArrow.points.get->point[];
+     	  (-4,5)->point;  
+          
+          1->rightArrow.points.get->point[];
+     	  (12,5)->point;  
+          2->rightArrow.points.get->point[];
+     	  (24,5)->point;  
+	  
+	  INNER;
+       #);     
+  #);
+
+DeleteFigure: Figure
+  (# useDefaultHotspot::(# do true -> value; #);
+     theColor: ^Color;
+     Line1: @Line;
+     Line2: @Line;
+     point: ^Point2d;
+     
+     init::<
+       (# theStyle: ^CompositeStyle;
+          theStrokeStyle: ^StrokeStyle;
+          theFillStyle: ^FillStyle;
+          theStrokeWidthStyle: ^StrokeWidthStyle;
+          
+       do &CompositeStyle[] -> theStyle[] -> Line1.theStyle[];
+          theStyle[] -> Line2.theStyle[];
+          &FillStyle[] -> theFillStyle[];
+          &StrokeStyle[] -> theStrokeStyle[];
+          &StrokeWidthStyle[] -> theStrokeWidthStyle[];
+          redish[] -> theStrokeStyle.stroke[];
+          redish[] -> theFillStyle.fill[];
+          2 -> theStrokeWidthStyle.strokeWidth;
+          theFillStyle[] -> theStyle.add;
+          theStrokeStyle[] -> theStyle.add;
+          theStrokeWidthStyle[] -> theStyle.add;
+          &PointList[] -> Line1.points[];
+          (for 4 repeat &Point2d[] -> point[] -> Line1.points.append; for);
+          Line1[] -> add;
+          &PointList[] -> Line2.points[];
+          (for 4 repeat &Point2d[] -> point[] -> Line2.points.append; for);
+          Line2[] -> add;
+          Layout;
+       #);
+     
+     Layout:
+       (# (* The line is drawn relative to the toolcell - 
+           * the other icons are drawn in global coords.
+           * Why is that? 
+           *)
+       do 1 -> Line1.points.get -> point[];
+          (8, -6) -> point;
+          2 -> Line1.points.get -> point[];
+          (6, -8) -> point;
+          3 -> Line1.points.get -> point[];
+          (-8, 6) -> point;
+          4 -> Line1.points.get -> point[];
+          (-6, 8) -> point;
+          
+          1 -> Line2.points.get -> point[];
+          (-6, -8) -> point;
+          2 -> Line2.points.get -> point[];
+          (-8, -6) -> point;
+          3 -> Line2.points.get -> point[];
+          (6, 8) -> point;
+          4 -> Line2.points.get -> point[];
+          (8, 6) -> point;
+       #);
+  #);
+
+CloneFigure: Figure
+  (# useDefaultHotspot::(# do true -> value; #);
+     theColor: ^Color;
+     Rect1: @Rect;
+     Rect2: @Rect;
+     
+     init::<
+       (# theStyle1: ^CompositeStyle;
+          theStrokeStyle1: ^StrokeStyle;
+          theStyle2: ^CompositeStyle;
+          theStrokeStyle2: ^StrokeStyle;
+          theStrokeWidthStyle: ^StrokeWidthStyle;
+          
+       do &CompositeStyle[] -> theStyle1[] -> Rect1.theStyle[];
+          &StrokeStyle[] -> theStrokeStyle1[];
+          &StrokeWidthStyle[] -> theStrokeWidthStyle[];
+          black[] -> theStrokeStyle1.stroke[];
+          2 -> theStrokeWidthStyle.strokeWidth;
+          theStrokeStyle1[] -> theStyle1.add;
+          theStrokeWidthStyle[] -> theStyle1.add;
+          &CompositeStyle[] -> theStyle2[] -> Rect2.theStyle[];
+          &StrokeStyle[] -> theStrokeStyle2[];
+          black[] -> theStrokeStyle2.stroke[];
+          theStrokeStyle2[] -> theStyle2.add;
+          theStrokeWidthStyle[] -> theStyle2.add;
+          Rect1[] -> add;
+          Rect2[] -> add;
+          INNER;
+          Layout;
+       #);
+     
+     Layout:
+       (# 
+       do (16,12)->(Rect1.width,Rect1.height);
+          0 -> Rect1.x;
+          0 -> Rect1.y;
+          
+          16 -> Rect2.width;
+          12 -> Rect2.height;
+          4 -> Rect2.x;
+          -4 -> Rect2.y;
+       #);
+     
+  #);
+
+SetDefaultsFigure: Figure
+  (# useDefaultHotspot::(# do true -> value; #);
+     greyBox: ^Rect;
+     greenBox: ^Rect;
+     
+     init::<
+       (#
+          theBasicStyle: ^BasicStyle;
+          
+       do &Rect[]->greyBox[];
+          &Rect[]->greenBox[];
+          
+          &BasicStyle[]->theBasicStyle[];
+          (gray9[],NONE,2)->theBasicStyle->greyBox.theStyle[];       
+          &BasicStyle[]->theBasicStyle[];
+          (green[],NONE,2)->theBasicStyle->greenBox.theStyle[];       
+          greyBox[]->add;
+          greenBox[]->add;
+          INNER;
+          Layout;
+       #);
+     
+     Layout:
+       (#
+       do (16,12)->(greyBox.width,greyBox.height); 
+          (0,0)->(greyBox.x,greyBox.y);
+          
+          (11,7)->(greenBox.width,greenBox.height); 
+          (7,-7)->(greenBox.x,greenBox.y);
+       #);
+     
+  #);
+
+HorizontalGuideFigure: Figure
+  (#
+     theFigure: ^Composite;
+     theLine: ^Line;
+     theTransitionFigure: ^Rect;
+     theTransitionSnapPoint: ^Ellipse;
+     point: ^Point2d;
+     
+     Init::
+       (# 
+          theBasicStyle: ^BasicStyle;
+       do &Composite[]->theFigure[];
+          &Line[]->theLine[];
+          &Rect[]->theTransitionFigure[];
+          &Ellipse[]->theTransitionSnapPoint[];
+          
+          &BasicStyle[]->theBasicStyle[];
+          (black[],NONE,1)->theBasicStyle->theLine.theStyle[];       
+          &BasicStyle[]->theBasicStyle[];
+          (black[],white[],1)->theBasicStyle->theTransitionFigure.theStyle[];       
+          &BasicStyle[]->theBasicStyle[];
+          (black[],NONE,1)->theBasicStyle->theTransitionSnapPoint.theStyle[];       
+          
+          &PointList[] -> theline.points[];
+          (for 2 repeat &Point2d[]->point[]->theline.points.append; for);
+          
+          theline[] -> theFigure.add;
+          theTransitionFigure[]->theFigure.add;
+          theTransitionSnapPoint[] -> theFigure.add;
+          theFigure[]->add;
+          Layout;
+       #);    
+     
+     Layout:
+       (# 
+       do 1 -> theline.points.get -> point[];
+          (0, 0) -> point;
+          2 -> theline.points.get -> point[];
+          (32, 0) -> point;
+          
+          (16,0)->(theTransitionFigure.x,theTransitionFigure.y);
+          (12,9)->(theTransitionFigure.width,theTransitionFigure.height);
+          
+          (16, 0) -> (theTransitionSnapPoint.x,theTransitionSnapPoint.y);
+          (1,1) -> (theTransitionSnapPoint.width,theTransitionSnapPoint.height);
+       #);    
+  #);
+
+VerticalGuideFigure: Figure
+  (#
+     theFigure: ^Composite;
+     theLine: ^Line;
+     theTransitionFigure: ^Rect;
+     theTransitionSnapPoint: ^Ellipse;
+     point: ^Point2d;
+     
+     Init::
+       (# 
+          theBasicStyle: ^BasicStyle;
+       do 
+          &Composite[]->theFigure[];
+          &Line[]->theLine[];
+          &Rect[]->theTransitionFigure[];
+          &Ellipse[]->theTransitionSnapPoint[];
+          
+          &BasicStyle[]->theBasicStyle[];
+          (black[],NONE,1)->theBasicStyle->theLine.theStyle[];       
+          &BasicStyle[]->theBasicStyle[];
+          (black[],white[],1)->theBasicStyle->theTransitionFigure.theStyle[];       
+          &BasicStyle[]->theBasicStyle[];
+          (black[],NONE,1)->theBasicStyle->theTransitionSnapPoint.theStyle[];       
+          
+          &PointList[] -> theline.points[];
+          (for 2 repeat &Point2d[]->point[]->theline.points.append; for);
+          
+          theline[] -> theFigure.add;
+          theTransitionFigure[]->theFigure.add;
+          theTransitionSnapPoint[] -> theFigure.add;
+          theFigure[]->add;
+          Layout;
+       #);    
+     
+     Layout:
+       (# 
+       do 1 -> theline.points.get -> point[];
+          (0, 0) -> point;
+          2 -> theline.points.get -> point[];
+          (0, 32) -> point;
+          
+          (0,16)->(theTransitionFigure.x,theTransitionFigure.y);
+          (12,9)->(theTransitionFigure.width,theTransitionFigure.height);
+          
+          (0, 16) -> (theTransitionSnapPoint.x,theTransitionSnapPoint.y);
+          (1,1) -> (theTransitionSnapPoint.width,theTransitionSnapPoint.height);
+       #);  
+  #);
+
+ZoomInFigure: Figure
+  (# useDefaultHotspot::(# do true -> value; #);
+     handle: ^Line;
+     glass: ^Ellipse;
+     rim: ^Ellipse;
+     signHoris: ^Line;
+     signVerti: ^Line;
+     point: ^Point2d;
+     
+     init:: 
+       (# 
+          theCompositeStyle: ^CompositeStyle;
+          theBasicStyle: ^BasicStyle;
+          theAlphaStyle: ^AlphaStyle;
+       do 
+          &Line[] -> handle[];
+          &Ellipse[] -> glass[];
+          &Ellipse[] -> rim[];
+          &Line[] -> signHoris[];
+          &Line[] -> signVerti[];
+          
+          (* handle init *)
+          &BasicStyle[] -> theBasicStyle[];
+          (black[],wheat[],1) -> theBasicStyle;
+          theBasicStyle -> handle.theStyle[];
+          
+          &PointList[]->handle.points[];
+          (for 5 repeat &Point2d[]->point[]->handle.points.append for);
+          handle[]->add;
+          
+          (* glass init *)
+          &BasicStyle[] -> theBasicStyle[];
+          &AlphaStyle[] -> theAlphaStyle[];
+          &CompositeStyle[] -> theCompositeStyle[];
+          (black[],white[],1) -> theBasicStyle;
+          0.5 -> theAlphaStyle;
+          theBasicStyle -> theCompositeStyle.add;
+          theAlphaStyle -> theCompositeStyle.add;
+          theCompositeStyle[] -> glass.theStyle[];
+          
+          (* rim init *)
+          &BasicStyle[] -> theBasicStyle[];
+          (black[],NONE,1) -> theBasicStyle;
+          theBasicStyle -> rim.theStyle[];
+          
+          (* sign init *)
+          &BasicStyle[] -> theBasicStyle[];
+          (black[],black[],1) -> theBasicStyle;
+          theBasicStyle -> signHoris.theStyle[];
+          
+          &BasicStyle[] -> theBasicStyle[];
+          (black[],black[],1) -> theBasicStyle;
+          theBasicStyle -> signVerti.theStyle[];
+          
+          (* init points *)
+          &PointList[]->signHoris.points[];
+          &PointList[]->signVerti.points[];
+          (for 2 repeat 
+               &Point2d[]->point[]->signHoris.points.append;
+               &Point2d[]->point[]->signVerti.points.append;
+          for);
+          
+          (* add objects *)
+          handle[] -> add;
+          glass[] -> add;
+          rim[] -> add;
+          signHoris[] -> add;
+          signVerti[] -> add;
+          
+          Layout;
+       #);
+     
+     Layout: 
+       (# 
+       do (* handle draw *)
+          1->handle.points.get->point[];
+          (5 + 1, 5 - 1)->point;
+          2->handle.points.get->point[];
+          (1 + 12, -1 + 12)->point;
+          3->handle.points.get->point[];
+          (-1 + 12, 1 + 12)->point;
+          4->handle.points.get->point[];
+          (5 - 1, 5 + 1)->point;
+          5->handle.points.get->point[];
+          (5 + 1, 5 - 1)->point;
+          
+          (* glass draw *)
+          0 -> glass.x;
+          0 -> glass.y;
+          40/3->glass.width;
+          40/3->glass.height;
+          
+          (* rim draw *)
+          0 -> rim.x;
+          0 -> rim.y;
+          40/3->rim.width;
+          40/3->rim.height;
+          
+          (* sign draw *)
+          1->signHoris.points.get->point[];
+          (-3, 0)->point;
+          2->signHoris.points.get->point[];
+          (+3, 0)->point;
+          1->signVerti.points.get->point[];
+          (0, -3)->point;
+          2->signVerti.points.get->point[];
+          (0, +3)->point;
+          
+       #);
+  #);
+
+ZoomOutFigure: Figure
+  (# useDefaultHotspot::(# do true -> value; #);
+     handle: @Line;
+     glass: @Ellipse;
+     rim: @Ellipse;
+     signHoris: @Line;
+     point: ^Point2d;
+     
+     init:: 
+       (# handleStyle: ^CompositeStyle;
+          theStrokeStyle: ^StrokeStyle;
+          handleFillStyle: ^FillStyle;
+          glassStyle: ^CompositeStyle;
+          glassFillStyle: ^FillStyle;
+          glassAlphaStyle: ^AlphaStyle;
+          rimStyle: ^CompositeStyle;
+          signStyle: ^CompositeStyle;
+          signFillStyle: ^FillStyle;
+       do (* handle init *)
+          &CompositeStyle[]->handleStyle[]->handle.theStyle[];
+          &StrokeStyle[]->theStrokeStyle[]->handleStyle.add;
+          &FillStyle[]->handleFillStyle[]->handleStyle.add;
+          black[]->theStrokeStyle.stroke[];
+          wheat[]->handleFillStyle.fill[];
+          &PointList[]->handle.points[];
+          (for 5 repeat &Point2d[]->point[]->handle.points.append for);
+          handle[]->add;
+          
+          (* glass init *)
+          &CompositeStyle[]->glassStyle[]->glass.theStyle[];
+          theStrokeStyle[]->glassStyle.add;
+          &FillStyle[]->glassFillStyle[]->glassStyle.add;
+          &AlphaStyle[]->glassAlphaStyle[]->glassStyle.add;
+          0.5->glassAlphaStyle;
+          white[]->glassFillStyle.fill[];
+          glass[]->add;
+          
+          (* rim init *)
+          &CompositeStyle[]->rimStyle[]->rim.theStyle[];
+          theStrokeStyle[]->rimStyle.add;
+          rim[]->add;
+          
+          (* sign init *)
+          &CompositeStyle[]->signStyle[]->signHoris.theStyle[];
+          theStrokeStyle[]->signStyle.add;
+          &FillStyle[]->signFillStyle[]->signStyle.add;
+          black[]->signFillStyle.fill[];
+          &PointList[]->signHoris.points[];
+          (for 2 repeat 
+               &Point2d[]->point[]->signHoris.points.append;
+          for);
+          signHoris[]->add;
+          Layout;
+       #);
+     
+     Layout: 
+       (# 
+       do (* handle draw *)
+          1->handle.points.get->point[];
+          (5 + 1, 5 - 1)->point;
+          2->handle.points.get->point[];
+          (1 + 12, -1 + 12)->point;
+          3->handle.points.get->point[];
+          (-1 + 12, 1 + 12)->point;
+          4->handle.points.get->point[];
+          (5 - 1, 5 + 1)->point;
+          5->handle.points.get->point[];
+          (5 + 1, 5 - 1)->point;
+          
+          (* glass draw *)
+          40/3->glass.width;
+          40/3->glass.height;
+          
+          (* rim draw *)
+          40/3->rim.width;
+          40/3->rim.height;
+          
+          (* sign draw *)
+          1->signHoris.points.get->point[];
+          (glass.x - 3, glass.y)->point;
+          2->signHoris.points.get->point[];
+          (glass.x + 3, glass.y)->point;
+       #);
+  #);
+
+ZoomFitFigure: Figure
+  (# useDefaultHotspot::(# do true -> value; #);
+     handle: @Line;
+     glass: @Ellipse;
+     rim: @Ellipse;
+     point: ^Point2d;
+     theFilledNetFigure: ^FilledNetfigure;
+     
+     init:: 
+       (# handleStyle: ^CompositeStyle;
+          theStrokeStyle: ^StrokeStyle;
+          handleFillStyle: ^FillStyle;
+          glassStyle: ^CompositeStyle;
+          glassFillStyle: ^FillStyle;
+          glassAlphaStyle: ^AlphaStyle;
+          rimStyle: ^CompositeStyle;
+                             
+       do 
+          (* page init *)
+          &FilledNetfigure[]->theFilledNetFigure[];
+          (20,14)->theFilledNetFigure.init;
+          (-20,-16)->(theFilledNetFigure.x,theFilledNetFigure.y);
+          theFilledNetFigure[]->add;
+          
+          (* handle init *)
+          &CompositeStyle[]->handleStyle[]->handle.theStyle[];
+          &StrokeStyle[]->theStrokeStyle[]->handleStyle.add;
+          &FillStyle[]->handleFillStyle[]->handleStyle.add;
+          black[]->theStrokeStyle.stroke[];
+          wheat[]->handleFillStyle.fill[];
+          &PointList[]->handle.points[];
+          (for 5 repeat &Point2d[]->point[]->handle.points.append for);
+          handle[]->add;
+          
+          (* glass init *)
+          &CompositeStyle[]->glassStyle[]->glass.theStyle[];
+          theStrokeStyle[]->glassStyle.add;
+          &FillStyle[]->glassFillStyle[]->glassStyle.add;
+          &AlphaStyle[]->glassAlphaStyle[]->glassStyle.add;
+          0.5->glassAlphaStyle;
+          white[]->glassFillStyle.fill[];
+          glass[]->add;
+          
+          (* rim init *)
+          &CompositeStyle[]->rimStyle[]->rim.theStyle[];
+          theStrokeStyle[]->rimStyle.add;
+          rim[]->add;
+                             
+          Layout;
+       #);
+     Layout: 
+       (# 
+       do 
+          (* handle draw *)
+          1->handle.points.get->point[];
+          (5 + 1, 5 - 1)->point;
+          2->handle.points.get->point[];
+          (1 + 12, -1 + 12)->point;
+          3->handle.points.get->point[];
+          (-1 + 12, 1 + 12)->point;
+          4->handle.points.get->point[];
+          (5 - 1, 5 + 1)->point;
+          5->handle.points.get->point[];
+          (5 + 1, 5 - 1)->point;
+          
+          (* glass draw *)
+          40/3->glass.width;
+          40/3->glass.height;
+          
+          (* rim draw *)
+          40/3->rim.width;
+          40/3->rim.height;          
+       #);
+  #);
+
+AuxFigure: Figure
+  (#
+     pencil: ^Composite;	
+     pencilBody: ^Line;   
+     pencilHead: ^Line;
+     pencilTip: ^Line;
+     pencilLine: ^Line;	
+     width,height: @Real;
+       
+     init::<
+       (# theBasicStyle: ^BasicStyle;
+       do (50,50)->(width,height);
+          
+          &Composite[]->Pencil[];
+          &Line[]->pencilBody[];
+          &Line[]->pencilHead[];
+          &Line[]->pencilTip[];
+          &Line[]->pencilLine[];
+          
+          &PointList[]->pencilBody.points[];
+          &PointList[]->pencilHead.points[];
+          &PointList[]->pencilTip.points[];
+          &PointList[]->pencilLine.points[];
+          
+          &BasicStyle[]->theBasicStyle[];		
+          (Black[],Black[],1)->theBasicStyle->pencilTip.theStyle[];
+          &BasicStyle[]->theBasicStyle[];		
+          (Black[],Wheat[],1)->theBasicStyle->pencilHead.theStyle[];
+          &BasicStyle[]->theBasicStyle[];		
+          (Black[],Red[],1)->theBasicStyle->pencilBody.theStyle[];
+          &BasicStyle[]->theBasicStyle[];		
+          (Black[],Black[],1)->theBasicStyle->pencilLine.theStyle[];
+          
+          (for 3 repeat &Point2d[]->pencilTip.points.append for); 
+          (for 5 repeat &Point2d[]->pencilHead.points.append for); 
+          (for 5 repeat &Point2d[]->pencilBody.points.append for); 
+          (for 2 repeat &Point2d[]->pencilLine.points.append for); 
+          
+          pencilTip[]->pencil.add;
+          pencilHead[]->pencil.add;
+          pencilBody[]->pencil.add;
+          pencilLine[]->pencil.add;
+          INNER;
+          pencil[]->add;
+          Layout;
+       #);
+     
+     Layout:<
+       (# point: ^Point2d;
+       do INNER;
+          1->pencilTip.points.get->point[];
+	  (-width/16.0,7*height/48.0)->point;  
+	  2->pencilTip.points.get->point[];
+	  (0,height/8.0)->point;  
+	  3->pencilTip.points.get->point[];
+	  (-width/48.0,3*height/16.0)->point;  
+	  
+	  1->pencilHead.points.get->point[];
+	  (-3*width/16.0,3*height/16.0)->point;
+	  2->pencilHead.points.get->point[];
+	  (-width/16.0,7*height/48.0)->point;  
+	  3->pencilHead.points.get->point[];
+	  (-width/48.0,3*height/16.0)->point;  
+	  4->pencilHead.points.get->point[];
+	  (-width/16.0,5*height/16.0)->point;
+	  5->pencilHead.points.get->point[];
+	  (-5*width/32.0,9*height/32.0)->point;
+          
+	  1->pencilBody.points.get->point[];
+	  (-width/2.0,height/2.0)->point;
+	  2->pencilBody.points.get->point[];
+	  (-3*width/16.0,3*height/16.0)->point;
+	  3->pencilBody.points.get->point[];
+	  (-5*width/32.0,9*height/32.0)->point;
+	  4->pencilBody.points.get->point[];
+	  (-width/16.0,5*height/16.0)->point;
+	  5->pencilBody.points.get->point[];
+	  (-width/4.0,height/2.0)->point;
+          
+	  1->pencilLine.points.get->point[];
+	  (-5*width/32.0,9*height/32.0)->point;
+	  2->pencilLine.points.get->point[];
+	  (-3*width/8.0,height/2.0)->point;
+       #);
+  #);
+
+AuxBoxFigure: AuxFigure
+  (#
+     theBox: ^Rect;
+     
+     init::
+       (# 
+       do &Rect[]->theBox[];
+          &BasicStyle[]->theBasicStyle[];		
+          (Black[],White[],1)->theBasicStyle->theBox.theStyle[];
+          theBox[]->add;
+       #);
+     
+     Layout::
+       (#
+       do width/2.0->theBox.width;
+	  5*height/16.0->theBox.height;
+	  width/8.0->theBox.x;
+	  height/8.0->theBox.y;
+       #);     
+  #);
+
+AuxEllipseFigure: AuxFigure
+  (#
+     theEllipse: ^Ellipse;
+     
+     init::
+       (# 
+       do &Ellipse[]->theEllipse[];
+          &BasicStyle[]->theBasicStyle[];		
+          (Black[],White[],1)->theBasicStyle->theEllipse.theStyle[];
+          theEllipse[]->add;
+       #);
+     
+     Layout::
+       (#
+       do width/2.0->theEllipse.width;
+	  5*height/16.0->theEllipse.height;
+	  width/8.0->theEllipse.x;
+	  height/8.0->theEllipse.y;
+       #);     
+  #);
+
+AuxLineFigure: AuxFigure
+  (# 
+     
+     theLine: ^Line;
+     
+     init::
+       (# 
+       do &Line[]->theLine[];
+          &BasicStyle[]->theBasicStyle[];		
+          (Black[],NONE,2)->theBasicStyle->theLine.theStyle[];
+          &PointList[]->theLine.points[];
+          (for 4 repeat &Point2d[]->theLine.points.append for);
+          theLine[]->add;
+       #);
+     
+     Layout::
+       (#
+       do 1->theLine.points.get->point[];
+          (0,height/8.0)->point;	
+          2->theLine.points.get->point[];
+          (width/8.0,0)->point;	
+          3->theLine.points.get->point[];
+          (3*width/16.0,height/4.0)->point;	
+          4->theLine.points.get->point[];
+          (3*width/8.0,height/16.0)->point;	
+       #);     
+  #);
+
+AuxPNGFigure: AuxFigure
+  (#
+     ThePNG: @Composite;
+     thePaper: @Rect;
+     theWindow: @Rect;
+     theRoof: @Line;
+     theSides: @Rect;
+     
+     Init::
+       (# 
+       do &BasicStyle[]->theBasicStyle[];		
+          (White[],White[],1)->theBasicStyle->thePaper.theStyle[];
+          &BasicStyle[]->theBasicStyle[];		
+          (Black[],NONE,1)->theBasicStyle->theSides.theStyle[];
+          &BasicStyle[]->theBasicStyle[];		
+          
+          &PointList[]->theRoof.points[];
+          (for 3 repeat &Point2d[]->theRoof.points.append for);
+          thePaper[]->thePNG.add;
+          theRoof[]->thePNG.add;
+          theSides[]->thePNG.add;
+          thePNG[]->add;
+       #);
+     
+     Layout::
+       (#
+       do 
+          7*width/32.0->thePaper.x;
+          11*height/64.0->thePaper.y;
+          14*width/32.0->thePaper.width;
+          17*height/32.0->thePaper.height;
+          
+          1->theRoof.points.get->point[];
+          (0*width/32.0,4*height/32.0)->point;	
+          2->theRoof.points.get->point[];
+          (7*width/32.0,-3*height/32.0)->point;	
+          3->theRoof.points.get->point[];
+          (14*width/32.0,4*height/32.0)->point;	
+          
+          7*width/32.0->theSides.x;
+          8*height/32.0->theSides.y;
+          10*width/32.0->theSides.width;
+          12*height/32.0->theSides.height
+          
+       #);          
+  #);
+
+AuxLabelFigure: AuxFigure
+  (# useDefaultHotspot::(# do true -> value; #);
+     theText: ^TextItem;
+     label: ^Text;
+     
+     Init::
+       (# 
+       do 'text' -> label[];
+	  &TextItem[]->theText[];
+          theText[]->add;
+       #);
+     
+     Layout::
+       (#
+       do label[] -> theText.content[];
+	  height/8.0->theText.y;
+       #); 
+     
+  #);
+
+CreateAuxPNGFigure: Figure
+  (# theText: ^TextItem;
+     theTriangle: ^Line;
+     theEllipse: ^Ellipse;
+     theRect: ^Rect;
+     
+     init::
+       (# theStyle: ^CompositeStyle;
+          theBasicStyle: ^BasicStyle; 
+          point: ^Point2d;
+       do &TextItem[] -> theText[];
+          'PNG' -> theText.content[];
+          theText[] -> add;
+          
+          &Rect[] -> theRect[];
+          &CompositeStyle[] -> theStyle[] -> theRect.theStyle[];
+          black[] -> StrokeStyle -> theStyle.add;
+          blueish[] -> FillStyle -> theStyle.add;
+          theRect[] -> add;
+          
+          &Ellipse[] -> theEllipse[];
+          &CompositeStyle[] -> theStyle[] -> theEllipse.theStyle[];
+          black[] -> StrokeStyle -> theStyle.add;
+          olive[] -> FillStyle -> theStyle.add;
+          theEllipse[] -> add;
+          
+          layout;
+       #);
+     
+     layout:
+       (# point: ^Point2d;
+       do (-4,-21) -> (theText.x, theText.y);
+          
+          (15,12) -> (theRect.width, theRect.height);
+          (12,-5) -> (theRect.x, theRect.y);
+          
+          (14,10) -> (theEllipse.width, theEllipse.height);
+          (4,-12) -> (theEllipse.x, theEllipse.y);
+          
+       #);
+  #);
+
+CreateAuxLabelFigure: Figure
+  (# useDefaultHotspot::(# do true -> value; #);
+     theText: ^TextItem;
+     theLabel: ^TextItem;
+     label: ^Text;
+     
+     Init::
+       (# 
+       do 'text' -> label[];
+	  &TextItem[]->theText[];
+          theText[]->add;
+       #);
+     
+     Layout:
+       (#
+       do label[] -> theText.content[];
+	  (0,0)->(theText.x, theText.y);
+       #); 
+     
+     update::
+       (# 
+       do layout;
+       #);
+  #);
+
+ToogleExplicitFigure: Figure
+  (# useDefaultHotspot::(# do true -> value; #);
+     theTextItem: ^TextItem;
+     init::
+       (# 
+       do &TextItem[] -> theTextItem[];          
+          'Toogle\nExplicit' -> theTextItem.content[];
+          theTextItem[] -> add;
+       #);     
+  #);

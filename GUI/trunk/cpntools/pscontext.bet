@@ -1,0 +1,743 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '~beta/postwimp/foundation/abstractsurface';
+INCLUDE '~beta/basiclib/formatio';
+INCLUDE '~beta/basiclib/numberio';
+INCLUDE '~beta/basiclib/file';
+INCLUDE 'relfile.bet';
+
+
+-- lib : Attributes --
+PSContext: Context
+  (# fontname: ^text;
+     fontsize: @real;
+     black: ^Color;
+     output: ^Stream;
+     
+     lineheight:
+       (# value: @integer;
+       do theFont.ascent + theFont.descent -> value;
+       exit value
+       #);
+     stringwidth:
+       (# txt: ^Text;
+          value: @integer;
+       enter txt[]
+       do (# width, height: @integer;
+          do txt[] -> theFont.measureText -> (width, height);
+             width -> value;
+          #);
+       exit value
+       #);
+     (* enable dash_bw to get pre bug #1288 behaviour *)
+     bw, dash_bw: @boolean;
+     GetPattern:
+       (# type: ^text;
+          pattern: ^text;
+       enter type[]
+       do (if true
+           // (type[] = NONE) then
+              '' -> pattern[];
+           // '' -> type.equalNCS then
+              '' -> pattern[];
+           // 'filled' -> type.equalNCS then
+              '' -> pattern[];
+           // 'solid' -> type.equalNCS then
+              '' -> pattern[];
+           // 'somedashed' -> type.equalNCS then
+              '9 13' -> pattern[];
+           // 'dashed' -> type.equalNCS then
+              '9 7' -> pattern[];
+           // 'somedotted' -> type.equalNCS then
+              '3 10' -> pattern[];
+           // 'scarcedotted' -> type.equalNCS then
+              '3 13' -> pattern[];
+           // 'dotted' -> type.equalNCS then
+              '3 7' -> pattern[];
+           // 'longdashed' -> type.equalNCS then
+              '15 7' -> pattern[];
+           // 'dashdotted' -> type.equalNCS then
+              '3 1' -> pattern[]; (* EEEE *)
+           // 'dotdashed' -> type.equalNCS then
+              '10 5 3 5' -> pattern[];
+           // 'none' -> type.equalNCS then
+              '0 1' -> pattern[];
+          else
+             '' -> pattern[];
+          if);
+       exit pattern[]
+       #);
+     GetPartternForColor:
+       (# r, g, b: @real;
+          pattern: ^text;
+       enter (r, g, b)
+       do (if dash_bw then
+              (if true
+               // (r = 0xFF / 0xFF) and (g = 0x00 / 0xFF) and (b = 0xFF / 0xFF) then
+                  'somedashed' -> pattern[];
+               // (r = 0x00 / 0xFF) and (g = 0xFF / 0xFF) and (b = 0xFF / 0xFF) then
+                  'somedotted' -> pattern[];
+               // (r = 0x00 / 0xFF) and (g = 0x00 / 0xFF) and (b = 0x00 / 0xFF) then
+                  'solid' -> pattern[];
+               // (r = 0x80 / 0xFF) and (g = 0x00 / 0xFF) and (b = 0x00 / 0xFF) then
+                  'dashdotted' -> pattern[];
+               // (r = 0x00 / 0xFF) and (g = 0x00 / 0xFF) and (b = 0xFF / 0xFF) then
+                  'longdashed' -> pattern[];
+               // (r = 0x80 / 0xFF) and (g = 0x80 / 0xFF) and (b = 0x00 / 0xFF) then
+                  'dotdashed' -> pattern[];
+               // (r = 0xFF / 0xFF) and (g = 0xFF / 0xFF) and (b = 0x00 / 0xFF) then
+                  'scarcedotted' -> pattern[];
+               // (r = 0x00 / 0xFF) and (g = 0x80 / 0xFF) and (b = 0x80 / 0xFF) then
+                  'dashed' -> pattern[];
+               // (r = 0x00 / 0xFF) and (g = 0xFF / 0xFF) and (b = 0x00 / 0xFF) then
+                  'dotted' -> pattern[];
+               // (r = 0xFF / 0xFF) and (g = 0xFF / 0xFF) and (b = 0xFF / 0xFF) then
+                  'none' -> pattern[];
+               else
+                  'solid' -> pattern[];
+              if);
+           else
+              (if (r = 0xFF / 0xFF) and (g = 0xFF / 0xFF) and (b = 0xFF / 0xFF) then
+                  'none' -> pattern[];
+               else
+                  'solid' -> pattern[];
+              if);
+          if);
+       exit pattern[]
+       #);
+     start:: 
+       (# x1, x2, y1, y2: @Integer;
+          fontFile: @File;
+       enter (output[], x1, y1, x2, y2)
+       do '%!PS-Adobe-3.0 EPSF-3.0' -> output.putline;
+          '%%%%BoundingBox: %i %i %i %i\n\n' ->
+             output.putFormat
+               (#
+               do x1 -> i;
+                  y1 -> i;
+                  x2 -> i;
+                  y2 -> i;
+               #);
+          '%%BeginProlog' -> output.putLine;
+          'fonts/verdana.pfa' -> relativeFile -> fontFile.name;
+          fontFile.openRead;
+          readFont:
+            (#
+            do (if not fontFile.eos then
+                   fontFile.getLine -> output.putLine;
+                   restart readFont;
+                else
+                   leave readFont;
+               if);
+            #);
+          fontFile.close;
+          '%%EndProlog' -> output.putLine;
+          black[] -> theStroke[];
+          NONE -> fill;
+          0.0 -> strokeWidth;
+          ARROW_NONE -> arrow;
+          1.0 -> alpha;
+          'Verdana' -> fontname[];
+          12 -> fontsize;
+          false -> bw;
+       #);
+     stop:: 
+       (#
+       do 'showpage' -> output.putline;
+       #);
+     doFill:
+       (#
+       do (if (theFill[] <> NONE) then
+              'gsave %f %f %f setrgbcolor fill grestore\n' ->
+                 output.putFormat
+                   (#
+                   do theFill.withRGB
+                        (#
+                        do (if bw then
+                               (if r+g+b=0.0 then
+                                   0.0 -> f;
+                                   0.0 -> f;
+                                   0.0 -> f;
+                                else 
+                                   1.0 -> f;
+                                   1.0 -> f;
+                                   1.0 -> f;
+                               if);
+                           else
+                              r -> f;
+                              g -> f;
+                              b -> f;
+                           if);
+                        #);
+                   #);
+          if);
+       #);
+     doStroke:
+       (#
+       do (if (theStroke[] <> NONE) then
+              '%f %f %f setrgbcolor\n' ->
+                 output.putFormat
+                   (#
+                   do theStroke.withRGB
+                        (#
+                        do (if bw then
+                               (if not ((r=1) and (g=1) and (b=1)) then
+                                   0.0 -> f;
+                                   0.0 -> f;
+                                   0.0 -> f;
+                                else 
+                                   1.0 -> f;
+                                   1.0 -> f;
+                                   1.0 -> f;
+                               if);
+                           else
+                              r -> f;
+                              g -> f;
+                              b -> f;
+                           if);
+                        #);
+                   #);
+          else
+             (* We're drawing b/w but don't know the colour.
+              * When dealing with current marking, we prefer
+              * to not set the colour.
+              *)
+             '0.0 0.0 0.0 setrgbcolor' -> output.putline;
+          if);
+          '%f setlinewidth\n' ->
+             output.putFormat
+               (#
+               do (if theStrokeWidth < 0.5 then
+                      0.5 -> f;
+                  else
+                     theStrokewidth -> f;
+                  if);
+               #);
+          '[%s] 0 setdash\n' ->
+             output.putFormat
+               (#
+               do (if bw then
+                      (if theStroke[] <> NONE then
+                          theStroke.withRGB
+                            (#
+                            do (r, g, b) -> GetPartternForColor -> GetPattern ->
+                                  s;
+                            #);
+                      else
+                         (0.0, 0.0, 0.0) -> GetPartternForColor -> GetPattern ->
+                            s;
+                      if);
+                  else
+                     thePattern[] -> GetPattern -> s;
+                  if);
+               #);
+       #);
+     drawEllipse:: 
+       (# drawFlatEllipse:
+            (#
+            do 'matrix currentmatrix' -> output.putline;
+               'gsave %f %f scale\n' ->
+                  output.putFormat
+                    (#
+                    do (THIS(drawEllipse).width / 2.0) -> f;
+                       (THIS(drawEllipse).height / 2.0) -> f;
+                    #);
+               doStroke;
+               'newpath' -> output.putline;
+               '0 0 1 0 360 arc' -> output.putline;
+               doFill;
+               'setmatrix' -> output.putline;
+               'stroke grestore' -> output.putline;
+            #);
+       do (if theMode
+           // 0 then
+              drawFlatEllipse;
+          if);
+       #);
+     drawRect:: 
+       (# drawFlatRect:
+            (#
+            do 'matrix currentmatrix' -> output.putline;
+               'gsave %f %f scale\n' ->
+                  output.putFormat
+                    (#
+                    do (THIS(drawRect).width / 2.0) -> f;
+                       (THIS(drawRect).height / 2.0) -> f;
+                    #);
+               doStroke;
+               'newpath' -> output.putline;
+               '-1 -1 moveto' -> output.putline;
+               '-1 1 lineto' -> output.putline;
+               '1 1 lineto' -> output.putline;
+               '1 -1 lineto' -> output.putline;
+               'closepath' -> output.putline;
+               doFill;
+               'setmatrix stroke grestore' -> output.putline;
+            #);
+       do (if theMode
+           // 0 then
+              drawFlatRect;
+          if);
+       #);
+     drawArrow:
+       (# A:
+            (#
+            exit 10.0 * theArrowHeadSize
+            #);
+          B:
+            (#
+            exit 10.0 * theArrowHeadSize
+            #);
+          C:
+            (#
+            exit 5.0 * theArrowHeadSize
+            #);
+          p, m, q: ^Point2d;
+          vx, vy, ux, uy, rx, ry, l: @real;
+          start, end: ^Point2d;
+       enter (start[], end[])
+       do start.x - end.x -> vx;
+          start.y - end.y -> vy;
+          vx * vx + vy * vy -> sqrt -> l;
+          (if l > 0.0 then
+              vx / l -> ux;
+              vy / l -> uy;
+              (end.x + ux * A, end.y + uy * A) -> MakePoint -> m[];
+              B * ux -> rx;
+              B * uy -> ry;
+              (end.x + rx * 0.5, end.y + ry * 0.5) -> Point2d;
+              (end.x + rx - C * uy, end.y + ry + C * ux) -> MakePoint -> q[];
+              (end.x + rx + C * uy, end.y + ry - C * ux) -> MakePoint -> p[];
+              doStroke;
+              'gsave newpath' -> output.putline;
+              '%f %f moveto\n' ->
+                 output.putFormat
+                   (#
+                   do p.x -> f;
+                      (- p.y) -> f;
+                   #);
+              '%f %f lineto\n' ->
+                 output.putFormat
+                   (#
+                   do end.x -> f;
+                      (- end.y) -> f;
+                   #);
+              '%f %f lineto\n' ->
+                 output.putFormat
+                   (#
+                   do q.x -> f;
+                      (- q.y) -> f;
+                   #);
+              'fill grestore' -> output.putline;
+          if);
+       #);
+     drawLine:: 
+       (# drawFlatLine:
+            (# segments: ^SegmentList;
+            do doStroke;
+               'gsave newpath' -> output.putline;
+               (if theCurvature > 0 then
+                   (points[], theCurvature) -> smoothenCurve -> segments[];
+                   segments.scan
+                     (# points: ^PointList;
+                     do '%f %f %s\n' ->
+                           output.putFormat
+                             (#
+                             do current.p.x -> f;
+                                (- current.p.y) -> f;
+                                (if inx = 1 then
+                                    'moveto' -> s;
+                                else
+                                   'lineto' -> s;
+                                if);
+                             #);
+                        (if current.c[] <> NONE then
+                            current.render -> points[];
+                            points.scan
+                              (#
+                              do '%f %f lineto\n' ->
+                                    output.putFormat
+                                      (#
+                                      do current.x -> f;
+                                         (- current.y) -> f;
+                                      #);
+                              #);
+                        else
+                           '%f %f lineto\n' ->
+                              output.putFormat
+                                (#
+                                do current.q.x -> f;
+                                   (- current.q.y) -> f;
+                                #);
+                        if);
+                     #);
+               else
+                  points.scan
+                    (#
+                    do (if inx
+                        // 1 then
+                           '%f %f moveto\n' ->
+                              output.putFormat
+                                (#
+                                do current.x -> f;
+                                   (- current.y) -> f;
+                                #);
+                       else
+                          '%f %f lineto\n' ->
+                             output.putFormat
+                               (#
+                               do current.x -> f;
+                                  (- current.y) -> f;
+                               #);
+                       if);
+                    #);
+               if);
+               'stroke grestore' -> output.putline;
+               (if theArrow
+                // ARROW_NONE then
+                // ARROW_BOTH then
+                   (2 -> points.get, 1 -> points.get) -> DrawArrow;
+                   (points.size - 1 -> points.get, points.size -> points.get) ->
+                      DrawArrow;
+                // ARROW_START then
+                   (2 -> points.get, 1 -> points.get) -> DrawArrow;
+                // ARROW_END then
+                   (points.size - 1 -> points.get, points.size -> points.get) ->
+                      DrawArrow;
+               if);
+            #);
+       do (if theMode
+           // 0 then
+              drawFlatLine;
+          if);
+       #);
+     drawImage:: 
+       (# x, y: @Real;
+       do (* this only allows images of width upto 65536/6 *)
+          (if NOT bw then
+              '%f %f 8 [1 0 0 1 0 0] { currentfile %f string readhexstring pop } false 3 colorimage\n'
+                 ->
+                 output.putFormat
+                   (#
+                   do content.width -> f;
+                      content.height -> f;
+                      3 * content.width -> f;
+                   #);
+          else
+             '%f %f 8 [1 0 0 1 0 0] { currentfile %f string readhexstring pop } image\n'
+                ->
+                output.putFormat
+                  (#
+                  do content.width -> f;
+                     content.height -> f;
+                     content.width -> f;
+                  #);
+          if);
+          0 -> x;
+          loop1:
+            (#
+            do 0 -> y;
+               loop2:
+                 (# a: @int32u;
+                 do ((%getLongAt (content.pixels + (x * content.width + y) * 4))
+                     % band 0xffffff) -> a;
+                    (if NOT bw then
+                        ((a % band 0xff0000) / 65536 + (a % band 0xff00) +
+                         (a % band 0xff) * 65536) -> a;
+                    else
+                       (((a % band 0xff0000) / 65536 + (a % band 0xff00) / 256 +
+                         (a % band 0xff)) / 3) -> a;
+                    if);
+                    (16, a) ->
+                       output.putRadix
+                         (#
+                         do true -> noBasePrefix;
+                            (if bw then
+                                2 -> width
+                            else
+                               6 -> width;
+                            if);
+                            true -> zeroPadding;
+                         #);
+                    y + 1 -> y;
+                    (if y < content.width then
+                        restart loop2;
+                    if);
+                 #);
+               output.newline;
+               x + 1 -> x;
+               (if x < content.height then
+                   restart loop1;
+               if);
+            #);
+       #);
+     drawTextSimple:
+       (# yPos: @real;
+          txt: ^Text;
+       enter txt[]
+       do '/%s findfont %f scalefont setfont\n' ->
+             output.putFormat
+               (#
+               do fontname[] -> s;
+                  fontsize -> f;
+               #);
+          doStroke;
+          txt.reset;
+          search:
+            (# tmp: ^text;
+            do 'newpath 0.0 %f moveto\n' -> output.putFormat
+                                              (#
+                                              do yPos -> f;
+                                              #);
+               '(' -> output.puttext;
+               txt.getline -> tmp[];
+               tmp.reset;
+               tmp.scan
+                 (#
+                 do (if ch
+                     // '(' then
+                        '\\(' -> output.puttext;
+                     // '\\' then
+                        '\\\\' -> output.puttext;
+                     // ')' then
+                        '\\)' -> output.puttext;
+                    else
+                       ch -> output.put;
+                    if);
+                 #);
+               
+               (yPos - lineheight) -> yPos;
+               ') show' -> output.putline;
+               (if (NOT (txt.eos)) then
+                   restart search;
+               if);
+            #);
+       #);
+     drawTextCentered:
+       (# txt: ^Text;
+          Line:
+            (# width: @integer;
+               content: ^Text;
+               init:
+                 (#
+                 enter content[]
+                 do content[] -> stringwidth -> width;
+                 #);
+            #);
+          lines: @List
+            (# element:: Line;
+               add:
+                 (# content: ^Text;
+                    theLine: ^Line;
+                 enter content[]
+                 do &Line[] -> theLine[];
+                    content[] -> theLine.init;
+                    theLine[] -> append;
+                 #);
+            #);
+          maxwidth: @integer;
+          yPos: @real;
+       enter txt[]
+       do 
+          txt.reset;
+          loop:
+            (if not txt.eos then
+                txt.getline -> lines.add;
+                restart loop;
+            if);
+          0 -> maxwidth;
+          lines.scan
+          (#
+          do (if current.width > maxwidth then
+                 current.width -> maxwidth;
+             if);
+          #);
+          
+          
+          '/%s findfont %f scalefont setfont\n' ->
+          output.putFormat
+          (#
+          do theFont.name[] -> s;
+             fontsize -> f;
+          #);
+          doStroke;
+          lines.scan
+          (#
+          do 'newpath %f %f moveto\n' -> output.putFormat
+                                              (#
+                                              do maxwidth / 2 -> f;
+                                                 yPos -> f;
+                                              #);
+             '(' -> output.puttext;
+             current.content[] -> output.puttext;
+             ') dup stringwidth pop 2 div neg 0 rmoveto show' -> output.putline;
+             (yPos - lineheight) -> yPos;
+          #);
+       #);
+     drawText:: 
+       (# 
+       do (if center then
+              txt[] -> drawTextCentered;
+           else
+              txt[] -> drawTextSimple;
+          if);
+       #);
+     drawTextBox::
+       (# wrap3:
+            (# input: ^Text;
+               output: ^Text;
+               ch: @char;
+               currentWidth: @integer;
+               currentHeight: @integer;
+               EOS: (# exit 0 #);
+               
+               next:
+                 (#
+                 do (if input.eos then
+                        EOS -> ch;
+                     else
+                        input.get -> ch;
+                    if);
+                 #);
+               put:
+                 (# ch: @char;
+                    s: @Text;
+                    w: @integer;
+                 enter ch
+                 do (if ch = ASCII.newline then
+                        0 -> currentWidth;
+                        currentHeight + lineheight -> currentHeight;
+                        (if NOT (currentHeight >= height) then
+                            ch -> output.put;
+                        if);
+                     else
+                        ch -> s.put;
+                        s[] -> stringwidth -> w;
+                        currentWidth + w -> currentWidth;
+                        (if currentWidth > width then
+                            output.newline;
+                            w -> currentWidth;
+                            currentHeight + lineheight -> currentHeight;
+                        if);
+                        (if NOT (currentHeight >= height) then
+                            ch -> output.put;
+                        if);
+                    if);
+                 #);
+            enter input[]
+            do input.reset;
+               &Text[] -> output[];
+               (for i:start repeat
+                    input.getLine;
+               for);
+               next;
+               loop:
+                 (if ch
+                  //EOS then
+                     (*** DONE ***)
+                  else
+                     ch -> put;
+                    
+                     (if currentHeight >= height then
+                         leave loop;
+                     if);
+                     next;
+                     restart loop;
+                 if);
+            exit output[]
+            #);
+          wrap:
+            (# input: ^Text;
+               output: ^Text;
+            enter input[]
+            do (if true then
+                   input[] -> wrap3 -> output[];
+                else
+                   input.copy -> output[];
+               if);
+            exit output[]
+            #);
+       do txt[] -> wrap -> drawTextSimple;
+       #);
+     pushAttributes:: 
+       (# new: ^Attributes;
+       do &Attributes[] -> new[];
+          theStroke[] -> new.stroke[];
+          theFill[] -> new.fill[];
+          thePattern[] -> new.pattern[];
+          theStrokeWidth -> new.strokeWidth;
+          theArrow -> new.arrow;
+          theAlpha -> new.alpha;
+          theMode -> new.mode;
+          theCurvature -> new.curvature;
+          top[] -> new.next[];
+          new[] -> top[];
+       #);
+     popAttributes:: 
+       (# old: ^Attributes;
+       do (if top[] <> NONE then
+              top[] -> old[];
+              top.next[] -> top[];
+              old.stroke[] -> stroke;
+              old.fill[] -> theFill[];
+              old.pattern[] -> thePattern[];
+              old.strokeWidth -> strokeWidth;
+              old.arrow -> theArrow;
+              old.alpha -> theAlpha;
+              old.mode -> theMode;
+              old.curvature -> theCurvature;
+          if);
+       #);
+     translate:: 
+       (#
+       do '%f %f translate\n' ->
+             output.putFormat
+               (#
+               do THIS(translate).x -> f;
+                  (- THIS(translate).y) -> f;
+               #);
+       #);
+     pushMatrix:: 
+       (#
+       do 'gsave' -> output.putline;
+       #);
+     popMatrix:: 
+       (#
+       do 'grestore' -> output.putline;
+       #);
+     Attributes:
+       (# stroke: ^Color;
+          fill: ^Color;
+          pattern: ^Text;
+          strokeWidth: @real;
+          arrow: @integer;
+          alpha: @real;
+          mode: @integer;
+          curvature: @integer;
+          next: ^Attributes;
+       #);
+     top: ^Attributes;
+  #);

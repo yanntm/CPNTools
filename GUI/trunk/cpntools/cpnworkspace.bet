@@ -1,0 +1,626 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '~beta/postwimp/workspace';
+INCLUDE '../cpnet/cpnet';
+
+INCLUDE 'wselements/index';
+INCLUDE 'wselements/statusbubble';
+INCLUDE 'debug';
+INCLUDE '~beta/basiclib/timedate';
+INCLUDE '../cpnet/xmlutilities';
+INCLUDE 'instrumentfactory';
+INCLUDE 'factory';
+INCLUDE '~beta/sysutils/objinterface';
+INCLUDE 'instruments/cpnoption';
+INCLUDE 'resources/XMLLibrary';
+INCLUDE '~beta/postwimp/common/standardpath';
+
+BODY 'private/cpnworkspacebody';
+
+-- lib: attributes --
+
+CPNWorkSpace: Workspace
+  (# <<SLOT CPNWorkspaceLib:Attributes>>;
+     modalDialog: @Boolean;
+     FolderLayerFolderType:: CPNBinder;
+     
+     
+     KillThemAll: external
+       (# processName: [0] @char;         
+       enter processName
+       do callC;
+      #);
+     defaultTransition: ^Transition;
+     defaultPlace: ^Place;
+     defaultArc: ^Arc;
+
+     defaultSSNode: ^SSNode;
+     
+     defaultPlaceType: ^PlaceType;
+     defaultInitMark: ^InitMark;
+     
+     defaultTransGuard: ^TransGuard;
+     defaultTransTime: ^TransTime;
+     defaultTransAction: ^TransAction;
+     defaultTransChannel: ^TransChannel;
+     defaultTransPriority: ^TransPriority;
+
+     defaultAnnotation: ^Annotation;
+     
+     defaultAuxBox: ^Aux;
+     defaultAuxEllipse: ^Aux;
+     defaultAuxLine: ^Aux;
+     defaultAuxLabel: ^Aux;
+     defaultAuxPng: ^Aux;
+     
+     IndexType:: CPNIndex;
+     
+     theInstrumentFactory: ^InstrumentFactory;
+     theFactory: ^Factory;
+     theXMLLibrary: ^XMLLibrary;
+     
+     InstanceNodeList: SmartList (# ElementType:: theIndex.InstanceNode; #);
+     
+     getGlobalOptions: ObjectPool.get
+       (# Type::OptionList;
+          init::(# do obj.init; #);
+       #);
+          
+     status: @StatusBubble;
+     fixedstatus: @FixedStatusBubble;
+     
+     scanBinders:
+       (# current: ^CPNBinder;
+       <<SLOT CPNWorkspaceScanBinders: doPart>>
+       #);
+          
+     CPNToolBox: ToolBox
+       (# 
+          pack::<
+            (# 
+            do 'toolbox' -> theXML.createElement -> elm[];
+               ('name', name[]) -> elm.createTextAttribute;
+               tools.scan
+               (# 
+               do current.pack -> elm.addElement;
+               #);
+            #);
+          
+          unPack::<
+            (# newToolCollection: ^ToolCollection;
+            do 'name' -> elm.lookupText -> name[];
+               elm.scanElements
+               (# 
+               do (if 'toolcollection' -> current.tag.equalNCS then
+                      (if current.children[] <> none then
+                          &CPNToolCollection[] -> newToolCollection[];
+                          current[] -> newToolCollection.unPack;
+                          newToolCollection[] -> add;
+                      if);
+                  if);
+               #);
+            exit newToolCollection[]
+            #);
+       #);
+     
+     CPNToolCollection: ToolCollection
+       (# 
+          pack::<
+            (#
+            do 'toolcollection' -> theXML.createElement -> elm[];
+               ('name', name[]) -> elm.createTextAttribute;
+               ('cellsize', cellsize) -> elm.createIntAttribute;
+               ('helpname', helpname[]) -> elm.createTextAttribute;
+               cells.scan
+               (# 
+                  xmlElm,toolElm: ^theXML.Element;
+                  asEditableCell: ^EditableCell;
+               do current.theInstrument.pack -> xmlElm[] -> elm.addElement;
+                  (if xmlElm[] <> none then
+                      'toolcell' -> theXML.createElement -> toolElm[];
+                      toolElm[] -> xmlElm.addElement;
+                      ('type', current[] -> getpatternname) -> toolElm.createTextAttribute;
+                      ('name', current.name[]) -> toolElm.createTextAttribute;
+                      ('helpname', current.helpname[]) -> toolElm.createTextAttribute;
+                      ('width', current.width) -> toolElm.createIntAttribute;
+                      ('height', current.height) -> toolElm.createIntAttribute;
+                      ('x', current.x) -> toolElm.createRealAttribute;
+                      ('y', current.y) -> toolElm.createRealAttribute;
+                      (if current## <= EditableCell## then
+                          current[] -> asEditableCell[];
+                          ('label', asEditableCell.labelContent[]) -> toolElm.createTextAttribute;
+                      if);
+                  if);
+               #);
+            #);
+          unPack::<
+            (# xmlElm: ^theXML.Element;
+            do 'name' -> elm.lookupText -> name[];
+               'cellsize' -> elm.lookupInt -> cellsize;
+               'helpname' -> elm.lookupText -> helpname[];
+               PaletteMode -> Mode;
+               elm.scanElements
+               (# aInstrument: ^Instrument;
+                  aToolCell: ^ToolCell;
+                  aEditableCell: ^EditableCell;
+                  toolcelltype: ^Text;
+               do current[] -> theInstrumentFactory.make -> aInstrument[];
+                  
+                  (if aInstrument[] <> none then
+                      'toolcell' -> current.getChild -> xmlElm[];
+                      'type' -> xmlElm.lookupText -> toolcelltype[];
+                      (if true
+                       //'ToolCell' -> toolcelltype.equalNCS then
+                          &ToolCell[] -> aToolCell[];
+                       //'EditableCell' -> toolcelltype.equalNCS then
+                          &EditableCell[] -> aEditableCell[];
+                       //'EditableNumberCell' -> toolcelltype.equalNCS then
+                          &EditableNumberCell[] -> aEditableCell[];
+                       //'ButtonCell' -> toolcelltype.equalNCS then
+                          &ButtonCell[] -> aToolCell[];
+                      if);
+                      (if aToolCell[] <> none then
+                          (aInstrument[], 'name' -> xmlElm.lookupText) -> aToolCell.init;
+                          'x' -> xmlElm.lookupReal -> aToolCell.x;
+                          'y' -> xmlElm.lookupReal -> aToolCell.y;
+                          this(ToolCollection)[] -> aToolCell.theCollection[];
+                          aToolCell[] -> add;
+                      if);
+                      (if aEditableCell[] <> none then
+                          &EditableInstrument[] -> aInstrument[];
+                          current[] -> aInstrument.unPack;
+                          (aInstrument[], 'name' -> xmlElm.lookupText, 'label' -> xmlElm.lookupText) -> aEditableCell.init;
+                          'x' -> xmlElm.lookupReal -> aEditableCell.x;
+                          'y' -> xmlElm.lookupReal -> aEditableCell.y;
+                          this(ToolCollection)[] -> aEditableCell.theCollection[];
+                          aEditableCell[] -> add;
+                      if);
+                      none -> aToolCell[] -> aEditableCell[];
+                  if);
+                  none -> aInstrument[];
+               #);
+            #);
+       #);
+     
+     CPNEditableNumberCell: EditableNumberCell
+       (# theOption: ^Option; 
+          
+          onChanged::
+            (# int: ^IntegerObject;
+               real: ^RealObject;
+               txt: ^Text;
+            do (if true
+                // source## <= IntegerOption## then
+                   theOption.value -> int[];
+                   &Text[] -> txt[];
+                   int.value -> txt.putint;
+                   txt[] -> setLabel;
+                // source## <= RealOption## then
+                   theOption.value -> real[];
+                   &Text[] -> txt[];
+                   real.value -> txt.putreal(# do plain -> style; #);
+                   txt[] -> setLabel;
+               if);
+            #);
+          
+          onTextUpdated::<
+            (# int: ^IntegerObject;
+               real: ^RealObject;
+            do (if theOption[] <> NONE then
+                   (if true 
+                    // theOption## <= IntegerOption## then
+                       CheckedAsInt:
+                         (#
+                         do &IntegerObject[] -> int[];
+                            labelTextItem.content.asInt 
+                            (# syntaxError::
+                                 (#
+                                 do leave CheckedAsInt;
+                                 #);
+                            #) -> int;
+                            int[] -> theOption.value;
+                            theOption.changed;
+                         #);
+                    // theOption## <= RealOption## then
+                       CheckedAsReal:
+                         (# 
+                         do &RealObject[] -> real[];
+                            labelTextItem.content.asReal 
+                            (# syntaxError::
+                                 (#
+                                 do leave CheckedAsReal;
+                                 #);
+                            #) -> real;
+                            real[] -> theOption.value;
+                            theOption.changed;
+                         #);
+                   if);
+               if);
+            #);
+          
+          init::<
+            (# optionname: ^Text;
+               options: ^OptionList;
+            enter (optionname[],options[])
+            do optionname[] -> options.find 
+               (# 
+               do THIS(CPNEditableNumberCell)[] -> theOption.attach;
+                  theOption[] -> THIS(CPNEditableNumberCell).theOption[];
+               #);
+            #);
+       #);
+     
+     CPNEditableTextCell: EditableCell
+       (# theOption: ^Option; 
+          
+          onChanged::
+            (# 
+            do onTextUpdated;
+               theOption.value -> setLabel;
+            #);
+          
+          onTextUpdated::<
+            (# 
+            do (if theOption[] <> NONE then
+                   labelTextItem.content[] -> theOption.value;
+                   theOption.changed;
+               if);
+            #);
+          
+          init::<
+            (# optionname: ^Text;
+               options: ^OptionList;
+            enter (optionname[],options[])
+            do optionname[] -> options.find 
+               (# 
+               do 
+                  theOption[] -> THIS(CPNEditableTextCell).theOption[];
+               #);
+            #);
+       #);
+     
+     WorkspaceCmdManager: @CommandManager;
+     
+     
+     currentMoveBinderCommand: ^MoveBinderCommand;
+     MoveBinderCommand: <<SLOT MoveBinderCommand: descriptor >>;
+     
+     onStartMoveFolder::
+       (#
+       <<SLOT onStartMoveFolder: doPart>>
+       #);
+     
+     onEndMoveFolder::
+       (#
+       <<SLOT onEndMoveFolder: doPart>>
+       #);
+     
+     saveFile: fileObject
+       (# 
+          myError:<
+            (# msg: ^Text;
+            enter msg[]
+            do INNER;
+            #);
+          
+          AccessError:: (# msg: ^Text; do (name).copy->msg[]; ': Insufficient access privilegies.'->msg.append; msg[] -> myError; #);
+          WriteError:: (# msg: ^Text; do (name).copy->msg[]; ': Write error.'->msg.append; msg[] -> myError; #);
+          ReadError:: (# msg: ^Text; do (name).copy->msg[]; ': Read error.'->msg.append; msg[] -> myError; #);
+          EOSerror:: (# msg: ^Text; do (name).copy->msg[]; ': Unexpected end-of-file.'->msg.append; msg[] -> myError; #);
+          NoSuchFileError:: (# msg: ^Text; do (name).copy->msg[]; ': No such file.'->msg.append; msg[] -> myError; #);
+          FileExistsError:: (# msg: ^Text; do (name).copy->msg[]; ': File exists.'->msg.append; msg[] -> myError; #);
+          NoSpaceError:: (# msg: ^Text; do (name).copy->msg[]; ': No space left on device.'->msg.append; msg[] -> myError; #);
+          OtherError:: (# msg: ^Text; do (name).copy->msg[]; ': Unknown error.'->msg.append; msg[] -> myError; #);
+       #);
+     
+     save:
+       (# XMLList: List(# Element:: theXML.Element; #);
+          fileName: ^Text;
+          saveList: @XMLList;
+          err: @boolean;
+          msg: ^text;
+          handleNewNetNameError:< (# do INNER #);
+          Feedback:< BooleanObject;
+          add:<
+            (# xmlElm: ^theXML.Element;
+            enter xmlElm[]
+            do (if xmlElm[] <> none then
+                   xmlElm[] -> saveList.append;
+               if);
+            #);
+       enter fileName[]
+       do INNER;
+          
+          process_savefile:
+            (# 
+               mySaveFile: saveFile
+                 (# myError::
+                      (# 
+                      do 'Error during save: '-> msg.prepend;
+                         msg[] -> status.error(# itemType:: SaveErrorFigure; #);
+                         handleNewNetNameError; 
+                         leave process_savefile;
+                      #);
+                 #);
+               
+               savetmp, tmp: ^Text;
+               tmpFile: ^mySaveFile;
+               delFile: ^mySaveFile;
+               rootElm, generatorElm: ^theXML.Element;
+            do 
+               
+               (* Open file *)
+               &mySaveFile[]->tmpFile[];
+               fileName.copy->savetmp[];
+               '.tmp'->savetmp.puttext;
+               savetmp[]->tmpFile.name;
+               
+               (* Build full XML tree*)
+               &Text[] -> tmp[];
+               'workspaceElements' -> theXML.createElement -> rootElm[];
+               'generator' -> theXML.createElement -> generatorElm[] -> rootElm.addElement;
+               ('tool',toolname) -> generatorElm.createTextAttribute;
+               ('version',version) -> generatorElm.createTextAttribute;
+               ('format', xmlformat) -> generatorElm.createIntAttribute;
+               saveList.scan(# do current[] -> rootElm.addElement; #);
+               
+               (* Write XML info *)               
+               tmpFile.openWrite;
+                              
+               '<?xml version="1.0" encoding="iso-8859-1"?>' -> tmpFile.putline;
+               '<!DOCTYPE workspaceElements PUBLIC "-//CPN//DTD CPNXML 1.0//EN" "http://www.daimi.au.dk/~cpntools/bin/DTD/4/cpn.dtd">' -> tmpFile.putline;
+               
+               (* Write the XML tree *)
+               (rootElm[], tmpfile[]) -> theXML.print;
+               tmpFile.close;
+               
+               (* Delete old file *)
+               &mySaveFile[]->delFile[];
+               fileName.copy -> delFile.name;
+               (if delFile.entry.exists then
+                   delFile.delete;
+               if);
+               
+               (* Rename temporary file *)
+               fileName.copy -> tmpFile.entry.rename;
+               NamesStatusBubbleSaveSucces -> getGlobalNames -> tmp[];
+               fileName[] -> tmp.prepend;
+               (if Feedback then tmp[] -> status.message; if);
+            #);
+       exit err
+       #);
+     
+     theInstrumentList: ^InstrumentList;
+     theToolCollectionList: ^ToolCollectionList;
+     ToolCollectionList: TextHashMap
+       (# Element:: ToolCollection;
+       #);
+     
+     WorkspaceElements:
+       (# 
+          processCPNet:
+            (# elm: ^XML.Element;
+               net: ^CPNet;
+               entry: @Diskentry;
+               theDir: ^text;
+               filename: ^Text;
+               theLoadNode: ^theIndex.LoadNode;
+            enter (filename[], elm[])
+            <<SLOT loadprocessCPNet:doPart>>
+            exit net[]
+            #);
+          
+          unPack:<
+            (# elm: ^theXML.Element;
+               filename: ^Text;
+               res: ^object;
+               reportedError: @boolean;
+            enter (filename[], elm[])
+            <<SLOT WorkspaceElementsunPack:doPart>>
+            exit (res[],reportedError)
+            #);
+       #);
+     
+     image: ^Text;
+     host: ^Text;
+     port: @integer;
+     localsim: @boolean;
+     
+     onResized::<
+       (#
+       do theIndex.layout; 
+          INNER;
+       #);
+     
+     onQuit::< 
+       (# scanNets:
+            (# current: ^CPNet;
+            do theIndex.scanIndexNodes
+               (# theNode: ^theIndex.netNode;
+               do (if current## <= theIndex.netNode## then
+                      current[] -> theNode[];
+                      theNode.net[] -> THIS(scanNets).current[];
+                      INNER scanNets;
+                  if);
+               #);
+            #);
+       <<SLOT CpnWorkspaceOnQuit: dopart>>
+       #);
+     
+     prepare::<
+       (#
+          prepareLibraries::< (# <<SLOT CPNWorkspacePreparePrepareLibraries:doPart>> #);
+            
+          prepareMover::< 
+            (# 
+            do INNER;
+            #);
+          prepareInstruments::<
+            (# 
+               loadDefaults:
+                 (#
+                 <<SLOT CPNWorkspaceLoadDefaults: doPart>>
+                 #);
+            do loadDefaults;
+               getInstruments -> theInstrumentList[];
+               INNER;
+            #);
+          prepareStatus:<
+            (# 
+            do status.init;
+               status.present -> foreground.add;
+               status[] -> objectpool.put;
+               fixedstatus.init;
+               fixedstatus.present -> foreground.add;
+               fixedstatus[] -> objectpool.put;
+            #);
+          prepareConfig:
+            (# getConfig:
+                 (# config: ^XML.Element;
+                 do reading:
+                      (# input: @SaveFile
+                           (# 
+			      myError:: 
+				(# 
+				do leave reading;
+                                #);
+                           #);
+                      do 'config.xml' -> relativeFile -> input.name;
+                         input.openRead;
+                         input[] -> theXML.parse -> config[];
+                         input.close;
+                      #);
+                 exit config[]
+                 #);
+               config: ^XML.Element;
+               processMouseConfig:
+                 (# elm: ^XML.Element;
+                 enter elm[]
+                 do elm.scanElements
+                       (#
+                       do (if 'mouse' -> current.tag.equal then
+                              current[] -> processMouse;
+                          if);
+                       #);
+                 #);
+               processMouse:
+                 (# elm: ^XML.Element;
+                    extract:
+                      (# elm: ^XML.Element;
+                         value: ^Text;
+                      enter elm[]
+                      do &text[] -> value[];
+                         elm.scanData
+                         (#
+                         do current.data[] -> value.puttext;
+                         #);
+                      exit value[]
+                      #);
+                    processNumber:
+                      (# input: ^Text;
+                         number: @integer;
+                      enter input[]
+                      do input.reset;
+                         input.getInt -> number;
+                      exit number
+                      #);
+                    number: @integer;
+                    primary: ^Text;
+                    direction: ^Text;
+                 enter elm[]
+                 do elm.scanElements
+                    (#
+                    do  (if true
+                         //'number' -> current.tag.equal then
+                            current[] -> extract -> processNumber -> number;
+                         //'primary' -> current.tag.equal then
+                            current[] -> extract -> primary[];
+                         //'hand' -> current.tag.equalNCS then
+                            current[] -> extract -> direction[];
+                        if);
+                    #);
+                    handmanager.scan
+                    (#
+                    do (if current.ID = number then
+                           (if 'true' -> primary.equal then
+                               current.ID -> standardMouse;
+                           if);
+                           (if true
+                            //'left' -> direction.equal then
+                               CursorDirections.Left -> current.direction;
+                            //'right' -> direction.equal then
+                               CursorDirections.Right -> current.direction;
+                           if);
+                       if);
+                    #);
+                 #);
+            do getConfig -> config[];
+               (if config[] <> NONE then
+		   config.scanElements 
+		     (# 
+		     do (if 'mouseconfig' -> current.tag.equal then
+			    current[] -> processMouseConfig;
+			if);
+                     #);
+               if);
+            #);
+          
+          loadPreferences:
+            (# 
+            <<SLOT CPNWorkspaceLoadPreferences: doPart>>
+            #);
+          
+       do THIS(Workspace)[] -> content.owner[];
+          THIS(Workspace)[] -> background.owner[];
+          prepareStatus;
+          prepareConfig;
+          INNER;
+          loadPreferences;
+       #);
+     parseArguments: (# <<SLOT parseArguments:doPart>> #);     
+     fps: @SimpleItem
+       (# displayOpaque::
+            (#
+            do framerate -> ctx.drawText;
+            #);
+       #);
+     init::<
+       (#
+	 do (0xa7 / 255, 0xa7 / 255, 0xce / 255) -> &Color -> backgroundColor[];
+       #);   
+     onSheetDropped:: (# <<SLOT OnSheetDropped:doPart>> #);     
+     onKeyDown::
+       (#
+       do (if ControlKey then
+              (if ch = 17 (* ctrl-q *) then
+                  widget.terminate;
+              if);
+          if);
+       #);     
+  do parseArguments;
+     INNER;
+     theIndex.layout;     
+  #);

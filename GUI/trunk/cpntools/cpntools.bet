@@ -1,0 +1,833 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN 'cpnworkspace';
+
+RESOURCE nti	'cpntools.rc'
+	   default  '';
+
+INCLUDE 'menues/bindermenu';
+INCLUDE 'menues/declnodemenu';
+INCLUDE 'menues/groupmenu';
+INCLUDE 'menues/historymenu';
+INCLUDE 'menues/inscriptionmenu';
+INCLUDE 'menues/instancenodemenu';
+INCLUDE 'menues/netnodemenu';
+INCLUDE 'menues/pagemenu';
+INCLUDE 'menues/tabmenu';
+INCLUDE 'menues/toolmenu';
+INCLUDE 'menues/workspacemenu';
+INCLUDE 'menues/bindernodemenu';
+INCLUDE 'menues/bindingindexmenu';
+INCLUDE 'menues/portsocketindexmenu';
+INCLUDE 'menues/descriptordialogmenu';
+INCLUDE 'menues/monitormenu';
+INCLUDE 'menues/textsheetmenu';
+INCLUDE 'menues/optionmenu';
+
+INCLUDE 'cursors/creationcursors';
+INCLUDE 'cursors/simulationcursors';
+
+INCLUDE 'instruments/highlightableinstruments';
+
+INCLUDE 'palettes/floatingview';
+INCLUDE '~beta/process/processmanager';
+
+INCLUDE 'resources/texts/texts';
+INCLUDE 'resources/default-values';
+INCLUDE 'relfile';
+INCLUDE 'debug';
+
+INCLUDE 'cpninstrumentfactory';
+INCLUDE 'cpnfactory';
+
+INCLUDE '~beta/postwimp/foundation/private/worldbody';
+
+BODY 'private/cpntoolsbody';
+
+-- program: descriptor --
+CpnWorkSpace
+(# theCreatingTools: @CreatingTools;
+   theStyleTools: @StyleTools;
+   theSimulationTools: @SimulationTools;
+   theStateSpaceTools: @StateSpaceTools;
+   theHierarchyTools: @HierarchyTools;
+   theViewTools: @ViewTools;
+   theMonitoringTools: @MonitoringTools;
+   theNetTools: @NetTools;
+   theCreateAuxTools: @CreateAuxTools;
+   theToolBox: @CPNToolBox;
+   
+   prepare:: 
+     (# 
+        prepareInstruments:: 
+          (# theBlackInstrument: ^SetColorInstrument;
+             theSilverInstrument: ^SetColorInstrument;
+             theGrayInstrument: ^SetColorInstrument;
+             theWhiteInstrument: ^SetColorInstrument;
+             theMaroonInstrument: ^SetColorInstrument;
+             theRedInstrument: ^SetColorInstrument;
+             thePurpleInstrument: ^SetColorInstrument;
+             theFuchsiaInstrument: ^SetColorInstrument;
+             theGreenInstrument: ^SetColorInstrument;
+             theLimeInstrument: ^SetColorInstrument;
+             theOliveInstrument: ^SetColorInstrument;
+             theYellowInstrument: ^SetColorInstrument;
+             theNavyInstrument: ^SetColorInstrument;
+             theBlueInstrument: ^SetColorInstrument;
+             theTealInstrument: ^SetColorInstrument;
+             theAquaInstrument: ^SetColorInstrument;
+             
+             theLineWidthInstrument: ^setLineWidthInstrument;
+             theCycleLinePatternInstrument: ^CycleLinePatternInstrument;
+             theSetArcDirectionInstrument: ^SetArcDirectionInstrument;
+             theCycleArcHeadInstrument: ^CycleArcHeadInstrument;
+             theToggleFillInstrument: ^ToggleFillInstrument;
+             theCloneGraphicsInstrument: ^CloneGraphicsInstrument;
+             
+             theCreateAuxBoxInstrument: ^CreateAuxBoxInstrument;
+             theCreateAuxEllipseInstrument: ^CreateAuxEllipseInstrument;
+             theCreateAuxLineInstrument: ^CreateAuxLineInstrument;
+             theCreateAuxLabelInstrument: ^CreateAuxLabelInstrument;
+             theCreateAuxPNGInstrument: ^ CreateAuxPNGInstrument;
+             
+             thePlaceInstrument: ^CPNGenericInstrument;
+             theTransitionInstrument: ^CPNGenericInstrument;
+             theArcInstrument: ^CPNGenericInstrument;
+             
+             theDeleteInstrument: ^GenericDeleteInstrument;
+             theCloneInstrument: ^CreateCloneInstrument;
+             
+             theHorizontalGuideInstrument: ^CreateHorizontalGuideInstrument;
+             theVerticalGuideInstrument: ^CreateVerticalGuideInstrument;
+             theToogleExplicitInstrument: ^ToogleExplicitInstrument;
+             
+             theRewindInstrument: ^RewindInstrument;
+             theStopInstrument: ^StopInstrument;
+             theOneStepInstrument: ^OneStepInstrument;
+             thePlayInstrument: ^PlayInstrument;
+             theFastForwardInstrument: ^FastForwardInstrument;
+             theBindManuallyInstrument: ^BindManuallyInstrument;
+	     theGenericMLEvaluateInstrument: ^GenericMLEvaluateInstrument;
+             theMLEvaluateInscriptionInstrument: ^MLEvaluateInscriptionInstrument;
+             
+             (* State Space Instruments *)
+             theEnterStateSpaceInstrument: ^EnterStateSpaceInstrument;
+             theCalcStateSpaceInstrument: ^CalcStateSpaceInstrument;
+             theCalcSccInstrument: ^CalcSccInstrument;
+             theSStoSimInstrument: ^SStoSimInstrument;
+             theSimtoSSInstrument: ^SimtoSSInstrument;
+             theSaveReportInstrument: ^SaveReportInstrument;
+	     theDisplayNodeInstrument: ^DisplayNodeInstrument;
+	     theDisplaySuccessorsInstrument: ^DisplaySuccessorsInstrument;
+	     theDisplayPredecessorsInstrument: ^DisplayPredecessorsInstrument;
+	     theDisplayPartialSSGraphInstrument: ^DisplayPartialSSGraphInstrument;
+	     
+             theInPortInstrument: ^InPortInstrument;
+             theOutPortInstrument: ^OutPortInstrument;
+             theIOPortInstrument: ^IOPortInstrument;
+             theSetSubPageInstrument: ^SetSubPageInstrument;
+             theAssignPortSocketInstrument: ^AssignPortSocketInstrument;
+             theFusionInstrument: ^FusionInstrument;
+             theMoveToSubPageInstrument: ^MoveToSubPageInstrument;
+             theFlattenInstrument: ^FlattenInstrument;
+             
+             theToggleGroupInstrument: ^ToggleGroupInstrument;
+             theNewGroupInstrument: ^SimpleNewGroupInstrument;
+             theClickZoomOutInstrument: ^ClickZoomOutInstrument;
+             theClickZoomInInstrument: ^ClickZoomInInstrument;
+             theClickZoomFitInstrument: ^ClickZoomFitInstrument;
+             
+             theLoadNetInstrument: ^LoadNetInstrument;
+             theSaveNetInstrument: ^SaveNetInstrument;
+	     theSaveAllNetsInstument: ^SaveAllNetsInstrument;
+             theSaveNetAsInstrument: ^SaveNetAsInstrument;
+             theSaveNetAndSimulatorInstrument: ^SaveNetAndSimulatorInstrument;
+	     theHelpInstrument: ^HelpInstrument;
+	     thePrintInstrument: ^PrintInstrument;
+             theCreateNetInstrument: ^CreateNetInstrument;
+             theCreatePageIndexInstrument: ^CreatePageIndexInstrument;
+             theDeletePageIndexInstrument: ^DeletePageIndexInstrument;
+             theCloseNetInstrument: ^CloseNetInstrument;
+             
+             theDataCollectionInstrument: ^DataCollectionInstrument;  
+             theMarkingSizeInstrument: ^MarkingSizeInstrument;
+             theBreakpointInstrument: ^BreakpointInstrument;
+             theUserDefinedInstrument: ^UserDefinedInstrument;
+             theWriteInFileInstrument: ^WriteInFileInstrument;
+             theListLengthDataCollectionInstrument: ^ListLengthDataCollectionInstrument;
+             theCountTransitionOccurrenceDataCollectionInstrument: ^CountTransitionOccurrenceDataCollectionInstrument;
+             thePlaceContentBreakpointInstrument: ^PlaceContentBreakpointInstrument;
+             theTransitionEnabledBreakpointInstrument: ^TransitionEnabledBreakpointInstrument;
+          do &SetColorInstrument[] -> theBlackInstrument[];
+             Black[] -> theBlackInstrument.init;
+             ('black', theBlackInstrument[]) -> theInstrumentList.associate;
+             
+             &SetColorInstrument[] -> theSilverInstrument[];
+             Silver[] -> theSilverInstrument.init;
+             ('silver', theSilverInstrument[]) -> theInstrumentList.associate;
+             
+             &SetColorInstrument[] -> theGrayInstrument[];
+             Gray[] -> theGrayInstrument.init;
+             ('gray', theGrayInstrument[]) -> theInstrumentList.associate;
+                          
+             &SetColorInstrument[] -> theWhiteInstrument[];
+             White[] -> theWhiteInstrument.init;
+             ('white', theWhiteInstrument[]) -> theInstrumentList.associate;
+             
+             &SetColorInstrument[] -> theMaroonInstrument[];
+             Maroon[] -> theMaroonInstrument.init;
+             ('maroon', theMaroonInstrument[]) -> theInstrumentList.associate;
+             
+             &SetColorInstrument[] -> theRedInstrument[];
+             Red[] -> theRedInstrument.init;
+             ('red', theRedInstrument[]) -> theInstrumentList.associate;
+             
+             &SetColorInstrument[] -> thePurpleInstrument[];
+             Purple[] -> thePurpleInstrument.init;
+             ('purple', thePurpleInstrument[]) -> theInstrumentList.associate;
+             
+             &SetColorInstrument[] -> theFuchsiaInstrument[];
+             Fuchsia[] -> theFuchsiaInstrument.init;
+             ('fuchsia', theFuchsiaInstrument[]) -> theInstrumentList.associate;
+             
+             &SetColorInstrument[] -> theGreenInstrument[];
+             Green[] -> theGreenInstrument.init;
+             ('green', theGreenInstrument[]) -> theInstrumentList.associate;
+             
+             &SetColorInstrument[] -> theLimeInstrument[];
+             Lime[] -> theLimeInstrument.init;
+             ('lime', theLimeInstrument[]) -> theInstrumentList.associate;
+             
+             &SetColorInstrument[] -> theOliveInstrument[];
+             Olive[] -> theOliveInstrument.init;
+             ('olive', theOliveInstrument[]) -> theInstrumentList.associate;
+             
+             &SetColorInstrument[] -> theYellowInstrument[];
+             Yellow[] -> theYellowInstrument.init;
+             ('yellow', theYellowInstrument[]) -> theInstrumentList.associate;
+             
+             &SetColorInstrument[] -> theNavyInstrument[];
+             Navy[] -> theNavyInstrument.init;
+             ('navy', theNavyInstrument[]) -> theInstrumentList.associate;
+             
+             &SetColorInstrument[] -> theBlueInstrument[];
+             Blue[] -> theBlueInstrument.init;
+             ('blue', theBlueInstrument[]) -> theInstrumentList.associate;
+             
+             &SetColorInstrument[] -> theTealInstrument[];
+             Teal[] -> theTealInstrument.init;
+             ('teal', theTealInstrument[]) -> theInstrumentList.associate;
+             
+             &SetColorInstrument[] -> theAquaInstrument[];
+             Aqua[] -> theAquaInstrument.init;
+             ('aqua', theAquaInstrument[]) -> theInstrumentList.associate;
+             
+             &setLineWidthInstrument[]->theLineWidthInstrument[];
+             theLineWidthInstrument.init;
+             ('lineWidth', theLineWidthInstrument[])->theInstrumentList.associate;
+             
+             &CycleLinePatternInstrument[]->theCycleLinePatternInstrument[];
+             theCycleLinePatternInstrument.init;
+             ('pattern', theCycleLinePatternInstrument[])->theInstrumentList.associate;
+             
+             &SetArcDirectionInstrument[]->theSetArcDirectionInstrument[];
+             theSetArcDirectionInstrument.init;
+             ('setArcDirection', theSetArcDirectionInstrument[]) 
+               -> theInstrumentList.associate;
+             
+             &CycleArcHeadInstrument[]->theCycleArcHeadInstrument[];
+             theCycleArcHeadInstrument.init;
+             ('cycleArcHead', theCycleArcHeadInstrument[])
+               -> theInstrumentList.associate;
+             
+             &toggleFillInstrument[] -> theToggleFillInstrument[];
+             theToggleFillInstrument.init;
+             ('ToggleFill', theToggleFillInstrument[]) -> theInstrumentList.associate; 
+             
+             &CloneGraphicsInstrument[] -> theCloneGraphicsInstrument[];
+             theCloneGraphicsInstrument.init;
+             ('cloneGraphics',theCloneGraphicsInstrument[]) -> theInstrumentList.associate;
+             (* Aux Init...*)
+             &CreateAuxBoxInstrument[] -> theCreateAuxBoxInstrument[];
+             ('CreateAuxBox', theCreateAuxBoxInstrument[])
+               -> theInstrumentList.associate;
+             theCreateAuxBoxInstrument.init;             
+             
+             &CreateAuxPNGInstrument[] -> theCreateAuxPNGInstrument[];
+             ('CreateAuxPNG', theCreateAuxPNGInstrument[])
+               -> theInstrumentList.associate;
+             theCreateAuxPNGInstrument.init;             
+              
+             &CreateAuxEllipseInstrument[] -> theCreateAuxEllipseInstrument[];
+             ('CreateAuxEllipse', theCreateAuxEllipseInstrument[])
+               -> theInstrumentList.associate;
+             theCreateAuxEllipseInstrument.init;             
+
+             &CreateAuxLineInstrument[]-> theCreateAuxLineInstrument[];
+              ('CreateAuxLine', theCreateAuxLineInstrument[])
+               -> theInstrumentList.associate;
+             theCreateAuxLineInstrument.init;             
+             
+             &CreateAuxLabelInstrument[] -> theCreateAuxLabelInstrument[];
+             ('CreateAuxLabel', theCreateAuxLabelInstrument[])
+               -> theInstrumentList.associate;
+             theCreateAuxLabelInstrument.init; 
+             
+             &PlaceInstrument[] -> thePlaceInstrument[];
+             thePlaceInstrument.init;
+             ('place', thePlaceInstrument[]) 
+               -> theInstrumentList.associate;
+             &TransitionInstrument[]->theTransitionInstrument[];
+             theTransitionInstrument.init;
+             ('trans', theTransitionInstrument[]) 
+               -> theInstrumentList.associate;
+             &ArcInstrument[]->theArcInstrument[];
+             theArcInstrument.init;
+             ('arc', theArcInstrument[])->theInstrumentList.associate;
+             
+             &GenericDeleteInstrument[]->theDeleteInstrument[];
+             theDeleteInstrument.init;
+             ('delete', theDeleteInstrument[]) -> theInstrumentList.associate;
+             
+             &CreateCloneInstrument[]->theCloneInstrument[];
+             theCloneInstrument.init;
+             ('clone', theCloneInstrument[]) -> theInstrumentList.associate;
+             
+             &CreateHorizontalGuideInstrument[] 
+               -> theHorizontalGuideInstrument[];
+             theHorizontalGuideInstrument.init;
+             ('horizontalGuide', theHorizontalGuideInstrument[]) 
+               -> theInstrumentList.associate;
+             &CreateVerticalGuideInstrument[] 
+               -> theVerticalGuideInstrument[];
+             theVerticalGuideInstrument.init;
+             ('verticalGuide', theVerticalGuideInstrument[]) 
+               -> theInstrumentList.associate;
+             &ToogleExplicitInstrument[] -> theToogleExplicitInstrument[];
+             theToogleExplicitInstrument.init;
+             ('toogleExplicit', theToogleExplicitInstrument[]) -> theInstrumentList.associate;
+             
+             &RewindInstrument[]->theRewindInstrument[];
+             theRewindInstrument.init;
+             ('rewind', theRewindInstrument[]) 
+               -> theInstrumentList.associate;
+             &StopInstrument[]->theStopInstrument[];
+             theStopInstrument.init;
+             ('stop', theStopInstrument[])->theInstrumentList.associate;
+             
+             &OneStepInstrument[]->theOneStepInstrument[];
+             theOneStepInstrument.init;
+             ('oneStep', theOneStepInstrument[]) 
+               -> theInstrumentList.associate;
+             
+             &PlayInstrument[]->thePlayInstrument[];
+             thePlayInstrument.init;
+             ('play', thePlayInstrument[])->theInstrumentList.associate;
+             
+             &FastForwardInstrument[]->theFastForwardInstrument[];
+             theFastForwardInstrument.init;
+             ('fastForward', theFastForwardInstrument[]) 
+               -> theInstrumentList.associate;
+             
+             &BindManuallyInstrument[] -> theBindManuallyInstrument[];
+             theBindManuallyInstrument.init;
+             ('bindmanually',theBindManuallyInstrument[])-> theInstrumentList.associate;
+             
+             &genericMLEvaluateInstrument[]->theGenericMLEvaluateInstrument[];
+             theGenericMLEvaluateInstrument.init;
+             ('mlevaluate', theGenericMLEvaluateInstrument[]) -> theInstrumentList.associate;
+             
+             &MLEvaluateInscriptionInstrument[] -> theMLEvaluateInscriptionInstrument[];
+             theMLEvaluateInscriptionInstrument.init;
+             ('evaluate', theMLEvaluateInscriptionInstrument[]) -> theInstrumentList.associate;
+             
+             (* State Space Instruments *)
+             &EnterStateSpaceInstrument[] -> theEnterStateSpaceInstrument[];
+             theEnterStateSpaceInstrument.init;
+             ('enterog', theEnterStateSpaceInstrument[]) -> theInstrumentList.associate;
+             &CalcStateSpaceInstrument[] -> theCalcStateSpaceInstrument[];
+             theCalcStateSpaceInstrument.init;
+             ('calcoccgraph', theCalcStateSpaceInstrument[]) -> theInstrumentList.associate;
+             &CalcSccInstrument[] -> theCalcSccInstrument[];
+             theCalcSccInstrument.init;
+             ('calcsccgraph', theCalcSccInstrument[]) -> theInstrumentList.associate;
+             &SStoSimInstrument[] -> theSStoSimInstrument[];
+             theSStoSimInstrument.init;
+             ('sstosim', theSStoSimInstrument[]) -> theInstrumentList.associate;
+             &SimtoSSInstrument[] -> theSimtoSSInstrument[];
+             theSimtoSSInstrument.init;
+             ('simtoss', theSimtoSSInstrument[]) -> theInstrumentList.associate;
+             &SaveReportInstrument[] -> theSaveReportInstrument[];
+             theSaveReportInstrument.init;
+	     ('saveogreport', theSaveReportInstrument[]) -> theInstrumentList.associate;
+	     &DisplayNodeInstrument[] -> theDisplayNodeInstrument[];
+	     theDisplayNodeInstrument.init;
+	     ('displaynode', theDisplayNodeInstrument[]) -> theInstrumentList.associate;
+	     &DisplaySuccessorsInstrument[] -> theDisplaySuccessorsInstrument[];
+	     theDisplaySuccessorsInstrument.init;
+	     ('displaysuccessors', theDisplaySuccessorsInstrument[]) -> theInstrumentList.associate;
+	     &DisplayPredecessorsInstrument[] -> theDisplayPredecessorsInstrument[];
+	     theDisplayPredecessorsInstrument.init;
+	     ('displaypredecessors', theDisplayPredecessorsInstrument[]) -> theInstrumentList.associate;	     
+	     &DisplayPartialSSGraphInstrument[] -> theDisplayPartialSSGraphInstrument[];
+	     theDisplayPartialSSGraphInstrument.init;
+	     ('displaypartialssgraph', theDisplayPartialSSGraphInstrument[]) -> theInstrumentList.associate;
+	     
+	     
+             &InPortInstrument[]->theInPortInstrument[];
+             theInPortInstrument.init;
+             ('in', theInPortInstrument[])->theInstrumentList.associate;
+             &OutPortInstrument[]->theOutPortInstrument[];
+             theOutPortInstrument.init;
+             ('out', theOutPortInstrument[])-> theInstrumentList.associate;
+             &IOPortInstrument[]->theIOPortInstrument[];
+             theIOPortInstrument.init;
+             ('i/o', theIOPortInstrument[])-> theInstrumentList.associate;
+             &SetSubPageInstrument[]->theSetSubPageInstrument[];
+             theSetSubPageInstrument.init;
+             ('SetSubPage', theSetSubPageInstrument[]) 
+               -> theInstrumentList.associate;
+             &AssignPortSocketInstrument[] 
+               -> theAssignPortSocketInstrument[];
+             theAssignPortSocketInstrument.init;
+             ('AssignPortSocket', theAssignPortSocketInstrument[]) 
+               -> theInstrumentList.associate;
+             &FusionInstrument[] 
+               -> theFusionInstrument[];
+             theFusionInstrument.init;
+             ('AssignFusion', theFusionInstrument[]) 
+               -> theInstrumentList.associate;
+             &MoveToSubPageInstrument[]->theMoveToSubPageInstrument[];
+             theMoveToSubPageInstrument.init;
+             ('MoveToSubPage', theMoveToSubPageInstrument[]) 
+               -> theInstrumentList.associate;
+             &FlattenInstrument[]->theFlattenInstrument[];
+             theFlattenInstrument.init;
+             ('flatten',theFlattenInstrument[]) -> theInstrumentList.associate;
+             
+             &ToggleGroupInstrument[]->theToggleGroupInstrument[];
+             theToggleGroupInstrument.init;
+             ('Group', theToggleGroupInstrument[]) 
+               -> theInstrumentList.associate;
+             &SimpleNewGroupInstrument[]->theNewGroupInstrument[];
+             theNewGroupInstrument.init;
+             ('NewGroup', theNewGroupInstrument[]) 
+               -> theInstrumentList.associate;
+             
+             
+             &ClickZoomInInstrument[]->theClickZoomInInstrument[];
+             theClickZoomInInstrument.init;
+             ('Zoomin', theClickZoomInInstrument[]) -> theInstrumentList.associate;
+             &ClickZoomOutInstrument[]->theClickZoomOutInstrument[];
+             theClickZoomOutInstrument.init;
+             ('Zoomout', theClickZoomOutInstrument[]) -> theInstrumentList.associate;
+             &ClickZoomFitInstrument[]->theClickZoomFitInstrument[];
+             theClickZoomFitInstrument.init;
+             ('Zoomfit', theClickZoomFitInstrument[]) -> theInstrumentList.associate;
+             
+             (*
+              * 
+              * HER SKAL LIGELEDES AENDRES
+              * MEN HVAD FANDEN ER DE FOR NOGLE KARLE?
+              * 
+              *)
+             
+             &LoadNetInstrument[]->theLoadNetInstrument[];
+             theLoadNetInstrument.init;
+             ('Load', theLoadNetInstrument[])->theInstrumentList.associate;
+             
+             &SaveNetInstrument[]->theSaveNetInstrument[];
+             theSaveNetInstrument.init;
+             ('Save', theSaveNetInstrument[])->theInstrumentList.associate;
+             
+             &SaveNetAsInstrument[]->theSaveNetAsInstrument[];
+             theSaveNetAsInstrument.init;
+             ('SaveAs', theSaveNetAsInstrument[])->theInstrumentList.associate;
+             
+             &SaveNetAndSimulatorInstrument[] -> theSaveNetAndSimulatorInstrument[];
+             theSaveNetAndSimulatorInstrument.init;
+             ('SaveNetAndSimulator', theSaveNetAndSimulatorInstrument[])->theInstrumentList.associate;
+             
+	     &HelpInstrument[]->theHelpInstrument[];
+	     theHelpInstrument.init;
+	     ('Help',theHelpInstrument[])->theInstrumentList.associate;
+             
+	     &PrintInstrument[]->thePrintInstrument[];
+	     thePrintInstrument.init;
+	     ('Print',thePrintInstrument[])->theInstrumentList.associate;
+             
+             &CreateNetInstrument[]->theCreateNetInstrument[];
+             theCreateNetInstrument.init;
+             ('NewNet', theCreateNetInstrument[])->theInstrumentList.associate;
+             
+             &CreatePageIndexInstrument[]->theCreatePageIndexInstrument[];
+             theCreatePageIndexInstrument.init;
+             ('NewPage', theCreatePageIndexInstrument[])->theInstrumentList.associate;
+             
+             &DeletePageIndexInstrument[]->theDeletePageIndexInstrument[];
+             theDeletePageIndexInstrument.init;
+             ('DeletePageIndex', theDeletePageIndexInstrument[])->theInstrumentList.associate;
+             
+             &CloseNetInstrument[]->theCloseNetInstrument[];
+             theCloseNetInstrument.init;
+             ('CloseNet', theCloseNetInstrument[])->theInstrumentList.associate;
+             
+             &DataCollectionInstrument[] -> theDataCollectionInstrument[];
+             theDataCollectionInstrument.init;
+             ('DataCollection', theDataCollectionInstrument[]) -> theInstrumentList.associate;
+             
+             &MarkingSizeInstrument[] -> theMarkingSizeInstrument[];
+             theMarkingSizeInstrument.init;
+             ('MarkingSize', theMarkingSizeInstrument[]) -> theInstrumentList.associate;
+             
+             &BreakpointInstrument[] -> theBreakpointInstrument[];
+             theBreakpointInstrument.init;
+             ('Breakpoint', theBreakpointInstrument[]) -> theInstrumentList.associate;
+             
+             &UserDefinedInstrument[] -> theUserDefinedInstrument[];
+             theUserDefinedInstrument.init;
+             ('UserDefined', theUserDefinedInstrument[]) -> theInstrumentList.associate;
+             
+             &WriteInFileInstrument[] -> theWriteInFileInstrument[];
+             theWriteInFileInstrument.init;
+             ('WriteInFile', theWriteInFileInstrument[]) -> theInstrumentList.associate;
+             
+             &ListLengthDataCollectionInstrument[] -> theListLengthDataCollectionInstrument[];
+             theListLengthDataCollectionInstrument.init;
+             ('ListLengthDataCollection', theListLengthDataCollectionInstrument[]) -> theInstrumentList.associate;
+                          
+             &CountTransitionOccurrenceDataCollectionInstrument[] 
+               -> theCountTransitionOccurrenceDataCollectionInstrument[];
+             theCountTransitionOccurrenceDataCollectionInstrument.init;
+             ('CountTransitionOccurrenceDataCollection', theCountTransitionOccurrenceDataCollectionInstrument[])
+               -> theInstrumentList.associate;
+             
+             &PlaceContentBreakpointInstrument[] -> thePlaceContentBreakpointInstrument[];
+             thePlaceContentBreakpointInstrument.init;
+             ('PlaceContentBreakpoint', thePlaceContentBreakpointInstrument[]) -> theInstrumentList.associate;
+             
+             &TransitionEnabledBreakpointInstrument[] -> theTransitionEnabledBreakpointInstrument[];
+             theTransitionEnabledBreakpointInstrument.init;
+             ('TransitionEnabledBreakpoint', theTransitionEnabledBreakpointInstrument[]) -> theInstrumentList.associate;
+          #);
+        
+        prepareMarkingMenus:: 
+          (# 
+          do &PageMenu[] -> addmenu;
+             
+             &BinderMenu[] -> addmenu;
+             &ToolBinderMenu[] -> addmenu;
+             &ToolCellMenu[] -> addmenu;
+             &ToolCellIndexMenu[] -> addmenu;
+             &workspaceMenu[] -> addmenu;
+             &ToolTabMenu[] -> addmenu;
+             &CPNTabMenu[] -> addmenu;
+             &TextTabMenu[] -> addmenu;
+             
+             &PlaceMenu[] -> addmenu;
+             &TransitionMenu[] -> addmenu;
+             &NodeMenu[] -> addmenu;
+             &ArcMenu[] -> addmenu;
+             &MLInscriptionMenu[] -> addmenu;
+             &InscriptionMenu[] -> addmenu;
+             &PortTypeMenu[] -> addmenu;
+             &SubpageInfoMenuEnabled[] -> addmenu;
+             &SubPageInfoMenu[] -> addmenu;
+             &HierarchyInfoMenu[] -> addmenu;
+             &CurrentMarkingMenu[] -> addMenu;
+             &GroupMenu[] -> addmenu;
+             &GroupNotAllMenu[] -> addmenu;
+             &HistoryMenu[] -> addmenu;
+             &CommandMenu[] -> addmenu;
+             &netNodeMenu[] -> addmenu;
+             &instanceNodeMenu[] -> addmenu;
+             &GlobalNodeMenu[] -> addmenu;
+             &DeclNodeMenu[] -> addmenu;
+             &CPNPageTabNodeMenu[] -> addmenu;
+             &ToolSheetTabNodeMenu[] -> addmenu;
+             &AuxLabelMenu[] -> addmenu;
+	     &AuxMenu[] -> addmenu;
+	     &SSNodeMenu[] -> addmenu;
+	     &SSArcMenu[] -> addmenu;
+             &GuidelineMenu[] -> addmenu;
+             
+             &BindingIndexMenu[] -> addmenu;
+             &PortSocketIndexMenu[] -> addmenu;
+             &DescriptorDialogMenu[] -> addmenu;
+             
+             &MonitorMenu[] -> addmenu;     
+             &MonitorBlockMenu[] -> addmenu;
+             &MonitorPagesMenu[] -> addmenu;
+             &MonitorPageNodeMenu[] -> addmenu;
+             &MonitorNodeNodeMenu[] -> addmenu;
+             &TextNodeMenu[] -> addMenu;
+             &SimpleDeclarationNodeMenu[] -> addMenu;
+             &MonitorDeclarationNodeMenu[] -> addMenu;
+             
+             &TextSheetMenu[] -> addmenu;
+             
+             &FolderPathOptionMenu[] -> addmenu;
+             
+             &OptionMenu[] -> addmenu;
+          #);
+        
+        prepareTestTools: 
+          (# 
+             leftInstrument: ^Instrument;
+          do &ToolCollectionList[] -> theToolCollectionList[];
+             theToolCollectionList.init;
+             theToolBox.init;
+             NamesToolBox -> getGlobalNames -> theToolBox.name[];
+             theCreateAuxTools.init;
+             theCreateAuxTools.thecollection[]
+               -> theToolBox.add;
+             ('aux',theCreateAuxTools.theCollection[]) -> theToolCollectionList.associate;
+             
+             theCreatingTools.init;
+             theCreatingTools.thecollection[] 
+               -> theToolBox.add;
+             ('create',theCreatingTools.theCollection[]) -> theToolCollectionList.associate;
+             
+             theHierarchyTools.init;
+             theHierarchyTools.thecollection[] 
+               -> theToolBox.add;
+             ('hierarchy',theHierarchyTools.theCollection[]) -> theToolCollectionList.associate;
+             
+             theMonitoringTools.init;
+             theMonitoringTools.theCollection[]
+               -> theToolBox.add;
+             ('monitoring',theMonitoringTools.theCollection[]) -> theToolCollectionList.associate;
+
+             theNetTools.init;
+             theNetTools.theCollection[]
+               -> theToolBox.add;
+             ('net',theNetTools.theCollection[]) -> theToolCollectionList.associate;
+
+             theSimulationTools.init;
+             theSimulationTools.thecollection[] 
+               -> theToolBox.add;
+             ('simulation',theSimulationTools.theCollection[]) -> theToolCollectionList.associate;
+             
+             theStateSpaceTools.init;
+             theStateSpaceTools.thecollection[] -> theToolBox.add;
+             ('statespace',theStateSpaceTools.theCollection[]) -> theToolCollectionList.associate;
+                          
+             theStyleTools.init;
+             theStyleTools.thecollection[] 
+               -> theToolBox.add;
+             ('style',theStyleTools.theCollection[]) -> theToolCollectionList.associate;
+
+             theViewTools.init;
+             theViewTools.thecollection[] 
+               -> theToolBox.add;
+             ('view',theViewTools.theCollection[]) -> theToolCollectionList.associate;
+
+             theToolBox[]->theIndex.SetContent;
+             (* &MoveToolGlassInstrument[]->leftInstrument[];
+              leftInstrument.init;
+              genericMove[]->theHand.active[]; *)
+             (* leftInstrument[]->theHand.active[]; *)
+          #);
+        prepareMover:: 
+          (# 
+          do &MoveTextAdapter[] -> addmover;
+             &MoveMLCodeOptionAdapter[] -> addmover;
+             &PortSocketHighLightInstrument[] -> addmover;
+             &SubpageInstanceHighlightInstrument[] -> addmover;
+             &HighlightDependsInstrument[] -> addmover;
+             &ShowInscriptionFatherHighLightInstrument[] -> addmover;
+             &ShowMarkingPlaceHighLightInstrument[] -> addmover;
+             &ShowHierInfoFatherHighLightInstrument[] -> addmover;
+	     &ShowDescriptorDialogFatherHighlightInstrument[] -> addmover;
+             &MoveBindingDialogInstrument[] -> addMover;
+             &MoveStatusBubbleInstrument[] -> addMover;
+             &MoveArcInstrument[] -> addmover;
+             &MoveHorizontalGuideInstrument[] -> addmover;
+             &MoveVerticalGuideInstrument[] -> addmover;
+             &ResizeElementInstrument[] -> addmover;
+             (** &MovePageElementInstrument[] -> addmover; **)
+             &BasicMovePageElementInstrument[] -> addmover;
+             &MoveMessage[] -> addmover;
+             &SimpleSelectGroupInstrument[] -> addmover;
+             &ResizeMarkingInstrument[] -> addmover;
+             &MoveSimulationInstrument[] -> addmover;
+             &TwoHandZoomInstrument[] -> addmover;
+             &MoveToolCellIndexInstrument[] -> addmover;
+             
+             
+             &MoveUpperTriangle[] -> addmover;
+             &MoveLowerTriangle[] -> addmover;
+             
+             (if (debugTraceOver## -> debugEnabled) then
+                 &TraceOverInstrument[] -> addmover;
+             if);
+          #);
+        prepareHelp: 
+          (# 
+          do NONE->theIndex.SetContent;
+          #);
+        prepareFactories::
+          (# 
+          do &CPNInstrumentFactory[] -> theInstrumentFactory[];
+             theInstrumentFactory.init;
+             &CPNFactory[] -> theFactory[];
+             theFactory.init;
+          #);
+        prepareGlobalOptionNode:
+          (# theOptionList: ^OptionList;
+             theOptionsNode: ^theIndex.OptionListNode;
+             theGlobalOption: ^OptionListOption;
+          do getGlobalOptions -> theOptionList[];
+             &OptionListOption[] -> theGlobalOption[];
+             NamesGlobalOptions -> getGlobalNames -> theGlobalOption.name;
+             theOptionList[] -> theGlobalOption.value;
+             theGlobalOption[] -> theIndex.setcontent;             
+          #);
+        prepareGlobalOptions:
+	  (# thePort: @integer;
+       	     theImage: ^Text;
+       	     theHost: ^Text;
+       	     options: ^OptionList;
+             stepsbetweensave: @IntegerObject;
+             reportOptions: ^OptionList;
+	     imageOptionsOption: ^OptionListOption;
+    	     imageOptions: ^OptionList;
+    	     imageOption: ^TextOption;
+	     getDefaultImage:
+	       (# path: ^Text;
+		  path2: ^Text;
+	       do 
+		  'cpnsim/cpn.ML' -> relativeFile -> path[] -> path2[];
+	(*	  ' ' -> path2.findAll
+		    (#
+		    do '"' -> path[];
+		       path2[] -> path.puttext;
+		       '"' -> path.puttext;
+		    #); *)
+	       exit path[]
+	       #);
+
+          do &OptionList[] -> options[];
+             options.init;
+             options[] -> ObjectPool.put;
+             CheckpointSaveDefault -> stepsbetweensave;
+             ('autosave', 'autosave') -> options.setAddOptionWithDefault
+             (# OptionType::IntegerOption
+                  (# dname:: (# do NamesGlobalOptionsAutosaveSteps -> getGlobalNames -> value[]; #); 
+                  #); 
+             #);
+             &OptionList[] -> reportOptions[];
+             reportOptions.init;
+             ('save_report', 'save_report') -> reportOptions.setAddOptionWithDefault
+             (# OptionType::BooleanOption
+                  (# dname:: (# do 'Save Report' -> value[]; #); 
+                     onChanged:: (# <<SLOT savereportchanged: doPart>> #); 
+                  #); 
+             #);
+             ('save_bindings', 'save_bindings') -> reportOptions.setAddOptionWithDefault
+             (# OptionType::BooleanOption
+                  (# dname:: (# do 'Save Bindings' -> value[]; #); 
+                     onChanged:: (# <<SLOT savebindingschanged: doPart>> #); 
+                  #); 
+             #);
+             ('simulation_report', reportOptions[]) -> options.setAddOption
+             (# OptionType::OptionListOption
+                  (# dname:: (# do 'Simulation Report' -> value[]; #); 
+                  #); 
+             #);
+	          
+	     &OptionList[] -> imageOptions[];
+    	     imageOptions.init;
+	     &OptionListOption[](*(# dname:: (# do 'Simulator image' -> value[]; #); #)*)
+	     		-> imageOptionsOption[] -> options.add;
+			'Simulator Process' -> imageOptionsOption.theName[];
+	     imageOptionsOption.init;
+	     imageOptions[] -> imageOptionsOption.theValue[];
+
+	     ('remote', 'remote') -> imageOptions.setAddOptionWithDefault
+             (# OptionType::BooleanOption
+		  (# dname:: (# do 'Remote' -> value[]; #); 
+                  #); 
+             #);
+
+	     ('host', 'host') -> imageOptions.setAddOptionWithDefault
+	       (# OptionType::TextOption
+		  (# dname:: (# do '  Host' -> value[]; #); 
+                  #); 
+             #);
+
+	     ('port', 'port') -> imageOptions.setAddOptionWithDefault
+             (# OptionType::IntegerOption
+		  (# dname:: (# do '  Port' -> value[]; #); 
+                  #); 
+             #);
+	         
+	     ('runtime', 'runtime') -> imageOptions.setAddOptionWithDefault
+	       (# OptionType::TextOption
+		    (# dname:: (# do '  Runtime' -> value[]; #); 
+                  #); 
+             #);
+	   
+
+
+	     &TextOption
+	       (#
+     		  setToDefault::
+		    (# 
+		    do getDefaultImage -> theDefaultValue[]
+		    #);
+		  getDefault::
+		    (#
+		    exit getDefaultImage
+		    #);
+		  dname::
+		    (# 
+		    do '  Image path' -> value[]
+		    #);
+   		#)[] -> imageOption[];
+    	     imageOption.init;
+	     '  Image path' -> imageOption.name;
+	     getDefaultImage -> imageOption.value;
+	     '  Image path' -> imageOption.setDefaultID;
+    	     imageOption[] -> imageOptions.add;
+	  #);
+        
+        
+     do initTextObserver;
+        prepareTestTools;
+        prepareHelp;        
+        prepareGlobalOptions;
+        prepareGlobalOptionNode;
+     #);
+do (# theTitle: ^Text;
+   do NamesProgramTitle -> getGlobalNames -> theTitle[];      
+      ' ' -> theTitle.puttext;
+      titlebar -> theTitle.puttext;
+      theTitle[] -> title;
+      1 -> setApplIcon;
+      
+   #);
+#)

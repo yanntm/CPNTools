@@ -1,0 +1,217 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '~beta/postwimp/workspace';
+
+INCLUDE '../../debug';
+
+--WorkSpacelib: attributes --
+
+SpeachBubble: Composite
+  (# visible: @boolean;
+     
+     topright,bottomright: ^Point2d;
+     theBasicStyle: ^BasicStyle;
+     theAlphaStyle: ^AlphaStyle;
+     
+     BubbleHiderTimer: widget.timer
+       (# 
+          once::trueObject;
+          
+          action::
+            (# asNotifier: ^Notifier;
+            do (if owner## <= Notifier## then
+                   owner[] -> asNotifier[];
+                   asNotifier.onChanged;
+               if);
+               hide;
+            #);
+       #);
+     bubbleHider: ^Surface.Timer;
+     
+     BubbleEffectTimer: widget.timer
+       (# steps: @Integer;
+          step: @Integer;
+          startpoint: @real;
+          goal: @real;
+          
+          init:
+            (# enter goal
+            do theAlphaStyle.alpha -> startpoint;
+               10 -> steps;
+               0 -> step;
+            #);
+          
+          myAbs:
+            (# r: @Real;
+            enter r
+            do (if r < 0 then -r -> r; if);
+            exit r
+            #);
+          
+          action::
+            (# procent: @Real;
+               dist: @real;
+            do (step*1.0)/(steps*1.0) -> procent;
+               (goal - startpoint) -> myAbs -> dist;
+               (if step = steps then
+                   goal -> theAlphaStyle;
+                   stop;
+                else
+                   (if startpoint<goal then
+                       procent*dist + startpoint -> theAlphaStyle;
+                    else
+                       startpoint - procent*dist -> theAlphaStyle;
+                   if);
+                   step + 1 -> step;
+               if);
+               changed;
+            #);
+       #);
+     bubbleEffect: ^BubbleEffectTimer;
+     hide:
+       (# 
+       do false -> visible;
+          Ignore -> status;
+          BubbleHider.stop;
+          0.0 -> BubbleEffect.init;
+          BubbleEffect.start;
+       #);
+     
+     show:<
+       (# time: @Integer;
+       enter time
+       do true -> visible;
+          0 -> status;
+          1.0 -> BubbleEffect.init;
+          BubbleEffect.start;
+          BubbleHider.stop;
+          (if time <> 0 then
+              time -> BubbleHider.start;
+           else
+              15000 -> BubbleHider.start;
+          if);
+          INNER;
+       #);
+     
+     setColor:
+       (# asBasicStyle: ^BasicStyle;
+          theColor: ^Color;
+       enter theColor[]
+       do theColor[] -> theBasicStyle.fill[];
+       #);
+     
+     thePiktogram: ^Item;
+     piktogram:
+       (# newPiktogram: ^Item;
+          xmin,xmax,ymin,ymax: @real;
+       enter newPiktogram[]
+       do (if thePiktogram[] <> none then
+              thePiktogram[] -> remove;
+          if);
+          (if newPiktogram[] <> none then
+              newPiktogram.init;
+              newPiktogram[] -> thePiktogram[] -> add;
+              (topright.x/2) -> thePiktogram.x;
+              -10 -> thePiktogram.y;
+          if);
+       #);
+     
+     theBubble: @Line
+       (# 
+          init::
+            (# 
+            do &PointList[] -> points[];
+               (0.0, 0.0) -> MakePoint -> points.append;
+               (40.0, 0.0) -> MakePoint -> bottomright[] -> points.append;
+               (40.0, -20.0) -> MakePoint -> topright[] -> points.append;
+               (0.0, -20.0) -> MakePoint -> points.append;
+               (0.0, 0.0) -> MakePoint -> points.append;
+               7 -> &CurvatureStyle -> theStyle[];
+            #);
+       #);
+     
+     theArrow: @Line
+       (# 
+          init::
+            (# 
+            do &PointList[] -> points[];
+               (0.0, -7.0) -> MakePoint -> points.append;
+               (-7.0, 7.0) -> MakePoint -> points.append;
+               (7.0, 0.0) -> MakePoint -> points.append;
+            #);
+       #);
+     
+     init::
+       (# styling: ^CompositeStyle;
+       do true -> visible;
+          &BubbleEffectTimer[] -> bubbleEffect[];
+          &BubbleHiderTimer[] -> bubbleHider[];
+          &CompositeStyle[] -> styling[] -> theStyle[];
+          (Black[],White[],1) -> &BasicStyle -> theBasicStyle[] -> styling.add;
+          (1.0) -> &AlphaStyle -> theAlphaStyle[] -> styling.add;
+          theBubble.init;
+          theBubble[] -> add;
+          theArrow.init;
+          theArrow[] -> add;
+       #);
+     
+     onChanged::
+       (# 
+       do (theIndex.rightedge - 20, 150) -> min -> topright.x -> bottomright.x;
+          (7+3,THIS(WorkSpace).height - (7+3)) -> (x,y);
+       #);
+     
+  #);
+
+SaveErrorFigure: Composite
+  (# 
+     theUpper: @Rect
+       (# 
+          init::
+            (# 
+            do (6,10) -> (width,height);
+            #);
+       #);
+     
+     theLower: @Rect
+       (# 
+          init::
+            (# 
+            do (6,3) -> (width,height);
+            #);
+       #);
+     
+     init::<
+       (# 
+       do theUpper.init;
+          theLower.init;
+          theUpper[] -> add;
+          theLower[] -> add;
+          -3.5 -> theUpper.y;
+          6.5 -> theLower.y;
+       #);
+  #);
+
