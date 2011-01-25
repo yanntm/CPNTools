@@ -1,0 +1,623 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../floatingview';
+
+-- styletoolsinit: DoPart --
+do &ToolCell[] -> BlackCell[];
+   &ToolCell[] -> SilverCell[];
+   &ToolCell[] -> GrayCell[];
+   &ToolCell[] -> WhiteCell[];
+   &ToolCell[] -> MaroonCell[];
+   &ToolCell[] -> RedCell[];
+   &ToolCell[] -> PurpleCell[];
+   &ToolCell[] -> FuchsiaCell[];
+   &ToolCell[] -> GreenCell[];
+   &ToolCell[] -> LimeCell[];
+   &ToolCell[] -> OliveCell[];
+   &ToolCell[] -> YellowCell[];
+   &ToolCell[] -> NavyCell[];
+   &ToolCell[] -> BlueCell[];
+   &ToolCell[] -> TealCell[];
+   &ToolCell[] -> AquaCell[];
+
+   &CPNEditableNumberCell[] -> LineWidthCell[];
+   &ToolCell[] -> CycleArcHeadCell[];
+   &ToolCell[] -> ToggleFillCell[];
+   &ToolCell[] -> cloneGraphicsCell[];
+   
+   getInstruments -> theInstrumentList[];
+   
+   'black' -> theInstrumentList.lookup -> theBlackInstrument[];
+   (theBlackInstrument[], 'black') -> BlackCell.init;
+   'set_color' -> BlackCell.helpName[];
+   
+   'silver' -> theInstrumentList.lookup -> theSilverInstrument[];
+   (theSilverInstrument[], 'silver') -> SilverCell.init;
+   'set_color' -> SilverCell.helpName[];
+   
+   'gray' -> theInstrumentList.lookup -> theGrayInstrument[];
+   (theGrayInstrument[], 'gray') -> GrayCell.init;
+   'set_color' -> GrayCell.helpName[];
+   
+   'white' -> theInstrumentList.lookup -> theWhiteInstrument[];
+   (theWhiteInstrument[], 'white') -> WhiteCell.init;
+   'set_color' -> WhiteCell.helpName[];
+   
+   'maroon' -> theInstrumentList.lookup -> theMaroonInstrument[];
+   (theMaroonInstrument[], 'maroon') -> MaroonCell.init;
+   'set_color' -> MaroonCell.helpName[];
+   
+   'red' -> theInstrumentList.lookup -> theRedInstrument[];
+   (theRedInstrument[], 'red') -> RedCell.init;
+   'set_color' -> RedCell.helpName[];
+   
+   'purple' -> theInstrumentList.lookup -> thePurpleInstrument[];
+   (thePurpleInstrument[], 'purple') -> PurpleCell.init;
+   'set_color' -> PurpleCell.helpName[];
+   
+   'fuchsia' -> theInstrumentList.lookup -> theFuchsiaInstrument[];
+   (theFuchsiaInstrument[], 'fuchsia') -> FuchsiaCell.init;
+   'set_color' -> FuchsiaCell.helpName[];
+   
+   'green' -> theInstrumentList.lookup -> theGreenInstrument[];
+   (theGreenInstrument[], 'green') -> GreenCell.init;
+   'set_color' -> GreenCell.helpName[];
+   
+   'lime' -> theInstrumentList.lookup -> theLimeInstrument[];
+   (theLimeInstrument[], 'lime') -> LimeCell.init;
+   'set_color' -> LimeCell.helpName[];
+   
+   'olive' -> theInstrumentList.lookup -> theOliveInstrument[];
+   (theOliveInstrument[], 'olive') -> OliveCell.init;
+   'set_color' -> OliveCell.helpName[];
+   
+   'yellow' -> theInstrumentList.lookup -> theYellowInstrument[];
+   (theYellowInstrument[], 'yellow') -> YellowCell.init;
+   'set_color' -> YellowCell.helpName[];
+   
+   'navy' -> theInstrumentList.lookup -> theNavyInstrument[];
+   (theNavyInstrument[], 'navy') -> NavyCell.init;
+   'set_color' -> NavyCell.helpName[];
+   
+   'blue' -> theInstrumentList.lookup -> theBlueInstrument[];
+   (theBlueInstrument[], 'blue') -> BlueCell.init;
+   'set_color' -> BlueCell.helpName[];
+   
+   'teal' -> theInstrumentList.lookup -> theTealInstrument[];
+   (theTealInstrument[], 'teal') -> TealCell.init;
+   'set_color' -> TealCell.helpName[];
+
+   'aqua' -> theInstrumentList.lookup -> theAquaInstrument[];
+   (theAquaInstrument[], 'aqua') -> AquaCell.init;
+   'set_color' -> AquaCell.helpName[];
+   
+   'lineWidth' -> theInstrumentList.lookup -> theLineWidthInstrument[];
+   (theLineWidthInstrument[], 'lineWidth', '1', 'linewidth', 
+   theLineWidthInstrument.options[]) -> LineWidthCell.init;
+   'line_thickness' -> LineWidthCell.helpName[];
+   
+   'cycleArcHead' -> theInstrumentList.lookup -> theCycleArcHeadInstrument[];
+   (theCycleArcHeadInstrument[], 'cycleArcHead') -> CycleArcHeadCell.init;   
+   'cycle_arc_head' -> CycleArcHeadCell.helpName[];
+   
+   
+   'ToggleFill' -> theInstrumentList.lookup -> theToggleFillInstrument[];
+   (theToggleFillInstrument[], 'ToggleFill') -> ToggleFillCell.init;
+   'toggle_fill' -> ToggleFillCell.helpName[];
+   
+   'cloneGraphics' -> theInstrumentList.lookup -> theCloneGraphicsInstrument[];
+   (theCloneGraphicsInstrument[], 'cloneGraphics') -> cloneGraphicsCell.init;
+   
+   &CPNToolCollection[]->theCollection[];
+   theCollection.init;
+   NamesStyleTools -> getGlobalNames -> theCollection.name[];
+   'style_tools' -> theCollection.helpname[];
+   PaletteMode -> theCollection.Mode;
+   
+   FuchsiaCell[] -> theCollection.add;
+   AquaCell[] -> FuchsiaCell.SetRightCell;
+   BlackCell[] -> AquaCell.SetRightCell;
+   MaroonCell[] -> BlackCell.SetRightCell;
+   NavyCell[] -> MaroonCell.SetRightCell;
+   OliveCell[] -> NavyCell.SetRightCell;
+   
+   YellowCell[] -> FuchsiaCell.SetBottomCell;
+   TealCell[] -> YellowCell.SetRightCell;
+   LimeCell[] -> TealCell.SetRightCell;
+   WhiteCell[] -> LimeCell.SetRightCell;
+   SilverCell[] -> WhiteCell.SetRightCell;
+   GrayCell[] -> SilverCell.SetRightCell;
+   
+   RedCell[] -> YellowCell.SetBottomCell;
+   PurpleCell[] -> RedCell.SetRightCell;
+   GreenCell[] -> PurpleCell.SetRightCell;
+   BlueCell[] -> GreenCell.SetRightCell;
+   
+   LineWidthCell[] -> OliveCell.SetRightCell;
+   CycleArcHeadCell[] -> LineWidthCell.SetBottomCell;
+   ToggleFillCell[] -> CycleArcHeadCell.setBottomCell;
+   
+   cloneGraphicsCell[] -> GrayCell.SetBottomCell;
+
+   theCollection.changed;
+   
+-- createauxinit: DoPart --   
+do &ToolCell[] -> createauxboxcell[];
+   &ToolCell[] -> createauxellipsecell[];
+   &ToolCell[] -> createauxlinecell[];  
+   &ToolCell[] -> createauxlabelcell[]; (* former Editable *)
+   &ToolCell[] -> createauxpngcell[];
+   
+   getInstruments -> theInstrumentList[];
+   'CreateAuxBox' -> theInstrumentList.lookup -> theAuxboxInstrument[];
+   (theAuxBoxInstrument[], 'CreateAuxBox') -> createauxboxCell.init;
+   'create_auxbox' -> createauxboxCell.helpName[];
+   
+   'CreateAuxEllipse' -> theInstrumentList.lookup -> theAuxEllipseInstrument[];
+   (theAuxEllipseInstrument[], 'CreateAuxEllipse') -> createauxellipsecell.init;
+   'create_auxellipse' -> createauxellipseCell.helpName[];
+   
+   'CreateAuxLabel' -> theInstrumentList.lookup -> theAuxLabelInstrument[];
+   (theAuxLabelInstrument[], 'CreateAuxLabel') -> createauxLabelcell.init;
+   'create_auxLabel' -> createauxLabelCell.helpName[];
+
+   &CPNToolCollection[] -> theCollection[];
+   theCollection.init;
+   NamesCreateAuxTools -> getGlobalNames -> theCollection.name[];
+   'auxiliary_tools' -> theCollection.helpname[];
+   PaletteMode -> theCollection.mode;
+   
+   createAuxBoxCell[]->theCollection.add;
+   createAuxEllipseCell[] -> createAuxBoxCell.setRightCell;
+   createauxLabelcell[] -> createauxEllipsecell.setRightCell;
+   
+   theCollection.changed;
+   
+-- createtoolsinit: DoPart --
+do getToolCells->list[];
+   &ToolCell[]->PlaceCell[];
+   &ToolCell[]->TransitionCell[];
+   &ToolCell[]->ArcCell[];
+   &ToolCell[]->DeleteCell[];
+   &ToolCell[]->CloneCell[];
+   &ToolCell[]->CycleArcCell[];
+   &ToolCell[]->HorizontalGuideCell[];
+   &ToolCell[]->VerticalGuideCell[];
+   &ToolCell[]->ToogleExplicitCell[];
+   
+   getInstruments->theInstrumentList[];
+   'place'->theInstrumentList.lookup->thePlaceInstrument[];
+   (thePlaceInstrument[], 'place')->PlaceCell.init;
+   'create_place'->PlaceCell.helpname[];
+   
+   'trans'->theInstrumentList.lookup->theTransitionInstrument[];
+   (theTransitionInstrument[], 'trans')->TransitionCell.init;
+   'create_transition'->TransitionCell.helpname[];
+   
+   'arc'->theInstrumentList.lookup->theArcInstrument[];
+   (theArcInstrument[], 'arc')->ArcCell.init;
+   'create_arc'->ArcCell.helpname[];
+   
+   'delete'->theInstrumentList.lookup->theDeleteInstrument[];
+   (theDeleteInstrument[], 'delete')->DeleteCell.init;
+   'delete_element'->DeleteCell.helpname[];
+   
+   
+   'clone'->theInstrumentList.lookup->theCloneInstrument[];
+   (theCloneInstrument[], 'clone')->CloneCell.init;
+   'clone_element'->CloneCell.helpname[];
+   
+   'setArcDirection' -> theInstrumentList.lookup -> theSetArcDirectionInstrument[];
+   (theSetArcDirectionInstrument[], 'setArcDirection') -> CycleArcCell.init;
+   'set_arc_direction'->CycleArcCell.helpname[];
+   
+   'horizontalGuide'->theInstrumentList.lookup-> theHorizontalGuideInstrument[];
+   (theHorizontalGuideInstrument[], 'horizontalGuide') -> HorizontalGuideCell.init;
+   'create_guideline'->HorizontalGuideCell.helpname[];
+   
+   'verticalGuide'->theInstrumentList.lookup->theVerticalGuideInstrument[];
+   (theVerticalGuideInstrument[], 'verticalGuide')->VerticalGuideCell.init;
+   'create_guideline'->VerticalGuideCell.helpname[];
+   
+   'toogleExplicit' -> theInstrumentList.lookup -> theToogleExplicitInstrument[];
+   (theToogleExplicitInstrument[], 'toogleExplicit') -> ToogleExplicitCell.init;
+   
+   &CPNToolCollection[]->theCollection[];
+   theCollection.init;
+   NamesCreateTools -> getGlobalNames -> theCollection.name[];
+   'create_tools'->theCollection.helpname[];
+   PaletteMode->theCollection.Mode;
+   
+   PlaceCell[]->theCollection.add;
+   TransitionCell[]->PlaceCell.SetLeftCell;
+   ArcCell[]->PlaceCell.SetRightCell;
+   DeleteCell[]->TransitionCell.SetBottomCell;
+   CloneCell[]->DeleteCell.SetRightCell;
+   CycleArcCell[]->CloneCell.SetRightCell;
+   HorizontalGuideCell[]->CycleArcCell.SetRightCell;
+   VerticalGuideCell[]->HorizontalGuideCell.SetTopCell;
+   (if internal then 
+       ToogleExplicitCell[] -> VerticalGuideCell.SetRightCell;
+   if);
+   
+   theCollection.Changed;
+   
+-- simulationtoolsinit: DoPart --
+do &ToolCell[]->RewindCell[];
+   &ToolCell[]->StopCell[];
+   &ToolCell[]->BindManuallyCell[];
+   &ToolCell[]->OneStepCell[];
+   &CPNEditableNumberCell[]->PlayCell[];
+   &CPNEditableNumberCell[]->FastForwardCell[];
+   &ToolCell[]->MLEvaluateCell[];
+   
+   getInstruments->theInstrumentList[];
+   
+   'rewind'->theInstrumentList.lookup->theRewindInstrument[];
+   (theRewindInstrument[], 'Rewind')->RewindCell.init;
+   'rewind' -> RewindCell.helpName[];
+   
+   'stop'->theInstrumentList.lookup->theStopInstrument[];
+   (theStopInstrument[], 'Stop')->StopCell.init;
+   'stop' -> StopCell.helpName[];
+   
+   'oneStep'->theInstrumentList.lookup->theOneStepInstrument[];
+   (theOneStepInstrument[], 'OneStep')->OneStepCell.init;
+   'single_step' -> OneStepCell.helpName[];
+   
+   'play'->theInstrumentList.lookup->thePlayInstrument[];
+   (thePlayInstrument[], 'Play', '50', 'numberofsteps',
+   thePlayInstrument.options[])->PlayCell.init;
+   'play' -> PlayCell.helpName[];
+   
+   'fastForward'->theInstrumentList.lookup->theFastForwardInstrument[];
+   (theFastForwardInstrument[], 'FastForward', '50', 'numberofsteps',
+   theFastForwardInstrument.options[])->FastForwardCell.init;
+   'fast_forward' -> FastForwardCell.helpName[];
+   
+   'bindmanually'->theInstrumentList.lookup->theBindManuallyInstrument[];
+   (theBindManuallyInstrument[], 'BindManually')->BindManuallyCell.init;
+   'bindmanually' -> BindManuallyCell.helpName[];
+   
+   'mlevaluate'->theInstrumentList.lookup->theMLEvaluateInstrument[];
+   (theMLEvaluateInstrument[], 'MLEvaluate')->MLEvaluateCell.init;
+   'evaluate_ml' -> MLEvaluateCell.helpName[];
+   
+   &CPNToolCollection[]->theCollection[];
+   theCollection.init;
+   NamesSimulationTools -> getGlobalNames -> theCollection.name[];
+   'simulation_tools'->theCollection.helpname[];
+   PaletteMode->theCollection.Mode;
+   
+   RewindCell[]->theCollection.add;
+   StopCell[]->RewindCell.SetRightCell;
+   BindManuallyCell[]->StopCell.SetRightCell;   
+   OneStepCell[]->BindManuallyCell.SetRightCell;
+   PlayCell[]->OneStepCell.SetRightCell;
+   FastForwardCell[]->PlayCell.SetRightCell;
+   MLEvaluateCell[]->FastForwardCell.SetRightCell;
+      
+   theCollection.onChanged;
+   
+-- statespacetoolsinit: DoPart --
+do &ToolCell[] -> EnterStateSpaceCell[];
+   &ToolCell[] -> CalcStateSpaceCell[];
+   &ToolCell[] -> CalcSccCell[];
+   &CPNEditableNumberCell[] -> SStoSimCell[];
+   &ToolCell[] -> SimtoSSCell[];
+   &ToolCell[] -> SaveReportCell[];
+   &CPNEditableNumberCell[] -> DisplayNodeCell[];
+   &ToolCell[] -> DisplaySuccessorsCell[];
+   &ToolCell[] -> DisplayPredecessorsCell[];
+   &ToolCell[] -> DisplayPartialSSGraphCell[];
+   
+   getInstruments -> theInstrumentList[];
+   
+   'enterog' -> theInstrumentList.lookup -> theEnterStateSpaceInstrument[];
+   (theEnterStateSpaceInstrument[], 'EnterStateSpace') -> EnterStateSpaceCell.init;
+   
+   'calcoccgraph' -> theInstrumentList.lookup -> theCalcStateSpaceInstrument[];
+   (theCalcStateSpaceInstrument[], 'CalcSS') -> CalcStateSpaceCell.init;
+   
+   'calcsccgraph' -> theInstrumentList.lookup -> theCalcSccInstrument[];
+   (theCalcSccInstrument[], 'CalcSCC') -> CalcSccCell.init;
+   
+   'sstosim' -> theInstrumentList.lookup -> theSStoSimInstrument[];
+   (theSStoSimInstrument[], 'SStoSim', '1', 'state',
+   theSStoSimInstrument.options[]) -> SStoSimCell.init;
+   
+   'simtoss' -> theInstrumentList.lookup -> theSimtoSSInstrument[];
+   (theSimtoSSInstrument[], 'SimtoSS') -> SimtoSSCell.init;
+      
+   'saveogreport' -> theInstrumentList.lookup -> theSaveReportInstrument[];
+   (theSaveReportInstrument[], 'SaveReport') -> SaveReportCell.init;
+   
+   'displaynode' -> theInstrumentList.lookup -> theDisplayNodeInstrument[];
+   (theDisplayNodeInstrument[], 'DisplayNode', '1', 'nodeNumber',
+   theDisplayNodeInstrument.options[]) -> DisplayNodeCell.init;
+
+   'displaysuccessors' -> theInstrumentList.lookup -> theDisplaySuccessorsInstrument[];
+   (theDisplaySuccessorsInstrument[], 'DisplaySuccessors') -> DisplaySuccessorsCell.init;
+   
+   'displaypredecessors' -> theInstrumentList.lookup -> theDisplayPredecessorsInstrument[];
+   (theDisplayPredecessorsInstrument[], 'DisplayPredecessors') -> DisplayPredecessorsCell.init;
+
+   'displaypartialssgraph' -> theInstrumentList.lookup -> theDisplayPartialSSGraphInstrument[];
+   (theDisplayPartialSSGraphInstrument[], 'DisplayPartialSSGraph') -> DisplayPartialSSGraphCell.init;
+   
+   &CPNToolCollection[]->theCollection[];
+   theCollection.init;
+   NamesOGTools -> getGlobalNames -> theCollection.name[];
+   'state_space_tools'->theCollection.helpname[];
+   PaletteMode->theCollection.Mode;
+   
+   EnterStateSpaceCell[] -> theCollection.add;
+   CalcStateSpaceCell[] -> EnterStateSpaceCell.SetRightCell;
+   CalcSccCell[] -> CalcStateSpaceCell.SetRightCell;
+   SaveReportCell[] -> CalcSccCell.SetRightCell;
+   DisplayNodeCell[] -> EnterStateSpaceCell.setBottomCell;
+   DisplaySuccessorsCell[] -> DisplayNodeCell.SetRightCell;
+   DisplayPredecessorsCell[] -> DisplaySuccessorsCell.SetRightCell;
+   DisplayPartialSSGraphCell[] -> DisplayPredecessorsCell.SetRightCell;
+   SStoSimCell[] -> DisplayNodeCell.SetBottomCell;
+   SimtoSSCell[] -> SStoSimCell.SetRightCell;
+
+
+   
+   theCollection.onChanged;
+   
+-- hierarchytoolsinit: DoPart --
+do &ToolCell[]->InPortCell[];
+   &ToolCell[]->OutPortCell[];
+   &ToolCell[]->IOPortCell[];
+   &ToolCell[]->SetSubPageCell[];
+   &ToolCell[]->AssignPortSocketCell[];
+   &ToolCell[]->FusionCell[];
+   &ToolCell[]->MoveToSubPageCell[];
+   &ToolCell[]->FlattenCell[];
+   
+   getInstruments->theInstrumentList[];
+   'in'->theInstrumentList.lookup->theInPortInstrument[];
+   (theInPortInstrument[], 'In')->InPortCell.init;
+   'set_porttype'->InPortCell.helpname[];
+   
+   'out'->theInstrumentList.lookup->theOutPortInstrument[];
+   (theOutPortInstrument[], 'Out')->OutPortCell.init;
+   'set_porttype'->OutPortCell.helpname[];
+   
+   'i/o'->theInstrumentList.lookup->theIOPortInstrument[];
+   (theIOPortInstrument[], 'I/O')->IOPortCell.init;
+   'set_porttype'->IOPortCell.helpname[];
+   
+   'SetSubPage'->theInstrumentList.lookup->theSetSubPageInstrument[];
+   (theSetSubPageInstrument[], 'SetSubPage')->SetSubPageCell.init;
+   'substitution_transition_assignment'->SetSubPageCell.helpname[];
+   
+   'AssignPortSocket'->theInstrumentList.lookup -> theAssignPortSocketInstrument[];
+   (theAssignPortSocketInstrument[], 'AssignPortSocket') -> AssignPortSocketCell.init;
+   'assign_port-socket'->AssignPortSocketCell.helpname[];
+   
+   'AssignFusion'->theInstrumentList.lookup -> theFusionInstrument[];
+   (theFusionInstrument[], 'AssignFusion') -> FusionCell.init;
+   'set_fusion_group'->FusionCell.helpname[];
+   
+   'MoveToSubPage'->theInstrumentList.lookup->theMoveToSubPageInstrument[];
+   (theMoveToSubPageInstrument[], 'MoveToSubPage') -> MoveToSubPageCell.init;
+   'move_to_subpage'->MoveToSubPageCell.helpname[];
+   
+   'flatten'->theInstrumentList.lookup -> theFlattenInstrument[];
+   (theFlattenInstrument[], 'Flatten') -> FlattenCell.init;
+   'flatten' -> FlattenCell.helpname[];
+   
+   &CPNToolCollection[]->theCollection[];
+   theCollection.init;
+   NamesHierarchyTools -> getGlobalNames -> theCollection.name[];
+   'hierarchy_tools'->theCollection.helpname[];
+   PaletteMode->theCollection.Mode;
+   
+   MoveToSubPageCell[]->theCollection.add;
+   FlattenCell[]->MoveToSubPageCell.SetRightCell;
+   SetSubPageCell[]->FlattenCell.SetRightCell;
+   AssignPortSocketCell[]->SetSubPageCell.SetRightCell;
+   InPortCell[]->MoveToSubPageCell.setBottomCell;
+   OutPortCell[]->InPortCell.SetRightCell;
+   IOPortCell[]->OutPortCell.SetRightCell;
+   FusionCell[]->IOPortCell.SetRightCell;
+   
+   theCollection.changed;
+
+-- viewtoolsinit: DoPart --
+   
+do &ToolCell[]->ToggleGroupCell[];
+   &ToolCell[]->NewGroupCell[];
+   &ToolCell[]->ClickZoomInCell[];
+   &ToolCell[]->ClickZoomOutCell[];
+   &ToolCell[]->ClickZoomFitCell[];
+   getInstruments->theInstrumentList[];
+   
+   'Group'->theInstrumentList.lookup->theToggleGroupInstrument[];
+   (theToggleGroupInstrument[], 'Group')->ToggleGroupCell.init;
+   'toggle_group' -> ToggleGroupCell.helpName[];
+   
+   'NewGroup'->theInstrumentList.lookup->theNewGroupInstrument[];
+   (theNewGroupInstrument[], 'NewGroup')->NewGroupCell.init;
+   'new_group' -> NewGroupCell.helpName[];
+   
+   'Zoomin'->theInstrumentList.lookup->theClickZoomInInstrument[];
+   (theClickZoomInInstrument[], 'Zoomin')->ClickZoomInCell.init;
+   'zoom' -> ClickZoomInCell.helpName[];
+   
+   'Zoomout'->theInstrumentList.lookup->theClickZoomOutInstrument[];
+   (theClickZoomOutInstrument[], 'Zoomout')->ClickZoomOutCell.init;
+   'zoom' -> ClickZoomOutCell.helpName[];
+   
+   'Zoomfit'->theInstrumentList.lookup->theClickZoomFitInstrument[];
+   (theClickZoomFitInstrument[], 'Zoomfit')->ClickZoomFitCell.init;
+   'zoom_to_fit' -> ClickZoomFitCell.helpName[];
+   
+   &CPNToolCollection[]->theCollection[];
+   theCollection.init;
+   NamesViewTools -> getGlobalNames -> theCollection.name[];
+   'view_tools'->theCollection.helpname[];
+   PaletteMode->theCollection.Mode; 
+   
+   ClickZoomInCell[] -> theCollection.add;
+   ClickZoomOutCell[] -> ClickZoomInCell.SetRightCell;
+   ClickZoomFitCell[] -> ClickZoomOutCell.SetRightCell;
+   NewGroupCell[] -> ClickZoomFitCell.SetRightCell;
+   ToggleGroupCell[] -> NewGroupCell.SetRightCell;
+   
+   theCollection.Changed;
+
+-- netToolsInit: DoPart --
+do 
+   &ToolCell[] -> closeNetCell[];
+   &ToolCell[] -> newPageCell[];   
+   &ButtonCell[] -> newNetCell[];
+   &ToolCell[] -> saveCell[];
+   &ToolCell[] -> saveAsCell[];
+   &ToolCell[] -> saveNetAndSimulator[];
+   &ButtonCell[] -> LoadCell[];
+   &ToolCell[] -> helpCell[];
+   &ToolCell[] -> printCell[];
+   
+
+   getInstruments->theInstrumentList[];
+   
+   'Load'->theInstrumentList.lookup->theLoadNetInstrument[];
+   (theLoadNetInstrument[], 'Load')->LoadCell.init;
+   
+   'SaveAs'->theInstrumentList.lookup->theSaveNetAsInstrument[];
+   (theSaveNetAsInstrument[], 'SaveAs')->saveAsCell.init;
+   
+   'Save'->theInstrumentList.lookup->theSaveNetInstrument[];
+   (theSaveNetInstrument[], 'Save')->saveCell.init;
+   
+   'SaveNetAndSimulator'->theInstrumentList.lookup->theSaveNetAndSimulatorInstrument[];
+   (theSaveNetAndSimulatorInstrument[], 'SaveNetAndSimulator')->saveNetAndSimulator.init;
+   
+   'NewNet'->theInstrumentList.lookup->theCreateNetInstrument[];
+   (theCreateNetInstrument[],'NewNet')->newNetCell.init;
+   
+   'NewPage'->theInstrumentList.lookup->theCreatePageIndexInstrument[];
+   (theCreatePageIndexInstrument[], 'NewPage')->newPageCell.init;
+   
+   'CloseNet'->theInstrumentList.lookup->theCloseNetInstrument[];
+   (theCloseNetInstrument[], 'CloseNet')->closeNetCell.init;
+
+   'Help'->theInstrumentList.lookup->theHelpInstrument[];
+   (theHelpInstrument[], 'Help')->helpCell.init;
+   
+   'Print'->theInstrumentList.lookup->thePrintInstrument[];
+   (thePrintInstrument[], 'Print')->printCell.init;
+   
+   'Help'->theInstrumentList.lookup->theHelpInstrument[];
+   (theHelpInstrument[], 'Help')->HelpCell.init;
+   
+   &CPNToolCollection[]->theCollection[];
+   theCollection.init;
+   NamesNetTools -> getGlobalNames -> theCollection.name[];
+   'net_tools'->theCollection.helpname[];
+   PaletteMode->theCollection.Mode;
+   
+   newNetCell[]->theCollection.add;
+   newPageCell[]->newNetCell.setRightCell;
+   closeNetCell[]->newPageCell.SetRightCell;
+   printCell[]->closeNetCell.SetRightCell;
+   LoadCell[]->newNetCell.SetBottomCell;
+   saveCell[]->LoadCell.SetRightCell;
+   saveAsCell[]->saveCell.SetRightCell;
+   theCollection.Changed;
+   
+-- MonitoringToolsInit:DoPart --
+do &ToolCell[] -> dataCollectionCell[];
+   &ToolCell[] -> markingSizeCell[];
+   &ToolCell[] -> breakpointCell[];
+   &ToolCell[] -> userDefinedCell[];
+   &ToolCell[] -> writeInFileCell[];
+   &ToolCell[] -> listLengthCell[];
+   &ToolCell[] -> countTransitionOccurCell[];
+   &ToolCell[] -> placeContentBreakCell[];
+   &ToolCell[] -> transitionEnabledCell[];
+   
+   getInstruments->theInstrumentList[];
+   
+   'DataCollection' -> theInstrumentList.lookup -> theDataCollectionInstrument[];
+   (theDataCollectionInstrument[], 'Data Collection') -> dataCollectionCell.init;
+   'create_data_collector_mon' -> dataCollectionCell.helpname[];
+   
+   'MarkingSize' -> theInstrumentList.lookup -> theMarkingSizeInstrument[];
+   (theMarkingSizeInstrument[], 'Marking Size') -> markingSizeCell.init;
+   'create_marking_size_monit' -> markingSizeCell.helpname[];
+   
+   'Breakpoint' -> theInstrumentList.lookup -> theBreakpointInstrument[];
+   (theBreakpointInstrument[], 'Breakpoint') -> breakpointCell.init;
+   'create_breakpoint_monitor' -> breakpointCell.helpname[];
+   
+   'UserDefined' -> theInstrumentList.lookup -> theUserDefinedInstrument[];
+   (theUserDefinedInstrument[], 'UserDefined') -> userDefinedCell.init;
+   'create_user-defined_monit' -> userDefinedCell.helpName[];
+   
+   'WriteInFile' -> theInstrumentList.lookup -> theWriteInFileInstrument[];
+   (theWriteInFileInstrument[], 'WriteinFile') -> writeInFileCell.init;
+   'create_write-in-file_moni' -> writeInFileCell.helpName[];
+   
+   'ListLengthDataCollection' -> theInstrumentList.lookup -> theListLengthDataCollectionInstrument[];
+   (theListLengthDataCollectionInstrument[], 'ListLengthDataCollection') -> listLengthCell.init;
+   'create_list_length_monito' -> listLengthCell.helpName[];
+   
+   'CountTransitionOccurrenceDataCollection' -> theInstrumentList.lookup
+     -> theCountTransitionOccurrenceDataCollectionInstrument[];
+   (theCountTransitionOccurrenceDataCollectionInstrument[], 'CountTransitionOccurrenceDataCollection') 
+     -> countTransitionOccurCell.init;
+   'create_count_transition_o' -> countTransitionOccurCell.helpName[];
+   
+   'PlaceContentBreakpoint' -> theInstrumentList.lookup -> thePlaceContentBreakpointInstrument[];
+   (thePlaceContentBreakpointInstrument[], 'PlaceContentBreakpoint') -> placeContentBreakCell.init;
+   'create_place_contents_mon' -> placeContentBreakCell.helpName[];
+   
+   'TransitionEnabledBreakpoint' -> theInstrumentList.lookup -> theTransitionEnabledBreakpointInstrument[];
+   (theTransitionEnabledBreakpointInstrument[], 'TransitionEnabledBreakpoint') -> transitionEnabledCell.init;
+   'create_transition_enabled' -> transitionEnabledCell.helpName[];
+   
+   &CPNToolCollection[]->theCollection[];
+   theCollection.init;
+   
+   NamesMonitoringToolBox -> getGlobalNames -> theCollection.name[];
+   'monitoring_tools'->theCollection.helpname[];
+   PaletteMode->theCollection.Mode;
+   
+   dataCollectionCell[] -> theCollection.add;
+   markingSizeCell[] -> dataCollectionCell.setRightCell;
+   breakpointCell[] -> markingSizeCell.setRightCell;
+   userDefinedCell[] -> breakpointCell.setRightCell;
+   writeinFileCell[] -> userDefinedCell.setRightCell;
+   listLengthCell[] -> dataCollectionCell.setbottomcell;
+   countTransitionOccurCell[] -> listLengthCell.setRightCell;
+   placeContentBreakCell[] -> countTransitionOccurCell.setRightCell;
+   transitionEnabledCell[] -> placeContentBreakCell.setRightCell;
+   
+   theCollection.changed;

@@ -1,0 +1,165 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '~beta/postwimp/workspace';
+
+-- Workspacelib: attributes --
+NamesMoveUpDeclItem: (# exit 1001 #);
+NamesAppendDeclItem: (# exit 1002 #);
+NamesAppendBlockItem: (# exit 1003 #);
+NamesDeleteDeclItem: (# exit 1004 #);
+NamesReevaluateDeclItem: (# exit 1092 #);
+
+NamesBinderCloseItem: (# exit 1005 #);
+NamesBinderDeleteItem: (# exit 1006 #);
+
+NamesBinderNodeDeleteBinderItem: (# exit 1007 #);
+
+NamesGroupMenuCloneItem: (# exit 1008 #);
+NamesGroupMenuNewGroupWithAll: (# exit 1074 #);
+NamesGroupMenuGroupItem: (# exit 1009 #);
+NamesGroupMenuDeleteItem: (# exit 1010 #);
+NamesGroupMenuCloneElementsItem: (# exit 1069 #);
+NamesGroupMenuCreateGlobalGroup: (# exit 1075 #);
+
+NamesHistoryMenuRepeatItem: (# exit 1011 #);
+NamesHistoryMenuClearItem: (# exit 1012 #);     
+
+NamesInscriptionMenuDeleteItem: (# exit 1013 #);
+NamesInscriptionMenuMLEvaluateItem: (# exit 1014 #);
+NamesInscriptionMenuShowPageItem: (# exit 1015 #);
+NamesInscriptionMenuShowSubPageItem: (# exit 1016 #);
+
+NamesInstanceNodeMenuDeletePageItem: (# exit 1017 #);
+NamesInstanceNodeMenuClonePageItem: (# exit 1018 #);
+
+NamesNetNodeMenuSaveItem: (# exit 1019 #);
+NamesNetNodeMenuSaveAsItem: (# exit 1020 #);
+NamesNetNodeMenuCloseItem: (# exit 1021 #);
+NamesNetNodeMenuNewPageItem: (# exit 1022 #);
+
+NamesPageMenuTransItem: (# exit 1023 #);
+NamesPageMenuPlaceItem: (# exit 1024 #);
+NamesPageMenuNewGroupItem: (# exit 1025 #);
+NamesPageMenuNewPageItem: (# exit 1026 #);
+NamesPageMenuDeleteItem: (# exit 1027 #);
+NamesPageMenuCloneItem: (# exit 1028 #);
+NamesPageMenuToggleGroupItem: (# exit 1029 #);
+NamesPageMenuArcItem: (# exit 1030 #);
+NamesPageMenuCycleArcItem: (# exit 1031 #);
+NamesPageMenuArc: (# exit 1032 #);
+NamesPageMenuSSArc: (# exit 1107 #);
+NamesPageMenuTransition: (# exit 1033 #);
+NamesPageMenuPlace: (# exit 1034 #);
+NamesPageMenuSSNode: (# exit 1106 #);
+NamesPageMenuAux: (# exit 1035 #);
+NamesPageMenuInscription: (# exit 1063 #);
+NamesPageMenuPortType: (# exit 1064 #);
+NamesPageMenuFusionSet: (# exit 1065 #);
+NamesPageMenuSubpage: (# exit 1066 #);
+NamesPageMenuElement: (# exit 1036 #);
+NamesPageMenuAssignToSocket: (# exit 1093 #);
+NamesPageMenuAssignToPort: (# exit 1094 #);
+NamesPageMenuCreateAuxText: (# exit 1097 #);
+
+NamesSurveillanceMenuShowPageItem: (# exit 1037 #);
+NamesSurveillanceMenuShowHTMLReportItem: (# exit 1038 #);
+NamesSurveillanceMenuEvaluateItem: (# exit 1039 #);
+NamesSurveillanceMenuDeleteItem: (# exit 1040 #);
+NamesSurveillanceMenuShowFunctionItem: (# exit 1041 #);
+
+NamesTabMenuDeletePageItem: (# exit 1042 #);
+NamesTabMenuClonePageItem: (# exit 1043 #);
+NamesTabMenuClosePageItem: (# exit 1044 #);
+NamesTabMenuCloneToolItem: (# exit 1045 #);
+NamesTabMenuCloseToolItem: (# exit 1046 #);
+NamesTabMenuDeleteToolItem: (# exit 1047 #);
+NamesTabMenuHelpToolItem: (# exit 1048 #);
+NamesTabMenuCloseDecl: (# exit 1100 #);
+
+NamesToolCellMenuCloneItem:  (# exit 1049 #);
+NamesToolCellMenuDeleteItem:  (# exit 1050 #);
+NamesToolCellMenuHelpItem:  (# exit 1051 #);
+NamesToolCellSetOptions: (# exit 1101 #);
+NamesToolCellCloseOptions: (# exit 1102 #);
+
+NamesWorkspaceMenuloadItem:  (# exit 1052 #);
+NamesWorkspaceMenuNewNetItem: (# exit 1053 #);
+NamesWorkspaceMenuSwapHandsItem:  (# exit 1058 #);
+NamesWorkspaceMenuSaveAllNetsItem: (# exit 1098#);
+NamesWorkspaceMenuCloseAllNetsItem: (# exit 1099 #);
+
+NamesTabMenuAddToToolBoxItem: (# exit 1054 #);
+NamesCommandMenuundo: (# exit 1055 #);
+NamesCommandMenuredo: (# exit 1056 #);
+NamesCommandMenudropTool: (# exit 1057 #);
+
+NamesGuidelineDelete: (# exit 1059 #);
+NamesBendPointDelete: (# exit 1060 #);
+
+NamesInstanceNodeMenuFireTransition: (# exit 1061 #);
+NamesCPNTabMenuBringToFrontItem: (# exit 1062 #);
+NamesPageMenuPlaceShowMarking: (# exit 1067 #);
+NamesGroupMenuMoveToSubpage: (# exit 1068 #);
+
+NamesBindingDialogClose: (# exit 1070 #);
+NamesBindingDialogBindManually: (# exit 1071 #);
+NamesBindingDialogFireAndClose: (# exit 1072 #);
+NamesBindingDialogAbort: (# exit 1073 #);
+
+NamesAppendMonitorBlock: (# exit 1076 #);
+NamesDeleteMonitor: (# exit 1077 #);
+NamesDisableMonitor: (# exit 1078 #);
+NamesAddPlaces: (# exit 1079 #);
+NamesMonitorRemovePlace: (# exit 1080 #);
+NamesAddTransitions: (# exit 1081 #);
+NamesEnableMonitor: (# exit 1082 #);
+
+NamesOutputDirectory: (# exit 1083 #);
+(*
+ * HV
+ * Added constant for real timestamp.
+ *)
+NamesRealTimestamp: (# exit 1108 #);
+
+NamesFolderPathOptionNodeChoosePath: (# exit 1084 #);
+NamesFolderPathOptionNodeModelPath: (# exit 1085 #);
+
+NamesCloneAbstractMonitor: (# exit 1086 #);
+
+NamesCreateGroupOfMonitorNodes: (# exit 1087 #);
+
+NamesMonitorRemoveTransition: (# exit 1088 #);
+NamesRemoveAllNodesOnPage: (# exit 1089 #);
+NamesGenerateNewTemplateCode: (# exit 1090 #);
+
+NamesFireAndShow: (# exit 1091 #);
+
+NamesDeleteCurrentMarking: (# exit 1095 #);
+NamesReplaceBySubpageItem: (# exit 1096 #);
+
+NamesSSNodeMenuDisplayPredecessors: (# exit 1103 #);
+NamesSSNodeMenuDisplaySuccessors: (# exit 1104 #);
+NamesToggleDescriptor: (# exit 1105 #);

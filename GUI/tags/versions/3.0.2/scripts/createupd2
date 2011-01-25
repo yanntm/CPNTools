@@ -1,0 +1,57 @@
+#!/usr/bin/perl -w
+# Usage createupd <path-with-files> <macro-namespace> <arguments-to-grep> [internal/]
+
+$PATH=$ARGV[0] || die "Needs path-with-files\n";
+$MACRO=$ARGV[1] || die "Needs macro-namespace\n";
+$GREP=$ARGV[2] || die "Needs arguments-to-grep\n";
+$DIR=$ARGV[3] || "";
+
+$LOCATION="http://www.daimi.au.dk/~cpntools/bin/update/$DIR";
+$A=0;
+
+chdir "$PATH";
+
+@FILES=`find -type f`;
+
+open(HEADER, '>> header') or die "Can't open header: $!\n";
+
+open(FOOTER, '>> footer') or die "Can't open footer: $!\n";
+
+foreach $file (@FILES) {
+	print ".";
+	chomp $file;
+	$file =~ s/^[.]\///;
+	if ($file =~ /$GREP/) {
+		print HEADER "0,$MACRO$A,0\n";
+	} else {
+		print HEADER "0,$MACRO$A,3\n";
+	}
+	print FOOTER "\n[$MACRO$A]\n";
+	$file_temp = $file;
+	$file_temp =~ s/.*\///;
+	print FOOTER "dwnName=$file_temp\n";
+	print FOOTER "dwnCheck=1\n";
+	print FOOTER "dwnURL=$LOCATION$file\n";
+	print FOOTER "dwnPathType=1\n";
+	$path_temp = $file;
+	$path_temp =~ s/^[^\/]*$//;
+	$path_temp =~ s/\/[^\/]*$//;
+	print FOOTER "dwnPath=$path_temp\n";
+	print FOOTER "dwnCtrlFunc=ucNET\n";
+	$file_size = `wc -c "$file"`;
+	chomp $file_size;
+	$file_size =~ s/^[^0123456789]*//;
+	$file_size =~ s/[^0123456789].*//;
+	print FOOTER "dwnSize=$file_size\n";
+	$file_date = `date -r "$file" +%s`;
+	$low_date = ($file_date * 10000000 + 116444736000000000) % 4294967296;
+	print FOOTER "dwnLowDate=$low_date\n";
+	$high_date = ($file_date * 10000000 + 116444736000000000) / 4294967296;
+	$high_date =~ s/(\d*)\..*/$1/;
+	print FOOTER "dwnHighDate=$high_date\n";
+	$A++;
+}
+
+print "\n";
+
+system "unix2dos -D footer header > /dev/null 2>&1";

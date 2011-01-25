@@ -1,0 +1,108 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN 'cpnworkspace';
+
+INCLUDE 'instrumentfactory';
+
+INCLUDE 'instruments/binderinstruments';
+INCLUDE 'instruments/creationinstruments';
+INCLUDE 'instruments/groupinstruments';
+INCLUDE 'instruments/hierarchyinstruments';
+INCLUDE 'instruments/simulationinstruments';
+INCLUDE 'instruments/styleinstruments';
+INCLUDE 'instruments/toolinstruments';
+INCLUDE 'instruments/netinstruments';
+INCLUDE 'instruments/monitoringinstruments';
+INCLUDE 'debug';
+
+---CPNWorkspaceLib: Attributes---
+
+CPNInstrumentFactory: InstrumentFactory
+  (# 
+     InstrumentPattern:
+       (# type: ##object 
+       enter type##
+       exit this(InstrumentPattern)[]
+       #);
+     
+     instruments: @Dictionary
+       (# key:: Text;
+          Element:: InstrumentPattern ;
+          keyEqual::
+            (# 
+            do left[] -> right.equalNCS -> value;
+            #);
+          HM: @HoneyMan;
+          hashFunction::
+            (#
+            do k[] -> HM.hash -> value;
+            #);
+          init::<
+            (# 
+            do HM.init;
+            #);
+       #);
+     
+     make::<
+       (# aInstrumentPattern: ^InstrumentPattern;
+       do elm.tag[] -> instruments.lookup -> aInstrumentPattern[];
+          (if aInstrumentPattern[] <> none then
+              &aInstrumentPattern.type[] -> theInstrument[];
+          if);
+       #);
+     
+     add:
+       (# key:^ Text;
+          type: ##object;
+          theInstrumentPattern: ^InstrumentPattern;
+       enter (key[],type##)
+       do type## -> &InstrumentPattern -> theInstrumentPattern[];
+          (key[],theInstrumentPattern) -> instruments.associate;
+       #);
+     
+     init::<
+       (# 
+       do instruments.init;
+          
+          (* StyleInstruments *)
+          ('setColorInstrument', setColorInstrument##) -> add;
+          ('setLineWidthInstrument', setLineWidthInstrument##) -> add;
+          ('CycleLinePatternInstrument', CycleLinePatternInstrument##) -> add;
+          ('CycleArcHeadInstrument', CycleArcHeadInstrument##) -> add;
+          ('toggleFillInstrument', toggleFillInstrument##) -> add;
+          
+          (* CreateInstruments *)
+          ('SetArcDirectionInstrument', SetArcDirectionInstrument##) -> add;
+          
+          (* SimulationInstruments *)
+          ('RewindInstrument', RewindInstrument##) -> add;
+          ('StopInstrument', StopInstrument##) -> add;
+          
+          (* Netinstruments *)
+          ('LoadInstrument', LoadNetInstrument##) -> add;
+       #);
+     
+  #);

@@ -1,0 +1,353 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<DOCUMENT Type="Advanced Installer" CreateVersion="7.2" version="7.7" Modules="freeware" RootPath="." Language="en">
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiPropsComponent">
+    <ROW Property="AI_MINIEVERCAPTION" MultiBuildValue="DefaultBuild:6.0" ValueLocId="-"/>
+    <ROW Property="AI_MINIEVERSION" MultiBuildValue="DefaultBuild:6.0" ValueLocId="-"/>
+    <ROW Property="AI_UPGRADE" Value="No"/>
+    <ROW Property="ALLUSERS" Value="2"/>
+    <ROW Property="ARPCOMMENTS" Value="This installer database contains the logic and data required to install [|ProductName]." ValueLocId="*"/>
+    <ROW Property="ARPCONTACT" Value="support@cpntools.org"/>
+    <ROW Property="ARPHELPLINK" Value="http://cpntools.org/support"/>
+    <ROW Property="ARPNOMODIFY" MultiBuildValue="DefaultBuild:1"/>
+    <ROW Property="ARPURLINFOABOUT" Value="http://cpntools.org/"/>
+    <ROW Property="BannerBitmap" MultiBuildValue="DefaultBuild:banner_image.jpg" Type="1"/>
+    <ROW Property="DialogBitmap" MultiBuildValue="DefaultBuild:dialog_image.jpg" Type="1"/>
+    <ROW Property="MSIFASTINSTALL" MultiBuildValue="DefaultBuild:2"/>
+    <ROW Property="Manufacturer" Value="AIS Group, Eindhoven University of Technology" ValueLocId="*"/>
+    <ROW Property="ProductCode" Value="1033:{1DECA1EE-75A1-4652-8049-BE91B0E0F223} " Type="16"/>
+    <ROW Property="ProductLanguage" Value="1033"/>
+    <ROW Property="ProductName" Value="CPN Tools" ValueLocId="*"/>
+    <ROW Property="ProductVersion" Value="2.9.7"/>
+    <ROW Property="SecureCustomProperties" Value="OLDPRODUCTS;AI_NEWERPRODUCTFOUND"/>
+    <ROW Property="UpgradeCode" Value="{17A02098-9ACB-4C3B-BDFA-3B272811724D}"/>
+    <ROW Property="WindowsFamily9X" MultiBuildValue="DefaultBuild:Windows 9x/ME" ValueLocId="-"/>
+    <ROW Property="WindowsTypeNT" MultiBuildValue="DefaultBuild:Windows XP x86" ValueLocId="-"/>
+    <ROW Property="WindowsTypeNT64" MultiBuildValue="DefaultBuild:Windows 7 x64" ValueLocId="-"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiDirsComponent">
+    <ROW Directory="APPDIR" Directory_Parent="TARGETDIR" DefaultDir="APPDIR:." IsPseudoRoot="1"/>
+    <ROW Directory="ASKCTL_DIR" Directory_Parent="statespacefiles_DIR" DefaultDir="ASKCTL"/>
+    <ROW Directory="DiningPhilosophers_DIR" Directory_Parent="Sample_Nets_DIR" DefaultDir="Dining~1|DiningPhilosophers"/>
+    <ROW Directory="DistributedDataBase_DIR" Directory_Parent="Sample_Nets_DIR" DefaultDir="Distri~1|DistributedDataBase"/>
+    <ROW Directory="Help_DIR" Directory_Parent="SHORTCUTDIR" DefaultDir="Help"/>
+    <ROW Directory="HierarchicalProtocol_DIR" Directory_Parent="Sample_Nets_DIR" DefaultDir="Hierar~1|HierarchicalProtocol"/>
+    <ROW Directory="Language_DIR" Directory_Parent="APPDIR" DefaultDir="Language"/>
+    <ROW Directory="PersonalFolder" Directory_Parent="TARGETDIR" DefaultDir="Person~1|PersonalFolder" IsPseudoRoot="1"/>
+    <ROW Directory="ProtocolWithTimer_DIR" Directory_Parent="Sample_Nets_DIR" DefaultDir="Protoc~1|ProtocolWithTimer"/>
+    <ROW Directory="QueueSystem_DIR" Directory_Parent="Sample_Nets_DIR" DefaultDir="QueueS~1|QueueSystem"/>
+    <ROW Directory="ReportFiles_DIR" Directory_Parent="statespacefiles_DIR" DefaultDir="Report~1|ReportFiles"/>
+    <ROW Directory="ResourceAllocation_DIR" Directory_Parent="Sample_Nets_DIR" DefaultDir="Resour~1|ResourceAllocation"/>
+    <ROW Directory="RingProtocol_DIR" Directory_Parent="Sample_Nets_DIR" DefaultDir="RingPr~1|RingProtocol"/>
+    <ROW Directory="SHORTCUTDIR" Directory_Parent="TARGETDIR" DefaultDir="SHORTC~1|SHORTCUTDIR" IsPseudoRoot="1"/>
+    <ROW Directory="Sample_Nets_DIR" Directory_Parent="APPDIR" DefaultDir="Sample~2|Sample CPN Models"/>
+    <ROW Directory="SimpleProtocol_DIR" Directory_Parent="Sample_Nets_DIR" DefaultDir="Simple~1|SimpleProtocol"/>
+    <ROW Directory="SystemFolder" Directory_Parent="TARGETDIR" DefaultDir="System~1|SystemFolder" IsPseudoRoot="1"/>
+    <ROW Directory="TARGETDIR" DefaultDir="SourceDir"/>
+    <ROW Directory="Telephones_DIR" Directory_Parent="Sample_Nets_DIR" DefaultDir="Teleph~1|Telephones"/>
+    <ROW Directory="TimedProtocol_DIR" Directory_Parent="Sample_Nets_DIR" DefaultDir="TimedP~1|TimedProtocol"/>
+    <ROW Directory="TimedResourceAlloc_DIR" Directory_Parent="Sample_Nets_DIR" DefaultDir="TimedR~1|TimedResourceAlloc"/>
+    <ROW Directory="applet_DIR" Directory_Parent="DiningPhilosophers_DIR" DefaultDir="applet"/>
+    <ROW Directory="cpnsim_DIR" Directory_Parent="APPDIR" DefaultDir="cpnsim"/>
+    <ROW Directory="export_DIR" Directory_Parent="statespacefiles_DIR" DefaultDir="export"/>
+    <ROW Directory="fonts_DIR" Directory_Parent="APPDIR" DefaultDir="fonts"/>
+    <ROW Directory="images_DIR" Directory_Parent="APPDIR" DefaultDir="images"/>
+    <ROW Directory="statespacefiles_DIR" Directory_Parent="cpnsim_DIR" DefaultDir="states~1|statespacefiles"/>
+    <ROW Directory="templates_DIR" Directory_Parent="APPDIR" DefaultDir="templa~1|templates"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiCompsComponent">
+    <ROW Component="ASKCTL.sml" ComponentId="{A1C27034-3E58-4037-A99F-DE15BD304E64}" Directory_="ASKCTL_DIR" Attributes="0" KeyPath="ASKCTL.sml" Type="0"/>
+    <ROW Component="DiningPhilosophers.cpn" ComponentId="{261711FF-D424-4B66-BB2C-34677ED02B8F}" Directory_="DiningPhilosophers_DIR" Attributes="0" KeyPath="DiningPhilosophers.cpn" Type="0"/>
+    <ROW Component="DistributedDataBase.cpn" ComponentId="{AD44F4AB-6E1C-442D-BD33-76CD81A30FCF}" Directory_="DistributedDataBase_DIR" Attributes="0" KeyPath="DistributedDataBase.cpn" Type="0"/>
+    <ROW Component="Help" ComponentId="{A538748C-2E82-48F4-A1EE-F4A851657832}" Directory_="Help_DIR" Attributes="0"/>
+    <ROW Component="HierarchicalProtocol.cpn" ComponentId="{F137FAB2-65FC-44AB-A01B-A4AB3617DBBC}" Directory_="HierarchicalProtocol_DIR" Attributes="0" KeyPath="HierarchicalProtocol.cpn_1" Type="0"/>
+    <ROW Component="New_net.cpn" ComponentId="{4CC6095C-E69D-4B06-8BD6-BB42FB7A54B3}" Directory_="templates_DIR" Attributes="0" KeyPath="New_net.cpn" Type="0"/>
+    <ROW Component="OGDead.sml" ComponentId="{4F987606-7FF3-43BC-8235-6CDBAA932953}" Directory_="ReportFiles_DIR" Attributes="0" KeyPath="OGDead.sml" Type="0"/>
+    <ROW Component="OGtoFSMView.sml" ComponentId="{F7B6DE98-EFF3-4622-BFEF-1E8A4B1DF241}" Directory_="export_DIR" Attributes="0" KeyPath="OGtoFSMView.sml" Type="0"/>
+    <ROW Component="ProtocolWithTimer.cpn" ComponentId="{89E01E24-E046-41FB-B551-3B404811A9FD}" Directory_="ProtocolWithTimer_DIR" Attributes="0" KeyPath="ProtocolWithTimer.cpn" Type="0"/>
+    <ROW Component="QueueSystem.cpn" ComponentId="{FFE5B3C0-EA19-4D63-9BA7-028064705F01}" Directory_="QueueSystem_DIR" Attributes="0" KeyPath="QueueSystem.cpn" Type="0"/>
+    <ROW Component="ResourceAllocation.cpn" ComponentId="{6FE14CCB-B000-45A2-A729-8CFA6D12120F}" Directory_="ResourceAllocation_DIR" Attributes="0" KeyPath="ResourceAllocation.cpn" Type="0"/>
+    <ROW Component="RingProtocol.cpn" ComponentId="{C8C1E965-0BB6-4503-B762-FDD27B1609E5}" Directory_="RingProtocol_DIR" Attributes="0" KeyPath="RingProtocol.cpn" Type="0"/>
+    <ROW Component="SHORTCUTDIR" ComponentId="{866E1497-22F0-48DB-A252-282327A3BC04}" Directory_="SHORTCUTDIR" Attributes="0"/>
+    <ROW Component="SimpleProtocol.cpn" ComponentId="{01CA31D2-6A9E-441F-9372-1CF5EF73126A}" Directory_="SimpleProtocol_DIR" Attributes="0" KeyPath="SimpleProtocol.cpn" Type="0"/>
+    <ROW Component="Telephones.cpn" ComponentId="{2E006E30-7EC6-4995-9349-A0F610D793E0}" Directory_="Telephones_DIR" Attributes="0" KeyPath="Telephones.cpn" Type="0"/>
+    <ROW Component="TimedProtocol.cpn" ComponentId="{80FB617B-CE09-402D-8290-4E2F47C04478}" Directory_="TimedProtocol_DIR" Attributes="0" KeyPath="TimedProtocol.cpn" Type="0"/>
+    <ROW Component="TimedResourceAlloc.cpn" ComponentId="{7C88DB0A-339B-4251-95F7-8C91F2673FC0}" Directory_="TimedResourceAlloc_DIR" Attributes="0" KeyPath="TimedResourceAlloc.cpn" Type="0"/>
+    <ROW Component="applet.html" ComponentId="{C153DEF8-B0C7-4FA8-8D8D-7BE50481CD91}" Directory_="applet_DIR" Attributes="0" KeyPath="applet.html" Type="0"/>
+    <ROW Component="arial.ttf" ComponentId="{F67B461C-19EC-4B8B-8CE9-E295526AE34E}" Directory_="fonts_DIR" Attributes="0" KeyPath="verdana.pfa" Type="0"/>
+    <ROW Component="avlTree.sml" ComponentId="{A1A3A042-4B4E-4DA3-BE46-2D3D7DED07C9}" Directory_="statespacefiles_DIR" Attributes="0" KeyPath="avlTree.sml" Type="0"/>
+    <ROW Component="cpn.ML.x86_cygwin" ComponentId="{58FBCEEE-30BB-465E-93FB-4D7A23E4C167}" Directory_="cpnsim_DIR" Attributes="0" KeyPath="cpn.ML.x86_cygwin" Type="0"/>
+    <ROW Component="cpnmld.x86_cygwin.exe" ComponentId="{4BFF5C20-4458-47FC-B127-B406CA1BE743}" Directory_="cpnsim_DIR" Attributes="0" KeyPath="cpnmld.x86_cygwin.exe"/>
+    <ROW Component="cpntools.exe" ComponentId="{9F97806D-5339-4F77-981F-4452F71F9EDC}" Directory_="APPDIR" Attributes="0" KeyPath="cpntools.exe"/>
+    <ROW Component="cyggcc_s_1.dll" ComponentId="{EAAA9465-D91A-44E7-BCA7-A7A82E626A77}" Directory_="cpnsim_DIR" Attributes="0" KeyPath="cyggcc_s_1.dll"/>
+    <ROW Component="cygwin1.dll" ComponentId="{BB8E4490-CDA9-48E0-B0F7-6BF23F1A3FE0}" Directory_="cpnsim_DIR" Attributes="0" KeyPath="cygwin1.dll"/>
+    <ROW Component="default.txt" ComponentId="{B278528A-90A1-47CC-A869-ED72E8E83CB3}" Directory_="Language_DIR" Attributes="0" KeyPath="default.txt" Type="0"/>
+    <ROW Component="defaults.xml" ComponentId="{9EF31A9C-AC8F-404D-994D-F8DF1A85A404}" Directory_="APPDIR" Attributes="0" KeyPath="defaults.xml" Type="0"/>
+    <ROW Component="logo.ico" ComponentId="{DE61005E-F91B-4110-AEB6-CC30711AA0C5}" Directory_="images_DIR" Attributes="0" KeyPath="logo.ico" Type="0"/>
+    <ROW Component="run.x86_cygwin.exe" ComponentId="{5D092C06-21B2-4C97-9FF0-1732FCF61F23}" Directory_="cpnsim_DIR" Attributes="0" KeyPath="run.x86_cygwin.exe"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiFeatsComponent">
+    <ROW Feature="MainFeature" Title="MainFeature" Description="Description" Display="1" Level="1" Directory_="APPDIR" Attributes="0" Components="cpntools.exe SHORTCUTDIR Help cpn.ML.x86_cygwin ASKCTL.sml avlTree.sml OGtoFSMView.sml OGDead.sml defaults.xml arial.ttf logo.ico default.txt applet.html DiningPhilosophers.cpn DistributedDataBase.cpn HierarchicalProtocol.cpn ProtocolWithTimer.cpn QueueSystem.cpn ResourceAllocation.cpn RingProtocol.cpn SimpleProtocol.cpn Telephones.cpn TimedProtocol.cpn TimedResourceAlloc.cpn New_net.cpn cpnmld.x86_cygwin.exe run.x86_cygwin.exe cyggcc_s_1.dll cygwin1.dll"/>
+    <ATTRIBUTE name="CurrentFeature" value="MainFeature"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiFilesComponent">
+    <ROW File="ASKCTL.sml" Component_="ASKCTL.sml" FileName="ASKCTL.sml" Attributes="0" SourcePath="cpnsim\statespacefiles\ASKCTL\ASKCTL.sml" SelfReg="false" Sequence="9"/>
+    <ROW File="ASKCTLloader.sml" Component_="ASKCTL.sml" FileName="ASKCTL~1.sml|ASKCTLloader.sml" Attributes="0" SourcePath="cpnsim\statespacefiles\ASKCTL\ASKCTLloader.sml" SelfReg="false" Sequence="10"/>
+    <ROW File="BitArray.sml" Component_="ASKCTL.sml" FileName="BitArray.sml" Attributes="0" SourcePath="cpnsim\statespacefiles\ASKCTL\BitArray.sml" SelfReg="false" Sequence="11"/>
+    <ROW File="CodeGenUtils.sml" Component_="avlTree.sml" FileName="CodeGe~1.sml|CodeGenUtils.sml" Attributes="0" SourcePath="cpnsim\statespacefiles\CodeGenUtils.sml" SelfReg="false" Sequence="13"/>
+    <ROW File="DiningPhilosopher.java" Component_="applet.html" FileName="Dining~1.jav|DiningPhilosopher.java" Attributes="0" SourcePath="Sample Nets\DiningPhilosophers\applet\DiningPhilosopher.java" SelfReg="false" Sequence="104"/>
+    <ROW File="DiningPhilosophers.cpn" Component_="DiningPhilosophers.cpn" FileName="Dining~1.cpn|DiningPhilosophers.cpn" Attributes="0" SourcePath="Sample Nets\DiningPhilosophers\DiningPhilosophers.cpn" SelfReg="false" Sequence="116"/>
+    <ROW File="DiningPhilosophers.pdf" Component_="DiningPhilosophers.cpn" FileName="Dining~1.pdf|DiningPhilosophers.pdf" Attributes="0" SourcePath="Sample Nets\DiningPhilosophers\DiningPhilosophers.pdf" SelfReg="false" Sequence="117"/>
+    <ROW File="DiningPhilosophers_ASKCTL.cpn" Component_="DiningPhilosophers.cpn" FileName="Dining~2.cpn|DiningPhilosophers_ASKCTL.cpn" Attributes="0" SourcePath="Sample Nets\DiningPhilosophers\DiningPhilosophers_ASKCTL.cpn" SelfReg="false" Sequence="118"/>
+    <ROW File="DiningPhilosophers_COMM.cpn" Component_="DiningPhilosophers.cpn" FileName="Dining~3.cpn|DiningPhilosophers_COMM.cpn" Attributes="0" SourcePath="Sample Nets\DiningPhilosophers\DiningPhilosophers_COMM.cpn" SelfReg="false" Sequence="119"/>
+    <ROW File="DiningPhilosophers_COMM_Mon.cpn" Component_="DiningPhilosophers.cpn" FileName="Dining~4.cpn|DiningPhilosophers_COMM_Mon.cpn" Attributes="0" SourcePath="Sample Nets\DiningPhilosophers\DiningPhilosophers_COMM_Mon.cpn" SelfReg="false" Sequence="120"/>
+    <ROW File="DistributedDataBase.cpn" Component_="DistributedDataBase.cpn" FileName="Distri~1.cpn|DistributedDataBase.cpn" Attributes="0" SourcePath="Sample Nets\DistributedDataBase\DistributedDataBase.cpn" SelfReg="false" Sequence="121"/>
+    <ROW File="DistributedDataBase.pdf" Component_="DistributedDataBase.cpn" FileName="Distri~1.pdf|DistributedDataBase.pdf" Attributes="0" SourcePath="Sample Nets\DistributedDataBase\DistributedDataBase.pdf" SelfReg="false" Sequence="122"/>
+    <ROW File="DistributedDataBase_OG.cpn" Component_="DistributedDataBase.cpn" FileName="Distri~2.cpn|DistributedDataBase_OG.cpn" Attributes="0" SourcePath="Sample Nets\DistributedDataBase\DistributedDataBase_OG.cpn" SelfReg="false" Sequence="123"/>
+    <ROW File="DistributedDataBase_OG.pdf" Component_="DistributedDataBase.cpn" FileName="Distri~2.pdf|DistributedDataBase_OG.pdf" Attributes="0" SourcePath="Sample Nets\DistributedDataBase\DistributedDataBase_OG.pdf" SelfReg="false" Sequence="124"/>
+    <ROW File="EncodeDecode.java" Component_="applet.html" FileName="Encode~1.jav|EncodeDecode.java" Attributes="0" SourcePath="Sample Nets\DiningPhilosophers\applet\EncodeDecode.java" SelfReg="false" Sequence="105"/>
+    <ROW File="HierarchicalProtocol.cpn_1" Component_="HierarchicalProtocol.cpn" FileName="Hierar~1.cpn|HierarchicalProtocol.cpn" Attributes="0" SourcePath="Sample Nets\HierarchicalProtocol\HierarchicalProtocol.cpn" SelfReg="false" Sequence="125"/>
+    <ROW File="HierarchicalProtocol.pdf" Component_="HierarchicalProtocol.cpn" FileName="Hierar~1.pdf|HierarchicalProtocol.pdf" Attributes="0" SourcePath="Sample Nets\HierarchicalProtocol\HierarchicalProtocol.pdf" SelfReg="false" Sequence="126"/>
+    <ROW File="JavaCPN.java" Component_="applet.html" FileName="JavaCP~1.jav|JavaCPN.java" Attributes="0" SourcePath="Sample Nets\DiningPhilosophers\applet\JavaCPN.java" SelfReg="false" Sequence="107"/>
+    <ROW File="JavaCPNInterface.java" Component_="applet.html" FileName="JavaCP~2.jav|JavaCPNInterface.java" Attributes="0" SourcePath="Sample Nets\DiningPhilosophers\applet\JavaCPNInterface.java" SelfReg="false" Sequence="108"/>
+    <ROW File="NetCapture.sml" Component_="avlTree.sml" FileName="NetCap~1.sml|NetCapture.sml" Attributes="0" SourcePath="cpnsim\statespacefiles\NetCapture.sml" SelfReg="false" Sequence="16"/>
+    <ROW File="New_net.cpn" Component_="New_net.cpn" FileName="Newnet~1.cpn|New net.cpn" Attributes="0" SourcePath="templates\New net.cpn" SelfReg="false" Sequence="151"/>
+    <ROW File="OGBTconvGen.sml" Component_="avlTree.sml" FileName="OGBTco~1.sml|OGBTconvGen.sml" Attributes="0" SourcePath="cpnsim\statespacefiles\OGBTconvGen.sml" SelfReg="false" Sequence="22"/>
+    <ROW File="OGBasicRefsGen.sml" Component_="avlTree.sml" FileName="OGBasi~1.sml|OGBasicRefsGen.sml" Attributes="0" SourcePath="cpnsim\statespacefiles\OGBasicRefsGen.sml" SelfReg="false" Sequence="17"/>
+    <ROW File="OGBasicTypes.sml" Component_="avlTree.sml" FileName="OGBasi~2.sml|OGBasicTypes.sml" Attributes="0" SourcePath="cpnsim\statespacefiles\OGBasicTypes.sml" SelfReg="false" Sequence="18"/>
+    <ROW File="OGBind.sml" Component_="avlTree.sml" FileName="OGBind.sml" Attributes="0" SourcePath="cpnsim\statespacefiles\OGBind.sml" SelfReg="false" Sequence="19"/>
+    <ROW File="OGBindMap.sml" Component_="avlTree.sml" FileName="OGBind~1.sml|OGBindMap.sml" Attributes="0" SourcePath="cpnsim\statespacefiles\OGBindMap.sml" SelfReg="false" Sequence="20"/>
+    <ROW File="OGBindSearchTreeFun.sml" Component_="avlTree.sml" FileName="OGBind~2.sml|OGBindSearchTreeFun.sml" Attributes="0" SourcePath="cpnsim\statespacefiles\OGBindSearchTreeFun.sml" SelfReg="false" Sequence="21"/>
+    <ROW File="OGCalcSucc.sml" Component_="avlTree.sml" FileName="OGCalc~1.sml|OGCalcSucc.sml" Attributes="0" SourcePath="cpnsim\statespacefiles\OGCalcSucc.sml" SelfReg="false" Sequence="23"/>
+    <ROW File="OGCreateStateRec.sml" Component_="avlTree.sml" FileName="OGCrea~1.sml|OGCreateStateRec.sml" Attributes="0" SourcePath="cpnsim\statespacefiles\OGCreateStateRec.sml" SelfReg="false" Sequence="24"/>
+    <ROW File="OGDead.sml" Component_="OGDead.sml" FileName="OGDead.sml" Attributes="0" SourcePath="cpnsim\statespacefiles\ReportFiles\OGDead.sml" SelfReg="false" Sequence="52"/>
+    <ROW File="OGDeadTIs.sml" Component_="OGDead.sml" FileName="OGDead~1.sml|OGDeadTIs.sml" Attributes="0" SourcePath="cpnsim\statespacefiles\ReportFiles\OGDeadTIs.sml" SelfReg="false" Sequence="53"/>
+    <ROW File="OGDelete.sml" Component_="avlTree.sml" FileName="OGDelete.sml" Attributes="0" SourcePath="cpnsim\statespacefiles\OGDelete.sml" SelfReg="false" Sequence="25"/>
+    <ROW File="OGEnabData.sml" Component_="avlTree.sml" FileName="OGEnab~1.sml|OGEnabData.sml" Attributes="0" SourcePath="cpnsim\statespacefiles\OGEnabData.sml" SelfReg="false" Sequence="26"/>
+    <ROW File="OGEncodeGen.sml" Component_="avlTree.sml" FileName="OGEnco~1.sml|OGEncodeGen.sml" Attributes="0" SourcePath="cpnsim\statespacefiles\OGEncodeGen.sml" SelfReg="false" Sequence="27"/>
+    <ROW File="OGFairness.sml" Component_="OGDead.sml" FileName="OGFair~1.sml|OGFairness.sml" Attributes="0" SourcePath="cpnsim\statespacefiles\ReportFiles\OGFairness.sml" SelfReg="false" Sequence="54"/>
+    <ROW File="OGFromSimDataGen.sml" Component_="avlTree.sml" FileName="OGFrom~1.sml|OGFromSimDataGen.sml" Attributes="0" SourcePath="cpnsim\statespacefiles\OGFromSimDataGen.sml" SelfReg="false" Sequence="28"/>
+    <ROW File="OGGenFilters.sml" Component_="avlTree.sml" FileName="OGGenF~1.sml|OGGenFilters.sml" Attributes="0" SourcePath="cpnsim\statespacefiles\OGGenFilters.sml" SelfReg="false" Sequence="29"/>
+    <ROW File="OGGlobTablesGen.sml" Component_="avlTree.sml" FileName="OGGlob~1.sml|OGGlobTablesGen.sml" Attributes="0" SourcePath="cpnsim\statespacefiles\OGGlobTablesGen.sml" SelfReg="false" Sequence="30"/>
+    <ROW File="OGHome.sml" Component_="OGDead.sml" FileName="OGHome.sml" Attributes="0" SourcePath="cpnsim\statespacefiles\ReportFiles\OGHome.sml" SelfReg="false" Sequence="55"/>
+    <ROW File="OGIdsGen.sml" Component_="avlTree.sml" FileName="OGIdsGen.sml" Attributes="0" SourcePath="cpnsim\statespacefiles\OGIdsGen.sml" SelfReg="false" Sequence="31"/>
+    <ROW File="OGInOutPath.sml" Component_="avlTree.sml" FileName="OGInOu~1.sml|OGInOutPath.sml" Attributes="0" SourcePath="cpnsim\statespacefiles\OGInOutPath.sml" SelfReg="false" Sequence="32"/>
+    <ROW File="OGIntegerBounds.sml" Component_="OGDead.sml" FileName="OGInte~1.sml|OGIntegerBounds.sml" Attributes="0" SourcePath="cpnsim\statespacefiles\ReportFiles\OGIntegerBounds.sml" SelfReg="false" Sequence="56"/>
+    <ROW File="OGIntegerBoundsGen.sml" Component_="OGDead.sml" FileName="OGInte~2.sml|OGIntegerBoundsGen.sml" Attributes="0" SourcePath="cpnsim\statespacefiles\ReportFiles\OGIntegerBoundsGen.sml" SelfReg="false" Sequence="57"/>
+    <ROW File="OGLiveTIs.sml" Component_="OGDead.sml" FileName="OGLive~1.sml|OGLiveTIs.sml" Attributes="0" SourcePath="cpnsim\statespacefiles\ReportFiles\OGLiveTIs.sml" SelfReg="false" Sequence="58"/>
+    <ROW File="OGMSSearchTreeFun.sml" Component_="avlTree.sml" FileName="OGMSSe~1.sml|OGMSSearchTreeFun.sml" Attributes="0" SourcePath="cpnsim\statespacefiles\OGMSSearchTreeFun.sml" SelfReg="false" Sequence="34"/>
+    <ROW File="OGMarkGen.sml" Component_="avlTree.sml" FileName="OGMark~1.sml|OGMarkGen.sml" Attributes="0" SourcePath="cpnsim\statespacefiles\OGMarkGen.sml" SelfReg="false" Sequence="33"/>
+    <ROW File="OGMultiSetBounds.sml" Component_="OGDead.sml" FileName="OGMult~1.sml|OGMultiSetBounds.sml" Attributes="0" SourcePath="cpnsim\statespacefiles\ReportFiles\OGMultiSetBounds.sml" SelfReg="false" Sequence="59"/>
+    <ROW File="OGMultiSetBoundsGen.sml" Component_="OGDead.sml" FileName="OGMult~2.sml|OGMultiSetBoundsGen.sml" Attributes="0" SourcePath="cpnsim\statespacefiles\ReportFiles\OGMultiSetBoundsGen.sml" SelfReg="false" Sequence="60"/>
+    <ROW File="OGNewSaveReport.sml" Component_="avlTree.sml" FileName="OGNewS~1.sml|OGNewSaveReport.sml" Attributes="0" SourcePath="cpnsim\statespacefiles\OGNewSaveReport.sml" SelfReg="false" Sequence="35"/>
+    <ROW File="OGNodeSel.sml" Component_="avlTree.sml" FileName="OGNode~1.sml|OGNodeSel.sml" Attributes="0" SourcePath="cpnsim\statespacefiles\OGNodeSel.sml" SelfReg="false" Sequence="36"/>
+    <ROW File="OGPrintFuns.sml" Component_="avlTree.sml" FileName="OGPrin~1.sml|OGPrintFuns.sml" Attributes="0" SourcePath="cpnsim\statespacefiles\OGPrintFuns.sml" SelfReg="false" Sequence="37"/>
+    <ROW File="OGProps.sml" Component_="avlTree.sml" FileName="OGProps.sml" Attributes="0" SourcePath="cpnsim\statespacefiles\OGProps.sml" SelfReg="false" Sequence="38"/>
+    <ROW File="OGRecSearchTreeFun.sml" Component_="avlTree.sml" FileName="OGRecS~1.sml|OGRecSearchTreeFun.sml" Attributes="0" SourcePath="cpnsim\statespacefiles\OGRecSearchTreeFun.sml" SelfReg="false" Sequence="39"/>
+    <ROW File="OGSearchFuns.sml" Component_="avlTree.sml" FileName="OGSear~1.sml|OGSearchFuns.sml" Attributes="0" SourcePath="cpnsim\statespacefiles\OGSearchFuns.sml" SelfReg="false" Sequence="40"/>
+    <ROW File="OGSearchReachable.sml" Component_="avlTree.sml" FileName="OGSear~2.sml|OGSearchReachable.sml" Attributes="0" SourcePath="cpnsim\statespacefiles\OGSearchReachable.sml" SelfReg="false" Sequence="41"/>
+    <ROW File="OGSetAttrOptions.sml" Component_="avlTree.sml" FileName="OGSetA~1.sml|OGSetAttrOptions.sml" Attributes="0" SourcePath="cpnsim\statespacefiles\OGSetAttrOptions.sml" SelfReg="false" Sequence="42"/>
+    <ROW File="OGStats.sml" Component_="OGDead.sml" FileName="OGStats.sml" Attributes="0" SourcePath="cpnsim\statespacefiles\ReportFiles\OGStats.sml" SelfReg="false" Sequence="61"/>
+    <ROW File="OGStopLimitCrit.sml" Component_="avlTree.sml" FileName="OGStop~1.sml|OGStopLimitCrit.sml" Attributes="0" SourcePath="cpnsim\statespacefiles\OGStopLimitCrit.sml" SelfReg="false" Sequence="43"/>
+    <ROW File="OGTime.sml" Component_="avlTree.sml" FileName="OGTime.sml" Attributes="0" SourcePath="cpnsim\statespacefiles\OGTime.sml" SelfReg="false" Sequence="45"/>
+    <ROW File="OGTimeListTreeFun.sml" Component_="avlTree.sml" FileName="OGTime~2.sml|OGTimeListTreeFun.sml" Attributes="0" SourcePath="cpnsim\statespacefiles\OGTimeListTreeFun.sml" SelfReg="false" Sequence="46"/>
+    <ROW File="OGTimeNodeSel.sml" Component_="avlTree.sml" FileName="OGTime~3.sml|OGTimeNodeSel.sml" Attributes="0" SourcePath="cpnsim\statespacefiles\OGTimeNodeSel.sml" SelfReg="false" Sequence="47"/>
+    <ROW File="OGToSimDataGen.sml" Component_="avlTree.sml" FileName="OGToSi~1.sml|OGToSimDataGen.sml" Attributes="0" SourcePath="cpnsim\statespacefiles\OGToSimDataGen.sml" SelfReg="false" Sequence="48"/>
+    <ROW File="OGTransEnabOccGen.sml" Component_="avlTree.sml" FileName="OGTran~1.sml|OGTransEnabOccGen.sml" Attributes="0" SourcePath="cpnsim\statespacefiles\OGTransEnabOccGen.sml" SelfReg="false" Sequence="49"/>
+    <ROW File="OGTransferStateGen.sml" Component_="avlTree.sml" FileName="OGTran~2.sml|OGTransferStateGen.sml" Attributes="0" SourcePath="cpnsim\statespacefiles\OGTransferStateGen.sml" SelfReg="false" Sequence="50"/>
+    <ROW File="OGUtils.sml" Component_="avlTree.sml" FileName="OGUtils.sml" Attributes="0" SourcePath="cpnsim\statespacefiles\OGUtils.sml" SelfReg="false" Sequence="51"/>
+    <ROW File="OGswitch.sml" Component_="avlTree.sml" FileName="OGswitch.sml" Attributes="0" SourcePath="cpnsim\statespacefiles\OGswitch.sml" SelfReg="false" Sequence="44"/>
+    <ROW File="OGtoFSMView.sml" Component_="OGtoFSMView.sml" FileName="OGtoFS~1.sml|OGtoFSMView.sml" Attributes="0" SourcePath="cpnsim\statespacefiles\export\OGtoFSMView.sml" SelfReg="false" Sequence="14"/>
+    <ROW File="OGtoGraphviz.sml" Component_="OGtoFSMView.sml" FileName="OGtoGr~1.sml|OGtoGraphviz.sml" Attributes="0" SourcePath="cpnsim\statespacefiles\export\OGtoGraphviz.sml" SelfReg="false" Sequence="15"/>
+    <ROW File="PhilCanvas.java" Component_="applet.html" FileName="PhilCa~1.jav|PhilCanvas.java" Attributes="0" SourcePath="Sample Nets\DiningPhilosophers\applet\PhilCanvas.java" SelfReg="false" Sequence="110"/>
+    <ROW File="Philosopher.java" Component_="applet.html" FileName="Philos~1.jav|Philosopher.java" Attributes="0" SourcePath="Sample Nets\DiningPhilosophers\applet\Philosopher.java" SelfReg="false" Sequence="111"/>
+    <ROW File="ProtocolWithTimer.cpn" Component_="ProtocolWithTimer.cpn" FileName="Protoc~1.cpn|ProtocolWithTimer.cpn" Attributes="0" SourcePath="Sample Nets\ProtocolWithTimer\ProtocolWithTimer.cpn" SelfReg="false" Sequence="127"/>
+    <ROW File="ProtocolWithTimer.pdf" Component_="ProtocolWithTimer.cpn" FileName="Protoc~1.pdf|ProtocolWithTimer.pdf" Attributes="0" SourcePath="Sample Nets\ProtocolWithTimer\ProtocolWithTimer.pdf" SelfReg="false" Sequence="128"/>
+    <ROW File="QueueSystem.cpn" Component_="QueueSystem.cpn" FileName="QueueS~1.cpn|QueueSystem.cpn" Attributes="0" SourcePath="Sample Nets\QueueSystem\QueueSystem.cpn" SelfReg="false" Sequence="129"/>
+    <ROW File="QueueSystemConfigs.cpn" Component_="QueueSystem.cpn" FileName="QueueS~2.cpn|QueueSystemConfigs.cpn" Attributes="0" SourcePath="Sample Nets\QueueSystem\QueueSystemConfigs.cpn" SelfReg="false" Sequence="130"/>
+    <ROW File="README" Component_="applet.html" FileName="README" Attributes="0" SourcePath="Sample Nets\DiningPhilosophers\applet\README" SelfReg="false" Sequence="113"/>
+    <ROW File="RealTimedProtocol.cpn" Component_="TimedProtocol.cpn" FileName="RealTi~1.cpn|RealTimedProtocol.cpn" Attributes="0" SourcePath="Sample Nets\TimedProtocol\RealTimedProtocol.cpn" SelfReg="false" Sequence="155"/>
+    <ROW File="RealTimedResourceAlloc.cpn" Component_="TimedResourceAlloc.cpn" FileName="RealTi~1.cpn|RealTimedResourceAlloc.cpn" Attributes="0" SourcePath="Sample Nets\TimedResourceAlloc\RealTimedResourceAlloc.cpn" SelfReg="false" Sequence="156"/>
+    <ROW File="ResourceAllocation.cpn" Component_="ResourceAllocation.cpn" FileName="Resour~1.cpn|ResourceAllocation.cpn" Attributes="0" SourcePath="Sample Nets\ResourceAllocation\ResourceAllocation.cpn" SelfReg="false" Sequence="131"/>
+    <ROW File="ResourceAllocation.pdf" Component_="ResourceAllocation.cpn" FileName="Resour~1.pdf|ResourceAllocation.pdf" Attributes="0" SourcePath="Sample Nets\ResourceAllocation\ResourceAllocation.pdf" SelfReg="false" Sequence="132"/>
+    <ROW File="ResourceAllocation_OG.cpn" Component_="ResourceAllocation.cpn" FileName="Resour~2.cpn|ResourceAllocation_OG.cpn" Attributes="0" SourcePath="Sample Nets\ResourceAllocation\ResourceAllocation_OG.cpn" SelfReg="false" Sequence="133"/>
+    <ROW File="ResourceAllocation_OG.pdf" Component_="ResourceAllocation.cpn" FileName="Resour~2.pdf|ResourceAllocation_OG.pdf" Attributes="0" SourcePath="Sample Nets\ResourceAllocation\ResourceAllocation_OG.pdf" SelfReg="false" Sequence="134"/>
+    <ROW File="ResourceAllocation_OG_Graphviz.cpn" Component_="ResourceAllocation.cpn" FileName="Resour~3.cpn|ResourceAllocation_OG_Graphviz.cpn" Attributes="0" SourcePath="Sample Nets\ResourceAllocation\ResourceAllocation_OG_Graphviz.cpn" SelfReg="false" Sequence="135"/>
+    <ROW File="RingProtocol.cpn" Component_="RingProtocol.cpn" FileName="RingPr~1.cpn|RingProtocol.cpn" Attributes="0" SourcePath="Sample Nets\RingProtocol\RingProtocol.cpn" SelfReg="false" Sequence="136"/>
+    <ROW File="RingProtocol.pdf" Component_="RingProtocol.cpn" FileName="RingPr~1.pdf|RingProtocol.pdf" Attributes="0" SourcePath="Sample Nets\RingProtocol\RingProtocol.pdf" SelfReg="false" Sequence="137"/>
+    <ROW File="SCC.sml" Component_="avlTree.sml" FileName="SCC.sml" Attributes="0" SourcePath="cpnsim\statespacefiles\SCC.sml" SelfReg="false" Sequence="62"/>
+    <ROW File="SimpleProtocol.cpn" Component_="SimpleProtocol.cpn" FileName="Simple~1.cpn|SimpleProtocol.cpn" Attributes="0" SourcePath="Sample Nets\SimpleProtocol\SimpleProtocol.cpn" SelfReg="false" Sequence="138"/>
+    <ROW File="SimpleProtocol.pdf" Component_="SimpleProtocol.cpn" FileName="Simple~1.pdf|SimpleProtocol.pdf" Attributes="0" SourcePath="Sample Nets\SimpleProtocol\SimpleProtocol.pdf" SelfReg="false" Sequence="139"/>
+    <ROW File="SimpleProtocol_IO.TXT" Component_="SimpleProtocol.cpn" FileName="Simple~1.TXT|SimpleProtocol_IO.TXT" Attributes="0" SourcePath="Sample Nets\SimpleProtocol\SimpleProtocol_IO.TXT" SelfReg="false" Sequence="141"/>
+    <ROW File="SimpleProtocol_IO.cpn" Component_="SimpleProtocol.cpn" FileName="Simple~2.cpn|SimpleProtocol_IO.cpn" Attributes="0" SourcePath="Sample Nets\SimpleProtocol\SimpleProtocol_IO.cpn" SelfReg="false" Sequence="140"/>
+    <ROW File="SimpleProtocol_OG.cpn" Component_="SimpleProtocol.cpn" FileName="Simple~3.cpn|SimpleProtocol_OG.cpn" Attributes="0" SourcePath="Sample Nets\SimpleProtocol\SimpleProtocol_OG.cpn" SelfReg="false" Sequence="142"/>
+    <ROW File="SimpleProtocol_OG.pdf" Component_="SimpleProtocol.cpn" FileName="Simple~2.pdf|SimpleProtocol_OG.pdf" Attributes="0" SourcePath="Sample Nets\SimpleProtocol\SimpleProtocol_OG.pdf" SelfReg="false" Sequence="143"/>
+    <ROW File="SimpleProtocol_RP.cpn" Component_="SimpleProtocol.cpn" FileName="Simple~4.cpn|SimpleProtocol_RP.cpn" Attributes="0" SourcePath="Sample Nets\SimpleProtocol\SimpleProtocol_RP.cpn" SelfReg="false" Sequence="144"/>
+    <ROW File="Telephones.cpn" Component_="Telephones.cpn" FileName="Teleph~1.cpn|Telephones.cpn" Attributes="0" SourcePath="Sample Nets\Telephones\Telephones.cpn" SelfReg="false" Sequence="145"/>
+    <ROW File="Telephones.pdf" Component_="Telephones.cpn" FileName="Teleph~1.pdf|Telephones.pdf" Attributes="0" SourcePath="Sample Nets\Telephones\Telephones.pdf" SelfReg="false" Sequence="146"/>
+    <ROW File="TimedProtocol.cpn" Component_="TimedProtocol.cpn" FileName="TimedP~1.cpn|TimedProtocol.cpn" Attributes="0" SourcePath="Sample Nets\TimedProtocol\TimedProtocol.cpn" SelfReg="false" Sequence="147"/>
+    <ROW File="TimedProtocol.pdf" Component_="TimedProtocol.cpn" FileName="TimedP~1.pdf|TimedProtocol.pdf" Attributes="0" SourcePath="Sample Nets\TimedProtocol\TimedProtocol.pdf" SelfReg="false" Sequence="148"/>
+    <ROW File="TimedResourceAlloc.cpn" Component_="TimedResourceAlloc.cpn" FileName="TimedR~1.cpn|TimedResourceAlloc.cpn" Attributes="0" SourcePath="Sample Nets\TimedResourceAlloc\TimedResourceAlloc.cpn" SelfReg="false" Sequence="149"/>
+    <ROW File="TimedResourceAlloc.pdf" Component_="TimedResourceAlloc.cpn" FileName="TimedR~1.pdf|TimedResourceAlloc.pdf" Attributes="0" SourcePath="Sample Nets\TimedResourceAlloc\TimedResourceAlloc.pdf" SelfReg="false" Sequence="150"/>
+    <ROW File="applet.html" Component_="applet.html" FileName="applet~1.htm|applet.html" Attributes="0" SourcePath="Sample Nets\DiningPhilosophers\applet\applet.html" SelfReg="false" Sequence="102"/>
+    <ROW File="arial.ttf" Component_="arial.ttf" FileName="arial.ttf" Attributes="0" SourcePath="fonts\arial.ttf" SelfReg="false" Sequence="73"/>
+    <ROW File="arrow.bmp" Component_="logo.ico" FileName="arrow.bmp" Attributes="0" SourcePath="images\arrow.bmp" SelfReg="false" Sequence="77"/>
+    <ROW File="arrow.cur" Component_="logo.ico" FileName="arrow.cur" Attributes="0" SourcePath="images\arrow.cur" SelfReg="false" Sequence="78"/>
+    <ROW File="arrow.png" Component_="logo.ico" FileName="arrow.png" Attributes="0" SourcePath="images\arrow.png" SelfReg="false" Sequence="79"/>
+    <ROW File="avlTree.sml" Component_="avlTree.sml" FileName="avlTree.sml" Attributes="0" SourcePath="cpnsim\statespacefiles\avlTree.sml" SelfReg="false" Sequence="12"/>
+    <ROW File="bothspoonsduke.gif" Component_="applet.html" FileName="bothsp~1.gif|bothspoonsduke.gif" Attributes="0" SourcePath="Sample Nets\DiningPhilosophers\applet\bothspoonsduke.gif" SelfReg="false" Sequence="103"/>
+    <ROW File="cpn.ML.x86_cygwin" Component_="cpn.ML.x86_cygwin" FileName="cpnML~1.x86|cpn.ML.x86-cygwin" Attributes="0" SourcePath="cpnsim\cpn.ML.x86-cygwin" SelfReg="false" Sequence="2"/>
+    <ROW File="cpn.ML.x86_darwin" Component_="cpn.ML.x86_cygwin" FileName="cpnML~2.x86|cpn.ML.x86-darwin" Attributes="0" SourcePath="cpnsim\cpn.ML.x86-darwin" SelfReg="false" Sequence="3"/>
+    <ROW File="cpn.ML.x86_linux" Component_="cpn.ML.x86_cygwin" FileName="cpnML~3.x86|cpn.ML.x86-linux" Attributes="0" SourcePath="cpnsim\cpn.ML.x86-linux" SelfReg="false" Sequence="4"/>
+    <ROW File="cpnmld.x86_cygwin.exe" Component_="cpnmld.x86_cygwin.exe" FileName="cpnmld~1.exe|cpnmld.x86-cygwin.exe" Attributes="0" SourcePath="cpnsim\cpnmld.x86-cygwin.exe" SelfReg="false" Sequence="153"/>
+    <ROW File="cpnmld.x86_darwin" Component_="cpn.ML.x86_cygwin" FileName="cpnmld~1.x86|cpnmld.x86-darwin" Attributes="0" SourcePath="cpnsim\cpnmld.x86-darwin" SelfReg="false" Sequence="5"/>
+    <ROW File="cpnmld.x86_linux" Component_="cpn.ML.x86_cygwin" FileName="cpnmld~2.x86|cpnmld.x86-linux" Attributes="0" SourcePath="cpnsim\cpnmld.x86-linux" SelfReg="false" Sequence="6"/>
+    <ROW File="cpntools.exe" Component_="cpntools.exe" FileName="cpntools.exe" Attributes="0" SourcePath="cpntools.exe" SelfReg="false" Sequence="1"/>
+    <ROW File="cyggcc_s_1.dll" Component_="cyggcc_s_1.dll" FileName="cyggcc~1.dll|cyggcc_s-1.dll" Attributes="0" SourcePath="cpnsim\cyggcc_s-1.dll" SelfReg="false" Sequence="157"/>
+    <ROW File="cygwin1.dll" Component_="cygwin1.dll" FileName="cygwin1.dll" Attributes="0" SourcePath="cpnsim\cygwin1.dll" SelfReg="false" Sequence="158"/>
+    <ROW File="default.txt" Component_="default.txt" FileName="default.txt" Attributes="0" SourcePath="Language\default.txt" SelfReg="false" Sequence="101"/>
+    <ROW File="defaults.xml" Component_="defaults.xml" FileName="defaults.xml" Attributes="0" SourcePath="defaults.xml" SelfReg="false" Sequence="72"/>
+    <ROW File="hungryduke.gif" Component_="applet.html" FileName="hungry~1.gif|hungryduke.gif" Attributes="0" SourcePath="Sample Nets\DiningPhilosophers\applet\hungryduke.gif" SelfReg="false" Sequence="106"/>
+    <ROW File="larrow.bmp" Component_="logo.ico" FileName="larrow.bmp" Attributes="0" SourcePath="images\larrow.bmp" SelfReg="false" Sequence="80"/>
+    <ROW File="larrow.cur" Component_="logo.ico" FileName="larrow.cur" Attributes="0" SourcePath="images\larrow.cur" SelfReg="false" Sequence="81"/>
+    <ROW File="larrow.png" Component_="logo.ico" FileName="larrow.png" Attributes="0" SourcePath="images\larrow.png" SelfReg="false" Sequence="82"/>
+    <ROW File="leftspoonduke.gif" Component_="applet.html" FileName="leftsp~1.gif|leftspoonduke.gif" Attributes="0" SourcePath="Sample Nets\DiningPhilosophers\applet\leftspoonduke.gif" SelfReg="false" Sequence="109"/>
+    <ROW File="logo.ico" Component_="logo.ico" FileName="32logo.ico" Attributes="0" SourcePath="images\32logo.ico" SelfReg="false" Sequence="76"/>
+    <ROW File="movecursor.bmp" Component_="logo.ico" FileName="movecu~1.bmp|movecursor.bmp" Attributes="0" SourcePath="images\movecursor.bmp" SelfReg="false" Sequence="83"/>
+    <ROW File="movecursor.cur" Component_="logo.ico" FileName="movecu~1.cur|movecursor.cur" Attributes="0" SourcePath="images\movecursor.cur" SelfReg="false" Sequence="84"/>
+    <ROW File="movecursor.png" Component_="logo.ico" FileName="movecu~1.png|movecursor.png" Attributes="0" SourcePath="images\movecursor.png" SelfReg="false" Sequence="85"/>
+    <ROW File="pancursor.bmp" Component_="logo.ico" FileName="pancur~1.bmp|pancursor.bmp" Attributes="0" SourcePath="images\pancursor.bmp" SelfReg="false" Sequence="86"/>
+    <ROW File="pancursor.cur" Component_="logo.ico" FileName="pancur~1.cur|pancursor.cur" Attributes="0" SourcePath="images\pancursor.cur" SelfReg="false" Sequence="87"/>
+    <ROW File="pancursor.png" Component_="logo.ico" FileName="pancur~1.png|pancursor.png" Attributes="0" SourcePath="images\pancursor.png" SelfReg="false" Sequence="88"/>
+    <ROW File="pollServer.java" Component_="applet.html" FileName="pollSe~1.jav|pollServer.java" Attributes="0" SourcePath="Sample Nets\DiningPhilosophers\applet\pollServer.java" SelfReg="false" Sequence="112"/>
+    <ROW File="resize_bl.cur" Component_="logo.ico" FileName="resize~1.cur|resize_bl.cur" Attributes="0" SourcePath="images\resize_bl.cur" SelfReg="false" Sequence="89"/>
+    <ROW File="resize_bottomleft.bmp" Component_="logo.ico" FileName="resize~1.bmp|resize_bottomleft.bmp" Attributes="0" SourcePath="images\resize_bottomleft.bmp" SelfReg="false" Sequence="90"/>
+    <ROW File="resize_bottomleft.png" Component_="logo.ico" FileName="resize~1.png|resize_bottomleft.png" Attributes="0" SourcePath="images\resize_bottomleft.png" SelfReg="false" Sequence="91"/>
+    <ROW File="resize_ew.bmp" Component_="logo.ico" FileName="resize~2.bmp|resize_ew.bmp" Attributes="0" SourcePath="images\resize_ew.bmp" SelfReg="false" Sequence="92"/>
+    <ROW File="resize_ew.cur" Component_="logo.ico" FileName="resize~2.cur|resize_ew.cur" Attributes="0" SourcePath="images\resize_ew.cur" SelfReg="false" Sequence="93"/>
+    <ROW File="resize_ew.png" Component_="logo.ico" FileName="resize~2.png|resize_ew.png" Attributes="0" SourcePath="images\resize_ew.png" SelfReg="false" Sequence="94"/>
+    <ROW File="resize_ns.bmp" Component_="logo.ico" FileName="resize~3.bmp|resize_ns.bmp" Attributes="0" SourcePath="images\resize_ns.bmp" SelfReg="false" Sequence="95"/>
+    <ROW File="resize_ns.cur" Component_="logo.ico" FileName="resize~3.cur|resize_ns.cur" Attributes="0" SourcePath="images\resize_ns.cur" SelfReg="false" Sequence="96"/>
+    <ROW File="resize_ns.png" Component_="logo.ico" FileName="resize~3.png|resize_ns.png" Attributes="0" SourcePath="images\resize_ns.png" SelfReg="false" Sequence="97"/>
+    <ROW File="resize_tl.cur" Component_="logo.ico" FileName="resize~4.cur|resize_tl.cur" Attributes="0" SourcePath="images\resize_tl.cur" SelfReg="false" Sequence="98"/>
+    <ROW File="resize_topleft.bmp" Component_="logo.ico" FileName="resize~4.bmp|resize_topleft.bmp" Attributes="0" SourcePath="images\resize_topleft.bmp" SelfReg="false" Sequence="99"/>
+    <ROW File="resize_topleft.png" Component_="logo.ico" FileName="resize~4.png|resize_topleft.png" Attributes="0" SourcePath="images\resize_topleft.png" SelfReg="false" Sequence="100"/>
+    <ROW File="rightspoonduke.gif" Component_="applet.html" FileName="rights~1.gif|rightspoonduke.gif" Attributes="0" SourcePath="Sample Nets\DiningPhilosophers\applet\rightspoonduke.gif" SelfReg="false" Sequence="114"/>
+    <ROW File="run.x86_cygwin.exe" Component_="run.x86_cygwin.exe" FileName="runx86~1.exe|run.x86-cygwin.exe" Attributes="0" SourcePath="cpnsim\run.x86-cygwin.exe" SelfReg="false" Sequence="154"/>
+    <ROW File="run.x86_darwin" Component_="cpn.ML.x86_cygwin" FileName="run~1.x86|run.x86-darwin" Attributes="0" SourcePath="cpnsim\run.x86-darwin" SelfReg="false" Sequence="7"/>
+    <ROW File="run.x86_linux" Component_="cpn.ML.x86_cygwin" FileName="run~2.x86|run.x86-linux" Attributes="0" SourcePath="cpnsim\run.x86-linux" SelfReg="false" Sequence="8"/>
+    <ROW File="ssglue.sml" Component_="avlTree.sml" FileName="ssglue.sml" Attributes="0" SourcePath="cpnsim\statespacefiles\ssglue.sml" SelfReg="false" Sequence="63"/>
+    <ROW File="switch1.sml" Component_="avlTree.sml" FileName="switch1.sml" Attributes="0" SourcePath="cpnsim\statespacefiles\switch1.sml" SelfReg="false" Sequence="64"/>
+    <ROW File="switch2.sml" Component_="avlTree.sml" FileName="switch2.sml" Attributes="0" SourcePath="cpnsim\statespacefiles\switch2.sml" SelfReg="false" Sequence="65"/>
+    <ROW File="switch3.sml" Component_="avlTree.sml" FileName="switch3.sml" Attributes="0" SourcePath="cpnsim\statespacefiles\switch3.sml" SelfReg="false" Sequence="66"/>
+    <ROW File="switch4.sml" Component_="avlTree.sml" FileName="switch4.sml" Attributes="0" SourcePath="cpnsim\statespacefiles\switch4.sml" SelfReg="false" Sequence="67"/>
+    <ROW File="switch5.sml" Component_="avlTree.sml" FileName="switch5.sml" Attributes="0" SourcePath="cpnsim\statespacefiles\switch5.sml" SelfReg="false" Sequence="68"/>
+    <ROW File="switch6.sml" Component_="avlTree.sml" FileName="switch6.sml" Attributes="0" SourcePath="cpnsim\statespacefiles\switch6.sml" SelfReg="false" Sequence="69"/>
+    <ROW File="switch7.sml" Component_="avlTree.sml" FileName="switch7.sml" Attributes="0" SourcePath="cpnsim\statespacefiles\switch7.sml" SelfReg="false" Sequence="70"/>
+    <ROW File="switch8.sml" Component_="avlTree.sml" FileName="switch8.sml" Attributes="0" SourcePath="cpnsim\statespacefiles\switch8.sml" SelfReg="false" Sequence="71"/>
+    <ROW File="title.jpg" Component_="applet.html" FileName="title.jpg" Attributes="0" SourcePath="Sample Nets\DiningPhilosophers\applet\title.jpg" SelfReg="false" Sequence="115"/>
+    <ROW File="verdana.pfa" Component_="arial.ttf" FileName="verdana.pfa" Attributes="0" SourcePath="fonts\verdana.pfa" SelfReg="false" Sequence="74"/>
+    <ROW File="verdana.ttf" Component_="arial.ttf" FileName="verdana.ttf" Attributes="0" SourcePath="fonts\verdana.ttf" SelfReg="false" Sequence="75"/>
+    <ROW File="xmllibrary.xml" Component_="New_net.cpn" FileName="xmllib~1.xml|xmllibrary.xml" Attributes="0" SourcePath="templates\xmllibrary.xml" SelfReg="false" Sequence="152"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.BuildComponent">
+    <ROW BuildKey="DefaultBuild" BuildName="DefaultBuild" BuildOrder="1" BuildType="0" PackageFolder="..\..\Documents and Settings\Administrator\Desktop" PackageFileName="CPN Tools" Languages="en" InstallationType="4"/>
+    <ATTRIBUTE name="CurrentBuild" value="DefaultBuild"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.DictionaryComponent">
+    <ROW Path="&lt;AI_DICTS&gt;ui.ail"/>
+    <ROW Path="&lt;AI_DICTS&gt;ui_en.ail"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.FragmentComponent">
+    <ROW Fragment="CommonUI.aip" Path="&lt;AI_FRAGS&gt;CommonUI.aip"/>
+    <ROW Fragment="FolderDlg.aip" Path="&lt;AI_THEMES&gt;classic\fragments\FolderDlg.aip"/>
+    <ROW Fragment="SequenceDialogs.aip" Path="&lt;AI_THEMES&gt;classic\fragments\SequenceDialogs.aip"/>
+    <ROW Fragment="Sequences.aip" Path="&lt;AI_FRAGS&gt;Sequences.aip"/>
+    <ROW Fragment="StaticUIStrings.aip" Path="&lt;AI_FRAGS&gt;StaticUIStrings.aip"/>
+    <ROW Fragment="UI.aip" Path="&lt;AI_THEMES&gt;classic\fragments\UI.aip"/>
+    <ROW Fragment="Validation.aip" Path="&lt;AI_FRAGS&gt;Validation.aip"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiAppSearchComponent">
+    <ROW Property="AI_IESEARCH" Signature_="AI_IESearchSgn" Builds="DefaultBuild"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiBinaryComponent">
+    <ROW Name="aicustact.dll" SourcePath="&lt;AI_CUSTACTS&gt;aicustact.dll"/>
+    <ROW Name="banner_image.jpg" SourcePath="&lt;AI_THEMES&gt;classic\resources\banner-image.jpg"/>
+    <ROW Name="dialog_image.jpg" SourcePath="&lt;AI_THEMES&gt;classic\resources\dialog-image.jpg"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiControlComponent">
+    <ATTRIBUTE name="FixedSizeBitmaps" value="0"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiControlEventComponent">
+    <ROW Dialog_="FolderDlg" Control_="Back" Event="NewDialog" Argument="WelcomeDlg" Condition="AI_INSTALL" Ordering="1"/>
+    <ROW Dialog_="WelcomeDlg" Control_="Next" Event="NewDialog" Argument="FolderDlg" Condition="AI_INSTALL" Ordering="1"/>
+    <ROW Dialog_="VerifyReadyDlg" Control_="Back" Event="NewDialog" Argument="FolderDlg" Condition="AI_INSTALL" Ordering="1"/>
+    <ROW Dialog_="FolderDlg" Control_="Next" Event="NewDialog" Argument="VerifyReadyDlg" Condition="AI_INSTALL" Ordering="15"/>
+    <ROW Dialog_="MaintenanceTypeDlg" Control_="Back" Event="NewDialog" Argument="MaintenanceWelcomeDlg" Condition="AI_MAINT" Ordering="1"/>
+    <ROW Dialog_="MaintenanceWelcomeDlg" Control_="Next" Event="NewDialog" Argument="MaintenanceTypeDlg" Condition="AI_MAINT" Ordering="2"/>
+    <ROW Dialog_="VerifyReadyDlg" Control_="Back" Event="NewDialog" Argument="PatchWelcomeDlg" Condition="AI_PATCH" Ordering="1"/>
+    <ROW Dialog_="PatchWelcomeDlg" Control_="Next" Event="NewDialog" Argument="VerifyReadyDlg" Condition="AI_PATCH" Ordering="3"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiCreateFolderComponent">
+    <ROW Directory_="SHORTCUTDIR" Component_="SHORTCUTDIR"/>
+    <ROW Directory_="Help_DIR" Component_="Help"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiCustActComponent">
+    <ROW Action="AI_PREPARE_UPGRADE" Type="65" Source="aicustact.dll" Target="PrepareUpgrade"/>
+    <ROW Action="AI_RESTORE_LOCATION" Type="65" Source="aicustact.dll" Target="RestoreLocation"/>
+    <ROW Action="AI_ResolveKnownFolders" Type="1" Source="aicustact.dll" Target="AI_ResolveKnownFolders"/>
+    <ROW Action="AI_STORE_LOCATION" Type="51" Source="ARPINSTALLLOCATION" Target="[APPDIR]"/>
+    <ROW Action="SET_APPDIR" Type="307" Source="APPDIR" Target="[ProgramFilesFolder][Manufacturer]\[ProductName]" MultiBuildTarget="DefaultBuild:[ProgramFilesFolder][ProductName]"/>
+    <ROW Action="SET_SHORTCUTDIR" Type="307" Source="SHORTCUTDIR" Target="[ProgramMenuFolder][ProductName]"/>
+    <ROW Action="SET_TARGETDIR_TO_APPDIR" Type="51" Source="TARGETDIR" Target="[APPDIR]"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiDrLocatorComponent">
+    <ROW Signature_="AI_IESearchSgn" Path="[SystemFolder]" Depth="0"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiEnvComponent">
+    <ROW Environment="PATH" Name="=-PATH" Value="[~];[APPDIR]\cpnsim\" Component_="cyggcc_s_1.dll"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiIconsComponent">
+    <ROW Name="SystemFolder_msiexec.exe" SourcePath="&lt;AI_RES&gt;uninstall.ico" Index="0"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiIniFileComponent">
+    <ROW IniFile="URL" FileName="Report~1.url|Report bug.url" DirProperty="Help_DIR" Section="InternetShortcut" Key="URL" Value="http://www.daimi.au.dk/~cpntools/bin/bugs/report.php" Action="0" Component_="SHORTCUTDIR"/>
+    <ROW IniFile="URL_1" FileName="Help.url" DirProperty="Help_DIR" Section="InternetShortcut" Key="URL" Value="http://wiki.daimi.au.dk/cpntools-help/cpntools-help.wiki" Action="0" Component_="SHORTCUTDIR"/>
+    <ROW IniFile="URL_2" FileName="CPNToo~1.url|CPN Tools Homepage.url" DirProperty="Help_DIR" Section="InternetShortcut" Key="URL" Value="http://www.cs.au.dk/CPNTools/" Action="0" Component_="SHORTCUTDIR"/>
+    <ROW IniFile="URL_3" FileName="Support.url" DirProperty="Help_DIR" Section="InternetShortcut" Key="URL" Value="http://wiki.daimi.au.dk/cpntools/technical_support.wiki" Action="0" Component_="SHORTCUTDIR"/>
+    <ROW IniFile="WorkingDirectory" FileName="Report~1.url|Report bug.url" DirProperty="Help_DIR" Section="InternetShortcut" Key="WorkingDirectory" Value="[SHORTCUTDIR]" Action="0" Component_="SHORTCUTDIR"/>
+    <ROW IniFile="WorkingDirectory_1" FileName="Help.url" DirProperty="Help_DIR" Section="InternetShortcut" Key="WorkingDirectory" Value="[SHORTCUTDIR]" Action="0" Component_="SHORTCUTDIR"/>
+    <ROW IniFile="WorkingDirectory_2" FileName="CPNToo~1.url|CPN Tools Homepage.url" DirProperty="Help_DIR" Section="InternetShortcut" Key="WorkingDirectory" Value="[SHORTCUTDIR]" Action="0" Component_="SHORTCUTDIR"/>
+    <ROW IniFile="WorkingDirectory_3" FileName="Support.url" DirProperty="Help_DIR" Section="InternetShortcut" Key="WorkingDirectory" Value="[SHORTCUTDIR]" Action="0" Component_="SHORTCUTDIR"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiInstExSeqComponent">
+    <ROW Action="AI_RESTORE_LOCATION" Condition="APPDIR=&quot;&quot;" Sequence="749"/>
+    <ROW Action="AI_STORE_LOCATION" Condition="Not Installed" Sequence="1501"/>
+    <ROW Action="AI_PREPARE_UPGRADE" Condition="AI_UPGRADE=&quot;No&quot; AND (Not Installed)" Sequence="1399"/>
+    <ROW Action="AI_ResolveKnownFolders" Sequence="51"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiInstallUISequenceComponent">
+    <ROW Action="AI_RESTORE_LOCATION" Condition="APPDIR=&quot;&quot;" Sequence="749"/>
+    <ROW Action="AI_ResolveKnownFolders" Sequence="51"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiLaunchConditionsComponent">
+    <ROW Condition="AI_IESEARCH" Description="[ProductName] cannot be installed on systems with Internet Explorer version smaller than [AI_MINIEVERCAPTION]" DescriptionLocId="AI.LaunchCondition.IE" IsPredefined="true" Builds="DefaultBuild"/>
+    <ROW Condition="Version9X OR (VersionNT AND (NOT VersionNT64)) OR (VersionNT64 &gt;= 601)" Description="[ProductName] cannot be installed on systems earlier than [WindowsTypeNT64]" DescriptionLocId="AI.LaunchCondition.NoSpecificNT64" IsPredefined="true" Builds="DefaultBuild"/>
+    <ROW Condition="Version9X OR VersionNT64 OR (VersionNT &gt;= 501)" Description="[ProductName] cannot be installed on systems earlier than [WindowsTypeNT]" DescriptionLocId="AI.LaunchCondition.NoSpecificNT" IsPredefined="true" Builds="DefaultBuild"/>
+    <ROW Condition="VersionNT" Description="[ProductName] cannot be installed on [WindowsFamily9X]" DescriptionLocId="AI.LaunchCondition.No9X" IsPredefined="true" Builds="DefaultBuild"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiShortsComponent">
+    <ROW Shortcut="Sample_CPN_Models" Directory_="PersonalFolder" Name="Sample~1|Sample CPN Models" Component_="ResourceAllocation.cpn" Target="[Sample_Nets_DIR]" Hotkey="0" IconIndex="0" ShowCmd="1"/>
+    <ROW Shortcut="Sample_CPN_Models_1" Directory_="SHORTCUTDIR" Name="Sample~1|Sample CPN Models" Component_="logo.ico" Target="[Sample_Nets_DIR]" Hotkey="0" IconIndex="0" ShowCmd="1"/>
+    <ROW Shortcut="Uninstall" Directory_="SHORTCUTDIR" Name="Uninst~2|Uninstall CPN Tools" Component_="SHORTCUTDIR" Target="[SystemFolder]msiexec.exe" Arguments="/x [ProductCode]" Hotkey="0" Icon_="SystemFolder_msiexec.exe" IconIndex="0" ShowCmd="1"/>
+    <ROW Shortcut="cpntools.exe" Directory_="SHORTCUTDIR" Name="CPNToo~2|CPN Tools" Component_="cpntools.exe" Target="[#cpntools.exe]" Hotkey="0" IconIndex="0" ShowCmd="1" WkDir="APPDIR"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiSignatureComponent">
+    <ROW Signature="AI_IESearchSgn" FileName="wininet.dll" MinVersion="[|AI_MINIEVERSION]"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiThemeComponent">
+    <ATTRIBUTE name="UsedTheme" value="classic"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiUpgradeComponent">
+    <ROW UpgradeCode="[|UpgradeCode]" VersionMax="[|ProductVersion]" Attributes="1025" ActionProperty="OLDPRODUCTS"/>
+  </COMPONENT>
+</DOCUMENT>

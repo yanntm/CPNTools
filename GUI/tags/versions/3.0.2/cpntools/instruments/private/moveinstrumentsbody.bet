@@ -1,0 +1,83 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../moveinstruments';
+
+-- MoveArcInstrumentRelevant:doPart --
+do false -> value;
+   (if true
+    // target## <= Arc## then       
+       target[] -> QUA
+       (# as:: Arc;
+       do ((thisObj.getCPNPage).getSelectedGroup).all -> value;
+       #);
+    // target## <= ArcInstance## then
+       target[] -> QUA
+       (# as:: ArcInstance;
+       do ((thisObj.theArc.getCPNPage).getSelectedGroup).all -> value;
+       #);
+   if);
+   
+-- BasicMovePageElementInstrumentApply:DoPart --
+do (# 
+   do target.startMove;
+      widget.cursors.move[] -> theHand.setTemporaryCursor;
+      &PageElementList[] -> targets[];
+      target.getCPNPage -> thePage[];
+      target[] -> targets.append;
+      (if (target[] -> (thePage.getSelectedGroup).isMember) then
+          (thePage.getSelectedGroup).scanElements
+          (#
+          do (if current[] <> target[] then
+                 (if NOT (current## <= BendPoint##) then
+                     current[] -> targets.append;
+                 if);
+             if);
+          #);
+      if);
+      targets[] -> SampleGeometry -> before[];
+      theHand.x -> startx;
+      theHand.y -> starty;
+      (startx, starty) -> globalToLocal -> (startx, starty);
+   #);
+-- ResizeElementInstrumentApply:DoPart --
+do (theHand[], hedge, vedge) -> chooseCursor;
+   theHand.anchor -> globalToLocal -> (startX, startY);
+   target[] -> getwidth -> startWidth -> beforeWidth;
+   target[] -> getheight -> startHeight -> beforeHeight;
+   NOTKNOWN -> directionOfResize;
+   &ElmSizeList[] -> theTargetList[];
+   target[] -> makeElmSize -> theTargetList.append;
+   target.getCPNPage -> thePage[];
+   (if (NOT (thePage.getSelectedGroup).all) AND (target[] -> (thePage.getSelectedGroup).isMember) then
+       (thePage.getSelectedGroup).scanElements
+       (#
+       do (if (current[] <> target[]) then
+              (if (current[] -> resizable) then
+                  current[] -> makeElmSize -> theTargetList.append;
+              if);
+          if);
+       #);
+   if);

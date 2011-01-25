@@ -1,0 +1,245 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../index';
+
+INCLUDE '../../cpnworkspace';
+
+-- SimpleDeclarationNodeNext:DoPart --
+do nextDeclarationNode.expandFatherNodes;
+   nextDeclarationNode[] -> elm[]; 
+      
+-- MonitorNodePrivate:Descriptor --
+(# theMonitor: ^Monitor;
+   dimmed: @boolean;
+#)
+
+-- MonitorNodeTextNodeGetName:DoPart --
+do theText[] -> name[];
+   inner;
+   
+-- MonitorNodePagesNodePrivate:Descriptor --
+(# theMonitor: ^Monitor;
+#)
+   
+-- MonitorNodePagesNodeBuildIndex:doPart --
+do (# thePages: @IDDictionary (# Element:: MonitorPageNode #); 
+      knownPages: @IDDictionary (# Element:: BooleanValue #);
+   do thePages.init;
+      knownPages.init;
+      scanIndexNodes
+      (# Type:: MonitorPageNode;
+      do (if current.expanded then
+             (current.thePage.id[], &TrueObject[]) 
+               -> knownPages.associate;
+          else
+             (current.thePage.id[], &FalseObject[]) 
+               -> knownPages.associate;             
+         if);
+      #);
+      clearIndexNodes;
+      private.theMonitor.scanNodeInstances
+      (# thePageNode: ^MonitorPageNode;
+         thePlaceNode: ^MonitorPlaceNode;
+         theTransitionNode: ^MonitorTransitionNode;
+         theBooleanObject: ^BooleanObject;
+      do current.thePageInstance.id[] -> thePages.lookup -> thePageNode[];
+         (if thePageNode[] = none then
+             &MonitorPageNode[] -> thePageNode[];
+             (current.thePageInstance[], theMonitor[]) -> thePageNode.init;
+             (current.thePageInstance.id[], thePageNode[]) -> thePages.associate;
+             thePageNode[] -> addIndexNode;
+             thePageNode.thePage.id[] 
+               -> knownPages.lookup
+               -> theBooleanObject[];
+             (if theBooleanObject[] <> none then
+                 theBooleanObject -> thePageNode.expanded;
+             if);
+         if);
+         (if addedNode[] = current[] then
+             true -> thePageNode.expanded;
+         if);
+         (if current## <= PlaceInstance## then
+             &MonitorPlaceNode[] -> thePlaceNode[];
+             (private.theMonitor[], current[]) -> thePlaceNode.init;
+             thePlaceNode[] -> thePageNode.addIndexNode;
+          else
+             &MonitorTransitionNode[] -> theTransitionNode[];
+             (private.theMonitor[], current[]) -> theTransitionNode.init;
+             theTransitionNode[] -> thePageNode.addIndexNode;
+         if);
+      #);
+      scanIndexNodes
+      (# 
+      do current.sortIndexNodesByName;
+      #);
+      sortIndexNodesByName;
+   #);
+   
+-- MonitorNodePagesNodeOnAdded:DoPart --
+do (if source## <= NodeInstance## then
+       source[] -> buildIndex;
+   if);
+   
+-- MonitorNodePagesNodeOnRemoved:DoPart --
+do (if source## <= NodeInstance## then
+       buildIndex;
+   if);
+   
+-- MonitorNodePagesNodeOnChanged:DoPart --
+do private.theMonitor.getNodeStatus -> getHighlight -> hilite_color[];
+   scanIndexNodes
+   (# 
+   do current.changed;
+      current.scanIndexNodes
+      (# 
+      do current.changed;
+      #);
+   #);
+   
+-- MonitorNodePagesNodeInit:DoPart --
+do theMonitor[] -> private.theMonitor[];
+   this(MonitorPagesNode)[] -> theMonitor.attach;
+   buildIndex;
+   
+-- MonitorMonitorDeclarationNodeInit:DoPart --
+do &SimpleDeclarationNode[] -> theDeclNode[];
+   theDeclaration[] -> theDeclNode.content[];
+   theDeclNode.init;
+   theDeclNode[] -> addIndexNode;
+   this(MonitorDeclarationNode)[] -> theDeclaration.attach;
+   setMonitorOnSheetTopName;
+   
+-- MonitorMonitorDeclarationNodeGetSheet:DoPart --
+do (# 
+   do theDeclNode.getSheet -> theSheet[];
+      theSheet[] -> qua
+      (# as:: TextSheet;
+      do monitorNameOnSheetTop[] -> thisObj.secondary[];
+      #);
+   #);
+   
+-- MonitorMonitorDeclarationNodeExpanderChanged:DoPart --
+do theDeclNode.expanderChanged;  
+   
+-- MonitorMonitorDeclarationNodeOnSemanticChanged:DoPart --
+do (# theCPNWorkSpace: ^CPNWorkspace;
+   do (if theDeclNode.content.mlDecl[] <> none then
+          theDeclNode.content.mlDecl.status -> getHighlight -> hilite_color[];
+      if);
+      setMonitorOnSheetTopName;
+      this(Workspace)[] -> theCPNWorkSpace[];
+      updateTheRightTabs:theCPNWorkSpace.scanBinders
+      (# 
+      do current.scanTextSheets
+         (# 
+         do current.toptab.onChanged;
+         #);
+      #);
+   #);
+   
+-- MonitorMonitorMonitorDeclarationNodeToolTip:DoPart --
+do theDeclNode.ToolTip -> theTip[];
+   
+-- MonitorNodeTypeNodeGetName:DoPart --
+do 'Type: ' -> name[];
+   private.theMonitor.typeAsString -> name.append;
+   
+-- MonitorNodeGetName:DoPart --
+do private.theMonitor.name[] -> name[];
+    
+-- MonitorNodeGetMonitor:DoPart --
+do private.theMonitor[] -> theMonitor[];
+   
+-- MonitorNodeOnChanged:DoPart --
+do (# dimChanged:
+        (# theNode: ^Node;
+        enter theNode[]
+        do (if private.dimmed then
+               theNode.dim;
+            else
+               theNode.undim;
+           if);
+           theNode.scanIndexNodes
+           (# 
+           do current[] -> dimChanged;
+           #);
+        #);
+   do (if private.dimmed <> private.theMonitor.disabled then
+          private.theMonitor.disabled -> private.dimmed;
+          this(MonitorNode)[] -> dimChanged;
+      if);      
+   #);
+   
+-- MonitorNodeOnAdded:DoPart --
+do 
+   
+-- MonitorNodeOnTextUpdated:DoPart --
+do private.theMonitor.semanticChanged;
+   
+-- MonitorNodeToolTip:DoPart --
+do private.theMonitor.qerrorMsg[] -> theTip[];
+   
+-- MonitorNodeInit:DoPart --
+do theMonitor[] -> private.theMonitor[];
+   this(MonitorNode)[] -> theMonitor.attach;
+   typeNode.init;
+   typeNode[] -> addIndexNode;
+   theMonitor.scanOptions
+   (# theOptionNode: ^OptionNode;
+   do (if true
+       // current## <= TextOption## then
+          &TextOptionNode[] -> theOptionNode[];
+          current[] -> theOptionNode.init;
+       // current## <= BooleanOption## then
+          &MonitorBooleanOptionNode[] -> theOptionNode[];
+          current[] -> theOptionNode.init;
+       else
+          'Unknown option!!!' -> debugtemp;
+      if); 
+      theOptionNode[] -> typeNode.addIndexNode;   
+   #);
+   
+   theMonitor[] -> pagesNode.init;
+   pagesNode[] -> addIndexNode;
+      
+   (# firstNode, previousNode: ^SimpleDeclarationNode;
+   do private.theMonitor.scanDeclarations
+      (# theNode: ^MonitorDeclarationNode;
+      do &MonitorDeclarationNode[] -> theNode[];
+         (private.theMonitor[], description[], current[]) -> theNode.init;
+         theNode[] -> addIndexNode;
+         (if firstNode[] = none then
+             theNode.theDeclNode[] -> firstNode[] -> previousNode[];
+         else
+             theNode.theDeclNode[] -> previousNode.nextDeclarationNode[];
+         if);
+         theNode.theDeclNode[] -> previousNode[];
+      #);
+      (if previousNode[] <> none then
+          firstNode[] -> previousNode.nextDeclarationNode[];
+      if);
+   #);
+   

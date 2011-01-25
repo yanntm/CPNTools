@@ -1,0 +1,317 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../cpnworkspace';
+INCLUDE '../instruments/binderinstruments';
+INCLUDE '../instruments/creationinstruments';
+INCLUDE '../instruments/deletioninstruments';
+INCLUDE '../instruments/groupinstruments';
+INCLUDE '../instruments/hierarchyinstruments';
+INCLUDE '../instruments/instancenodeinstruments';
+INCLUDE '../instruments/monitoringinstruments';
+INCLUDE '../instruments/simulationinstruments';
+INCLUDE '../instruments/statespaceinstruments';
+INCLUDE '../instruments/styleinstruments';
+INCLUDE '../instruments/toolinstruments';
+INCLUDE '../instruments/helpinstruments';
+INCLUDE '../instruments/userinterfaceinstruments';
+INCLUDE '../instruments/netinstruments';
+BODY 'private/floatingviewbody';
+INCLUDE '../resources/texts/texts';
+
+-- CpnWorkspaceLib: attributes --
+
+StyleTools: 
+  (# BlackCell: ^ToolCell;
+     SilverCell: ^ToolCell;
+     GrayCell: ^ToolCell;
+     WhiteCell: ^ToolCell;
+     MaroonCell: ^ToolCell;
+     RedCell: ^ToolCell;
+     PurpleCell: ^ToolCell;
+     FuchsiaCell: ^ToolCell;
+     GreenCell: ^ToolCell;
+     LimeCell: ^ToolCell;
+     OliveCell: ^ToolCell;
+     YellowCell: ^ToolCell;
+     NavyCell: ^ToolCell;
+     BlueCell: ^ToolCell;
+     TealCell: ^ToolCell;
+     AquaCell: ^ToolCell;
+     
+     LineWidthCell: ^CPNEditableNumberCell;
+     CycleArcHeadCell: ^ToolCell;
+     ToggleFillCell: ^ToolCell;
+     cloneGraphicsCell: ^ToolCell;
+     
+     theBlackInstrument: ^CPNGenericInstrument;
+     theSilverInstrument: ^CPNGenericInstrument;
+     theGrayInstrument: ^CPNGenericInstrument;
+     theWhiteInstrument: ^CPNGenericInstrument;
+     theMaroonInstrument: ^CPNGenericInstrument;
+     theRedInstrument: ^CPNGenericInstrument;
+     thePurpleInstrument: ^CPNGenericInstrument;
+     theFuchsiaInstrument: ^CPNGenericInstrument;
+     theGreenInstrument: ^CPNGenericInstrument;
+     theLimeInstrument: ^CPNGenericInstrument;
+     theOliveInstrument: ^CPNGenericInstrument;
+     theYellowInstrument: ^CPNGenericInstrument;
+     theNavyInstrument: ^CPNGenericInstrument;
+     theBlueInstrument: ^CPNGenericInstrument;
+     theTealInstrument: ^CPNGenericInstrument;
+     theAquaInstrument: ^CPNGenericInstrument;
+
+     theLineWidthInstrument: ^CPNGenericInstrument;
+     theCycleLinePatternInstrument: ^CPNGenericInstrument;
+     theCycleArcHeadInstrument: ^Instrument;
+     theToggleFillInstrument: ^Instrument;
+     theCloneGraphicsInstrument: ^Instrument;
+     
+     theCollection: ^ToolCollection;
+     list: ^ToolCellList;
+     theInstrumentList: ^InstrumentList;
+     theSheet: ^ToolSheet;
+     theBinder: ^Folder;
+     
+     
+     init: (# <<SLOT styletoolsinit: DoPart>> #);
+  #);
+
+CreateAuxTools:
+  (# createauxboxcell: ^toolCell;
+     createauxellipsecell: ^toolcell;
+     createauxlinecell: ^toolcell;
+     CreateauxlabelCell: ^toolcell;
+     createauxpngcell: ^toolcell;
+     
+     theauxboxinstrument: ^CreateAuxBoxinstrument;    
+     theauxellipseinstrument: ^CreateAuxEllipseInstrument;
+     theauxlineinstrument: ^CreateAuxLineInstrument;
+     theAuxLabelInstrument: ^CreateAuxLabelInstrument;
+     theauxpnginstrument: ^CreateAuxPNGInstrument;
+     
+     theCollection: ^ToolCollection;
+     list: ^ToolCellList;
+     theInstrumentList: ^InstrumentList;
+     theSheet: ^ToolSheet;
+     theBinder: ^Folder;
+     
+     
+     init: (# <<SLOT createauxinit:DoPart>> #);
+  #);
+
+CreatingTools: 
+  (# PlaceCell: ^ToolCell;
+     TransitionCell: ^ToolCell;
+     ArcCell: ^ToolCell;
+     DeleteCell: ^ToolCell;
+     CloneCell: ^ToolCell;
+     CycleArcCell: ^ToolCell;
+     HorizontalGuideCell: ^ToolCell;
+     VerticalGuideCell: ^ToolCell;
+     ToogleExplicitCell: ^ToolCell;
+     
+     thePlaceInstrument: ^CPNGenericInstrument;
+     theTransitionInstrument: ^CPNGenericInstrument;
+     theArcInstrument: ^CPNGenericInstrument;
+     theDeleteInstrument: ^GenericDeleteInstrument;
+     
+     
+     theCloneInstrument: ^CreateCloneInstrument;
+     
+     theCloneToolCellInstrument: ^CloneToolCellInstrument;
+     theSetArcDirectionInstrument: ^SetArcDirectionInstrument;
+     theHorizontalGuideInstrument: ^CreateHorizontalGuideInstrument;
+     theVerticalGuideInstrument: ^CreateVerticalGuideInstrument;
+     theToogleExplicitInstrument: ^ToogleExplicitInstrument;
+     
+     theCollection: ^ToolCollection;
+     list: ^ToolCellList;
+     theInstrumentList: ^InstrumentList;
+     theSheet: ^ToolSheet;
+     theBinder: ^Folder;
+     
+     
+     init: (# <<SLOT createtoolsinit: DoPart>> #);
+  #);
+
+SimulationTools: 
+  (# RewindCell: ^ToolCell;
+     StopCell: ^ToolCell;
+     OneStepCell: ^ToolCell;
+     PlayCell: ^CPNEditableNumberCell;
+     FastForwardCell: ^CPNEditableNumberCell;
+     BindManuallyCell: ^ToolCell;
+     MLEvaluateCell: ^ToolCell;
+     
+     theRewindInstrument: ^CPNInstrument;
+     theStopInstrument: ^CPNInstrument;
+     theOneStepInstrument: ^GenericInstrument;
+     thePlayInstrument: ^PlayInstrument;
+     theFastForwardInstrument: ^FastForwardInstrument;
+     theBindManuallyInstrument: ^BindManuallyInstrument;
+     theMLEvaluateInstrument: ^genericInstrument;
+     
+     theCollection: ^ToolCollection;
+     list: ^ToolCellList;
+     theInstrumentList: ^InstrumentList;
+     theSheet: ^ToolSheet;
+     theBinder: ^Folder;
+     
+     init: (# <<SLOT simulationtoolsinit: DoPart>> #);
+  #); 
+
+StateSpaceTools:
+  (# EnterStateSpaceCell: ^ToolCell;
+     CalcStateSpaceCell: ^ToolCell;
+     CalcSccCell: ^ToolCell;
+     SStoSimCell: ^CPNEditableNumberCell;
+     SimtoSSCell: ^ToolCell;
+     SaveReportCell: ^ToolCell;
+     DisplayNodeCell: ^CPNEditableNumberCell;
+     DisplaySuccessorsCell: ^ToolCell;
+     DisplayPredecessorsCell: ^ToolCell;
+     DisplayPartialSSGraphCell: ^ToolCell;
+     
+     theEnterStateSpaceInstrument: ^EnterStateSpaceInstrument;
+     theCalcStateSpaceInstrument: ^CalcStateSpaceInstrument;
+     theCalcSccInstrument: ^CalcSccInstrument;
+     theSStoSimInstrument: ^SStoSimInstrument;
+     theSimtoSSInstrument: ^SimtoSSInstrument;
+     theSaveReportInstrument: ^SaveReportInstrument;
+     theDisplayNodeInstrument: ^DisplayNodeInstrument;
+     theDisplaySuccessorsInstrument: ^DisplaySuccessorsInstrument;
+     theDisplayPredecessorsInstrument: ^DisplayPredecessorsInstrument;
+     theDisplayPartialSSGraphInstrument: ^DisplayPartialSSGraphInstrument;
+     
+     
+     theCollection: ^ToolCollection;
+     list: ^ToolCellList;
+     theInstrumentList: ^InstrumentList;
+     theSheet: ^ToolSheet;
+     theBinder: ^Folder;
+     
+     init: (# <<SLOT statespacetoolsinit: DoPart>> #);
+  #);
+
+HierarchyTools: 
+  (# InPortCell: ^ToolCell;
+     OutPortCell: ^ToolCell;
+     IOPortCell: ^ToolCell;
+     SetSubPageCell: ^ToolCell;
+     AssignPortSocketCell: ^ToolCell;
+     FusionCell: ^ToolCell;
+     MoveToSubPageCell: ^ToolCell;
+     FlattenCell: ^ToolCell;
+     
+     theInPortInstrument: ^InPortInstrument;
+     theOutPortInstrument: ^OutPortInstrument;
+     theIOPortInstrument: ^IOPortInstrument;
+     theSetSubPageInstrument: ^SetSubPageInstrument;
+     theAssignPortSocketInstrument: ^AssignPortSocketInstrument;
+     theFusionInstrument: ^FusionInstrument;
+     theMoveToSubPageInstrument: ^MoveToSubPageInstrument;
+     theFlattenInstrument: ^FlattenInstrument;
+     
+     theCollection: ^ToolCollection;
+     list: ^ToolCellList;
+     theInstrumentList: ^InstrumentList;
+     theSheet: ^ToolSheet;
+     theBinder: ^Folder;
+     
+     
+     init: (# <<SLOT hierarchytoolsinit: DoPart>> #);
+  #);
+
+ViewTools: 
+  (# ToggleGroupCell: ^ToolCell;
+     NewGroupCell: ^ToolCell;
+     
+     ClickZoomInCell: ^ToolCell;
+     ClickZoomOutCell: ^ToolCell;
+     ClickZoomFitCell: ^ToolCell;
+     
+     theToggleGroupInstrument: ^ToggleGroupInstrument;
+     theNewGroupInstrument: ^SimpleNewGroupInstrument;
+     
+     theClickZoomInInstrument: ^ClickZoomInInstrument;
+     theClickZoomOutInstrument: ^ClickZoomOutInstrument;
+     theClickZoomFitInstrument: ^ClickZoomFitInstrument;
+     
+     theCollection: ^ToolCollection;
+     theInstrumentList: ^InstrumentList;
+     theSheet: ^ToolSheet;
+     theBinder: ^Folder;
+     
+     init: (# <<SLOT viewtoolsinit: DoPart>> #);
+  #);
+
+NetTools: 
+  (# loadCell: ^ButtonCell;
+     saveAsCell: ^ToolCell;
+     saveCell: ^ToolCell;
+     saveNetAndSimulator: ^ToolCell;
+     newNetCell: ^ButtonCell;
+     newPageCell: ^ToolCell;     
+     closeNetCell: ^ToolCell;
+     helpCell: ^ToolCell;
+     printCell: ^ToolCell;
+     theLoadNetInstrument: ^LoadNetInstrument;
+     theSaveNetAsInstrument: ^SaveNetAsInstrument;
+     theSaveNetInstrument: ^SaveNetInstrument;
+     theSaveNetAndSimulatorInstrument: ^SaveNetAndSimulatorInstrument;
+     theCreateNetInstrument: ^CreateNetInstrument;
+     theCreatePageIndexInstrument: ^CreatePageIndexInstrument;    
+     theCloseNetInstrument: ^Instrument;
+     thePrintInstrument: ^PrintInstrument;
+     theHelpInstrument: ^HelpInstrument;
+     
+     theCollection: ^ToolCollection;
+     theInstrumentList: ^InstrumentList;
+     theSheet: ^ToolSheet;
+     theBinder: ^Folder;     
+     
+     init: (# <<SLOT netToolsInit: DoPart>> #);
+  #);
+
+MonitoringTools:
+  (# dataCollectionCell, markingSizeCell: ^ToolCell;
+     breakpointCell, userDefinedCell: ^ToolCell; 
+     writeInFileCell, listLengthCell: ^ToolCell;
+     countTransitionOccurCell, placeContentBreakCell: ^ToolCell;
+     transitionEnabledCell: ^ToolCell;
+     theDataCollectionInstrument: ^DataCollectionInstrument;
+     theMarkingSizeInstrument: ^MarkingSizeInstrument;
+     theBreakpointInstrument: ^BreakpointInstrument;
+     theUserDefinedInstrument: ^UserDefinedInstrument;
+     theWriteInFileInstrument: ^WriteInFileInstrument;
+     theListLengthDataCollectionInstrument: ^ListLengthDataCollectionInstrument;
+     theCountTransitionOccurrenceDataCollectionInstrument: ^CountTransitionOccurrenceDataCollectionInstrument;
+     thePlaceContentBreakpointInstrument: ^PlaceContentBreakpointInstrument;
+     theTransitionEnabledBreakpointInstrument: ^TransitionEnabledBreakpointInstrument;     
+     theCollection: ^ToolCollection;
+     theInstrumentList: ^InstrumentList;
+     init: (# <<SLOT MonitoringToolsInit:DoPart>> #);
+  #);

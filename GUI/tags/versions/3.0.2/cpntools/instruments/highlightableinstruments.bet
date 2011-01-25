@@ -1,0 +1,340 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../cpnworkspace';
+
+INCLUDE 'cpninstrument';
+INCLUDE 'moveinstruments';
+
+BODY 'private/highlightableinstrumentsbody';
+
+-- CPNWorkSpaceLib: Attributes --
+
+PortSocketHighLightInstrument: Instrument
+  (# TargetType:: PortType;
+     lastSockets: @PlaceInstanceList;     
+     lastPageInstance: ^PageInstance;
+     relevant:: (# do false -> value; #);
+     addHighlight: @boolean;
+     onMouseFloat:: (# <<SLOT PortSocketHighLightInstrumentOnMouseFloat:DoPart>> #);       
+  #);
+
+SubpageInstanceHighlightInstrument: Instrument
+  (# TargetType:: SubpageInfo;
+     relevant:: (# do false -> value; #);
+     highlightAdded: @boolean;
+     theSubpageInstance: ^PageInstance;
+     theTransitionInstance: ^TransitionInstance;
+     onMouseFloat:: (# <<SLOT SubpageInstanceHighlightInstrumentOnMouseFloat:doPart>> #);       
+  #);
+
+PageElementHighLightInstrument: Instrument
+  (# LastFather: ^PageElement;
+     
+     relevant:: (# do false -> value; #);
+     
+     onMouseFloat::<
+       (# theTarget: ^TargetType;
+          CurrentFather: ^PageElement;
+          removing:< Object;
+          adding:< Object;
+       do INNER;
+          (if LastFather[] <> CurrentFather[] then
+              (if LastFather[] <> NONE then
+                  LastFather.lowlight;
+                  LastFather.changed;
+                  removing;
+              if);
+              (if CurrentFather[] <> NONE then
+                  CurrentFather.highlight;
+                  CurrentFather.changed;
+                  adding;
+              if);
+              CurrentFather[] -> LastFather[];
+          if);
+       #);
+  #);
+  
+ShowInscriptionFatherHighLightInstrument: PageElementHighLightInstrument
+  (# TargetType:: Inscription;
+     
+     onMouseFloat:: 
+       (# 
+       do search: theHand.over.scan
+            (#
+            do current.scan
+               (#
+               do (if current## <= CPNSheet## then
+                      leave search;
+                   else 
+                      (if true
+                       // current## <= PlaceInscription## then
+                          current[] -> QUA
+                          (# as::PlaceInscription;
+                          do thisObj.getPlace -> CurrentFather[];
+                          #);
+                          leave search;
+                       // current## <= TransitionInscription## then
+                          current[] -> QUA
+                          (# as::TransitionInscription;
+                          do thisObj.getTransition -> CurrentFather[];
+                          #);
+                          leave search;
+                       // current## <= Annotation## then
+                          current[] -> QUA
+                          (# as::Annotation;
+                          do thisObj.getArc -> CurrentFather[];
+                          #);
+                          leave search;
+                      if);
+                  if);
+               #);
+            #);
+       #);      
+  #);
+
+ShowMarkingPlaceHighLightInstrument: PageElementHighLightInstrument
+  (# TargetType:: SimulationItem;
+     
+     onMouseFloat:: 
+       (# 
+       do search: theHand.over.scan
+            (#
+            do current.scan
+               (#
+               do (if current## <= CPNSheet## then
+                      leave search;
+                   else 
+                      (if (current## <= Token##) OR (current##<=PlaceMarking##) then
+                          current[] -> theTarget[];
+                          theTarget.instance.thePlace[] -> CurrentFather[];
+                          leave search;
+                      if);
+                  if);
+               #);
+            #);
+       #);
+  #);
+
+ShowHierInfoFatherHighLightInstrument: PageElementHighLightInstrument
+  (# TargetType:: FusionInfo;
+     highlightedPlaces: @PlaceList;
+     init:: (# <<SLOT ShowHierInfoFatherHighLightInstrumentInit:doPart>> #);
+     onMouseFloat::
+       (# adding:: (# <<SLOT ShowHierInfoFatherHighLightInstrumentAdding:doPart>> #);
+          removing:: (# <<SLOT ShowHierInfoFatherHighLightInstrumentRemoving:doPart>> #);
+       <<SLOT ShowHierInfoFatherHighLightInstrumentOnMouseFloat:doPart>> 
+       #);      
+  #);
+
+ShowDescriptorDialogFatherHighlightInstrument: PageElementHighlightInstrument
+  (# TargetType:: DescriptorDialog;
+     onMouseFloat::
+       (# 
+       do search: theHand.over.scan
+            (# 
+            do current.scan
+		 (# theNodeDescriptor: ^SSNodeDescriptorDialog;
+               do (if current## <= CPNSheet## then
+                      leave search;
+                   else 
+		      (if true
+		       // current## <= SSNodeDescriptorDialog## then
+		          current[] -> QUA
+                          (# as::SSNodeDescriptorDialog;
+			  do thisObj[] -> theNodeDescriptor[]
+                          #);
+			  (if theNodeDescriptor.visible then
+    			      theNodeDescriptor.theSSNode[] -> CurrentFather[];
+			  if);
+                          leave search;
+		       // current## <= SSArcDescriptorDialog## then
+		          current[] -> QUA
+                          (# as::SSArcDescriptorDialog;
+			  do thisObj.theSSArc[] -> currentFather[];
+                          #);
+                          leave search;
+                      if);
+                  if);
+               #);
+            #);
+       #);
+  #);
+
+TraceOverInstrument: Instrument
+  (# onMouseFloat::
+       (#
+       do (if (debugTraceOver## -> debugEnabled) then
+              '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~' -> debugTraceOver;
+              (if theHand.over[] <> NONE then
+                  theHand.over.scan
+                  (#
+                  do current.scan
+                     (# theCPNSheet: ^CPNSheet;
+                     do (if current## <= CPNSheet## then
+                            current[] -> theCPNSheet[];
+                            '%s: %s (%d) '->debugTraceOver(# do current[] -> getPatternName ->s; theCPNSheet.content.thepage.thename.copy->s; theCPNSheet.content.mlinstancenumber->d; #);
+                         else
+                            current[] -> getPatternName -> debugTraceOver;
+                        if);
+                     #);
+                     '---------------------------' -> debugTraceOver;
+                  #);
+              if);
+          if);
+       #);
+  #);
+
+HighlightDependsInstrument: Instrument
+  (# relevant:: (# do false -> value; #);     
+     dependHalos: @HighlightableIDDictionary;
+     cpnpages: @CPNPageIDDictionary;
+     clearDependHalo: (# <<SLOT HighlightDependsInstrumentClearDependHalo:DoPart>> #);
+     setDependHalo:
+       (# target: ^Decl;
+       enter target[]
+       <<SLOT HighlightDependsInstrumentSetDependHalo:DoPart>>        
+       #);
+     setOnlyDependHalo:
+       (# target: ^Decl;
+       enter target[]
+       <<SLOT HighlightDependsInstrumentSetOnlyDependHalo:doPart>>
+       #);
+     setDependHaloFromNode:
+       (# target: ^NodeInstance;
+       enter target[]
+       <<SLOT HighlightDependsInstrumentSetDependHaloFromNode:DoPart>>
+       #);
+     highlightMonitor:
+       (# mon: ^AbstractMonitor;
+          col: ^Color;
+       enter (mon[], col[])
+       do (if (mon[] <> none) and
+              ((mon.id[], mon[]) -> dependHalos.associate) then
+              col[] -> mon.setHalo;
+              (mon.getFatherMonitor, col[]) -> highlightMonitor;
+          if);
+       #);
+     highlightDeclaration:
+       (# elm: ^Declaration;
+          col: ^Color;
+       enter (elm[], col[])
+       do (if (elm[] <> none) and
+              ((elm.id[], elm[]) -> dependHalos.associate) then
+              col[] -> elm.setHalo;
+              (elm.getParent, col[]) -> highlightDeclaration;
+          if);
+       #);     
+     highlightSubpagesHalo:
+       (# thePage: ^CPNPage
+       enter thePage[]
+       do (if (thePage.id[] -> cpnpages.lookup) = none then
+              depend_color -> thePage.setSubpagesHalo;
+              (thePage.id[], thePage[]) -> cpnpages.associate; 
+              thePage.scanTopCPNpages
+              (# 
+              do current[] -> highlightSubpagesHalo;
+              #);
+          if);
+       #);      
+     setDependHaloFromMonitor:
+       (# target: ^Monitor;
+       enter target[]
+       <<SLOT HighlightDependsInstrumentSetDependHaloFromMonitor:DoPart>>
+       #);
+     oldtarget: ^Entity;
+     
+     onMouseFloat::
+       (# target: ^Entity;
+          thePageInstance: ^PageInstance;
+       do (if theHand.over[] <> NONE then
+              search: theHand.over.scan
+                (#
+                do current.scan
+                   (#
+                   do (if true
+                       // (current## <= theIndex.AbstractDeclNode##) or
+                          (current## <= theIndex.MonitorNode##) or
+                          (current## <= Node##) then
+                          current[] -> target[];
+                       // current## <= CPNSheet## then
+                          current[] -> qua
+                          (# as:: CPNSheet;
+                          do thisObj.content[] -> thePageInstance[]
+                          #);
+                          leave search;                          
+                      if);
+                   #);
+                #);
+              (if (target[] <> none) then
+                  (if target## <= Node## then
+                      target.id[] -> thePageInstance.lookupNodeInstance -> target[];
+                  if);
+                  (if target[] <> oldtarget[] then
+                      (if oldtarget[] <> NONE then
+                          clearDependHalo;
+                      if);
+                      target[] -> delay.target[];
+                      delay.reset;
+                      target[] -> oldtarget[];
+                  if);
+               else
+                  (if oldtarget[] <> none then
+                      clearDependHalo;
+                      none -> oldtarget[];
+                  if);
+              if);
+          if);
+       #);
+
+     delay: @widget.timer
+       (# target: ^Entity;
+          reset:
+            (#
+            do stop;
+               500 -> start;
+            #);
+          action::
+            (# indexDecl: ^theIndex.AbstractDeclNode;
+            do stop;
+               (if target[] <> NONE then
+                   (if true
+                    // (target## <= theIndex.AbstractDeclNode##) then
+                       target[] -> indexDecl[];
+                       indexDecl.content.mldecl[] -> setDependHalo;
+                    // target## <= theIndex.MonitorNode## then
+                       target[] -> qua
+                       (# as:: theIndex.MonitorNode;
+                       do thisObj.getMonitor -> setDependHaloFromMonitor;
+                       #);
+                    // target## <= NodeInstance## then
+                       target[] -> setDependHaloFromNode;
+                   if);
+               if);
+            #);
+       #);
+  #);
+
+

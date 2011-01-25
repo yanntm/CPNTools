@@ -1,0 +1,335 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '~beta/xml/xml';
+INCLUDE '~beta/basiclib/numberio';
+INCLUDE '~beta/postwimp/workspace';
+INCLUDE '../cpntools/debug';
+
+-- XMLLib: attributes --
+createElement:
+  (# tag: ^text;
+     elm: ^Element;
+  enter tag[]
+  do &Element[] -> elm[];
+     tag[] -> elm.tag[];
+  exit elm[]
+  #);
+
+createDataElement:
+  (# data: ^text;
+     dataElm: ^DataElement;
+  enter data[]
+  do &DataElement[] -> dataElm[];
+     data.copy -> dataElm.data[];
+  exit dataElm[]
+  #);
+
+IDDictionary: Dictionary
+  (# Key::Text;
+     Element::Text;
+     keyEqual::(# do left[] -> right.equal -> value; #);
+     hashFunction::
+       (# index, max: @integer;      
+       do k.length -> index;
+          maxInt / 2 -> max;
+          while:
+            (if index > 0 then
+                131 * value + k.T[index] -> value;
+                value mod max -> value;
+                index - 1 -> index;
+                restart while;
+            if);
+       #);
+  #);
+
+maxID: IntegerValue
+  (# isInt: BooleanValue
+       (# theText: ^Text;
+       enter theText[]
+       do true -> value;
+          scan: theText.scanAll
+          (# 
+          do (if (ch < 48) or (ch > 57) then
+                 false -> value;
+                 leave scan;
+             if);
+          #);
+       #);
+     findMax:
+       (# e: ^Element;
+          curid: ^Text; 
+       enter e[]
+       do e.scanAttributes
+          (# 
+          do (if 'id' -> current.key.equal then
+                 (1,2) -> current.value.sub -> curid[];
+                 (if ('id' -> curid.equalNCS) then
+                     ((3, current.value.length) -> current.value.sub) -> curid[];
+                     (if curid[] -> isInt then
+                         (curid.asInt, value) -> max -> value;
+                     if);
+                  else
+                     (* do nothing, just like the hashfunction above *)
+                 if);
+             if);
+          #);
+          e.scanElements
+          (# 
+          do current[] -> findMax;
+          #);
+       #);
+     e: ^Element;
+  enter e[]
+  do 0 -> value;
+     e[] -> findMax;
+  #);
+
+renewID:
+  (# elm: ^Element;
+     idd: ^IDDictionary;
+     theWorld: ^World;
+  enter (elm[], theWorld[])
+  do &IDDictionary[] -> idd[];
+     idd.init;
+     (idd[], theWorld[]) -> elm.renewid;
+     idd[] -> elm.renewIDRef;
+  #);
+
+debug:
+  (# elm: ^Element;
+  enter elm[]
+  do (if debugging and (debugXML## -> debugEnabled) then
+         '<!-- ---------------XML:Start------------------ -->' -> debugXML;
+         (elm[], screen[]) -> print;
+         newline;
+         '<!-- ---------------XML:Stop------------------- -->' -> debugXML;
+     if);
+  #);
+
+-- XMLAbstractElementLib: attributes --
+
+
+-- XMLElementLib: attributes --
+
+renewID:
+  (# idd: ^IDDictionary;
+     theWorld: ^World;
+     newid: ^Text;
+  enter (idd[], theWorld[])
+  do scanAttributes
+     (# 
+     do (if 'id' -> current.key.equal then
+            theWorld.uniqueID -> newid[];
+            (current.value[], newid[]) -> idd.associate;
+            newid[] -> current.value[];
+        if);
+     #);
+     scanElements
+     (# 
+     do (idd[], theWorld[]) -> current.renewID;
+     #);
+  #);
+
+renewIDRef:
+  (# idd: ^IDDictionary;
+     newid: ^Text;
+  enter idd[]
+  do scanAttributes
+     (# 
+     do (if 'idref' -> current.key.equal then
+            current.value[] -> idd.lookup -> newid[];
+            (if (newid[] <> none) and not ('' -> newid.equal) then
+                newid[] -> current.value[];
+            if);
+        if);
+     #);
+     scanElements
+     (# 
+     do idd[] -> current.renewIDRef;
+     #);
+  #);
+
+changeAttribute: lookup
+  (# newValue: ^Text;
+  enter newValue[]
+  do (if newValue[] <> none then
+         newValue.copy -> current.value[];
+      else
+         '' -> current.value[];
+     if);
+  #);
+
+changeIntAttribute: lookup
+  (# newValue: @Integer;
+  enter newValue
+  do &Text[] -> current.value[];
+     newValue -> current.value.putint;
+  #);
+
+createAttribute:
+  (# key: ^text;
+     value: ^text;
+     atr: ^Attribute;
+  enter key[] 
+  do &Attribute[] -> atr[];
+     key[]-> atr.key[];
+     &text[] -> value[];
+     INNER;
+     value[] -> atr.value[];
+     atr[] -> this(Element).addAttribute;
+  #);
+
+createRealAttribute: createAttribute
+  (# realValue: @Real;
+  enter realValue
+  do realValue -> value.putReal;
+  #);
+
+createIntAttribute: createAttribute
+  (# intValue: @Integer;
+  enter intValue
+  do intValue -> value.putInt;
+  #);
+
+createTextAttribute: createAttribute
+  (# textValue: ^text;
+  enter textValue[]
+  do (if textValue[] <> none then
+         textValue.copy -> value.putText;
+      else
+         '' -> value.putText;
+     if);
+  #);
+
+createBoolAttribute: createAttribute
+  (# boolValue: @Boolean;
+  enter boolValue
+  do (if boolValue then
+         'true' -> value.putText;
+      else
+         'false' -> value.putText;
+     if);
+  #);
+
+createColorAttribute: createAttribute
+  (# colorValue: ^Color;
+  enter colorValue
+  do '(%f,%f,%f)' -> value.putformat(# do colorValue.rgb -> (f,f,f); #);
+  #);
+
+get:
+  (# key: ^Text;
+     current: ^Element;
+     found: @Boolean;
+  enter key[]
+  do search: scanElements
+       (# 
+       do current[] -> this(get).current[];
+          INNER get;
+          (if found then leave search if);
+       #)
+  exit current[]
+  #);
+
+getChild: get
+  (# 
+  do key[] -> current.tag.equalNCS -> found; 
+  #);
+
+lookup:
+  (# key: ^Text;
+     value: ^Text;
+     current: ^Attribute;
+  enter key[]
+  do search: scanAttributes
+       (# 
+       do (if key[] ->current.key.equal then
+              current[] -> this(lookup).current[];
+              current.value[] -> value[];
+              value.reset;
+              INNER lookup;
+              leave search;
+          if);
+       #);
+  #);
+
+lookupReal: lookup
+  (# r: @Real;
+  do value.getReal -> r;
+  exit r
+  #);
+
+lookupRealObject: lookup
+  (# r: ^RealObject;
+  do &RealObject[] -> r[];
+     value.getReal -> r;
+  exit r[]
+  #);
+
+lookupText: lookup
+  (#   
+  exit value[]
+  #);
+
+lookupInt: lookup
+  (# i:@Integer;
+  do value.getInt ->i;
+  exit i
+  #);
+
+lookupIntegerObject: lookup
+  (# i: ^IntegerObject;
+  do &IntegerObject[] -> i[];
+     value.getInt -> i;
+  exit i[]
+  #);
+
+lookupBool: lookup
+  (# b: @Boolean;
+  do ('true' -> value.equalNCS) -> b;
+  exit b
+  #);
+
+lookupBooleanObject: lookup
+  (# b: ^BooleanObject;
+  do &BooleanObject[] -> b[];
+     ('true' -> value.equalNCS) -> b;
+  exit b[]
+  #);
+
+lookupColor: lookup
+  (# c: ^Color;
+     v:[3] @Text;
+     p: @Integer;
+     cr,cg,cb: @Real;
+  do '(%f,%f,%f)' -> value.getFormat(# do (f,f,f) -> (cr,cg,cb); #);
+     (cr,cg,cb) -> &Color -> c[]
+  exit c[]
+  #);
+
+-- XMLDataElementLib: attributes --
+
+-- XMLAttributeLib: attributes --
