@@ -1,0 +1,173 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN 'cpnmenu';
+
+INCLUDE '../instruments/monitoringinstruments';
+
+-- CPNworkspacelib:attributes --
+GeneralMonitorMenu: CPNMenu
+  (# TargetType::< theIndex.AbstractMonitorNode;
+     CloneItem::
+       (# init::
+            (# 
+            do &CloneAbstractMonitorInstrument[] -> theInstrument[];
+               theInstrument.init;
+               NamesCloneAbstractMonitor -> getGlobalNames -> name[];
+            #);
+       #);
+     LeftItem::
+       (# init::
+            (# 
+            do &AppendMonitorBlockInstrument[] -> theInstrument[];
+               theInstrument.init;
+               NamesAppendMonitorBlock -> getGlobalNames -> name[];
+            #);          
+       #);
+     RightItem::
+       (# init::
+            (# 
+            do &DisableMonitorInstrument[] -> theInstrument[];
+               theInstrument.init;               
+            #);
+          makeDynamicName::
+            (#
+            do (if (target.getMonitor).disabled then
+                   NamesEnableMonitor -> getGlobalNames -> txt[];
+                else
+                   NamesDisableMonitor -> getGlobalNames -> txt[];
+               if);
+            #);
+       #);     
+     DeleteItem::
+       (# init::
+            (# 
+            do &DeleteMonitorInstrument[] -> theInstrument[];
+               theInstrument.init;
+            #);
+          makeDynamicName::
+            (# value: @boolean;
+            do target## <= theIndex.MonitorNode## -> value;
+               (if not value then
+                   target[] -> qua
+                   (# as:: theIndex.MonitorBlockNode;
+                   do not thisObj.IsGlobal -> value;
+                   #);
+               if);
+               (if value then
+                   NamesDeleteMonitor -> getGlobalNames -> txt[];       
+                else
+                   ' ' -> txt[];
+               if);
+            #);
+       #);
+  #);
+MonitorMenu: GeneralMonitorMenu
+  (# TargetType:: theIndex.MonitorNode;
+     BottomRightItem::
+       (# init::
+            (# 
+            do &GenerateNewTemplateCodeInstrument[] -> theInstrument[];
+               theInstrument.init;
+               NamesGenerateNewTemplateCode -> getGlobalNames -> name[];
+            #);
+       #);
+  #);
+MonitorBlockMenu: GeneralMonitorMenu (# #);
+MonitorPagesMenu: CPNMenu
+  (# TargetType:: theIndex.MonitorPagesNode;
+     CloneItem::
+       (# init::
+            (# 
+            do &CreateGroupOfMonitorNodesInstrument[] -> theInstrument[];
+               theInstrument.init;
+               NamesCreateGroupOfMonitorNodes -> getGlobalNames -> name[];
+            #);
+       #);
+  #);
+MonitorPageNodeMenu: CPNMenu
+  (# TargetType:: theIndex.MonitorPageNode;
+     DeleteItem::
+       (# init::
+            (# 
+            do &RemoveNodesOnPageInstanceFromMonitorInstrument[] -> theInstrument[];
+               theInstrument.init;
+               NamesRemoveAllNodesOnPage -> getGlobalNames -> name[];
+            #);
+       #);
+  #);
+MonitorNodeNodeMenu: CPNMenu
+  (# TargetType:: theIndex.MonitorNodeNode;
+     CloneItem::
+       (# init::
+            (# 
+            do &AddSurroundingNodesToMonitorInstrument[] -> theInstrument[];
+               theInstrument.init;
+            #);
+          makeDynamicName::
+            (# 
+            do (if (target[], theHand[]) -> theInstrument.relevant then
+                   (if target## <= theIndex.MonitorPlaceNode## then
+                       NamesAddTransitions -> getGlobalNames -> txt[];    
+                    else
+                       NamesAddPlaces -> getGlobalNames -> txt[];
+                   if);
+                else
+                   ' ' -> txt[];
+               if);
+            #);
+       #);
+     DeleteItem::
+       (# init:: 
+            (# 
+            do &RemoveNodeFromMonitorInstrument[] -> theInstrument[];
+               theInstrument.init;
+            #);
+          makeDynamicName::
+            (# 
+            do (if (target[], theHand[]) -> theInstrument.relevant then
+                   (if target## <= theIndex.MonitorPlaceNode## then
+                       NamesMonitorRemovePlace -> getGlobalNames -> txt[];
+                    else
+                       NamesMonitorRemoveTransition -> getGlobalNames -> txt[];                           
+                   if);
+                else
+                   ' ' -> txt[];
+               if);
+            #);
+       #);
+  #);
+TextNodeMenu: CPNMenu 
+  (# TargetType:: theIndex.TextNode;
+     
+  #);
+SimpleDeclarationNodeMenu: CPNMenu 
+  (# TargetType:: theIndex.SimpleDeclarationNode;
+     
+  #);
+MonitorDeclarationNodeMenu: CPNMenu 
+  (# TargetType:: theIndex.MonitorDeclarationNode;
+     
+  #);

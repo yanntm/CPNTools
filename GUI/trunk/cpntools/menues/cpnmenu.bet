@@ -1,0 +1,149 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../cpnworkspace';
+INCLUDE '../instruments/historyinstruments';
+
+--- CPNWorkSpaceLib: attributes---
+CPNMenu: MarkingMenu
+  (# CPNItem: MenuItem 
+       (# 
+          init::<
+            (# 
+            do true -> dynamicName;
+               INNER;
+            #);
+          makeDynamicName::<
+            (# subMenuMadeDynamicName: (# exit (NOT (''->txt.equal)) #);
+            do INNER;
+               (if (NOT subMenuMadeDynamicName) then
+                   (if ((target[],theHand[]) -> theInstrument.relevant) then
+                       name[] -> txt[];
+                    else
+                       ' ' -> txt[];
+                   if);
+               if);
+            #);
+       #);
+     size:: (# do 6 -> value; #);
+     
+     aBottomLeftItem: CPNItem
+       (# init::<
+            (# 
+            do 3->direction;
+               INNER;
+            #);          
+       #);
+     
+     BottomLeftItem:< aBottomLeftItem;
+     
+     aBottomRightItem: CPNItem
+       (# init::<
+            (# 
+            do 1->direction;
+               INNER;
+            #);          
+       #);
+     
+     BottomRightItem:< aBottomRightItem;
+     
+     aCloneItem: CPNItem
+       (# init::<
+            (#
+            do	NamesPageMenuCloneItem -> getGlobalNames -> name[];
+               5 -> direction;
+               INNER;
+            #);
+       #);
+
+     CloneItem:< aCloneItem;
+
+     aDeleteItem: CPNItem
+       (# init::<
+            (#
+            do NamesPageMenuDeleteItem -> getGlobalNames -> name[]; 
+               2 -> direction;
+               INNER;
+            #);
+       #);
+
+     DeleteItem:< aDeleteItem;
+
+     aLeftItem: CPNItem
+       (# init::<
+            (#
+            do	4 -> direction;
+               INNER;
+            #);
+       #);
+
+     LeftItem:< aLeftItem;
+
+     aRightItem: CPNItem
+       (# init::<
+            (#
+            do	6 -> direction;
+               INNER;
+            #);
+       #);
+
+     RightItem:< aRightItem;
+
+     init::<
+       (# theItem: ^CPNItem;
+       do true -> rotate;
+          (if aCloneItem## > CloneItem## then
+              &CloneItem[] -> theItem[];
+              theItem.init;
+              theItem[] -> add;
+          if);
+          (if aDeleteItem## > DeleteItem## then
+              &DeleteItem[] -> theItem[];
+              theItem.init;
+              theItem[] -> add;
+          if);
+          (if aLeftItem## > LeftItem## then
+              &LeftItem[] -> theItem[];
+              theItem.init;
+              theItem[] -> add;
+          if);
+          (if aRightItem## > RightItem## then
+              &RightItem[] -> theItem[];
+              theItem.init;
+              theItem[] -> add;
+          if);
+          (if aBottomRightItem## > BottomRightItem## then
+              &BottomRightItem[] -> theItem[];
+              theItem.init;
+              theItem[] -> add;
+          if);
+          (if aBottomLeftItem## > BottomLeftItem## then
+              &BottomLeftItem[] -> theItem[];
+              theItem.init;
+              theItem[] -> add;
+          if);
+          INNER;
+       #);
+  #);
