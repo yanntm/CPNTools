@@ -1,0 +1,234 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../../../unit/betalibtest';
+INCLUDE '../../cpnoption';
+-- testProgram: MainPart --
+(#	w: @Workspace;
+
+	OptionTest: @TestSuite
+	(#	o: ^w.Option;
+		b: @boolean;
+		n: ^w.Notifier;
+		t: ^text;
+
+		init::
+		(#	cloneTest: @TestCase
+			(#	c: ^w.Option;
+				d: @boolean;
+				e: ^Object;
+			do	false -> b;
+				false -> d;
+				&w.Option(# clone:: (# do true -> b; #); init:: (# do true -> d; #); #)[] -> o[];
+				o.clone -> c[];
+				(c.theName[] = NONE) -> assert;
+				(c.theValue[] = NONE) -> assert;
+				(NOT b) -> assert;
+				d -> assert;
+				(o## = c##) -> assert;
+				(w.Option## <> c##) -> assert;
+
+				false -> b;
+				'hest' -> o.name;
+				o.clone -> c[];
+				c.name -> t[];
+				('hest' -> t.equal) -> assert;
+				(NOT b) -> assert;
+
+				false -> b;
+				t[] -> o.value;
+				o.clone -> c[];
+				c.value -> e[];
+				b -> assert;
+				(e## = Object##) -> assert;
+			#);
+
+			packTest: @TestCase
+			(#
+			do	
+			#);
+
+			unPackTest: @TestCase
+			(#
+			do	
+			#);
+
+			nameTest: @TestCase
+			(#	
+			do	false -> b;
+				&w.Notifier(# onChanged:: (# do true -> b; #); #)[] -> n[];
+				&w.Option[] -> o[];
+				n[] -> o.attach;
+				'hest' -> o.name;
+				b -> assert;
+
+				false -> b;
+				o.name -> t[];
+				('hest' -> t.equal) -> assert;
+				(NOT b) -> assert;
+			#);
+
+			valueTest: @TestCase
+			(#	
+			do	false -> b;
+				&w.Notifier(# onChanged:: (# do true -> b; #); #)[] -> n[];
+				&w.Option[] -> o[];
+				n[] -> o.attach;
+				&text[] -> t[];
+				t[] -> o.value;
+				b -> assert;
+
+				false -> b;
+				(o.value = t[]) -> assert;
+				(NOT b) -> assert;
+			#);
+
+			onChangedTest: @TestCase
+			(#
+			do	false -> b;
+				&w.Notifier(# onChanged:: (# do true -> b; #); #)[] -> n[];
+				&w.Option[] -> o[];
+				n[] -> o.attach;
+				o.changed;
+				b -> assert;
+			#);
+
+			initTest: @TestCase
+			(#
+			do	false -> b;
+				&w.Option(# init:: (# do true -> b; #); #)[] ->o[];
+				o.init;
+				b -> assert;
+			#);
+
+		do	cloneTest.init;
+			packTest.init;
+			unPackTest.init;
+			nameTest.init;
+			valueTest.init;
+			onChangedTest.init;
+			initTest.init;
+		#);
+	#);
+
+	HandOptionTest: @TestSuite
+	(#	o: ^w.HandOption;
+		h: ^w.Hand;
+
+		cloneTest: @TestCase
+		(#	p: ^w.HandOption;
+		do	&w.HandOption[] -> o[];
+			&w.Hand[] -> h[];
+			h[] -> o.value;
+			o.clone -> p[];
+			p.value -> h[];
+			(o.value = p.value) -> assert;
+			(h## = w.Hand##) -> assert;
+		#);
+
+		init::
+		(#
+		do	cloneTest.init;
+		#);
+	#);
+
+	IntegerOptionTest: @TestSuite
+	(#
+		init::
+		(#
+		#);
+	#);
+
+	BooleanOptionTest: @TestSuite
+	(#
+		init::
+		(#
+		#);
+	#);
+
+	RealOptionTest: @TestSuite
+	(#
+		init::
+		(#
+		#);
+	#);
+
+	TextOptionTest: @TestSuite
+	(#
+		init::
+		(#
+		#);
+	#);
+
+	XMLOptionTest: @TestSuite
+	(#
+		init::
+		(#
+		#);
+	#);
+
+	MLCodeOptionTest: @TestSuite
+	(#
+		init::
+		(#
+		#);
+	#);
+
+	ColorOptionTest: @TestSuite
+	(#
+		init::
+		(#
+		#);
+	#);
+
+	PositionOptionTest: @TestSuite
+	(#
+		init::
+		(#
+		#);
+	#);
+
+	OptionListTest: @TestSuite
+	(#
+		init::
+		(#
+		#);
+	#);
+
+	init::
+	(#
+	do	OptionTest.init;
+		HandOptionTest.init;
+		IntegerOptionTest.init;
+		BooleanOptionTest.init;
+		RealOptionTest.init;
+		TextOptionTest.init;
+		XMLOptionTest.init;
+		MLCodeOptionTest.init;
+		ColorOptionTest.init;
+		PositionOptionTest.init;
+		OptionListTest.init;
+	#);
+#)

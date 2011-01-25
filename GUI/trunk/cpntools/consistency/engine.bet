@@ -1,0 +1,188 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '~beta/postwimp/workspace';
+
+BODY 'private/enginebody';
+
+INCLUDE '../debug';
+INCLUDE '../instruments/cpnoption';
+INCLUDE '~beta/postwimp/foundation/heap';
+INCLUDE '~beta/sysutils/scanobjects';
+INCLUDE '../wselements/statusbubble';
+
+-- WorkspaceLib: Attributes --
+getConsistencyEngine: ObjectPool.get
+  (# Type::ConsistencyEngine;
+     init::(# do obj.init; #);
+  #);
+
+TextList: List(# element::Text; #);
+
+HistoryObserver: Notifier
+  (# theConsistencyEngine: ^ConsistencyEngine;
+     manager: ^CommandManager;
+     theOption: ^BooleanOption;
+     
+     init::
+       (# 
+       <<SLOT bodyHistoryObserverinit: doPart>>
+       #);
+     onChanged::
+       (# 
+       do (if (theOption.value).value then
+              theConsistencyEngine.run
+              (# ConsistencyException::
+                   (# do true -> continue; #); 
+              #);
+          if);
+       #);
+  #);
+
+ConsistencyEngine: Notifier
+  (# errors: ^TextList;
+     ConsistencyOn: @debugConsistency;
+     tests: @ElementDeque
+       (# Element:: ConsistencyTest;
+       #);
+     add:< 
+       (# elm: ^ConsistencyTest;
+       enter elm[]
+       do THIS(Element)[] -> elm.father[];
+          elm[] -> tests.append;
+          elm[] -> added;
+          INNER;
+       #);
+     remove:< 
+       (# elm: ^ConsistencyTest;
+       enter elm[]
+       do INNER;
+          elm[] -> tests.remove;
+          NONE -> elm.father[];
+          elm[] -> removed;
+       #);
+     run:
+       (# ConsistencyException:< Exception
+            (# 
+            <<SLOT bodyConsistencyEngineConsistencyExceptionbody: doPart>> 
+            #);
+          
+       do (if internal then
+              (if ConsistencyOn.debugMe then
+                  errors.clear;
+                  scanheap(# type::Notifier;
+                             elm: ^Notifier;
+                          do current[] -> elm[];
+                             this(ConsistencyEngine).tests.scan
+                             (# 
+                             do (if (elm## <= current.TargetType##) then
+                                    elm[] -> current.run;
+                                if);
+                             #);
+                             none -> elm[];
+                          #);
+                  (if not errors.empty then
+                      ConsistencyException;
+                  if);
+              if);
+          if);
+       #);
+     
+     init::<
+       (# globals: ^OptionList;
+          cons: ^OptionList;
+       <<SLOT bodyConsistencyEngineinit: doPart>>
+       #);
+     
+  #);
+
+ConsistencyTest: Notifier
+  (# FatherType:: ConsistencyEngine;
+     TargetType:< Notifier;
+     target: ^TargetType;
+     
+     ConsistencyException: Exception
+       (# 
+       do '%s failed for %s[%s]: ' 
+            -> msg.putformat
+          (# 
+          do this(ConsistencyTest)[] -> &getpatternname -> s;
+             target[] -> &getpatternname -> s;
+             (if target.id[] <> none then
+                 target.id[] -> s;
+              else
+                 'NONE' -> s;
+             if);                               
+          #);
+          INNER;
+       #);
+     
+     ConsistencyNotification: ConsistencyException
+       (# 
+       do true -> continue;
+          INNER;
+          msg[] -> father.errors.append;
+       #);
+     
+     DeletedElmOnHeapNotification: ConsistencyNotification
+       (# 
+       do '%s is deleted but still consistency tested'
+            -> msg.putformat(# do target[] -> getPatternName -> s; #);
+       #);
+     
+     run:<
+       (# 
+       enter target[] 
+       do (if not target.deleted then
+              INNER;
+           else
+              DeletedElmOnHeapNotification;
+          if);
+          none -> target[];
+       #);
+  #);
+
+NowOptionObserver: Notifier
+  (# theConsistencyEngine: ^ConsistencyEngine;
+     theOption: ^BooleanOption;
+     
+     onChanged::
+       (# status: ^StatusBubble;
+       do this(Notifier)[] -> theOption.detach;
+          theConsistencyEngine.run
+          (# ConsistencyException::
+               (# do true -> continue; #); 
+          #);
+          &FalseObject[] -> theOption.value;
+          this(Notifier)[] -> theOption.attach;
+          ObjectPool.get(# Type:: StatusBubble; #) -> status[];
+	    'Consistency check completed succedfully' -> status.message;
+       #);
+     
+     init::
+       (# 
+       <<SLOT bodyNowOptionObserverinit: doPart>>
+       #);
+  #);
