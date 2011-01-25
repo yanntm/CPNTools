@@ -1,0 +1,469 @@
+#!/bin/bash
+
+function show-help-message () {
+    echo "Usage: `basename $0` [OPTION]?"
+    echo 
+    echo "The behavior of `basename $0` with no arguments is to build an internal release."
+    echo "Options can be:"
+    echo
+    # echo "       -b     Build only"
+    echo "       -e     External release"
+    echo "       -h     Shows this help"
+}
+
+function set-global-variables () {
+    echo -n Setting global variables...
+    MAJOR=2.2
+    DBPASSWD="Cpn=Tool=Bugs"
+    DAIMIUSER=pern
+    ROOT=/cygdrive/c
+    CPN2000=$ROOT/cpn2000
+    POSTWIMP=$BETALIB/postwimp
+    OPENGL=$BETALIB/opengl
+    XML=$BETALIB/xml
+    SOURCES=( $CPN2000 $POSTWIMP $OPENGL $XML )
+    CPN2000_TAG_MODULES=( $ROOT/cpn2000 )
+    POSTWIMP_TAG_MODULES=( $POSTWIMP )
+    BETAPROJECT_TAG_MODULES=( $OPENGL $XML )
+    COMPILE_HOTSPOTS=( cpntools.bet )
+    CVS_RSH=ssh
+    BETA_CVS_HOME=/users/beta/.CVSHOME
+    CPNTOOLS_CVS_HOME=/users/cpntools/repository
+    REMOTE_MACHINE=fresh-horse.daimi.au.dk
+    EXTERNAL_VERSION_REPOSITORY=/web/cpntools/data/versions/win2k
+    INTERNAL_VERSION_REPOSITORY=/web/cpntools/data/versions/win2k/devel
+    EXTERNAL_LINUX_VERSION_REPOSITORY=/web/cpntools/data/versions/linux
+    INTERNAL_LINUX_VERSION_REPOSITORY=/web/cpntools/data/versions/linux/devel
+    BRANCH_TAG=""
+    if [ "$RELEASE" == "external" ]; then
+	VERSION_REPOSITORY=$EXTERNAL_VERSION_REPOSITORY
+	LINUX_VERSION_REPOSITORY=$EXTERNAL_LINUX_VERSION_REPOSITORY
+    else
+	VERSION_REPOSITORY=$INTERNAL_VERSION_REPOSITORY
+	LINUX_VERSION_REPOSITORY=$INTERNAL_LINUX_VERSION_REPOSITORY
+    fi
+    INSTALLER_PREFIX=cpntools_
+    DATE=`date '+%B %Y'`
+    DISTRIBUTION=$ROOT/Dist
+    CREATE_INSTALL_FOLDER=$ROOT/Program\ files/CreateInstall\ Pro
+    CREATE_INSTALL_EXE=$CREATE_INSTALL_FOLDER/ci.exe
+    debugHelp=$CPN2000/cpntools/.debug-local-help
+    debugInstallImage=$CPN2000/cpntools/.debug-install-image
+    TEMPORARY_FILES=( $debugHelp $debugInstallImage )
+    NEEDED_PROGRAMS=( unix2dos perl sed tr ssh scp )
+    echo ' done'
+}
+
+function shut-down-cpntools-instances () {
+    processes=( run.x86-win32.exe cpnmld.exe cpntools.exe )
+    echo Killing processes which can not run while running `basename $0`
+    for process in ${processes[@]}; do
+	echo "  - $process"
+	$CPN2000/scripts/kill.exe $process
+    done
+}
+
+function check-setup () {
+    echo -n Checking validity of setup...
+    if [ "$CVS_RSH" != ssh ]; then
+	echo ' failed'
+	echo \$CVS_RSH is not set to ssh
+	exit 1
+    fi
+    if [ "$BETALIB" == "" ]; then
+	echo ' failed'
+	echo \$BETALIB is not set
+	exit 1
+    fi
+    if [ ! -e "$BETALIB" ]; then
+	echo ' failed'
+	echo \$BETALIB does not exist
+	exit 1
+    fi
+    for directory in ${SOURCES[@]}; do 
+	if [ ! -e $directory ]; then
+	    echo ' failed'
+	    echo $directory does not exists... aborting
+	    exit 1
+	fi
+    done
+    for program in ${NEEDED_PROGRAMS[@]}; do
+	if [ "`which $program 2> /dev/null`" == "" ]; then
+	    echo ' failed'
+	    echo $program is not in your \$PATH
+	    echo This script depend on it
+	    exit 1
+	fi
+    done
+    if [ "`ssh -qx $DAIMIUSER@$REMOTE_MACHINE echo A`" != 'A' ]; then
+	echo ' failed'
+	echo Can not reach $REMOTE_MACHINE through ssh
+	exit 1
+    fi
+    if [ "`ssh -qx $DAIMIUSER@$REMOTE_MACHINE \"if [ -e $VERSION_REPOSITORY ]; then echo A; else echo B; fi;\"`" != 'A' ]; then
+	echo ' failed'
+	echo Can not access $REMOTE_MACHINE:$VERSION_REPOSITORY
+	exit 1
+    fi
+    if [ ! -e "$CREATE_INSTALL_EXE" ]; then
+	echo ' failed'
+	echo Can not find the Create Install executable at $CREATE_INSTALL_EXE
+	exit 1
+    fi
+    echo ' done'
+}
+
+function generate-version-number () {
+    echo -n Generating version number...
+    files=( `ssh -qx $DAIMIUSER@$REMOTE_MACHINE "ls $EXTERNAL_VERSION_REPOSITORY | grep $INSTALLER_PREFIX$MAJOR"` `ssh -qx $DAIMIUSER@$REMOTE_MACHINE "ls $INTERNAL_VERSION_REPOSITORY | grep $INSTALLER_PREFIX$MAJOR"` )
+    MINOR=-1
+    for file in ${files[@]}; do
+	NUMBER=`echo $file | cut -d '.' -f3`	
+	if [ $NUMBER -gt $MINOR ]; then
+	    MINOR=$NUMBER	    
+	fi
+    done
+    if [ "$RELEASE" == "internal" ]; then
+	MINOR=`expr $MINOR + 1`
+    fi
+    VERSION=$MAJOR.$MINOR
+    echo " done"
+    echo "  - Version number is $VERSION"
+}
+
+function clean-source-tree () {
+    echo -n Cleaning source tree...
+    OLDPWD=$PWD
+    cd $CPN2000
+    rm -Rf cpntools/cpnsim/ xsl/executable/ cpntools/debug.bet cpntools/resources/help-resources.bet cpntools/help
+    rm -f cpntools/*.cpn cpntools/*.exe 
+    find cpntools/ -name 'cpntools.dump' -exec rm -Rf {} \; 2> /dev/null
+    find cpntools/ -name '#*' -exec rm -Rf {} \; 2> /dev/null
+    find cpntools/ -name '*~' -exec rm -Rf {} \; 2> /dev/null
+    for file in ${TEMPORARY_FILES[@]}; do 
+	rm -Rf $file
+    done    
+    cd $OLDPWD
+    echo ' done'
+}
+
+function update-source-tree () {
+    echo Updating source tree
+    OLDPWD=$PWD
+    for directory in ${SOURCES[@]}; do
+	echo "  - Updating $directory"
+	cd $directory
+	cvs -Q up -dP	
+    done
+    cd $OLDPWD
+}
+
+function tag-source-tree () {
+    echo Tagging source tree
+    OLDPWD=$PWD
+    TAG="v$(echo $VERSION | sed -e "s/[.]/_/g")"
+    for directory in ${CPN2000_TAG_MODULES[@]}; do
+	cd $directory
+	directory=`basename $directory`
+	echo "  - Tagging $directory"	
+	if [ "$BRANCH_TAG" == "" ]; then
+	    cvs -Q rtag -RF $TAG $directory
+	else
+	    cvs -Q rtag -RF -r $BRANCH_TAG $TAG $directory
+	fi
+    done
+    for directory in ${POSTWIMP_TAG_MODULES[@]}; do
+	cd $directory
+	directory=`basename $directory`
+	echo "  - Tagging $directory"	
+	if [ "$BRANCH_TAG" == "" ]; then
+	    cvs -Q rtag -RF $TAG $directory
+	else
+	    cvs -Q rtag -RF -r $BRANCH_TAG $TAG $directory
+	fi
+    done
+    for directory in ${BETAPROJECT_TAG_MODULES[@]}; do
+	cd $directory
+	directory=`basename $directory`
+	echo "  - Tagging $directory"	
+	if [ "$BRANCH_TAG" == "" ]; then
+	    cvs -Q rtag -RF $TAG beta_project/$directory
+	else
+	    cvs -Q rtag -RF -r $BRANCH_TAG $TAG beta_project/$directory
+	fi
+    done
+    cd $OLDPWD
+}
+
+function make-version-dependend-corrections () {
+    echo -n Making version depended correction to source code...
+
+    cat debug.bet | sed -e "s/^[ ]*debugging.*/debugging:(# exit false #);/" | sed -e "s/^[ ]*gimmesurveillance.*/gimmesurveillance: (# exit false #);/" > debug.bet.new
+    mv -f debug.bet.new debug.bet
+    if [ "$RELEASE" == "external" ]; then
+	cat debug.bet | sed -e "s/^[ ]*version.*/version: (# exit '$VERSION' #);/" -e "s/^[ ]*titlebar.*/titlebar: (# exit '(Version $VERSION - $DATE)' #);/" > debug.bet.new
+	mv -f debug.bet.new debug.bet
+	cat debug.bet | sed -e "s/^[ ]*internal.*/internal: (# exit false #);/" > debug.bet.new
+    else
+	cat debug.bet | sed -e "s/^[ ]*version.*/version: (# exit '$VERSION' #);/" -e "s/^[ ]*titlebar.*/titlebar: (# exit '(Internal version $VERSION - $DATE)' #);/" > debug.bet.new
+	mv -f debug.bet.new debug.bet
+	cat debug.bet | sed -e "s/^[ ]*internal.*/internal: (# exit true #);/" > debug.bet.new
+    fi
+    mv -f debug.bet.new debug.bet   
+
+#     cat resources/help-resources.bet | sed -e "s/[ ]*theHelpGlobalizer.*/theHelpGlobalizer: HelpGlobalizer2 (# #);/" > help-resources.bet.new
+#     mv -f help-resources.bet.new resources/help-resources.bet
+
+    echo ' done'
+}
+
+function compile-all-source-code () {
+    echo Compiling
+    for file in ${COMPILE_HOTSPOTS[@]}; do
+	echo -n "  - $file..."
+	beta -qw --mute -s 10 11 12 $file > /dev/null 2>&1 
+	if [ ! -e `basename $file .bet`.exe ]; then
+		echo " failed"
+		echo Could not compile $file ... exiting
+	    exit 1
+	fi
+	echo " done"
+    done
+}
+
+function make-local-help () {
+    echo -n Making local help...
+    uniqueHelp=/tmp/help-$$-$(date +%s)        
+    help=help.tar.gz
+    ssh -qx $DAIMIUSER@$REMOTE_MACHINE "rm -f ~/$help; mkdir $uniqueHelp; chmod og-wrx $uniqueHelp; cd $uniqueHelp; cvs -Q -d $CPNTOOLS_CVS_HOME co cpn2000/scripts/converthelp > /dev/null; mv cpn2000/scripts/converthelp .; rm -Rf cpn2000; chmod u+x converthelp; ./converthelp; rm converthelp; mv $uniqueHelp/$help ~/; rm -Rf $uniqueHelp" > $debugHelp 2>&1
+    if [ "`ssh $DAIMIUSER@$REMOTE_MACHINE \"if [ -e /users/$DAIMIUSER/$help ]; then echo A; fi\"`" != "A" ]; then
+	echo ' failed'
+	echo Read $debugHelp for more information
+	exit 1    
+    fi
+    scp -q $DAIMIUSER@$REMOTE_MACHINE:~/$help .
+    gunzip $help
+    tar -xvf help.tar | grep -v ^help/
+    rm help.tar
+    if [ -e help/wget.log ]; then
+	mv help/wget.log ../scripts
+    fi
+    echo ' done'
+}
+
+function collecting-files-for-distribution () {
+    echo -n Building distribution in $DISTRIBUTION...
+
+    rm -Rf $DISTRIBUTION
+    mkdir $DISTRIBUTION
+    cd $DISTRIBUTION
+    mkdir makehere
+    cd makehere
+    # CPNTools package
+    mkdir CPNTools
+    cd CPNTools
+    cp -p $CPN2000/cpntools/cpntools.exe .
+    cp -Rp $CPN2000/cpntools/Language/ .
+    cp -Rp $CPN2000/cpntools/images/ .
+    cp -p $CPN2000/scripts/*.url .
+    cp -p $CPN2000/cpntools/defaults.xml .
+    cd ..
+    # fonts package
+    mkdir fonts
+    cd fonts
+    cp -Rp $CPN2000/fonts/ .
+    cd ..
+    # cpnsim package
+    mkdir cpnsim
+    cd cpnsim
+    cp -Rp $CPN2000/cpntools/cpnsim/ .
+    rm -f  cpnsim/cpn.ML.x86-linux
+    rm -f  cpnsim/run.x86-linux
+    rm -f  cpnsim/cpnmld
+    cd ..
+    # converter package
+    mkdir converter
+    cd converter
+    cp -Rp $CPN2000/xsl/executable/ converter
+    cd ..
+    # help package
+    mkdir help
+    cd help
+    cp -Rp $CPN2000/cpntools/help/ .
+    cd ..
+    # Samples package
+    mkdir Samples
+    mkdir Samples/Samples
+    cd Samples/Samples
+    #cp -p $CPN2000/cpntools/hier.cpn .
+    cp -Rp $CPN2000/cpntools/Sample\ Nets/* .
+    rm channel.cpn
+    cd ../..
+    # Utils package
+    mkdir Utils
+    mkdir Utils/Utils
+    cd Utils/Utils
+    cp -p $CPN2000/scripts/cardinfo.exe .
+    cp -p $CPN2000/scripts/REG.EXE .
+    cd ../..
+    # Templates package
+    mkdir templates
+    mkdir templates/templates
+    cd templates/templates
+    cp -Rp $CPN2000/cpntools/templates/* .
+    cd $DISTRIBUTION
+
+    for file in `find -name CVS -type d`; do
+	rm -Rf $file
+    done
+
+    cd $DISTRIBUTION/makehere
+    if [ "$RELEASE" == "external" ]; then
+	$CPN2000/scripts/copynew release makehere
+    else
+	$CPN2000/scripts/copynew internal makehere
+    fi
+
+    echo ' done' 
+}
+
+function make-install-image () {
+    echo -n Making install image...
+
+    cd "$CREATE_INSTALL_FOLDER"
+    ./ci.exe Projects/CPN\ Tools.g > $debugInstallImage 2>&1
+    chmod a-x,u+w $DISTRIBUTION/Disk1/*
+    chmod a+x $DISTRIBUTION/Disk1/*.exe
+    # Create update.ini
+    #echo Creating update.ini
+    if [ "$1" != "release" ]; then
+	UPDINT="internal/"
+    else
+	UPDINT=""
+    fi
+    cd $DISTRIBUTION/makehere
+    cp $CPN2000/scripts/update.ini .
+    for file in *; do
+	if [ -d "$file" ]; then
+	    echo -ne " - $file" >> $debugInstallImage 2>&1
+	    $CPN2000/scripts/createupd2 "$file" "$file" "." "$UPDINT" >> $debugInstallImage 2>&1
+	    CURRENT="$( cat update.ini | grep -B 10000 "^#$file" | wc -l )"
+	    head -n $[ $CURRENT - 1 ] update.ini > tmp
+	    cat "$file/header" >> tmp
+	    cat "$file/footer" >> footer
+	    grep -A 10000 "^#$file" update.ini | tail -n +2 >> tmp
+	    mv tmp update.ini
+	    rm "$file/header" "$file/footer"
+	fi
+    done
+    cat update.ini footer > $DISTRIBUTION/Disk1/update.ini
+    rm update.ini footer    
+
+    echo ' done'
+}
+
+function copy-install-image-to-repository () {
+    echo -n Copying install image to repository...
+    SOURCE=$DISTRIBUTION/Disk1/setup.exe
+    DESTINATION=$REMOTE_MACHINE:$VERSION_REPOSITORY/$INSTALLER_PREFIX$VERSION.exe
+    scp -q "$SOURCE" $DESTINATION    
+    SOURCE=$DISTRIBUTION/cpntools_$VERSION.tar.gz
+    DESTINATION=$REMOTE_MACHINE:$LINUX_VERSION_REPOSITORY/$INSTALLER_PREFIX$VERSION.tar.gz
+    scp -q "$SOURCE" $DESTINATION
+    if [ "$RELEASE" == "external" ]; then
+	UPDATE_DIR=/users/cpntools/public_html/bin/update
+	ssh $DAIMIUSER@$REMOTE_MACHINE "rm -Rf $UPDATE_DIR/*"
+	scp -rq $DISTRIBUTION/Disk1/update.ini $DISTRIBUTION/makehere/*/* $REMOTE_MACHINE:$UPDATE_DIR
+    fi
+    echo ' done'
+}
+
+
+function build-linux() {
+    ssh -qx cpntools@$REMOTE_MACHINE "build-cpntools $VERSION $RELEASE $DATE"
+    cd $DISTRIBUTION
+    cp -pr makehere/CPNTools .
+    cp -pr makehere/cpnsim/cpnsim CPNTools
+    cp -pr makehere/fonts/fonts CPNTools 
+    cp -pr makehere/Samples/Samples CPNTools 
+    cp -pr makehere/templates/templates CPNTools
+    cp -pr makehere/help/help CPNTools
+    rm CPNTools/cpntools.exe
+    scp fresh-horse:/users/cpntools/cpn2000/cpntools/cpntools CPNTools/cpntools
+    chmod 755 CPNTools/cpntools
+    rm CPNTools/cpnsim/cpn.ML.x86-win32
+    scp fresh-horse:/users/cpntools/cpn2000/cpntools/cpnsim/cpn.ML.x86-linux CPNTools/cpnsim/
+    rm CPNTools/cpnsim/run.x86-win32.exe
+    scp fresh-horse:/users/cpntools/cpn2000/cpntools/cpnsim/run.x86-linux CPNTools/cpnsim/
+    chmod 755 CPNTools/cpnsim/run.x86-linux
+    rm CPNTools/cpnsim/cpnmld.exe
+    scp fresh-horse:/users/cpntools/cpn2000/cpntools/cpnsim/cpnmld CPNTools/cpnsim/
+    chmod 755 CPNTools/cpnsim/cpnmld
+    tar -cf cpntools_$VERSION.tar CPNTools
+    gzip cpntools_$VERSION.tar
+}
+
+
+function update-database () {
+    echo -n Updating database... 
+    KNOWN_VERSIONS=`echo "SELECT VText FROM version" | ssh -qx $DAIMIUSER@mysql "mysql -u cpntools -h localhost --password=$DBPASSWD cpntools" | tr '.' '_'`
+    VERSION2=`echo $VERSION | tr '.' '_'`
+    if [ "`echo $KNOWN_VERSIONS | grep $VERSION2`" != "" && "$RELEASE" == "internal" ]; then
+	echo ' done'
+	echo '  - Version already exist in database; no updates are done'
+    else	    
+	if [ "$RELEASE" == "external" ]; then
+	    echo "INSERT INTO version VALUES(0,'CPN Tools $VERSION',1,'/web/cpntools/data/versions/win2k/cpntools_$VERSION.exe',0)" | ssh $DAIMIUSER@mysql "mysql -u cpntools -h localhost --password=$DBPASSWD cpntools"
+	    echo "INSERT INTO version VALUES(0,'CPN Tools $VERSION',2,'/web/cpntools/data/versions/linux/cpntools_$VERSION.tar.gz',0)" | ssh $DAIMIUSER@mysql "mysql -u cpntools -h localhost --password=$DBPASSWD cpntools"
+	else
+	    echo "INSERT INTO version VALUES(0,'CPN Tools $VERSION development',1,'/web/cpntools/data/versions/win2k/devel/cpntools_$VERSION.exe',1)" | ssh $DAIMIUSER@mysql "mysql -u cpntools -h localhost --password=$DBPASSWD cpntools"
+	    echo "INSERT INTO version VALUES(0,'CPN Tools $VERSION development',2,'/web/cpntools/data/versions/linux/devel/cpntools_$VERSION.tar.gz',1)" | ssh $DAIMIUSER@mysql "mysql -u cpntools -h localhost --password=$DBPASSWD cpntools"
+
+	    MAX=$(echo "SELECT MAX(BID) FROM Build" | ssh $DAIMIUSER@mysql "mysql -s -u cpntoolsbugs -h localhost --password=$DBPASSWD cpntoolsbugs")
+	    echo "UPDATE Build SET BText='$VERSION' WHERE BID=$MAX" | ssh $DAIMIUSER@mysql "mysql -u cpntoolsbugs -h localhost --password=$DBPASSWD cpntoolsbugs"
+	    echo "INSERT INTO Build(BText) VALUES('Next version')" | ssh $DAIMIUSER@mysql "mysql -u cpntoolsbugs -h localhost --password=$DBPASSWD cpntoolsbugs"
+	fi
+	
+	echo ' done'
+    fi
+}
+
+# Parse arguments
+case $1 in
+    -e) 
+	echo Making external version
+	RELEASE=external
+	;;
+    -h)
+	show-help-message
+	exit 1
+	;;
+    *) 
+	if [ ! -z $1 ]; then
+	    show-help-message
+	    exit 1
+	else
+	    echo Making internal version
+	    RELEASE=internal
+	fi	
+	;;
+esac
+
+set-global-variables
+shut-down-cpntools-instances
+check-setup
+generate-version-number
+clean-source-tree
+update-source-tree
+tag-source-tree
+cd $CPN2000/cpntools
+make-version-dependend-corrections
+compile-all-source-code
+make-local-help
+collecting-files-for-distribution
+make-install-image
+build-linux
+copy-install-image-to-repository
+update-database
+clean-source-tree
+update-source-tree
