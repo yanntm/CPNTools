@@ -1,0 +1,132 @@
+#!/bin/bash
+
+#### Check http://wiki.daimi.au.dk:8000/cpn2000/unit_test.wiki for information
+#### on unit testing.
+
+#### Interesting stuff for you happens at line 81ff.
+
+A=0
+B=0
+C=0
+TOTAL=0
+FAILED=0
+SUITEFAILED=0
+SUITE=""
+S=0
+norm='[0m'
+bold='[1;10m'
+green='[1;32m'
+red='[1;31m'
+
+function beep() {
+	echo -ne 
+}
+
+function suite() {
+	echo -ne "$bold=== Suite: $1 "
+	i=$[ 67 - ${#1}]
+	while [ $i != 0 ]; do
+		echo -ne =
+		i=$[$i - 1 ]
+	done
+	echo "$norm"
+	SUITE="$1"
+	A=0
+	FAILED=0
+	SUITEFAILED=0
+	S=$[$S+1]
+}
+
+function settabs() {
+	i=$[ 5 - (${#1} - 1) / 8 ]
+	while [ $i != 0 ]; do
+		echo -ne "\t"
+		i=$[$i - 1 ]
+	done
+}
+
+function test() {
+	A=$[ $A + 1 ]
+	E="$1"
+	TOTAL=$[$TOTAL + 1]
+	echo -ne "  "
+	echo -ne "Test $bold$E$norm"
+	settabs "$E"
+	shift
+	$* > "$SUITE.$E.out" 2>&1
+	if [ $? != 0 ]; then
+		echo -ne "[$red FAILED $norm]\n\a\a\a"
+		FAILED=1
+		B=$[ $B + 1 ]
+		beep
+	else
+		echo -ne "[$green   Ok   $norm]\t"
+		if [ "`diff \"$SUITE.$E.out\" \"$SUITE.$E.out.ok\" 2>&1`" != "" ]; then
+			echo -ne "[$red FAILED $norm]\n\a\a\a";
+			FAILED=1
+			B=$[ $B + 1 ]
+		else
+			rm "$SUITE.$E.out"
+			echo -ne "[$green   Ok   $norm]\n";
+		fi
+	fi
+	if [ $FAILED != 0 ]; then
+		if [ $SUITEFAILED == 0 ]; then
+			SUITEFAILED=1
+			C=$[$C+1]
+		fi
+	fi
+}
+
+#### Test format:
+#
+# suite <suite name>
+# test <test name> <command>
+#
+# If <suite name> or <test name> contains spaces, they must be escaped, either
+# by putting the entire test in double quotes (") or by escaping each space
+# by backslash (\). The names should only contain alphanumeric characters and
+# space.
+#
+# <command> is exactly what you would write on the command-line, incl. evt.
+# parameters.
+#
+# Remember suites cannot be nested
+#
+# All tests should cd to where they live before executing, and then back to
+# /cygdrive/c/cpn2000/ afterwards.
+#
+####
+
+START=$( date +%s )
+pushd . > /dev/null 2>&1
+cd /cygdrive/c/cpn2000/
+
+#### Insert manual tests to be run before the automatic tests here
+
+#### Stop doing things here
+
+#### Run the automatically found tests
+
+./scripts/autotest
+. autotest.out
+
+#### Insert manual tests to be run after the automatic tests here
+
+#### Stop doing things here
+
+echo
+
+END=$( date +%s )
+
+if [ $C == 0 ]; then
+	echo "All $S suites were successful."
+	echo "All $TOTAL tests were successful."
+	rm autotest.out
+else
+	echo "Out of $S test suites, $C failed."
+	echo "Out of $TOTAL tests, $B failed. Bugger."
+fi
+echo "Running took $[ $END - $START ] seconds (which is nice, I guess)."
+
+popd > /dev/null 2>&1
