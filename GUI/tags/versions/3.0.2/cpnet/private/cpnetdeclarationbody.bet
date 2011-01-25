@@ -1,0 +1,420 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../cpnet';
+INCLUDE '../decl';
+
+--DeclarationPrivate:Descriptor--
+(# 
+   theDeclarations: @DeclarationList;
+   theNet: ^CPNet;
+   parent: ^Declaration;
+  
+   init:
+     (# 
+     do theDeclarations.init;
+     #);
+#)
+
+--DeclarationInit:doPart--
+do private.init;
+   (if isBlock then
+       (# newBlockDecl: ^BlockDecl;
+       do &BlockDecl[] -> newBlockDecl[];
+          newBlockDecl.init;
+          'New Block' -> newBlockDecl.data[];
+          newBlockDecl[] -> changeDecl;
+       #);
+   if);
+
+--DeclarationGetCPNet:doPart--
+do private.theNet[] -> net[];
+   
+--DeclarationSetCPNet:doPart--
+do net[] -> private.theNet[];
+   scanDeclarations
+   (# 
+   do net[] -> current.setCPNet;
+   #);
+   
+--DeclarationGetParent:doPart--
+do private.parent[] -> parent[];
+   
+--DeclarationScanDeclarations:doPart--
+do private.theDeclarations.scan
+   (# 
+   do current[] -> this(scanDeclarations).current[];
+      inner scanDeclarations;
+   #);
+   
+--DeclarationScanDeclarationTree:doPart--
+do (# doRecursion:
+        (# father: ^Declaration;
+        enter father[]
+        do (if father.isBlock then
+               father.scanDeclarations
+               (# 
+               do current[] -> doRecursion;
+               #);
+            else
+               father[] -> THIS(scanDeclarationTree).current[];
+               INNER scanDeclarationTree;
+           if);
+        #);
+   do THIS(Declaration)[] -> doRecursion;
+   #);
+   
+--DeclarationRemoveDeclarationNoDelete:doPart--
+do (# pos,pos_pred: ^List.theCellType;
+   do theDeclaration[] -> private.theDeclarations.at -> pos[];
+      (if pos.pred[] <> NONE then
+          pos.pred[] -> pos_pred[];
+          pos_pred.elm[] -> prev[];
+       else
+          NONE -> pos_pred[];
+          NONE -> prev[];
+      if);
+      pos_pred[] -> private.theDeclarations.deleteAfter;
+      theDeclaration[] -> theDeclaration.removed;
+      THIS(Declaration)[] -> theDeclaration.detach;
+      NONE -> theDeclaration.setCPNet;
+      NONE -> theDeclaration.private.parent[];
+   #);
+--DeclarationRemoveDeclaration:doPart--
+do theDeclaration[] -> removeDeclarationNoDelete -> prev[];
+   (if theDeclaration.mldecl[] <> NONE then
+       theDeclaration.mldecl[] -> markForDeletion;
+   if);
+   
+--DeclarationAddDeclaration:doPart--
+do (theDeclaration[], THIS(Declaration)[]) -> addDeclarationAfter;
+   
+--DeclarationAddDeclarationAfter:doPart--
+do (# pos: ^List.theCellType;
+   do (if prev[] = THIS(Declaration)[] then
+          (theDeclaration[], NONE) -> private.theDeclarations.insertBefore;
+       else
+          (if prev[] <> NONE then
+              prev[] -> private.theDeclarations.at -> pos[];
+          if);
+          (theDeclaration[], pos[]) -> private.theDeclarations.insertAfter;
+      if);
+      getCPNet -> theDeclaration.setCPNet;
+      THIS(Declaration)[] -> theDeclaration.private.parent[];
+      THIS(Declaration)[] -> theDeclaration.attach;
+      theDeclaration[] -> added;
+   #);
+
+--DeclarationAddDeclarationBefore:doPart--
+do (# pos: ^List.theCellType;
+   do (if next[] = THIS(Declaration)[] then
+          (theDeclaration[], NONE) -> private.theDeclarations.insertAfter;
+       else
+          (if next[] <> NONE then
+              next[] -> private.theDeclarations.at -> pos[];
+          if);
+          (theDeclaration[], pos[]) -> private.theDeclarations.insertBefore;
+      if);
+      getCPNet -> theDeclaration.setCPNet;
+      THIS(Declaration)[] -> theDeclaration.private.parent[];
+      THIS(Declaration)[] -> theDeclaration.attach;
+      theDeclaration[] -> added;
+   #);
+   
+--DeclarationGetCurrentHighlight:doPart--
+do (if mldecl[] <> NONE then
+       (if isBlock then
+           (# has_error: @Boolean;
+              has_unchecked: @Boolean;
+              has_temp: @Boolean;
+              temp: ^Color;
+           do scanDeclarationTree
+              (# 
+              do (if NOT current.isBlock then
+                     (if current.mldecl[] <> NONE then
+                         (if current.mldecl.status 
+                          // incorrect then
+                             true -> has_error;
+                          // unchecked
+                          // checking then
+                             true -> has_unchecked;
+                         if);
+                      else
+                         true -> has_unchecked;
+                     if);
+                 if);
+              #);
+              (if has_error then
+                  error_color -> currentHighlight[];
+               else
+                  (if has_unchecked then
+                      check_color -> currentHighlight[];
+                  if);
+              if);
+           #);
+        else
+           mldecl.getCurrentHighlight -> currentHighlight[];
+       if);
+   if);
+   
+--DeclarationOnSemanticChanged:doPart--
+do observers.scan
+   (#
+   do source[] -> current.onSemanticChanged;
+   #);
+    
+--DeclarationMarkForDeletion:doPart--
+do theDecl[] -> private.theNet.theGlobals.markForDeletion;
+   
+--DeclarationDelete:doPart--
+do (# pos: ^List.theCellType;
+   do (if debugging then 
+          'Declaration: deleting decl' -> debugCPNet; 
+      if);
+      (if mldecl[] <> NONE then
+          mldecl.id[] -> (getCPNet).theGlobals.disassociateIDandDecl;
+          mldecl[] -> markForDeletion;
+          THIS(Declaration)[] -> mldecl.detach;
+          NONE -> mldecl.theDeclaration[];
+          mldecl.semanticChanged;
+          private.theNet.semanticChanged;
+      if);
+      THIS(Declaration)[] -> private.parent.removeDeclaration -> prev[];
+      (if debugging then 'Declaration: done deleting decl' -> debugCPNet; if);
+   #);
+   
+-- DeclarationPrint:DoPart --
+do (# theEmptyDecl: @EmptyDecl;
+   do (if mldecl[] = NONE then
+          output[] -> theEmptyDecl.print;
+       else
+          output[] -> mldecl.print;
+      if);
+   #);
+   
+-- DeclarationShortName:doPart --
+do (# theEmptyDecl: @EmptyDecl;
+   do (if mldecl[] = NONE then       
+          theEmptyDecl.shortname -> name[];
+       else
+          theShortName[] -> name[];
+      if);
+   #);
+   
+--DeclarationParseSeparateFirst: doPart--
+do (# (* Algoritme: Antallet af ws beregnes i pretty printet (der er ingen comments) 
+       *            Dernæst løbes igennem den uformaterede tekst indtil at det før fundne 
+       *            antal fratrukket længden af pretty printet er nået, men hvor ws i den
+       *            formaterede tekst ikke er talt med.
+       *            !!! *)
+      findIndexMinusWS:
+	(# str, str200: ^Text;
+	   num, i, ws: @integer;
+	   insidecomment: @boolean;
+	   hallooo: @integer; 
+	enter (num, str[])
+	do iter: str.scanAll
+	     (#
+	     do i+1 -> i;
+		(if not insidecomment then
+		    (if (ch='\n') or (ch='\t') or (ch=' ') then
+			ws+1 -> ws;
+		    if);
+		    (if (ch='(') and 
+                        (i+1 <= str.length) and
+                        ((i+1->str.inxGet)='*') then
+			ws+1 -> ws;
+			true -> insidecomment;
+		    if);
+		    (if i-ws = num then
+			leave iter;
+		    if);
+		 else
+		    ws+1 -> ws;
+		    (if (ch='*') and 
+                        (i+1 <= str.length) and
+                        ((i+1 -> str.inxGet)=')') then
+			false -> insidecomment;
+			ws+1 -> ws; (* the ')' *)
+		    if);
+		if);
+	     #);
+
+	   (* a trailing comment *)
+	   iter2: ((i+1,str.length) -> str.sub).scanAll
+	     (#
+	     do (if not insidecomment then
+		    (if (ch=' ') or (ch='\n') then
+			i+1 -> i;
+		     else
+			(if (ch='(') and 
+                            (i+1 <= str.length) and
+                            ((i+1+1->str.inxGet)='*') then
+			    i+1  -> i;
+			    true -> insidecomment;
+			 else
+			    leave iter2;
+			if);
+                    if);
+		 else
+		    i+1 -> i;
+		    (if (ch='*') and 
+                        (i+1 <= str.length) and
+                        ((i+1 -> str.inxGet)=')') then (* only +1 because the i+1 before *)
+			false -> insidecomment;
+			i+1 -> i; (* the ')' *)
+		    if);
+		if);
+	     #);
+	exit i 
+	#);
+      countWhiteSpace:
+	(# num,i : @integer;
+	   str: ^Text;
+	enter str[]
+	do str.scanAll
+	     (#
+	     do i+1 -> i;
+		(if (ch='\n') or (ch='\t') or (ch=' ') then
+		    num+1 -> num;
+		if);
+	     #);
+	exit num
+	#);
+      ripComments:
+	(# i: @integer;
+	   str, out: ^Text;
+	   insidecomment: @boolean;
+	enter str[]
+	do &Text[] -> out[];
+	   iter: str.scanAll
+	     (#
+	     do i+1 -> i;
+		(if not insidecomment then                    
+		    (if (ch='(') and 
+                        (i+1 <= str.length) and
+                        ((i+1->str.inxGet)='*') then
+			true -> insidecomment;
+		     else
+			(if (i<=2) then ch -> out.put; if);
+			(if (i>2) and (not (((i-1 -> str.inxGet)='*') and (ch=')'))) then
+			    ch -> out.put;
+			if);
+		    if);
+		 else
+		    (if (ch='*') and 
+                        (i+1 <= str.length) and
+                        ((i+1 -> str.inxGet)=')') then
+			false -> insidecomment;
+		    if);
+		if);
+	     #);
+	exit out[]
+	#);
+      p,k : @integer;
+
+   do &Text[] -> preText[];
+      preText[] -> mydecl.print;
+      preText[] -> ripComments -> preText[];  (* MLDecl can contain comments! *)
+      preText[] -> countWhiteSpace -> p;
+      (preText.length-p, theText[])  -> findIndexMinusWS -> k;
+      ((1, k) -> theText.sub).trim -> preText[];
+      ((k+1,theText.length) ->  theText.sub).trim -> postText[];
+      
+      (* Replace color with colset *)
+      (if 'color' -> ((1,5) -> postText.sub).equal then
+          (6,postText.length) -> postText.sub -> postText[];
+          'colset' -> postText.prepend;
+      if);
+   #);
+
+--DeclarationChangeDecl:doPart--
+do (if new[] <> mldecl[] then
+       (if (mldecl[] <> NONE) and (getCPNet <> none) then
+           new.id[] -> (getCPNet).theGlobals.disassociateIDandDecl;
+           mldecl.id[] -> (getCPNet).theGlobals.disassociateIDandDecl;
+	   mldecl.id.copy -> new.id[];
+	   mldecl.overwrites.scan
+	     (# do current[] -> new.overwrites.append; #);
+	   mldecl.overwrittenBy.scan
+	     (# do current[] -> new.overwrittenBy.append; #);
+	   mldecl.overwrites.scan
+	     (#
+	     do
+		mldecl[] -> current.overwrittenBy.at -> current.overwrittenBy.delete;
+		new[] -> current.overwrittenBy.append;
+	     #);
+	   mldecl.overwrittenBy.scan
+	     (#
+	     do
+		mldecl[] -> current.overwrites.at -> current.overwrites.delete;
+		new[] -> current.overwrites.append;
+	     #);
+	   mldecl.scanUsedBy
+	     (# do current[] -> new.addUsedBy; #);
+	   mldecl.scanUsedByNodes
+             (# do current[] -> new.addUsedByNode; #);
+           mldecl.scanUsedByMonitors
+             (# do current[] -> new.addUsedByMonitor; #);
+	   mldecl.overwrites.clear;
+	   mldecl.overwrittenBy.clear;
+	   mldecl.clearUsedBy;
+	   mldecl.clearUsedByNodes;
+	   mldecl[] -> markForDeletion;
+
+	   THIS(Declaration)[] -> mldecl.detach;
+	   NONE -> mldecl.theDeclaration[];
+	   mldecl.semanticChanged;
+       if);
+
+       new[] -> mldecl[];
+   if);
+   (if (getCPNet <> NONE) AND
+       ((getCPNet).theGlobals[] <> NONE) then
+       (* Yes, I know this is ugly, but we use Declarations outside CPNets,
+        * so we are not garanteed a Globals to register the Decl in. 
+        * /dossen
+        *)
+       (mldecl.id[], mldecl[]) -> (getCPNet).theGlobals.associateIDandDecl;
+   if);
+   THIS(Declaration)[] -> mldecl.attach;
+   THIS(Declaration)[] -> mldecl.theDeclaration[];
+   (if mldecl## <= BlockDecl## then
+       true -> isBlock;
+    else
+       false -> isBlock;
+   if);
+   mldecl.semanticChanged;
+   mldecl.shortName -> theShortName[];
+   (if node[] <> NONE then
+       node[] -> 
+       qua
+       (# as:: IndexNode; 
+       do (if not thisObj.expanded then
+              shortName -> thisObj.setTextContent;
+          if);
+       #);
+   if);
+  

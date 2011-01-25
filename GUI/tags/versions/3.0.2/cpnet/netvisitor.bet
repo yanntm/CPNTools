@@ -1,0 +1,196 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN 'cpnet';
+-- Workspacelib: attributes --
+
+(* ------------------ visitor outline for new pack code ----------- *)
+
+NetVisitor:
+  (# init:< (# do INNER; #);
+     
+     visitCPNet:<
+       (# current: ^CPNet;
+       enter current[]
+       do INNER;
+       #);
+
+     visitFusionSet:<
+       (# current: ^FusionSet;
+       enter current[]
+       do INNER;
+       #);
+
+     visitGlobals:<
+       (# current: ^Globals;
+       enter current[]
+       do INNER;
+       #);
+
+     visitCPNPage:<
+       (# current: ^CPNPage;
+       enter current[]
+       do INNER;
+       #);
+
+     visitPlace:<
+       (# current: ^Place;
+       enter current[]
+       do INNER;
+       #);
+     
+     visitPlaceType:< 
+       (# current: ^PlaceType;
+       enter current[]
+       do INNER;
+       #);
+
+     visitInitMark:<
+       (# current: ^InitMark;
+       enter current[]
+       do INNER;
+       #);
+
+     visitPortType:<
+       (# current: ^PortType;
+       enter current[]
+       do INNER;
+       #);
+
+     visitFusionInfo:<
+       (# current: ^FusionInfo;
+       enter current[]
+       do INNER;
+       #);
+
+     visitTransition:<
+       (# current: ^Transition;
+       enter current[]
+       do INNER;
+       #);
+
+     visitTransTime:<
+       (# current: ^TransTime;
+       enter current[]
+       do INNER;
+       #);
+
+     visitTransGuard:<
+       (# current: ^TransGuard;
+       enter current[]
+       do INNER;
+       #);
+
+     visitTransAction:<
+       (# current: ^TransAction;
+       enter current[]
+       do INNER;
+       #);
+
+     visitTransChannel:<
+       (# current: ^TransChannel;
+       enter current[]
+       do INNER;
+       #);
+
+     visitTransPriority:<
+       (# current: ^TransPriority;
+       enter current[]
+       do INNER;
+       #);
+
+     visitArc:<
+       (# current: ^Arc;
+       enter current[]
+       do INNER;
+       #);
+
+     visitAnnotation:<
+       (# current: ^Annotation;
+       enter current[]
+       do INNER;
+       #);
+
+     visitSubPageInfo:<
+       (# current: ^SubPageInfo;
+       enter current[]
+       do INNER;
+       #);
+     
+     visitSSArc:<
+       (# current: ^SSArc;
+       enter current[]
+       do INNER;
+       #);
+     visitSSNode:<
+       (# current: ^SSNode;
+       enter current[]
+       do INNER;
+       #);
+
+
+     visitBendPoint:<
+       (# current: ^BendPoint;
+       enter current[]
+       do INNER;
+       #);
+
+     visitAux:<
+       (# current: ^Aux;
+       enter current[]
+       do INNER;
+       #);
+
+     visitGroup:<
+       (# current: ^Group;
+       enter current[]
+       do INNER;
+       #);
+
+     visitHorizontalGuideline:<
+       (# current: ^HorizontalGuideline;
+       enter current[]
+       do INNER;
+       #);
+
+     visitVerticalGuideLine:<
+       (# current: ^VerticalGuideline;
+       enter current[]
+       do INNER;
+       #);
+     
+     visitMonitor:<
+       (# current: ^Monitor;
+       enter current[]
+       do inner;
+       #);
+     
+     visitMonitorBlock:<
+       (# current: ^MonitorBlock;
+       enter current[]
+       do inner;
+       #);
+  #);
+(* ----------------------- end visitor --------------------- *)

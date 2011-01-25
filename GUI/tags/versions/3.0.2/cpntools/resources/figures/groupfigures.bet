@@ -1,0 +1,130 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '~beta/postwimp/workspace';
+
+INCLUDE 'standardfigures';
+INCLUDE 'figure'
+
+-- workspacelib: attributes --
+
+ToggleGroupFigure: Figure
+  (# useDefaultHotspot::(# do true -> value; #);
+     theToggleGroupFigure: ^Composite;
+     theFilledGroupFigure: ^FilledGroupFigure;
+     theToggleFigure: ^ToggleFigure;
+     
+     init::<
+       (#
+       do 
+          &Composite[]->theToggleGroupFigure[];
+          &FilledGroupFigure[]->theFilledGroupFigure[];
+          &ToggleFigure[]->theToggleFigure[];
+          
+          (22,14)->theFilledGroupFigure.init;
+          theToggleFigure.init;
+          
+          (0,5)->(theFilledGroupFigure.x,theFilledGroupFigure.y);
+          (12,-6)->(theToggleFigure.x,theToggleFigure.y);
+          
+          theToggleFigure[]->theToggleGroupFigure.add;
+          theFilledGroupFigure[]->theToggleGroupFigure.add;
+          theToggleGroupFigure[]->add;
+       #);     
+  #);
+
+NewGroupFigure: Figure
+  (# useDefaultHotspot::(# do true -> value; #);
+     theNewGroupFigure: ^Composite;
+     theGroupFigure: ^FilledGroupFigure;
+     theArrowFigure: ^ArrowFigure;
+     theBasicStyle: ^BasicStyle;
+     
+     init::<
+       (#
+       do 
+          &Composite[]->theNewGroupFigure[];
+          &FilledGroupFigure[]->theGroupFigure[];
+          &ArrowFigure[]->theArrowFigure[];
+          
+          (22,14)->theGroupFigure.init;
+          theArrowFigure.init;
+          
+          (-20,-16)->(theGroupFigure.x,theGroupFigure.y);
+          (-4,-4)->(theArrowFigure.x,theArrowFigure.y);
+          
+          theGroupFigure[]->theNewGroupFigure.add;
+          theArrowFigure[]->theNewGroupFigure.add;
+          theNewGroupFigure[]->add;
+       #);          
+  #);
+
+CloneGroupFigure: Figure
+  (# useDefaultHotspot::(# do true -> value; #);
+     theCloneGroupFigure: ^Composite;
+     theGroupFigure: ^FilledGroupFigure;
+     theFirstClonedGroupFigure: ^FilledGroupFigure;
+     theSecondClonedGroupFigure: ^FilledGroupFigure;
+     theArrowFigure: ^ArrowFigure;
+     theBasicStyle: ^BasicStyle;
+     theGroupColor: ^Color;
+     
+     init::<
+       (#
+       do 
+          &Composite[]->theCloneGroupFigure[];
+          &FilledGroupFigure[]->theGroupFigure[];
+          &FilledGroupFigure[]->theFirstClonedGroupFigure[];
+          &FilledGroupFigure[]->theSecondClonedGroupFigure[];
+          &ArrowFigure[]->theArrowFigure[];
+          
+          (22,14)->theGroupFigure.init;
+          (22,14)->theFirstClonedGroupFigure.init;
+          (22,14)->theSecondClonedGroupFigure.init;
+          theArrowFigure.init;
+          
+          &Color[]->theGroupColor[];
+          (Wheat.red,Wheat.green,Wheat.blue)->theGroupColor;
+          0.7->theGroupColor.darken->theGroupColor[];
+          &BasicStyle[]->theBasicStyle[];
+          (theGroupColor[],theGroupColor[],1)->theBasicStyle->theSecondClonedGroupFigure.
+          theGroupFigure.theGroupFigure.theStyle[];          
+          
+          (0,5)->(theGroupFigure.x,theGroupFigure.y);
+          (-20,-16)->(theFirstClonedGroupFigure.x,theFirstClonedGroupFigure.y);
+          (-16,-20)->(theSecondClonedGroupFigure.x,theSecondClonedGroupFigure.y);
+          (-4,-4)->(theArrowFigure.x,theArrowFigure.y);
+          
+          theSecondClonedGroupFigure[]->theCloneGroupFigure.add;
+          theFirstClonedGroupFigure[]->theCloneGroupFigure.add;
+          theArrowFigure[]->theCloneGroupFigure.add;
+          theGroupFigure[]->theCloneGroupFigure.add;
+          theCloneGroupFigure[]->add;
+       #);     
+  #);
+
+
+
+

@@ -1,0 +1,24 @@
+#!/usr/bin/perl -w
+# Usage copynew <source> <destination>
+
+$SOURCE=$ARGV[0] || die "Needs source\n";
+$DESTINATION=$ARGV[1] || die "Needs destination\n";
+
+$ROOT=`pwd`;
+chomp $ROOT;
+
+$S = "$ROOT/$SOURCE";
+$D = "$ROOT/$DESTINATION";
+
+chdir "$D";
+
+@FILES=`find . -type f`;
+
+foreach $file (@FILES) {
+    chomp $file;
+    $diff=0;
+    if (-f "$S/$file") {
+	$diff = system(">/dev/null diff -q '$S/$file' '$D/$file'");
+	system "touch --reference='$S/$file' '$D/$file'" unless ($diff);
+    }
+}

@@ -1,0 +1,189 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../cpnet';
+
+--BindingDialogPrivate:descriptor--
+(# foundEnabled, timeIncreased: @boolean;
+   ProxyBindingIndex: IndexTriangle
+     (# 
+        triangleColor::
+          (# 
+          do enabled_color -> c[];
+          #);
+        indexPosition::
+          (# 
+          do (THIS(BindingDialog).x,THIS(BindingDialog).y) -> (p.x,p.y);
+          #);
+        onMouseUp::
+          (# 
+          do (if (not manualBindingStarted and not indexVisible) then
+                 true -> indexVisible;
+                 ShowPossibleBindings;
+                 THIS(BindingDialog).update;
+              else
+                 THIS(BindingDialog).clear;
+                 THIS(BindingDialog).update;
+             if);
+          #);
+     #);
+   theIndex: ^BindingIndex;
+   proxy: ^ProxyBindingIndex;
+   indexVisible: @boolean;
+#)
+   
+--BindingDialogIsBindingDone:doPart--
+do false -> answer;
+   (if private.theIndex[] <> NONE then
+       (private.theIndex[]).isBindingDone -> answer;
+   if);
+   
+--BindingDialogShowPossibleBindings:doPart--
+do (if (not (theTransitionInstance.net).ML.isSimulating)
+       and ((theTransitionInstance.net).status=compiled) then (*To prevent chrash when
+                                                               *trying to bind manually
+                                                               *during syntax check or
+                                                               *a simulation*)
+       ObjectPool.get(# Type::FixedStatusBubble; #) -> fixedStatus[];
+       'Getting possible bindings' -> fixedStatus.running;
+       fixedStatus.start;
+       setBusyCursor;
+       
+       true -> manualBindingStarted;
+       true -> private.indexVisible;
+       &BindingIndex[] -> private.theIndex[];
+       
+       (if THIS(BindingDialog)[] = (theTransitionInstance.net).bindingDialogToReset[] then
+           NONE -> (theTransitionInstance.net).bindingDialogToReset[];
+       if);
+       
+       (theTransitionInstance.net).ML[] -> theTransitionInstance.getPossibleBindings 
+         -> (succes,ilist[],slist[]);
+       (if succes then
+           (ilist[],slist[])->private.theIndex.init;
+           private.proxy.present -> presentation.remove;
+           private.theIndex.present -> presentation.add;
+           THIS(BindingDialog)[] -> (theTransitionInstance.net).bindingDialogToReset[];
+           false -> theTransitionInstance.justFiredWithManualBinding;
+           theTransitionInstance.changed;
+           unsetBusyCursor;
+           fixedStatus.stop;
+        else
+           unsetBusyCursor;
+           fixedStatus.stop;
+           false -> manualBindingStarted;
+           false -> private.indexVisible;
+           ObjectPool.get(# Type::StatusBubble; #) -> status[];
+           (1 -> slist.get) -> (CannotBindManuallyReason -> getGlobalNames).append -> status.error;
+       if);           
+    else
+       false -> manualBindingStarted;
+       false -> private.indexVisible;
+       ObjectPool.get(# Type::StatusBubble; #) -> status[];
+       CannotBindManually -> getGlobalNames -> status.error;
+   if);
+
+--BindingDialogFireWithCurrentChoices:doPart--
+do ObjectPool.get(# Type::FixedStatusBubble; #) -> fixedStatus[];
+   'Firing with current choices' -> fixedStatus.running;
+   fixedStatus.start;
+   setBusyCursor;
+   
+   true -> theTransitionInstance.justFiredWithManualBinding;
+   false -> manualBindingStarted;
+   NONE -> (theTransitionInstance.net).bindingDialogToReset[];
+   true -> private.theIndex.fired;
+   &IntObjList[] -> bindings[];
+   ((theTransitionInstance.net).ML[],private.theIndex.getChosenbindings) 
+     -> theTransitionInstance.fireTransitionWithThisBinding;
+   theTransitionInstance.getMarkingsOfSurroundingPIGs;
+   IncreaseTime:
+     (# 
+     do
+        (theTransitionInstance.net).getAllEnabledTransitions -> foundEnabled;
+        (if not foundEnabled then
+            (theTransitionInstance.net).IncreaseModelTime -> timeIncreased;
+            (if timeIncreased then
+                restart IncreaseTime;
+            if);
+        if);
+     #);
+   (theTransitionInstance.net).updateStepAndTime;
+   THIS(BindingDialog)[] -> (theTransitionInstance.net).bindingDialogToReset[];
+   theTransitionInstance.changed;
+   
+   unsetBusyCursor;
+   fixedStatus.stop;
+   
+-- BindingDialogGetPrintablePart:doPart --
+do (if private.theIndex[]<>NONE then
+       private.theIndex.present -> printablePart.add;
+   if);
+   
+-- BindingDialogClear:doPart --  
+do NONE -> private.theIndex[];
+   NONE -> (theTransitionInstance.net).bindingDialogToReset[];
+   false -> private.indexVisible;
+   false -> theTransitionInstance.justFiredWithManualBinding;
+   (if manualBindingStarted then
+       (theTransitionInstance.net).ML[] -> theTransitionInstance.abortManualBinding;
+       false -> manualBindingStarted;
+   if);
+   update;
+          
+-- BindingDialogInit:doPart --
+do &private.ProxyBindingIndex[] -> private.proxy[];
+   private.proxy.init;
+   false -> manualBindingStarted;
+   false -> theTransitionInstance.justFiredWithManualBinding;
+   false -> private.indexVisible;
+   theTransitionInstance.changed;   
+   
+-- BindingDialogUpdate:doPart --
+do presentation.clear;
+   (if (theTransitionInstance.status=isEnabled) then
+       private.proxy.present -> presentation.add;
+   if);
+   (if ((not (private.theIndex[]=NONE)) and private.indexVisible) then
+       (theTransitionInstance.theTransition.deltaPositionOfBindingIndex.d.x,
+       theTransitionInstance.theTransition.deltaPositionOfBindingIndex.d.y)
+         -> (private.theIndex.x,private.theIndex.y);
+       private.theIndex.changed;
+       private.theIndex.present -> presentation.add;
+   if);
+   
+   
+   theTransitionInstance.changed;
+   
+--BindingDialogOnClicked:doPart--
+do (if private.theIndex[] <> NONE then
+       (if theTransitionInstance.justFiredWithManualBinding then
+           THIS(BindingDialog).clear;
+        else
+           (if private.theIndex.isBindingDone then
+               THIS(BindingDialog).fireWithCurrentChoices;
+           if);
+       if);
+   if);

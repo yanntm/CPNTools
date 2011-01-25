@@ -1,0 +1,1130 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../cpnet';
+
+-- InscriptionPrivate:Descriptor --
+(# cpnml: ^Text; 
+   AST: ^Text;
+#)
+
+-- InscriptionClone:doPart --
+do (getInscription).copy -> new.setInscription;
+   (dx,dy) -> (new.dx,new.dy);
+   new.getInscription -> (new.getTextItem).content[];
+   INNER;
+   
+-- InscriptionDefaultSnap:doPart --
+do INNER;
+   
+-- InscriptionPositionForSave:doPart --
+do (# dx, dy: @Real;
+      w, h: @Real;
+   do private.cpnml[] -> arial.measureText -> (w, h);
+      (if anchorHorizontal
+       //LeftJustify then
+          w / 2 -> dx;
+       //RightJustify then
+          - w / 2 -> dx;
+      if);
+      (if anchorVertical
+       //TopJustify then
+          h / 2 -> dy;
+       //RightJustify then
+          - h / 2 -> dy;
+      if);
+      xx + dx -> xx;
+      yy + dy -> yy;
+   #);     
+   
+-- InscriptionDefaultInscriptionRegularExpression:DoPart --
+do (# pre: @Pcre;
+      ok: @boolean;
+      result: ^Text;
+   do inner defaultInscriptionRegularExpression;
+      (if theRegularExpression[] = none then
+          '^\\s*' -> theRegularExpression[];
+          defaultInscription -> theRegularExpression.append;          
+          '\\s*$' -> theRegularExpression.append;
+      if);
+   #);
+   
+-- InscriptionIsDefaultInscription:doPart --
+do (defaultInscription -> private.cpnml.equal) -> value;   
+   
+-- InscriptionDelete:doPart --
+do NONE -> setInscription; (* this is how to "delete" an inscription *)
+   (# f:^PageElement;
+      theNode: ^Node;
+   do (if qerror[] <> NONE then (* MLEval makes use of this *)
+          qerror.presentation[] -> presentation.remove;
+          qerror.delete;
+          none -> qerror[];
+          changed;
+      if);
+      true -> deleted;
+      INNER delete;
+      (if father[] <> NONE then (* FIXME: this goes further down *)
+          father[]->f[];
+          (*THIS(Inscription)[] -> father.remove;*)
+          (if f## <= Node## then
+              f[] -> theNode[];
+              (if createdUnchanged and 
+                  ((theNode.status = checked) or
+                  (theNode.status = compiled)) then
+                  false -> createdUnchanged;
+                  (if debugging then
+                      'The Inscription was just created, and its parent is fine... No check ;-' ->debugCPNet;
+                  if);
+               else
+                  f.onSemanticChanged;
+              if);
+          if);
+      if);
+   #);     
+ 
+-- InscriptionNext: doPart --
+do (if debugging then
+       '\n>>>>\n  leaving inscription %s at (%f,%f)\n  with cpnml="%s"\n  and father %s\n<<<<<'
+         ->
+       debugclone(# 
+                 do THIS(Inscription).id[] -> s;
+                    THIS(Inscription).x -> f;
+                    THIS(Inscription).y -> f;
+                    THIS(Inscription).private.cpnml[] -> s;
+                    THIS(Inscription).father.id[] -> s;
+                 #);
+   if);
+   (if getInscription -> (defaultInscription).equal then
+       '' -> theItem.content[];
+   if);
+   INNER;
+   
+-- InscriptionOnFocusLost:doPart --
+do (# pre: @Pcre;
+   do defaultInscriptionRegularExpression -> pre;
+      (if (theItem.content.copy -> pre.match) or
+          ('' -> theItem.content.equal) then
+          '' -> theItem.content[];
+          defaultInscription -> private.cpnml[];
+      if);
+   
+      inner onFocusLost;
+      
+      (if (defaultInscription -> theItem.content.equal) then
+          changed;
+      if);
+   #);
+   
+-- InscriptionOnTextUpdated:doPart --
+do this(Inscription)[] -> removeMessageBubble;
+   theItem.content.trim -> theItem.content[] -> private.cpnml[];
+   INNER;
+   'Text' -> debugCPNet;
+   
+-- InscriptionOnChanged:doPart --
+do 'Changed' -> debugCPNet;
+   INNER;
+   
+-- InscriptionOnSemanticChanged:doPart --
+do 'Semantic' -> debugCPNet;
+   private.cpnml[] -> theItem.content[];
+   NONE -> private.AST[]; (* something with status *)
+   'resetting AST' -> debugAST;
+   INNER;
+   
+-- InscriptionSetInscription:doPart --
+do (if cpnml[] = none then
+       defaultInscription -> private.cpnml[];
+    else
+       cpnml[] -> private.cpnml[];
+   if);
+   setTextItem;
+   
+-- InscriptionGetInscription:doPart --
+do (if private.cpnml[] = none then
+       defaultInscription -> private.cpnml[];
+   if);
+   private.cpnml[] -> cpnml[]
+   
+-- InscriptionIsBeingEdited:doPart --
+do theItem.editActive -> value;
+   
+-- InscriptionsetEditingMode:doPart --
+do edit -> theItem.editActive;
+   changed;
+   
+-- InscriptionSetTextItem:doPart --
+do private.cpnml[] -> theItem.content[];
+   changed;
+ 
+-- InscriptionClearTextItem:doPart --
+do '' -> theItem.content[];
+   
+-- InscriptionIsVisible:doPart --
+do isBeingEdited or not(isDefaultInscription or ('' -> private.cpnml.equal)) -> value;
+   INNER;
+
+-- InscriptionSetAST:doPart --
+do 'Setting AST = "%s", was "%s"' -> 
+   debugAST
+   (# 
+   do (if ast[] <> NONE then
+          ast[] -> s; 
+       else
+          '***NONE***' -> s;
+      if);
+      (if THIS(Inscription).private.AST[] <> NONE then
+          THIS(Inscription).private.AST[] -> s; 
+       else
+          '***NONE***' -> s;
+      if);
+   #);
+   ast[] -> private.AST[];
+   
+-- InscriptionGetAST:doPart --
+do private.AST[] -> ast[];
+   
+--InscriptionUpdate:doPart--
+do (# xmin, xmax, ymin, ymax: @Real;
+      handle: ^Rect;
+      ii: @integer;
+      
+      holder: ^Composite;
+      
+   do &Composite[] -> holder[];
+      holder.init;
+      
+      TextColor[] -> StrokeStyle -> theItem.theStyle[];
+      (if theItem.content[] = NONE then
+          private.cpnml[] -> theItem.content[];
+      if);
+      NONE -> theItem.father[];
+      theItem[] -> holder.add;
+      
+      0 -> holder.x;
+      0 -> holder.y;
+      holder.bounds -> (xmin, xmax, ymin, ymax);
+      x -> ii -> presentation.x;
+      y -> ii -> presentation.y;
+
+      (if anchorHorizontal
+       //LeftJustify then
+          -xmin -> ii -> holder.x;
+       //CenterJustify then
+          -xmin - (xmax - xmin)  / 2 -> ii -> holder.x;
+       //RightJustify then
+          -xmax -> ii -> holder.x;
+      if);
+      (if anchorVertical
+       //TopJustify then
+          -ymin -> ii -> holder.y;
+       //CenterJustify then
+          -ymin - (ymax - ymin) / 2 -> ii -> holder.y;
+       //BottomJustify then
+          -ymax -> ii -> holder.y;
+      if);
+      
+      
+      holder[] -> presentation.add;
+   #);
+   
+-- InscriptionPrint:doPart --
+do (# xmin, xmax, ymin, ymax: @Real;      
+   do private.cpnml[] -> theItem.content[];
+      0 -> theItem.x;
+      0 -> theItem.y;
+      theItem.bounds -> (xmin, xmax, ymin, ymax);
+      
+      (if anchorHorizontal
+       //LeftJustify then
+          -xmin -> theItem.x;
+       //CenterJustify then
+          -xmin - (xmax - xmin)  / 2 -> theItem.x;
+       //RightJustify then
+          -xmax -> theItem.x;
+      if);
+      (if anchorVertical
+       //TopJustify then
+          -ymin -> theItem.y;
+       //CenterJustify then
+          -ymin - (ymax - ymin) / 2 -> theItem.y;
+       //BottomJustify then
+          -ymax -> theItem.y;
+      if);
+      x + theItem.x -> theItem.x;
+      y + theItem.y -> theItem.y;
+   #);
+   
+-- InscriptionGetTextItem:doPart --
+do theItem[] -> theTextItem[];
+
+-- InscriptionBounds:doPart --
+do (# w, h: @Real;
+   do (if private.cpnml[] <> NONE then
+          private.cpnml[] -> arial.measureText -> (w, h);
+      if);
+      (if false (*** HML: Why measure the item also?***) then
+          (if theItem[] <> NONE then
+              theItem.content[] -> arial.measureText -> (w, h);
+          if);
+      if);
+      (if anchorHorizontal
+       //LeftJustify then
+          xmin + w -> xmax;
+       //CenterJustify then
+          xmin - w / 2 -> xmin;
+          xmax + w / 2 -> xmax;
+       //RightJustify then
+          xmin - w -> xmin;
+      if);
+      (if anchorVertical
+       //TopJustify then
+          ymin + h -> ymax;
+       //CenterJustify then
+          ymin - h / 2 -> ymin;
+          ymax + h / 2 -> ymax;
+       //BottomJustify then
+          ymin - h -> ymin;
+      if);
+   #);
+   
+-- InscriptionInit:doPart --
+do &TextItem[] -> theItem[];
+   theItem.init;
+   this(Inscription)[] -> theItem.owner[];
+   CenterJustify -> anchorHorizontal;
+   CenterJustify -> anchorVertical;
+   false -> createdUnchanged;
+   setInscription;
+   INNER;
+   
+-- TransitionInscriptionPrivate:Descriptor --
+(# theTransition: ^Transition; 
+#)
+   
+-- TransitionInscriptionSetTransition:DoPart --
+do theTransition[] -> private.theTransition[];
+   
+-- TransitionInscriptionGetTransition:DoPart --
+do private.theTransition[] -> theTransition[];
+   
+-- TransitionInscriptionOnSemanticChanged:doPart --
+do (getTransition).semanticChanged;
+   INNER;
+
+-- TransitionInscriptionSnap:doPart --
+do (if getTransition <> NONE then 
+       This(TransitionInscription)[] -> (getTransition).snapTo -> (dx,dy);
+   if);
+
+-- TransitionInscriptionIsVisible:doPart --
+do value and (getTransition <> NONE)  -> value;
+   
+-- TransitionInscriptionOnTextUpdated:DoPart --
+do semanticChanged;
+   inner;
+   
+-- PlaceInscriptionSnap:doPart --
+do (if getPlace <> NONE then 
+       This(PlaceInscription)[] -> (getPlace).snapTo -> (dx,dy);
+   if);
+
+-- PlaceInscriptionIsVisible:doPart --
+do value and (getPlace <> NONE) -> value;
+
+-- PlaceInscriptionOnSemanticChanged:doPart --
+do (getPlace).semanticChanged;
+   
+-- TransGuardDefaultInscriptionRegularExpression:DoPart --
+do '^\\s*\\[\\s*\\]\\s*$' -> theRegularExpression[];
+
+-- TransGuardDefaultSnap:doPart --
+do NE -> snap_id;
+   RightJustify -> changeAnchorHorizontal;
+   BottomJustify -> changeAnchorVertical;
+
+   (*(-private.theTransition.width-(w/2), -private.theTransition.height+(h/3)) -> (x,y);*)
+   
+-- TransGuardNext:doPart --
+do (# theTransTime: ^TransTime;
+   do private.theTransition.getTransTime -> elm[] -> theTransTime[];
+      theTransTime.setTextItem;
+   #);
+ 
+-- TransTimeDefaultInscriptionRegularExpression:DoPart --
+do '^\\s*@\\+\\s*$' -> theRegularExpression[];
+   
+-- TransTimeDefaultSnap:doPart --
+do NW -> snap_id;
+   LeftJustify -> changeAnchorHorizontal;
+   BottomJustify -> changeAnchorVertical;
+
+   (*(w, -h) -> (x,y);*)
+
+-- TransTimeNext:doPart --
+do (# theTransAction: ^TransAction;
+   do private.theTransition.getTransAction -> elm[] -> theTransAction[];
+      theTransAction.setTextItem;
+   #);
+   
+-- TransActionDefaultInscriptionRegularExpression:DoPart --
+do '^\\s*'
+   'input\\s*[(]\\s*[)]\\s*;\\s*'
+   'output\\s*[(]\\s*[)]\\s*;\\s*'
+   'action\\s*[(]\\s*[)]\\s*;\\s*$'
+     -> theRegularExpression[];
+
+-- TransChannelDefaultInscriptionRegularExpression:DoPart --
+do
+
+-- TransPriorityDefaultInscriptionRegularExpression:DoPart --
+do 
+
+-- TransActionDefaultSnap:doPart --
+do SW -> snap_id;
+   LeftJustify -> changeAnchorHorizontal;
+   TopJustify -> changeAnchorVertical;
+
+   (*(w, h) -> (x,y);*)
+
+-- TransActionNext:doPart --
+do (# theTransPriority: ^TransPriority;
+   do private.theTransition.getTransPriority -> elm[] -> theTransPriority[];
+      theTransPriority.setTextItem;
+   #)
+
+-- TransChannelDefaultSnap:doPart --
+do W -> snap_id;
+   LeftJustify -> changeAnchorHorizontal;
+   CenterJustify -> changeAnchorVertical;
+
+-- TransChannelNext:doPart --
+do private.theTransition[] -> elm[];   
+  
+-- TransPriorityDefaultSnap:doPart --
+do SE -> snap_id;
+   RightJustify -> changeAnchorHorizontal;
+   CenterJustify -> changeAnchorVertical;
+
+-- TransPriorityNext:doPart --
+do (if internal then
+   (# theTransChannel: ^TransChannel;
+   do private.theTransition.getTransChannel -> elm[] -> theTransChannel[];
+      theTransChannel.setTextItem;
+   #);
+   else
+   private.theTransition[] -> elm[];   
+   if);
+  
+-- PlaceTypePrivate:Descriptor --
+(# thePlace: ^Place;   
+   placeTypeCompletionCycle: @integer;
+   resetCycleCounter:
+     (# 
+     do 0 -> placeTypeCompletionCycle;
+     #);
+   init:
+     (# 
+     do resetCycleCounter;
+     #);
+#)
+
+-- PlaceTypeResetCycleCounter:DoPart --
+do private.resetCycleCounter;
+
+-- PlaceTypeMakeAutoCompletion:doPart --
+do (# colorNames: ^SortedTextSequence; 
+      length: @integer;
+      theTextItem: ^TextItem;
+      notMarkedText, content: ^Text;      
+   do getTextItem -> theTextItem[];
+      (if theTextItem.end = theTextItem.content.length then 
+          (1, theTextItem.start) -> theTextItem.content.sub -> notMarkedText[];
+          notMarkedText[]
+            -> (getCPNPage).net.getColorNamesAlphabetically
+            -> colorNames[]; 
+          (if colorNames.size > 0 then
+              theTextItem.content.clear;
+              notMarkedText[] -> theTextItem.content.append;
+              
+              (if direction
+               // upArrow then
+                  private.placeTypeCompletionCycle + 1 -> private.placeTypeCompletionCycle;
+               // downArrow then
+                  private.placeTypeCompletionCycle - 1 -> private.placeTypeCompletionCycle;
+               else
+                  1 -> private.placeTypeCompletionCycle;
+              if);
+              
+              (if private.placeTypeCompletionCycle > colorNames.size then
+                  1 -> private.placeTypeCompletionCycle;
+              if);
+              (if private.placeTypeCompletionCycle < 1 then
+                  colorNames.size -> private.placeTypeCompletionCycle;
+              if);
+              
+              private.placeTypeCompletionCycle -> colorNames.get -> content[];
+                            
+              (getTextItem).content.length -> length;
+              (length + 1, content.length) -> content.sub -> theTextItem.content.append;
+              length -> theTextItem.start;
+              content.length -> theTextItem.end; 
+              true -> (getTextEditor).touched;
+           else
+              private.resetCycleCounter;
+          if);
+       else
+          private.resetCycleCounter;
+      if);
+   #);
+   
+-- PlaceTypeDefaultInscription:doPart --
+do 'PLACE TYPE' -> theInscription[];
+
+-- PlaceTypeDefaultSnap:doPart --
+do SW -> snap_id;
+   LeftJustify -> changeAnchorHorizontal;
+   TopJustify -> changeAnchorVertical;
+   
+-- PlaceTypeNext:doPart --
+do (# theInitMark: ^InitMark;
+   do private.resetCycleCounter;
+      private.thePlace.getInitMark -> elm[] -> theInitMark[];
+      theInitMark.setTextItem;
+   #);
+   
+-- PlaceTypeDelete:doPart --
+do (if createdUnchanged and 
+       ((private.thePlace.status = checked) or
+       (private.thePlace.status = compiled)) then
+       false -> createdUnchanged;
+       (if debugging then
+           'The Inscription was just created, and its parent is fine... No check ;-' ->debugCPNet;
+       if);
+    else
+       private.thePlace.onSemanticChanged;
+   if);
+   true -> private.thePlace.SetAssignmentGraphError;
+   
+-- PlaceTypeOnTextUpdated:doPart --
+do theItem.content.copy -> private.thePlace.setPlaceTypeOfAssignmentGraph;  
+   
+-- PlaceTypeSetPlace:doPart --
+do thePlace[] -> private.thePlace[];
+      
+-- PlaceTypeGetPlace:doPart --
+do private.thePlace[] -> thePlace[];
+   
+-- PlaceTypeOnSemanticChanged:doPart --
+do (*** Semanticchanged is not called when an place type is not on a place ***)
+   ('private.thePlace[] <> none', private.thePlace[] <> none) -> assert (# #);
+   
+   private.thePlace.semanticChangedOnPlaceGraph;
+   
+-- PlaceTypeOnFocusLost:DoPart --
+do private.resetCycleCounter;
+   
+-- PlaceTypeInit:DoPart --
+do private.init;
+   
+-- InitMarkPrivate:Descriptor --
+(# thePlace: ^Place;  
+#)
+
+-- InitMarkDefaultInscription:doPart --
+do 'INIT MARK' -> theInscription[];
+   
+-- InitMarkDefaultSnap:doPart --
+do NW -> snap_id;
+   LeftJustify -> changeAnchorHorizontal;
+   BottomJustify -> changeAnchorVertical;
+   
+   (* ((3*w)/4, -h) -> (x,y); {* hack *} *)
+   
+-- InitMarkNext:doPart --
+do private.thePlace[] -> elm[];
+
+-- InitMarkOnTextUpdated:doPart --
+do private.thePlace.initMarkChanged;
+   
+-- InitMarkSetPlace:doPart --
+do thePlace[] -> private.thePlace[];
+
+-- InitMarkGetPlace:doPart --
+do private.thePlace[] -> thePlace[];
+
+-- InitMarkOnSemanticChanged:doPart --
+do (*** Semanticchanged is not called when an init mark is not on a place ***)
+   ('private.thePlace[] <> none', private.thePlace[] <> none) -> assert (# #);
+   
+   private.thePlace.initMarkChanged;
+   
+-- AnnotationComputeAttachment: doPart --
+do (# computeTraditionalAttachment:
+        (# points: ^PointList;
+           length: @real;
+           p: @Point2d;
+           m: @Point2d;
+           alpha, beta: @real;
+           currentDist: @real;
+           currentAlpha: @real;
+           currentBeta: @real;
+           accumAlpha: @real;
+           found: @boolean;
+           u, v: @Point2d;
+           p1, p2: ^Point2d;
+           
+        do getPoints -> points[];
+           points[] -> ComputeLength -> length;
+           
+           (if length > 0 then
+               position -> (p.x, p.y);
+               MaxReal -> currentDist;
+               false -> found;
+                          
+               search:
+                 (# d: @real;
+                    dist: @real;
+                 do 1 -> points.get -> p1[];
+                    (for inx: points.size - 1 repeat
+                         (inx + 1) -> points.get -> p2[];
+                         (p1[], p2[]) -> PointDist -> d;
+                         (if d > 0 then
+                             (p2.x - p1.x) / d -> u.x;
+                             (p2.y - p1.y) / d -> u.y;
+                             -u.y -> v.x;
+                             u.x -> v.y;
+                             (p.x - p1.x) * u.x + (p.y - p1.y) * u.y -> alpha;
+                             (if (0 < alpha) and (alpha < d) then
+                                 (p.x - p1.x) * v.x + (p.y - p1.y) * v.y -> beta;
+                                 beta -> abs -> dist;
+                                 (if dist < currentDist then
+                                     beta -> currentBeta;
+                                     accumAlpha + alpha -> currentAlpha;
+                                     dist -> currentDist;
+                                     p1.x + alpha * u.x -> m.x;
+                                     p1.y + alpha * u.y -> m.y;
+                                     true -> found;
+                                 if);
+                             if);
+                             accumAlpha + d -> accumAlpha;
+                         if);
+                         p2[] -> p1[];
+                    for);
+                 #);
+               (if found then
+                   currentBeta -> dist;
+                   currentAlpha / length -> t;
+                   true -> attached;
+                else
+                   false -> attached;
+               if);
+           if);
+        #);
+      computeSegmentAttachment:
+        (# points: ^PointList;
+           length: @real;
+           p: @Point2d;
+           m: @Point2d;
+           alpha, beta: @real;
+           found: @boolean;
+           u, v: @Point2d;
+           p1, p2: ^Point2d;
+           
+           currentDist: @real;
+           dx, dy: @real;
+           dxx, dyy: @real;
+           seg: @integer;
+        do CenterJustify -> changeAnchorHorizontal -> dx;
+           CenterJustify -> changeAnchorVertical -> dy;
+           
+           getPoints -> points[];
+           points[] -> ComputeLength -> length;
+           
+           (if length > 0 then
+               
+               
+               
+               position -> (p.x, p.y);
+               p.copy -> private.theArc.setMark;
+               
+               
+               
+               MaxReal -> currentDist;
+               false -> found;
+                          
+               search:
+                 (# d: @real;
+                    dist: @real;
+                 do 1 -> points.get -> p1[];
+                    (for inx: points.size - 1 repeat
+                         (inx + 1) -> points.get -> p2[];
+                         (p1[], p2[]) -> PointDist -> d;
+                         (if d > 0 then
+                             (p2.x - p1.x) / d -> u.x;
+                             (p2.y - p1.y) / d -> u.y;
+                             -u.y -> v.x;
+                             u.x -> v.y;
+                             (p.x - p1.x) * u.x + (p.y - p1.y) * u.y -> alpha;
+                             (if (0 < alpha) and (alpha < d) then
+                                 (p.x - p1.x) * v.x + (p.y - p1.y) * v.y -> beta;
+                                 beta -> abs -> dist;
+                                 (if dist < currentDist then
+                                     dist -> currentDist;
+                                     inx -> seg;
+                                     p1.x + alpha * u.x -> m.x;
+                                     p1.y + alpha * u.y -> m.y;
+                                     true -> found;
+                                 if);
+                             if);
+                         if);
+                         p2[] -> p1[];
+                    for);
+                 #);
+               (if found then
+                   seg -> attachedSegment;
+                   true -> attached;
+                   attachedSegment -> computeAdvancedAttachment -> (dxx, dyy);
+                   dx + dxx -> dx;
+                   dy + dyy -> dy;
+                else
+                   false -> attached;
+               if);
+           if);
+        exit (dx, dy)
+        #);
+        
+      computeAdvancedAttachment:
+        (# points: ^PointList;
+           A, B: ^Point2d;
+           v: ^Point2d;
+           u: ^Point2d;
+           n: ^Point2d;
+           PointHat:
+             (# p, q: ^Point2d;
+             enter p[]
+             do &Point2d[] -> q[];
+                -p.y -> q.x;
+                p.x -> q.y;
+             exit q[]
+             #);
+           PointDiff:
+             (# p, q: ^Point2d;
+                result: ^Point2d;
+             enter (p[], q[])
+             do &Point2d[] -> result[];
+                p.x - q.x -> result.x;
+                p.y - q.y -> result.y;
+             exit result[]
+             #);
+           PointAdd:
+             (# p, q: ^Point2d;
+                result: ^Point2d;
+             enter (p[], q[])
+             do &Point2d[] -> result[];
+                q.x + p.x -> result.x;
+                q.y + p.y -> result.y;
+             exit result[]
+             #);
+           PointNorm:
+             (# v: ^Point2d;
+                norm: @real;
+             enter v[]
+             do v.x*v.x + v.y*v.y -> sqrt -> norm;
+             exit norm
+             #);
+           PointScale:
+             (# p: ^Point2d;
+                t: @real;
+                q: ^Point2d;
+             enter (p[], t)
+             do &Point2d[] -> q[];
+                p.x*t -> q.x;
+                p.y*t -> q.y;
+             exit q[]
+             #);
+           norm: @real;
+           new_t: @real;
+           new_d: @real;
+           C: @Point2d;
+           AC: ^Point2d;
+           w, h: @real;
+           diag: @Point2d;
+           anchor: ^Point2d;
+           A_anchor: ^Point2d;
+           
+           seg: @integer;
+           inx: @integer;
+           ii: @integer;
+           reference: ^Point2d;
+           tmp: @Point2d;
+           tmp_d: @real;
+           dx, dy: @real;
+        enter seg
+        do getPoints -> points[];
+           
+           1 -> points.get -> A[];
+           1 -> inx;
+           loop: (#
+                 do inx + 1 -> points.get -> B[];
+                    (if inx <> seg then
+                        B[] -> A[];
+                        inx + 1 -> inx;
+                        restart loop;
+                    if);
+                 #);
+           (if getInscription <> NONE then
+               getInscription -> arial.measureText -> (w, h);
+           if);
+           
+               
+           CenterJustify -> changeAnchorHorizontal;
+           CenterJustify -> changeAnchorVertical;
+           
+           position -> (C.x, C.y);
+           (B[], A[]) -> PointDiff -> v[];
+           v[] -> PointNorm -> norm;
+           
+           
+           comp:
+             (if norm > 0.001 then
+                 (v[], 1/ norm) -> PointScale -> u[];
+                 u[] -> PointHat -> n[];
+                 (C[], A[]) -> PointDiff -> AC[];
+                 ((AC[], u[]) -> DotProduct) / norm  -> new_t;
+                 (AC[], n[]) -> DotProduct -> new_d;
+                 (if true then
+                     (if true
+                      //(new_d * n.x) > 0 then
+                         LeftJustify -> changeAnchorHorizontal -> dx;
+                      //(new_d * n.x) = 0 then
+                         CenterJustify -> changeAnchorHorizontal -> dx;
+                      //(new_d * n.x) < 0 then
+                         RightJustify -> changeAnchorHorizontal -> dx;
+                     if);
+                     (if true
+                      //(new_d * n.y) > 0 then
+                         TopJustify -> changeAnchorVertical -> dy;
+                      //(new_d * n.y) = 0 then
+                         CenterJustify -> changeAnchorVertical -> dy;
+                      //(new_d * n.y) < 0 then
+                         BottomJustify -> changeAnchorVertical -> dy;
+                     if);
+                     &Point2d[] -> anchor[];
+                     position -> anchor;
+                     (anchor[], A[]) -> PointDiff -> A_anchor[];
+                     (A_anchor[], n[]) -> DotProduct -> tmp_d;
+                     
+                     (if tmp_d*new_d < 0 then
+                         true -> crossing;
+                         CenterJustify -> changeAnchorHorizontal;
+                         CenterJustify -> changeAnchorVertical;
+                         0 -> dx;
+                         0 -> dy;
+                      else
+                         false -> crossing;
+                         tmp_d -> new_d;
+                     if);
+                     
+                     
+                 if);
+                 (if new_t < 0 then
+                     0 -> new_t;
+                 if);
+                 (if new_t > 1 then
+                     1 -> new_t;
+                 if);
+                 
+                 new_t -> t;
+                 new_d -> dist;
+              else
+             if);
+        exit (dx, dy)
+        #);
+   do (if not computing then
+          true -> computing;
+          (if LAFON then
+              computeSegmentAttachment -> (dx, dy);
+           else
+              computeTraditionalAttachment;
+          if);
+          false -> computing;
+      if);
+   #);
+-- AnnotationComputePosition: doPart --
+do (# computeTraditionalPosition:
+        (# points: ^PointList;
+           length: @real;
+           alpha, beta: @real;
+           p1, p2: ^Point2d;
+           u, v: @Point2d;
+           m: @Point2d;
+           p: @Point2d;
+           found: @boolean;
+        do getPoints -> points[];
+           points[] -> ComputeLength -> length;
+           (if length > 0 then
+               length * t -> alpha;
+               dist -> beta;
+               search:
+                 (# d: @real;
+                 do false -> found;
+                    1 -> points.get -> p1[];
+                    (for inx: points.size - 1 repeat
+                         inx + 1 -> points.get -> p2[];
+                         (p1[], p2[]) -> PointDist -> d;
+                         (if d < alpha then
+                             alpha - d -> alpha;
+                          else
+                             (if d > 0 then
+                                 (p2.x - p1.x) / d -> u.x;
+                                 (p2.y - p1.y) / d -> u.y;
+                                 -u.y -> v.x;
+                                 u.x -> v.y;
+                                 true -> found;
+                                 leave search;
+                             if);
+                         if);
+                         p2[] -> p1[];
+                    for);
+                 #);
+               (if found then
+                   p1.x + u.x*alpha -> m.x;
+                   p1.y + u.y*alpha -> m.y;
+                   m.x + v.x*beta -> p.x;
+                   m.y + v.y*beta -> p.y;
+                   (p.x, p.y) -> position;
+               if);
+           if);
+        #);
+      computeAdvancedPosition:
+        (# points: ^PointList;
+           A: ^Point2d;
+           B: ^Point2d;
+           vx, vy: @real;
+           nx, ny: @real;
+           length: @real;
+           R: @Point2d;
+           TO: @Point2d;
+           diag: @Point2d;
+           offset: @real;
+           
+           anchor: @Point2d;
+           
+           w, h: @real;
+           seg: @integer;
+           inx: @integer;
+           reference: ^Point2d;
+           old: @Point2d;
+           ii: @integer;
+           
+           round:
+             (# in: @real;
+                out: @integer;
+             enter in
+             do (if in > 0 then
+                    in + 0.5 -> out;
+                 else
+                    in - 0.5 -> out;
+                if);
+             exit out
+             #);
+        enter seg
+        do position -> old;
+           old.copy -> private.theArc.setMark;
+           
+           getPoints -> points[];
+           
+           (if points.size >= 2 then
+               
+               (if seg < 1 then
+                   1 -> seg;
+               if);
+               (if seg > (points.size - 1) then
+                   points.size - 1 -> seg;
+               if);
+               
+               
+               1 -> points.get -> A[];
+               1 -> inx;
+               loop: (#
+                     do inx + 1 -> points.get -> B[];
+                        (if inx <> seg then
+                            B[] -> A[];
+                            inx + 1 -> inx;
+                            restart loop;
+                        if);
+                     #);
+               
+               (if getInscription <> NONE then
+                   getInscription -> arial.measureText -> (w, h);
+               if);
+               
+               (A[], B[]) -> PointDist -> length;
+               (if length > 0.001 then
+                   (B.x - A.x) / length -> vx;
+                   (B.y - A.y) / length -> vy;
+                   -vy -> nx;
+                   vx -> ny;
+                   
+                   
+                   A.x + (B.x - A.x) * t -> R.x;
+                   A.y + (B.y - A.y) * t -> R.y;
+                   
+                   R.x + dist*nx -> TO.x;
+                   R.y + dist*ny -> TO.y;
+                   
+                   
+                   (if not crossing then
+                       (if true
+                        //(dist * nx) > 0 then
+                           LeftJustify -> anchorHorizontal;
+                           -w/2 -> diag.x;
+                        //(dist * nx) = 0 then
+                           CenterJustify -> anchorHorizontal;
+                           0 -> diag.x;
+                        //(dist * nx) < 0 then
+                           RightJustify -> anchorHorizontal;
+                           w/2 -> diag.x;
+                       if);
+                       (if true
+                        //(dist * ny) > 0 then
+                           TopJustify -> anchorVertical;
+                           -h/2 -> diag.y;
+                        //(dist * ny) = 0 then
+                           CenterJustify -> anchorVertical;
+                           0 -> diag.y;
+                        //(dist * ny) < 0 then
+                           BottomJustify -> anchorVertical;
+                           h/2 -> diag.y;
+                       if);
+                   if);
+                   diag.x * vx + diag.y * vy -> offset;
+                   TO.x + offset*vx -> round -> anchor.x;
+                   TO.y + offset*vy -> round -> anchor.y;
+                   (anchor.x, anchor.y) -> position;
+               if);
+           if);
+        #);
+   do (if NOT computing then
+          true -> computing;
+          (if LAFON then
+              attachedSegment -> computeAdvancedPosition;
+           else
+              computeTraditionalPosition;
+          if);
+          false -> computing;
+      if);
+   #);
+
+-- AnnotationClone:doPart --
+do t -> new.t;
+   dist -> new.dist;
+   attached -> new.attached;
+
+-- AnnotationInit: doPart --
+do INNER;
+   
+   
+-- AnnotationLib: attributes --
+
+LAFON: (# exit TRUE #);
+
+getPoints:
+  (# points: ^PointList;
+     theArc: ^Arc;
+  do &PointList[] -> points[];
+     private.theArc[] -> theArc[];
+     (if theArc.points[] <> NONE then
+         theArc.points.scan
+         (#
+         do current[] -> points.append;
+         #);
+     if);
+  exit points[]
+  #);
+ComputeLength:
+  (# length: @real;
+     points: ^PointList;
+  enter points[]
+  do (# p1, p2: ^Point2d;
+     do (if points.size > 1 then
+            1 -> points.get -> p1[];
+            (for inx: points.size - 1 repeat
+                 (inx+1) -> points.get -> p2[];
+                 length + ((p1[], p2[]) -> PointDist) -> length;
+                 p2[] -> p1[];
+            for);
+        if);
+     #);
+  exit length
+  #);
+
+-- AnnotationPrivate:Descriptor --
+(# 
+   theArc: ^Arc;
+#)
+
+-- AnnotationSetArc:doPart --
+do theArc[] -> private.theArc[];
+
+-- AnnotationGetArc:doPart --
+do private.theArc[] -> theArc[];
+
+-- AnnotationDefaultSnapToElement:doPart --
+do private.theArc[] -> elm[]
+
+-- AnnotationOnTextUpdated:doPart --
+do computeAttachment;
+   private.theArc.semanticChanged;
+
+-- AnnotationOnChanged:doPart --
+do (if (getCPNPage <> NONE) and
+       (getArc <> none) then 
+       (* FIXME should not check if getarc is none *)
+       computeAttachment; (* don't compute position unless on a page *)
+   if);
+
+-- AnnotationSnap:doPart --
+do false -> computing;
+   computeAttachment -> (dx, dy);
+   (if attached then
+       (if (((dist -> abs) - 10) -> abs) < 10 then
+           (if crossing then
+            else
+               (if dist < 0 then
+                   -4 -> dist;
+                else
+                   4 -> dist;
+               if);
+               computePosition;
+           if);
+       if);
+   if);
+   true -> computing;
+
+-- AnnotationIsVisible:doPart --
+do value and (getArc <> NONE) -> value;

@@ -1,0 +1,394 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../cpnet';
+
+--PortSocketDialogPrivate:descriptor--
+(# PlaceListSequence: Sequence (# element:: PlaceList; #);
+   PortSocketTriangle: IndexTriangle
+     (# 
+        triangleColor::
+          (# 
+          do lightblueish[] -> c[];
+             c.darken -> c[];
+             c.darken -> c[];
+          #);
+        indexPosition::
+          (# 
+          do (THIS(PortSocketDialog).x,THIS(PortSocketDialog).y) -> (p.x,p.y);
+          #);
+        onMouseUp::
+          (# 
+          do (if not indexVisible then
+                 showAssignments;
+              else
+                 THIS(PortSocketDialog).clear;
+             if);
+             update;
+          #);
+     #);
+   PortSocketIndex: abstractwsIndex
+     (# getBackgroundColor::
+          (# 
+          do purple[] -> c[];
+             (for i:22 repeat
+                  c.lighten -> c[];
+             for);
+          #);
+        maxBackgroundHeight::<
+          (# 
+          do THIS(World).height/2 -> maxHeight;
+          #);
+        
+        SocketNode: AbstractVariableNode
+          (# theSocket: ^Place;
+             
+             init::
+               (# s: ^Place;
+               enter s[]
+               do s[] -> theSocket[];
+               #);
+             
+          #);
+        
+        PortNode: AbstractPickableNode
+          (# thePort: ^Place;
+             fatherType:: SocketNode;
+             init::
+               (# p: ^Place;
+               enter p[]
+               do p[] -> thePort[];
+               #);
+             
+             AssignPortSocketFromIndexCommand: Command
+               (# theAssignment: ^Assignment;
+                  portPlace,socketPlace: ^Place;
+                  
+                  prepare::
+                    (# 
+                    do &Assignment[] -> theAssignment[];
+                       thePort[] -> portPlace[];
+                       THIS(PortNode).father.theSocket[] -> socketPlace[];
+                    #);
+                  
+                  apply::
+                    (# 
+                    do redo;
+                       ((theTransitionInstance.net),THIS(AssignPortSocketFromIndexCommand)[]) 
+                         -> registerCommand;                       
+                    #);
+                  
+                  redo::
+                    (# 
+                    do (portPlace[],socketPlace[],theTransitionInstance.theTransition[]) 
+                         -> theAssignment.init;
+                    #);
+                  undo::
+                    (# 
+                    do theAssignment.delete;
+                    #);
+               #);
+             showSheet::
+               (# theAssignPortSocketFromIndexCommand: ^AssignPortSocketFromIndexCommand;
+               do &Assignportsocketfromindexcommand[] -> theAssignPortSocketFromIndexCommand[];
+                  theAssignPortSocketFromIndexCommand.init;
+                  theAssignPortSocketFromIndexCommand.prepare;
+                  father.clearIndexNodes;
+                  theAssignPortSocketFromIndexCommand.apply; 
+               #);             
+             chooseThisValue::
+               (# 
+               do val[] -> father.chosenContent[]; 
+               #);
+          #);
+        
+        init::
+          (# sockets: ^PlaceList;
+             portGroups: ^PlaceListSequence;
+             startingPointOfUnassignedSockets: @integer;
+             i: @integer;
+          enter (sockets[],portGroups[],startingPointOfUnassignedSockets)
+          do 1->i;
+             createNodes: sockets.scan
+               (# thePortNode: ^PortNode;
+                  theSocketNode: ^SocketNode;
+                  thePorts: ^PlaceList;
+               do &SocketNode[] -> theSocketNode[];
+                  (current.theName[],current[]) -> theSocketNode.init;
+                  theSocketNode[] -> addIndexNode;
+                  i -> portGroups.get -> thePorts[];
+                  createPortNodes: thePorts.scan
+                    (# 
+                    do &PortNode[] -> thePortNode[];
+                       (current.theName[],current[]) -> thePortNode.init;
+                       thePortNode[] -> theSocketNode.addIndexNode;
+                    #);
+                  (if i<startingPointOfUnassignedSockets then
+                      theSocketNode.checkForSingleChild;
+                  if);
+                  i+1->i;               
+               #);
+          #);
+     #);
+   theIndex: ^PortSocketIndex;
+   proxy: ^PortSocketTriangle;
+   indexVisible: @boolean;
+   
+   findPossiblePortsForASocket:
+     (# useNameAsMatchIfOtherThingsFail: @boolean;
+        theSocket: ^Place;
+        possiblePorts: ^PlaceList;
+        portCandidates: ^PlaceList;
+        socketPlaceType: ^Text;
+        arcDirection: @integer;
+        hasEqualPlaceType:
+          (# portCandidate: ^Place;
+          enter portCandidate[]
+          exit (socketPlaceType[] -> ((portCandidate.getPlaceType).getInscription).equal) 
+          #);
+        doesArcDirectionMatchTag:
+          (# portCandidate: ^Place;
+             result: @boolean;
+          enter portCandidate[]
+          do (if arcDirection
+              // TtoP then
+                 ('out' -> ((portCandidate.getPortType).getCPNML).equalNCS) -> result;
+              // PtoT then
+                 ('in' -> ((portCandidate.getPortType).getCPNML).equalNCS) -> result;
+              // bothDir then
+                 ('i/o' -> ((portCandidate.getPortType).getCPNML).equalNCS) -> result;
+             if);
+          exit result
+          #);
+        doesNameMatch:
+          (# portCandidate: ^Place;
+          enter portCandidate[]
+          exit ((portCandidate.theName.copy).trim -> (theSocket.theName.copy).equalNCS)
+          #);
+     enter (theSocket[],useNameAsMatchIfOtherThingsFail)
+     do &PlaceList[] -> portCandidates[];
+        portCandidates.init;
+        (theSocket.getPlaceType).getInscription -> socketPlaceType[];
+        0 -> arcDirection;
+        getArcDirection: theSocket.scanArcs
+          (# tmp: @integer;
+          do (if current.transEnd[]=theTransitionInstance.theTransition[] then
+                 current.getOrientation -> tmp;
+                 (if (tmp=BothDir) or (tmp+arcDirection=TtoP+PtoT) then
+                     BothDir -> arcDirection;
+                     leave getArcDirection;
+                  else 
+                     tmp -> arcDirection;
+                 if);              
+             if); 
+          #);
+        findCandidates:(theTransitionInstance.theTransition.getSubpage).scanPlaces
+          (# notPlaceIsAssignedToSuperPage: @boolean;
+             
+          do true -> notPlaceIsAssignedToSuperPage;
+             checkPlaceIsNotAssigned: current.scanAssignments
+                   (# 
+                   do (if current.getSubTransition=theTransitionInstance.theTransition[] then
+                          false -> notPlaceIsAssignedToSuperPage;
+                          leave checkPlaceIsNotAssigned;
+                      if);
+                   #);             
+             (if (current.getPortType<>NONE) AND notPlaceIsAssignedToSuperPage then           
+                 (if (current[] -> hasEqualPlaceType) AND 
+                     (current[] -> doesArcDirectionMatchTag) then
+                     current[] -> portCandidates.append;
+                 if);
+             if);
+          #);
+        (if useNameAsMatchIfOtherThingsFail AND (portCandidates.size>1) then
+            &PlaceList[] -> possiblePorts[];
+            possiblePorts.init;            
+            portCandidates.scan
+            (# 
+            do (if (current[]->doesNameMatch) then
+                   current[] -> possiblePorts.append;
+               if);
+            #);
+            (if possiblePorts.size=0 (*No mathces were found using name*) then
+                portCandidates[] -> possiblePorts[];
+            if);
+         else
+            portCandidates[] -> possiblePorts[];
+        if);
+     exit possiblePorts[]
+     #);
+   
+   getIndexContent:
+     (# sockets: ^PlaceList;
+        portGroups: ^PlaceListSequence;
+        aPortSequence: ^PlaceList;
+        theAssignment: ^Assignment;
+        unassignedSocketsStartsHere: @integer;
+     do &PlaceList[] -> sockets[];
+        &PlaceListSequence[] -> portGroups[];
+        sockets.init;
+        portGroups.init;
+        getAssignments: theTransitionInstance.theTransition.socketPlaces.scan
+          (# 
+          do current[] -> theAssignment[];
+             (theAssignment.getSocket) -> sockets.append;
+             &PlaceList[] -> aPortSequence[];
+             aPortSequence.init;
+             (theAssignment.getPort)-> aPortSequence.append;
+             aPortSequence[] -> portGroups.append;
+          #);
+        sockets.size+1 -> unassignedSocketsStartsHere;
+        getUnassignedSockets: theTransitionInstance.theTransition.scanSurroundingPlaces
+          (# theSocket: ^Place;
+             currentIsUnasigned:
+               (# candidate: ^Place;
+                             
+
+                  result: @boolean;
+               enter candidate[]
+               do true -> result;
+                  findAssignmentsIfAny: candidate.scanAssignments
+                    (# 
+                    do (if current.getSubTransition=theTransitionInstance.theTransition[] then
+                           false -> result;
+                           leave findAssignmentsIfAny;
+                       if);
+                    #);
+               exit result
+               #);
+          do (if (current[] -> currentIsUnasigned) then
+                 current[] -> theSocket[] -> sockets.append;
+                 &PlaceList[] -> aPortSequence[];
+                 aPortSequence.init;
+                 
+                 ((theSocket[],false) -> private.findPossiblePortsForASocket).scan
+                 (# 
+                 do current[] -> aPortSequence.append;
+                 #);
+                 
+                 aPortSequence[] -> portGroups.append;
+             if);
+          #);
+     exit (sockets[],portGroups[],unassignedSocketsStartsHere)
+     #);
+   
+   checkIndexContentIsValid:
+     (# newSocketList: ^PlaceList;
+        newPortSeqeunce: ^PlaceListSequence;
+        newStartingPointOfUnassigned: @integer;
+        i: @integer;
+        result: @boolean;
+     do true -> result;
+        (getIndexContent) -> (newSocketList[],newPortSeqeunce[],newStartingPointOfUnassigned);
+        (if (newSocketList.size<>private.theIndex.theIndexNodes.size) then
+            false -> result;
+         else
+            1->i;
+            matchNewAndOldContent: newSocketList.scan
+              (# currentSocket: ^Place;
+                 currentSocketNode: ^PortSocketIndex.SocketNode;
+                 numberOfPossiblePorts: @integer;
+                 newNumberOfPossiblePorts: @integer;
+              do current[] -> currentSocket[];
+                 findTheMatchingIndexNode: private.theIndex.scanIndexNodes
+                   (# type:: theIndex.SocketNode;
+                   do (if currentSocket[]=current.theSocket[] then
+                          current[] -> currentSocketNode[];
+                          leave findTheMatchingIndexNode;
+                      if);
+                   #);
+                 (if currentSocketNode[]=NONE then
+                     false -> result;
+                     leave matchNewAndOldContent;
+                  else
+                     (i->newPortSeqeunce.get).size -> newNumberOfPossiblePorts;
+                     currentSocketNode.theIndexNodes.size -> numberOfPossiblePorts;
+                     (if i<newStartingPointOfUnassigned then
+                         ((numberOfPossiblePorts=0) AND 
+                         (((i->newPortSeqeunce.get).head).elm.theName[] 
+                           -> currentSocketNode.chosenContent.equal))
+                           -> result;
+                      else
+                         (newNumberOfPossiblePorts=numberOfPossiblePorts)->result;
+                     if);
+                     (if not result then
+                         leave matchNewAndOldContent;
+                     if);
+                 if);
+                 i+1->i;
+              #);
+        if);
+     exit result
+     #);
+#)
+
+
+-- PortSocketDialogShowAssignments:doPart --
+do &private.PortSocketIndex[] -> private.theIndex[];
+   private.getIndexContent -> private.theIndex.init;
+   true -> private.indexVisible;
+   update;
+   
+-- PortSocketDialogGetPossiblePorts:doPart --
+do &PlaceList[] -> possiblePorts[];
+   possiblePorts.init;
+   (theSocket[],useNameAsCriteria) -> private.findPossiblePortsForASocket -> possiblePorts[];
+   
+-- PortSocketDialogGetPrintablePart:doPart --
+do (if private.theIndex[]<>NONE then
+       private.theIndex.present -> printablePart.add;
+   if);
+   
+-- PortSocketDialogOnSemanticChanged:doPart --
+do (if (private.theIndex[]<>NONE) AND (not (private.checkIndexContentIsValid)) then
+       THIS(PortSocketDialog).clear;
+       THIS(PortSocketDialog).showAssignments;
+    if);
+   
+-- PortSocketDialogClear:doPart --
+do NONE -> private.theIndex[];
+   false -> private.indexVisible;
+   update;
+   
+-- PortSocketDialogInit:doPart --
+do &private.PortSocketTriangle[] -> private.proxy[];
+   private.proxy.init;
+   false -> private.indexVisible;
+   theTransitionInstance.changed;
+   
+-- PortSocketDialogUpdate:doPart --
+do private.proxy.present -> presentation.add;
+   (if private.indexVisible then
+       (theTransitionInstance.theTransition.deltaPositionOfBindingIndex.d.x,
+       (theTransitionInstance.theTransition.deltaPositionOfBindingIndex.d.y))
+         -> (private.theIndex.x,private.theIndex.y);
+       private.theIndex.changed;
+       private.theIndex.present -> presentation.add;
+   if);
+   theTransitionInstance.changed;
+   
+--PortSocketDialogOnClicked:doPart --
+do THIS(PortSocketDialog).clear;
+   

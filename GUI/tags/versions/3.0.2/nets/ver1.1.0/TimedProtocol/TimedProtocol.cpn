@@ -1,0 +1,798 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE workspaceElements PUBLIC "-//CPN//DTD CPNXML 1.0//EN" "http://www.daimi.au.dk/~cpntools/bin/DTD/2/cpn.dtd">
+
+<workspaceElements>
+<generator tool="CPN Tools" version="(Version 1.1.0 - March 2004)" format="2"/>
+<cpnet>
+<globbox>
+<color id="id1407">
+<id>INT</id>
+<timed/>
+<int/></color>
+<color id="id1411">
+<id>DATA</id>
+<string/></color>
+<color id="id1414">
+<id>INTxDATA</id>
+<timed/>
+<product>
+<id>INT</id>
+<id>DATA</id></product></color>
+<var id="id1419">
+<type>
+<id>INT</id></type>
+<id>n</id>
+<id>k</id>
+<id>wait</id></var>
+<var id="id1424">
+<type>
+<id>DATA</id></type>
+<id>p</id>
+<id>str</id></var>
+<ml id="id1429">val stop = "########";</ml>
+<color id="id1430">
+<id>Ten0</id>
+<int>
+<with>
+<ml>0</ml>
+<ml>10</ml></with></int></color>
+<color id="id1436">
+<id>Ten1</id>
+<int>
+<with>
+<ml>1</ml>
+<ml>10</ml></with></int></color>
+<var id="id1444">
+<type>
+<id>Ten0</id></type>
+<id>s</id></var>
+<var id="id1448">
+<type>
+<id>Ten1</id></type>
+<id>r</id></var>
+<ml id="id1452">fun OK(s:Ten0,r:Ten1) = (r&lt;=s);</ml>
+<color id="id1453">
+<id>NetDelay</id>
+<int>
+<with>
+<ml>25</ml>
+<ml>75</ml></with></int></color>
+<ml id="id1461">fun DEL() = NetDelay.ran();</ml></globbox>
+<page id="id4">
+<pageattr name="Top"/>
+<vguideline id="ID1539" x="153.000000">
+<guideline_elm idref="id71"/>
+<guideline_elm idref="id86"/>
+<guideline_elm idref="id65"/></vguideline>
+<vguideline id="ID1540" x="-280.000000">
+<guideline_elm idref="id3260"/>
+<guideline_elm idref="id111"/></vguideline>
+<hguideline id="ID1541" y="-64.000000">
+<guideline_elm idref="id59"/>
+<guideline_elm idref="id65"/>
+<guideline_elm idref="id1112"/>
+<guideline_elm idref="id27"/>
+<guideline_elm idref="id32"/></hguideline>
+<hguideline id="ID1542" y="-158.000000">
+<guideline_elm idref="id18"/>
+<guideline_elm idref="id86"/>
+<guideline_elm idref="id45"/></hguideline>
+<hguideline id="ID1543" y="-246.000000">
+<guideline_elm idref="id3260"/>
+<guideline_elm idref="id8"/>
+<guideline_elm idref="id53"/>
+<guideline_elm idref="id13"/>
+<guideline_elm idref="id71"/>
+<guideline_elm idref="id1073"/>
+<guideline_elm idref="ID709754"/></hguideline>
+<vguideline id="ID1544" x="258.000000">
+<guideline_elm idref="id77"/>
+<guideline_elm idref="id18"/>
+<guideline_elm idref="id1112"/></vguideline>
+<vguideline id="ID1545" x="-84.000000">
+<guideline_elm idref="id53"/>
+<guideline_elm idref="id59"/></vguideline>
+<vguideline id="ID1546" x="33.000000">
+<guideline_elm idref="id13"/>
+<guideline_elm idref="id96"/>
+<guideline_elm idref="id103"/>
+<guideline_elm idref="id32"/></vguideline>
+<vguideline id="ID1547" x="-164.000000">
+<guideline_elm idref="id38"/>
+<guideline_elm idref="id8"/>
+<guideline_elm idref="id45"/>
+<guideline_elm idref="id27"/></vguideline>
+<place id="id86">
+<posattr x="54.063604" y="55.830389"/>
+<fillattr colour="White" pattern="solid" filled="false"/>
+<lineattr colour="Navy" thick="1" type="solid"/>
+<textattr colour="Navy" bold="false"/>
+<text>NextRec</text>
+<ellipse w="23.321555" h="7.773852"/>
+<token x="-17.667845" y="-4.593640"/>
+<marking x="0.000000" y="0.000000" hidden="false"/>
+<type id="id88">
+<posattr x="41.166078" y="48.939929"/>
+<fillattr colour="White" pattern="solid" filled="false"/>
+<lineattr colour="Navy" thick="0" type="solid"/>
+<textattr colour="Navy" bold="false"/>
+<text>INT</text></type>
+<initmark id="id89">
+<posattr x="43.286219" y="62.367491"/>
+<fillattr colour="White" pattern="solid" filled="false"/>
+<lineattr colour="Navy" thick="0" type="solid"/>
+<textattr colour="Navy" bold="false"/>
+<text>1</text></initmark></place>
+<Aux id="id93">
+<posattr x="-56.183746" y="0.706714"/>
+<fillattr colour="White" pattern="solid" filled="false"/>
+<lineattr colour="Navy" thick="0" type="solid"/>
+<textattr colour="Navy" bold="true"/>
+<label w="14.134276" h="5.300353"/>
+<text>Sender</text></Aux>
+<Aux id="id95">
+<posattr x="78.445230" y="0.706714"/>
+<fillattr colour="White" pattern="solid" filled="false"/>
+<lineattr colour="Navy" thick="0" type="solid"/>
+<textattr colour="Navy" bold="true"/>
+<label w="16.961131" h="5.300353"/>
+<text>Receiver</text></Aux>
+<arc id="id119" orientation="TtoP">
+<posattr x="0.000000" y="0.000000"/>
+<fillattr colour="Navy" pattern="solid" filled="false"/>
+<lineattr colour="Navy" thick="2" type="solid"/>
+<textattr colour="Black" bold="false"/>
+<arrowattr headsize="1.000000" currentcyckle="2"/>
+<transend idref="id8"/>
+<placeend idref="id53"/>
+<annot id="id121">
+<posattr x="-39.929329" y="88.692580"/>
+<fillattr colour="White" pattern="solid" filled="false"/>
+<lineattr colour="Navy" thick="0" type="solid"/>
+<textattr colour="Navy" bold="false"/>
+<text>(n,p)</text></annot></arc>
+<arc id="id125" orientation="PtoT">
+<posattr x="0.000000" y="0.000000"/>
+<fillattr colour="Teal" pattern="solid" filled="false"/>
+<lineattr colour="Teal" thick="2" type="solid"/>
+<textattr colour="Black" bold="false"/>
+<arrowattr headsize="1.000000" currentcyckle="2"/>
+<transend idref="id13"/>
+<placeend idref="id53"/>
+<annot id="id127">
+<posattr x="-13.427562" y="88.692580"/>
+<fillattr colour="White" pattern="solid" filled="false"/>
+<lineattr colour="Teal" thick="0" type="solid"/>
+<textattr colour="Teal" bold="false"/>
+<text>(n,p)</text></annot></arc>
+<arc id="id131" orientation="TtoP">
+<posattr x="0.000000" y="0.000000"/>
+<fillattr colour="Teal" pattern="solid" filled="false"/>
+<lineattr colour="Teal" thick="2" type="solid"/>
+<textattr colour="Black" bold="false"/>
+<arrowattr headsize="1.000000" currentcyckle="2"/>
+<transend idref="id13"/>
+<placeend idref="id71"/>
+<annot id="id133">
+<posattr x="35.689046" y="93.992933"/>
+<fillattr colour="White" pattern="solid" filled="false"/>
+<lineattr colour="Teal" thick="0" type="solid"/>
+<textattr colour="Teal" bold="false"/>
+<text>if OK(s,r)
+then 1`(n,p)
+else empty</text></annot></arc>
+<arc id="id137" orientation="PtoT">
+<posattr x="0.000000" y="0.000000"/>
+<fillattr colour="Navy" pattern="solid" filled="false"/>
+<lineattr colour="Navy" thick="2" type="solid"/>
+<textattr colour="Black" bold="false"/>
+<arrowattr headsize="1.000000" currentcyckle="2"/>
+<transend idref="id18"/>
+<placeend idref="id71"/>
+<annot id="id139">
+<posattr x="68.551237" y="88.692580"/>
+<fillattr colour="White" pattern="solid" filled="false"/>
+<lineattr colour="Navy" thick="0" type="solid"/>
+<textattr colour="Navy" bold="false"/>
+<text>(n,p)</text></annot>
+<bendpoint id="id1073" serial="1">
+<posattr x="81.978799" y="86.925795"/>
+<fillattr colour="White" pattern="Solid" filled="false"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr colour="Black" bold="false"/>
+<text></text></bendpoint></arc>
+<arc id="id143" orientation="TtoP">
+<posattr x="0.000000" y="0.000000"/>
+<fillattr colour="Navy" pattern="solid" filled="false"/>
+<lineattr colour="Navy" thick="0" type="solid"/>
+<textattr colour="Black" bold="false"/>
+<arrowattr headsize="1.000000" currentcyckle="2"/>
+<transend idref="id18"/>
+<placeend idref="id77"/>
+<annot id="id145">
+<posattr x="114.487633" y="88.339223"/>
+<fillattr colour="White" pattern="solid" filled="false"/>
+<lineattr colour="Navy" thick="0" type="solid"/>
+<textattr colour="Navy" bold="false"/>
+<text>if n=k
+andalso
+p&lt;&gt;stop
+then str^p
+else str</text></annot>
+<bendpoint id="ID709754" serial="1">
+<posattr x="104.593640" y="86.925795"/>
+<fillattr colour="White" pattern="Solid" filled="false"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr colour="Black" bold="false"/>
+<text></text></bendpoint></arc>
+<arc id="id149" orientation="TtoP">
+<posattr x="0.000000" y="0.000000"/>
+<fillattr colour="Navy" pattern="solid" filled="false"/>
+<lineattr colour="Navy" thick="2" type="solid"/>
+<textattr colour="Black" bold="false"/>
+<arrowattr headsize="1.000000" currentcyckle="2"/>
+<transend idref="id18"/>
+<placeend idref="id65"/>
+<annot id="id151">
+<posattr x="101.413428" y="24.028269"/>
+<fillattr colour="White" pattern="solid" filled="false"/>
+<lineattr colour="Navy" thick="0" type="solid"/>
+<textattr colour="Navy" bold="false"/>
+<text>if n=k
+then k+1
+else k</text></annot>
+<bendpoint id="id1112" serial="1">
+<posattr x="91.166078" y="22.614841"/>
+<fillattr colour="White" pattern="Solid" filled="false"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr colour="Black" bold="false"/>
+<text></text></bendpoint></arc>
+<arc id="id155" orientation="PtoT">
+<posattr x="0.000000" y="0.000000"/>
+<fillattr colour="Teal" pattern="solid" filled="false"/>
+<lineattr colour="Teal" thick="2" type="solid"/>
+<textattr colour="Black" bold="false"/>
+<arrowattr headsize="1.000000" currentcyckle="2"/>
+<transend idref="id32"/>
+<placeend idref="id65"/>
+<annot id="id157">
+<posattr x="37.809187" y="19.787986"/>
+<fillattr colour="White" pattern="solid" filled="false"/>
+<lineattr colour="Teal" thick="0" type="solid"/>
+<textattr colour="Teal" bold="false"/>
+<text>n</text></annot></arc>
+<arc id="id161" orientation="PtoT">
+<posattr x="0.000000" y="0.000000"/>
+<fillattr colour="Navy" pattern="solid" filled="false"/>
+<lineattr colour="Navy" thick="0" type="solid"/>
+<textattr colour="Black" bold="false"/>
+<arrowattr headsize="1.000000" currentcyckle="2"/>
+<transend idref="id18"/>
+<placeend idref="id86"/>
+<annot id="id163">
+<posattr x="68.197880" y="66.077739"/>
+<fillattr colour="White" pattern="solid" filled="false"/>
+<lineattr colour="Navy" thick="0" type="solid"/>
+<textattr colour="Navy" bold="false"/>
+<text>k</text></annot>
+<bendpoint id="id1151" serial="2">
+<posattr x="58.657244" y="59.363958"/>
+<fillattr colour="White" pattern="Solid" filled="false"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr colour="Black" bold="false"/>
+<text></text></bendpoint>
+<bendpoint id="ID715985" serial="1">
+<posattr x="71.378092" y="62.897527"/>
+<fillattr colour="White" pattern="Solid" filled="false"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr colour="Black" bold="false"/>
+<text></text></bendpoint></arc>
+<arc id="id167" orientation="TtoP">
+<posattr x="0.000000" y="0.000000"/>
+<fillattr colour="Navy" pattern="solid" filled="false"/>
+<lineattr colour="Navy" thick="0" type="solid"/>
+<textattr colour="Black" bold="false"/>
+<arrowattr headsize="1.000000" currentcyckle="2"/>
+<transend idref="id18"/>
+<placeend idref="id86"/>
+<annot id="id169">
+<posattr x="72.438163" y="43.109541"/>
+<fillattr colour="White" pattern="solid" filled="false"/>
+<lineattr colour="Navy" thick="0" type="solid"/>
+<textattr colour="Navy" bold="false"/>
+<text>if n=k
+then k+1
+else k</text></annot>
+<bendpoint id="id1171" serial="1">
+<posattr x="59.363958" y="49.823322"/>
+<fillattr colour="White" pattern="Solid" filled="false"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr colour="Black" bold="false"/>
+<text></text></bendpoint></arc>
+<arc id="id173" orientation="TtoP">
+<posattr x="0.000000" y="0.000000"/>
+<fillattr colour="Teal" pattern="solid" filled="false"/>
+<lineattr colour="Teal" thick="2" type="solid"/>
+<textattr colour="Black" bold="false"/>
+<arrowattr headsize="1.000000" currentcyckle="2"/>
+<transend idref="id32"/>
+<placeend idref="id59"/>
+<annot id="id175">
+<posattr x="-8.833922" y="14.487633"/>
+<fillattr colour="White" pattern="solid" filled="false"/>
+<lineattr colour="Teal" thick="0" type="solid"/>
+<textattr colour="Teal" bold="false"/>
+<text>if OK(s,r)
+then 1`n
+else empty</text></annot></arc>
+<arc id="id179" orientation="PtoT">
+<posattr x="0.000000" y="0.000000"/>
+<fillattr colour="Navy" pattern="solid" filled="false"/>
+<lineattr colour="Navy" thick="2" type="solid"/>
+<textattr colour="Black" bold="false"/>
+<arrowattr headsize="1.000000" currentcyckle="2"/>
+<transend idref="id27"/>
+<placeend idref="id59"/>
+<annot id="id181">
+<posattr x="-37.102473" y="19.787986"/>
+<fillattr colour="White" pattern="solid" filled="false"/>
+<lineattr colour="Navy" thick="0" type="solid"/>
+<textattr colour="Navy" bold="false"/>
+<text>n</text></annot></arc>
+<arc id="id185" orientation="PtoT">
+<posattr x="0.000000" y="0.000000"/>
+<fillattr colour="Navy" pattern="solid" filled="false"/>
+<lineattr colour="Navy" thick="0" type="solid"/>
+<textattr colour="Black" bold="false"/>
+<arrowattr headsize="1.000000" currentcyckle="2"/>
+<transend idref="id27"/>
+<placeend idref="id45"/>
+<annot id="id187">
+<posattr x="-62.897527" y="40.282686"/>
+<fillattr colour="White" pattern="solid" filled="false"/>
+<lineattr colour="Navy" thick="0" type="solid"/>
+<textattr colour="Navy" bold="false"/>
+<text>k</text></annot>
+<bendpoint id="id1229" serial="1">
+<posattr x="-59.717314" y="42.049470"/>
+<fillattr colour="White" pattern="Solid" filled="false"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr colour="Black" bold="false"/>
+<text></text></bendpoint></arc>
+<arc id="id191" orientation="TtoP">
+<posattr x="0.000000" y="0.000000"/>
+<fillattr colour="Navy" pattern="solid" filled="false"/>
+<lineattr colour="Navy" thick="0" type="solid"/>
+<textattr colour="Black" bold="false"/>
+<arrowattr headsize="1.000000" currentcyckle="2"/>
+<transend idref="id27"/>
+<placeend idref="id45"/>
+<annot id="id193">
+<posattr x="-51.943463" y="40.282686"/>
+<fillattr colour="White" pattern="solid" filled="false"/>
+<lineattr colour="Navy" thick="0" type="solid"/>
+<textattr colour="Navy" bold="false"/>
+<text>n</text></annot>
+<bendpoint id="id1249" serial="1">
+<posattr x="-53.003534" y="39.222615"/>
+<fillattr colour="White" pattern="Solid" filled="false"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr colour="Black" bold="false"/>
+<text></text></bendpoint></arc>
+<arc id="id197" orientation="PtoT">
+<posattr x="0.000000" y="0.000000"/>
+<fillattr colour="Navy" pattern="solid" filled="false"/>
+<lineattr colour="Navy" thick="0" type="solid"/>
+<textattr colour="Black" bold="false"/>
+<arrowattr headsize="1.000000" currentcyckle="2"/>
+<transend idref="id8"/>
+<placeend idref="id45"/>
+<annot id="id199">
+<posattr x="-65.371025" y="69.611307"/>
+<fillattr colour="White" pattern="solid" filled="false"/>
+<lineattr colour="Navy" thick="0" type="solid"/>
+<textattr colour="Navy" bold="false"/>
+<text>n</text></annot>
+<bendpoint id="id1269" serial="1">
+<posattr x="-61.484099" y="68.197880"/>
+<fillattr colour="White" pattern="Solid" filled="false"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr colour="Black" bold="false"/>
+<text></text></bendpoint></arc>
+<arc id="id203" orientation="TtoP">
+<posattr x="0.000000" y="0.000000"/>
+<fillattr colour="Navy" pattern="solid" filled="false"/>
+<lineattr colour="Navy" thick="0" type="solid"/>
+<textattr colour="Black" bold="false"/>
+<arrowattr headsize="1.000000" currentcyckle="2"/>
+<transend idref="id8"/>
+<placeend idref="id45"/>
+<annot id="id205">
+<posattr x="-50.530035" y="69.611307"/>
+<fillattr colour="White" pattern="solid" filled="false"/>
+<lineattr colour="Navy" thick="0" type="solid"/>
+<textattr colour="Navy" bold="false"/>
+<text>n</text></annot>
+<bendpoint id="id1289" serial="1">
+<posattr x="-53.003534" y="68.197880"/>
+<fillattr colour="White" pattern="Solid" filled="false"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr colour="Black" bold="false"/>
+<text></text></bendpoint></arc>
+<arc id="id209" orientation="PtoT">
+<posattr x="0.000000" y="0.000000"/>
+<fillattr colour="Navy" pattern="solid" filled="false"/>
+<lineattr colour="Navy" thick="0" type="solid"/>
+<textattr colour="Black" bold="false"/>
+<arrowattr headsize="1.000000" currentcyckle="2"/>
+<transend idref="id18"/>
+<placeend idref="id77"/>
+<annot id="id211">
+<posattr x="85.512367" y="97.173145"/>
+<fillattr colour="White" pattern="solid" filled="false"/>
+<lineattr colour="Navy" thick="0" type="solid"/>
+<textattr colour="Navy" bold="false"/>
+<text>str</text></annot></arc>
+<arc id="id215" orientation="PtoT">
+<posattr x="0.000000" y="0.000000"/>
+<fillattr colour="Navy" pattern="solid" filled="false"/>
+<lineattr colour="Navy" thick="0" type="solid"/>
+<textattr colour="Black" bold="false"/>
+<arrowattr headsize="1.000000" currentcyckle="2"/>
+<transend idref="id8"/>
+<placeend idref="id38"/>
+<annot id="id217">
+<posattr x="-66.077739" y="101.413428"/>
+<fillattr colour="White" pattern="solid" filled="false"/>
+<lineattr colour="Navy" thick="0" type="solid"/>
+<textattr colour="Navy" bold="false"/>
+<text>(n,p)</text></annot>
+<bendpoint id="id1328" serial="1">
+<posattr x="-61.484099" y="101.413428"/>
+<fillattr colour="White" pattern="Solid" filled="false"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr colour="Black" bold="false"/>
+<text></text></bendpoint></arc>
+<arc id="id221" orientation="TtoP">
+<posattr x="0.000000" y="0.000000"/>
+<fillattr colour="Navy" pattern="solid" filled="false"/>
+<lineattr colour="Navy" thick="0" type="solid"/>
+<textattr colour="Black" bold="false"/>
+<arrowattr headsize="1.000000" currentcyckle="2"/>
+<transend idref="id8"/>
+<placeend idref="id38"/>
+<annot id="id223">
+<posattr x="-40.282686" y="101.413428"/>
+<fillattr colour="White" pattern="solid" filled="false"/>
+<lineattr colour="Navy" thick="0" type="solid"/>
+<textattr colour="Navy" bold="false"/>
+<text>(n,p)@+wait</text></annot>
+<bendpoint id="id1348" serial="1">
+<posattr x="-53.003534" y="101.413428"/>
+<fillattr colour="White" pattern="Solid" filled="false"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr colour="Black" bold="false"/>
+<text></text></bendpoint></arc>
+<arc id="id227" orientation="BOTHDIR">
+<posattr x="0.000000" y="0.000000"/>
+<fillattr colour="Teal" pattern="solid" filled="false"/>
+<lineattr colour="Teal" thick="0" type="solid"/>
+<textattr colour="Black" bold="false"/>
+<arrowattr headsize="1.000000" currentcyckle="2"/>
+<transend idref="id32"/>
+<placeend idref="id103"/>
+<annot id="id229">
+<posattr x="13.074205" y="36.749117"/>
+<fillattr colour="White" pattern="solid" filled="false"/>
+<lineattr colour="Teal" thick="0" type="solid"/>
+<textattr colour="Teal" bold="false"/>
+<text>s</text></annot></arc>
+<arc id="id236" orientation="BOTHDIR">
+<posattr x="0.000000" y="0.000000"/>
+<fillattr colour="Teal" pattern="solid" filled="false"/>
+<lineattr colour="Teal" thick="0" type="solid"/>
+<textattr colour="Black" bold="false"/>
+<arrowattr headsize="1.000000" currentcyckle="2"/>
+<transend idref="id13"/>
+<placeend idref="id96"/>
+<annot id="id238">
+<posattr x="13.074205" y="72.438163"/>
+<fillattr colour="White" pattern="solid" filled="false"/>
+<lineattr colour="Teal" thick="0" type="solid"/>
+<textattr colour="Teal" bold="false"/>
+<text>s</text></annot></arc>
+<arc id="id245" orientation="BOTHDIR">
+<posattr x="0.000000" y="0.000000"/>
+<fillattr colour="Navy" pattern="solid" filled="false"/>
+<lineattr colour="Navy" thick="0" type="solid"/>
+<textattr colour="Black" bold="false"/>
+<arrowattr headsize="1.000000" currentcyckle="2"/>
+<transend idref="id8"/>
+<placeend idref="id111"/>
+<annot id="id247">
+<posattr x="-91.872792" y="88.692580"/>
+<fillattr colour="White" pattern="solid" filled="false"/>
+<lineattr colour="Navy" thick="0" type="solid"/>
+<textattr colour="Navy" bold="false"/>
+<text>wait</text></annot>
+<bendpoint id="id3260" serial="1">
+<posattr x="-98.939929" y="86.925795"/>
+<fillattr colour="White" pattern="Solid" filled="false"/>
+<lineattr colour="Black" thick="0" type="Solid"/>
+<textattr colour="Black" bold="false"/>
+<text></text></bendpoint></arc>
+<Aux id="id94">
+<posattr x="16.607774" y="0.706714"/>
+<fillattr colour="White" pattern="solid" filled="false"/>
+<lineattr colour="Teal" thick="0" type="solid"/>
+<textattr colour="Teal" bold="true"/>
+<label w="15.901060" h="5.300353"/>
+<text>Network</text></Aux>
+<trans id="id8">
+<posattr x="-57.950530" y="86.925795"/>
+<fillattr colour="White" pattern="solid" filled="false"/>
+<lineattr colour="Navy" thick="2" type="solid"/>
+<textattr colour="Navy" bold="false"/>
+<text>Send
+Packet</text>
+<box w="20.848057" h="13.074205"/>
+<time id="id12">
+<posattr x="-53.003534" y="75.618375"/>
+<fillattr colour="White" pattern="solid" filled="false"/>
+<lineattr colour="Navy" thick="0" type="solid"/>
+<textattr colour="Navy" bold="false"/>
+<text>@+9</text></time></trans>
+<place id="id45">
+<posattr x="-57.950530" y="55.830389"/>
+<fillattr colour="White" pattern="solid" filled="false"/>
+<lineattr colour="Navy" thick="1" type="solid"/>
+<textattr colour="Navy" bold="false"/>
+<text>NextSend</text>
+<ellipse w="24.381625" h="7.773852"/>
+<token x="0.000000" y="0.000000"/>
+<marking x="0.000000" y="0.000000" hidden="false"/>
+<type id="id47">
+<posattr x="-70.848057" y="48.939929"/>
+<fillattr colour="White" pattern="solid" filled="false"/>
+<lineattr colour="Navy" thick="0" type="solid"/>
+<textattr colour="Navy" bold="false"/>
+<text>INT</text></type>
+<initmark id="id48">
+<posattr x="-68.727915" y="62.367491"/>
+<fillattr colour="White" pattern="solid" filled="false"/>
+<lineattr colour="Navy" thick="0" type="solid"/>
+<textattr colour="Navy" bold="false"/>
+<text>1</text></initmark></place>
+<trans id="id27">
+<posattr x="-57.950530" y="22.614841"/>
+<fillattr colour="White" pattern="solid" filled="false"/>
+<lineattr colour="Navy" thick="2" type="solid"/>
+<textattr colour="Navy" bold="false"/>
+<text>ReceiveAck</text>
+<box w="24.028269" h="13.074205"/>
+<time id="id31">
+<posattr x="-53.003534" y="10.954064"/>
+<fillattr colour="White" pattern="solid" filled="false"/>
+<lineattr colour="Navy" thick="0" type="solid"/>
+<textattr colour="Navy" bold="false"/>
+<text>@+7</text></time></trans>
+<place id="id38">
+<posattr x="-57.950530" y="114.487633"/>
+<fillattr colour="White" pattern="solid" filled="false"/>
+<lineattr colour="Navy" thick="1" type="solid"/>
+<textattr colour="Navy" bold="false"/>
+<text>Send</text>
+<ellipse w="17.667845" h="7.773852"/>
+<token x="-10.954064" y="4.593640"/>
+<marking x="-1.413428" y="4.946996" hidden="false"/>
+<type id="id40">
+<posattr x="-65.371025" y="121.024735"/>
+<fillattr colour="White" pattern="solid" filled="false"/>
+<lineattr colour="Navy" thick="0" type="solid"/>
+<textattr colour="Navy" bold="false"/>
+<text>INTxDATA</text></type>
+<initmark id="id41">
+<posattr x="-27.208481" y="126.855124"/>
+<fillattr colour="White" pattern="solid" filled="false"/>
+<lineattr colour="Navy" thick="0" type="solid"/>
+<textattr colour="Navy" bold="false"/>
+<text>1`(1,"Modellin")++
+1`(2,"g and An")++
+1`(3,"alysis b")++
+1`(4,"y Means ")++
+1`(5,"of Colou")++
+1`(6,"red Petr")++
+1`(7,"i Nets##")++
+1`(8,"########")</text></initmark></place>
+<place id="id111">
+<posattr x="-98.939929" y="108.127208"/>
+<fillattr colour="White" pattern="solid" filled="false"/>
+<lineattr colour="Navy" thick="1" type="solid"/>
+<textattr colour="Navy" bold="false"/>
+<text>Wait</text>
+<ellipse w="10.954064" h="7.420495"/>
+<token x="-4.946996" y="0.706714"/>
+<marking x="0.000000" y="0.000000" hidden="false"/>
+<type id="id113">
+<posattr x="-90.282686" y="101.590106"/>
+<fillattr colour="White" pattern="solid" filled="false"/>
+<lineattr colour="Navy" thick="0" type="solid"/>
+<textattr colour="Navy" bold="false"/>
+<text>INT</text></type>
+<initmark id="id114">
+<posattr x="-89.929329" y="114.310954"/>
+<fillattr colour="White" pattern="solid" filled="false"/>
+<lineattr colour="Blue" thick="0" type="solid"/>
+<textattr colour="Blue" bold="false"/>
+<text>100</text></initmark></place>
+<place id="id53">
+<posattr x="-29.681979" y="86.925795"/>
+<fillattr colour="White" pattern="solid" filled="false"/>
+<lineattr colour="Navy" thick="2" type="solid"/>
+<textattr colour="Navy" bold="false"/>
+<text>A</text>
+<ellipse w="7.773852" h="7.773852"/>
+<token x="0.000000" y="0.000000"/>
+<marking x="0.000000" y="0.000000" hidden="false"/>
+<type id="id55">
+<posattr x="-29.681979" y="95.229682"/>
+<fillattr colour="White" pattern="solid" filled="false"/>
+<lineattr colour="Navy" thick="0" type="solid"/>
+<textattr colour="Navy" bold="false"/>
+<text>INTxDATA</text></type></place>
+<trans id="id13">
+<posattr x="11.660777" y="86.925795"/>
+<fillattr colour="White" pattern="solid" filled="false"/>
+<lineattr colour="Teal" thick="2" type="solid"/>
+<textattr colour="Teal" bold="false"/>
+<text>Transmit
+Packet</text>
+<box w="20.848057" h="13.074205"/>
+<time id="id17">
+<posattr x="24.381625" y="78.091873"/>
+<fillattr colour="White" pattern="solid" filled="false"/>
+<lineattr colour="Teal" thick="0" type="solid"/>
+<textattr colour="Teal" bold="false"/>
+<text>@+DEL()</text></time></trans>
+<place id="id96">
+<posattr x="11.660777" y="62.544170"/>
+<fillattr colour="White" pattern="solid" filled="false"/>
+<lineattr colour="Teal" thick="1" type="solid"/>
+<textattr colour="Teal" bold="false"/>
+<text>SP</text>
+<ellipse w="7.773852" h="7.773852"/>
+<token x="-1.413428" y="1.413428"/>
+<marking x="0.000000" y="0.000000" hidden="false"/>
+<initmark id="id98">
+<posattr x="4.770318" y="62.544170"/>
+<fillattr colour="White" pattern="solid" filled="false"/>
+<lineattr colour="Teal" thick="0" type="solid"/>
+<textattr colour="Teal" bold="false"/>
+<text>8</text></initmark>
+<type id="id99">
+<posattr x="1.060071" y="62.544170"/>
+<fillattr colour="White" pattern="solid" filled="false"/>
+<lineattr colour="Teal" thick="0" type="solid"/>
+<textattr colour="Teal" bold="false"/>
+<text>Ten0</text></type></place>
+<place id="id103">
+<posattr x="11.660777" y="46.643110"/>
+<fillattr colour="White" pattern="solid" filled="false"/>
+<lineattr colour="Teal" thick="1" type="solid"/>
+<textattr colour="Teal" bold="false"/>
+<text>SA</text>
+<ellipse w="7.773852" h="7.773852"/>
+<token x="-3.886926" y="-1.413428"/>
+<marking x="0.000000" y="0.000000" hidden="false"/>
+<type id="id105">
+<posattr x="1.060071" y="46.643110"/>
+<fillattr colour="White" pattern="solid" filled="false"/>
+<lineattr colour="Teal" thick="0" type="solid"/>
+<textattr colour="Teal" bold="false"/>
+<text>Ten0</text></type>
+<initmark id="id109">
+<posattr x="4.770318" y="46.643110"/>
+<fillattr colour="White" pattern="solid" filled="false"/>
+<lineattr colour="Teal" thick="0" type="solid"/>
+<textattr colour="Teal" bold="false"/>
+<text>8</text></initmark></place>
+<trans id="id32">
+<posattr x="11.660777" y="22.614841"/>
+<fillattr colour="White" pattern="solid" filled="false"/>
+<lineattr colour="Teal" thick="2" type="solid"/>
+<textattr colour="Teal" bold="false"/>
+<text>TransmitAck</text>
+<box w="24.381625" h="13.074205"/>
+<time id="id36">
+<posattr x="20.671378" y="11.660777"/>
+<fillattr colour="White" pattern="solid" filled="false"/>
+<lineattr colour="Teal" thick="0" type="solid"/>
+<textattr colour="Teal" bold="false"/>
+<text>@+DEL()</text></time></trans>
+<place id="id71">
+<posattr x="54.063604" y="86.925795"/>
+<fillattr colour="White" pattern="solid" filled="false"/>
+<lineattr colour="Navy" thick="2" type="solid"/>
+<textattr colour="Navy" bold="false"/>
+<text>B</text>
+<ellipse w="7.773852" h="7.773852"/>
+<token x="0.000000" y="0.000000"/>
+<marking x="0.000000" y="0.000000" hidden="false"/>
+<type id="id73">
+<posattr x="54.063604" y="95.229682"/>
+<fillattr colour="White" pattern="solid" filled="false"/>
+<lineattr colour="Navy" thick="0" type="solid"/>
+<textattr colour="Navy" bold="false"/>
+<text>INTxDATA</text></type></place>
+<place id="id65">
+<posattr x="54.063604" y="22.614841"/>
+<fillattr colour="White" pattern="solid" filled="false"/>
+<lineattr colour="Navy" thick="2" type="solid"/>
+<textattr colour="Navy" bold="false"/>
+<text>C</text>
+<ellipse w="7.773852" h="7.773852"/>
+<token x="0.000000" y="0.000000"/>
+<marking x="0.000000" y="0.000000" hidden="false"/>
+<type id="id67">
+<posattr x="54.063604" y="14.310954"/>
+<fillattr colour="White" pattern="solid" filled="false"/>
+<lineattr colour="Navy" thick="0" type="solid"/>
+<textattr colour="Navy" bold="false"/>
+<text>INT</text></type></place>
+<place id="id77">
+<posattr x="91.166078" y="114.487633"/>
+<fillattr colour="White" pattern="solid" filled="false"/>
+<lineattr colour="Navy" thick="1" type="solid"/>
+<textattr colour="Navy" bold="false"/>
+<text>Received</text>
+<ellipse w="20.848057" h="7.773852"/>
+<token x="0.000000" y="0.000000"/>
+<marking x="0.000000" y="0.000000" hidden="false"/>
+<type id="id79">
+<posattr x="81.272085" y="107.773852"/>
+<fillattr colour="White" pattern="solid" filled="false"/>
+<lineattr colour="Navy" thick="0" type="solid"/>
+<textattr colour="Navy" bold="false"/>
+<text>DATA</text></type>
+<initmark id="id85">
+<posattr x="77.561837" y="114.487633"/>
+<fillattr colour="White" pattern="solid" filled="false"/>
+<lineattr colour="Navy" thick="0" type="solid"/>
+<textattr colour="Navy" bold="false"/>
+<text>""</text></initmark></place>
+<trans id="id18">
+<posattr x="91.166078" y="55.830389"/>
+<fillattr colour="White" pattern="solid" filled="false"/>
+<lineattr colour="Navy" thick="2" type="solid"/>
+<textattr colour="Navy" bold="false"/>
+<text>Receive
+Packet</text>
+<box w="20.848057" h="13.074205"/>
+<time id="id26">
+<posattr x="96.819788" y="43.462898"/>
+<fillattr colour="White" pattern="solid" filled="false"/>
+<lineattr colour="Navy" thick="0" type="solid"/>
+<textattr colour="Navy" bold="false"/>
+<text>@+17</text></time></trans>
+<place id="id59">
+<posattr x="-29.681979" y="22.614841"/>
+<fillattr colour="White" pattern="solid" filled="false"/>
+<lineattr colour="Navy" thick="2" type="solid"/>
+<textattr colour="Navy" bold="false"/>
+<text>D</text>
+<ellipse w="7.420495" h="7.773852"/>
+<token x="0.000000" y="0.000000"/>
+<marking x="0.000000" y="0.000000" hidden="false"/>
+<type id="id61">
+<posattr x="-29.681979" y="14.310954"/>
+<fillattr colour="White" pattern="solid" filled="false"/>
+<lineattr colour="Navy" thick="0" type="solid"/>
+<textattr colour="Navy" bold="false"/>
+<text>INT</text></type></place>
+<Aux id="id110">
+<posattr x="-3.886926" y="-24.028269"/>
+<fillattr colour="White" pattern="solid" filled="false"/>
+<lineattr colour="Navy" thick="0" type="solid"/>
+<textattr colour="Navy" bold="false"/>
+<label w="29.328622" h="5.300353"/>
+<text>Timed Protocol</text></Aux></page></cpnet></workspaceElements>

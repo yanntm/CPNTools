@@ -1,0 +1,130 @@
+#!/usr/local/bin/bash
+mkdir help
+cd help
+echo "Wgetting files"
+wget -o wget.log -np -r -k http://wiki.daimi.au.dk/cpntools-help/
+cd wiki.daimi.au.dk*/cpntools-help
+wget -a ../../wget.log http://www.daimi.au.dk/~cpntools/bin/style-help-blue.css
+# convert
+rm -Rf *.wiki?* _sitemap* _home*
+rm -f `find -name 'aux.gif*'`
+echo "Renaming to .html"
+for f in *.wiki; do 
+	test -e "$f" && mv "$f" "`echo $f | sed -e 's/[.]wiki$/.html/'`"
+done;
+for i in *..*; do 
+        test -e "$f" && mv "$i" "`echo \"$i\"| sed \"s/\.\./\./g\"`"; 
+done
+echo "Cleaning up files (1)"
+for f in *.html; do
+	test -e $f && perl -p -ibak -e 's/(<[aA][^>]*).wiki(\?[^">]*)*(["]{0,1}>)/$1.html$3/g' $f
+done
+echo "Cleaning up files (2)"
+for f in *.html; do
+	test -e $f && perl -p -e '
+	tr/\n\t\r\a\f/\t /d;' $f|perl -p -e '
+	s {<link rel="stylesheet" type="text/css" href=".*?">}[<link rel="stylesheet" type="text/css" href="style-help-blue.css">]g;
+	s {You are currently viewing the online version of the help. There are likely to be inconsistencies between the online and offline versions of help pages. The online version is updated regularly, and it may cover features that are only available in <a href="http://wiki.daimi.au.dk/cpntools/releases.html">internal releases of CPN Tools</a>. When an <a href="http://wiki.daimi.au.dk/cpntools/releases.html">internal or external release of CPN Tools</a> is created, the current online version of the help pages is included in the release as the offline version of the help pages.}[You are currently viewing the offline version of the help.  The online version is available from <a href="http://wiki.daimi.au.dk/cpntools-help/">http://wiki.daimi.au.dk/cpntools-help/</a>. There are likely to be inconsistencies between the offline and online versions, because the online version is updated regularly.]g;
+	s {<table\ class=top.*?</table>}[]g;
+	s {<table\ class=bottom.*?</table>}[]g;
+	s {<div\ class=version>.*?</div>}[<div class=version></div>]g;' | tr "\t" "\n" | sed -e "s/<a [^>]*href=\"[^>]*[.][^>]*[.][^>]*\"[^>]*>\([^<]*<img[^>]*>[^<]*\)<\/a>/\1/g" -e "s/_home[.]html/cpntools-help.html/g" > $f.x
+	test -e $f.x && mv $f.x $f;
+done
+echo "Finalising"
+echo "Removing pages with link to black hole in help"
+rm -f *bak
+for file in `grep -l "<a href=\"http://wiki.daimi.au.dk/cpntools-help/black_hole[.]html\">Black Hole</a>" *.gif.html *.bmp.html *.bm.html *.b.html *.jpg.html`; do
+	rm ` cat $file | grep "<img src=\"_images" | sed -e "s/.*<img src=\"\([^\"]*\)\">.*/\1/" `
+	rm $file
+done
+rm `grep -l "<a href=\"http://wiki.daimi.au.dk/cpntools-help/black_hole[.]html\">Black Hole</a>" *.html`
+rm *.bmp.html *.gif.html *.jpg.html *.jpeg.html 2> /dev/null
+echo "Removing pages with link to example nets in help"
+for file in `grep -l "<a href=\"example_nets[.]html\">Example Nets</a>" *.pdf.html *.zip.html`; do
+	rm "$file"
+	rm _files/$( echo $file | sed -e "s/[.]html$//" )
+done
+for file in `grep -l "<a href=\"example_nets[.]html\">Example Nets</a>" *.html`; do
+	mv $file $file.old
+	cat $file.old | sed -e "s/<a href=\".*.zip.html.*\">\([^<]*\)<\/a>/\1/g" | sed -e "s/<a href=\".*.pdf.html.*\">\([^<]*\)<\/a>/\1/g" > $file
+	rm $file.old
+done
+
+# Merging CPN Tools help and BRITNeY Suite help
+# TODO: This might change! Make a dynamic solution!
+echo "Converting link to BRITNeY Suite"
+perl -pi.bak -e 's/http:\/\/wiki\.daimi\.au\.dk\/britney\//britney\/britney\.html/g' animations_and_visualisat.html
+rm -f *bak
+
+mv * ../..
+cd ../..
+rm -Rf wiki.daimi.au.dk* wget.log
+
+#Get help for BRITNeY
+mkdir britney
+cd britney
+
+echo "Processing files from britney-wiki"
+echo "- WGetting files"
+wget -q -np -r -k http://wiki.daimi.au.dk/britney/
+
+cd wiki.daimi.au.dk/britney
+rm -rf *.wiki?*
+echo "- Removing pages placed in trash"
+for file in `grep -l "trash\.wiki\">Trash</a>" *.wiki`; do
+    rm "$file"
+    rm -f _files/$( echo $file | sed -e "s/[.]wiki$//" )
+    rm -f _images/$( echo $file | sed -e "s/[.]wiki$//" )
+done;
+rm _home.wiki
+rm _recent.wiki
+
+for file in `grep -l "<a href=\"announcements.wiki\">Announcements</a>" *.wiki`; do
+    rm $file
+done;
+
+echo "- Changing .wiki to .html"
+for file in *.wiki; do 
+    test -e "$file" && mv "$file" "`echo $file | sed -e 's/[.]wiki$/.html/'`"
+done;
+rm -f *.cpn.html *.gif.html *.java.html *.xml.html *.pdf.html *.sml.html
+
+echo "- Cleaning up files"
+for f in *.html; do
+	test -e $f && perl -p -ibak -e 's/(<[aA][^>]*).wiki([\@\?][^">]*)*(["]{0,1}>)/$1.html$3/g' $f
+done
+rm -rf *.htmlbak
+
+echo "- Removing wiki options from files"
+for f in *.html; do
+	test -e $f && perl -p -e '
+	tr/\n\t\r\a\f/\t /d;' $f|perl -p -e '
+	s {<table\ class=top.*?</table>}[]g;
+	s {<table\ class=bottom.*?</table>}[]g;
+	s {<div\ class=version>.*?</div>}[<div class=version></div>]g;' | tr "\t" "\n" | sed -e "s/<a [^>]*href=\"[^>]*[.][^>]*[.][^>]*\"[^>]*>\([^<]*<img[^>]*>[^<]*\)<\/a>/\1/g" -e "s/_home[.]html/britney.html/g" > $f.x
+	test -e $f.x && mv $f.x $f;
+done
+
+# merging JavaDoc and Wiki files
+for f in *.html; do
+    perl -pi.bak -e 's/http:\/\/www\.daimi\.au\.dk\/~mw\/local\/tincpn\///' $f
+done
+
+rm -rf *bak
+mv * ../../
+cd ../..
+rm -rf wiki.daimi.au.dk
+echo "Procession JavaDoc files"
+echo "- WGetting files"
+wget -q -np -r -k http://www.daimi.au.dk/~mw/local/tincpn/adoc/
+echo "- Removing redundancies"
+cd www.daimi.au.dk/~mw/local/tincpn
+rm -rf adoc/*.html?*
+mv adoc ../../../..
+cd ../../../..
+rm -rf www.daimi.au.dk
+cd ../..
+
+tar -c help | gzip > help.tar.gz
+cp help.tar.gz ~/
+rm -Rf help

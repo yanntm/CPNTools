@@ -1,0 +1,479 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../mlcoms';
+
+INCLUDE 'cpnetmonitorbody';
+INCLUDE '../../cpntools/instruments/monitoringinstruments';
+
+-- MLSetMonitorOrderSend:DoPart --
+do 450 -> bis.putInt;
+   1 -> bis.putInt;
+   
+   theGlobalMonitor.numberOfMonitorsInTree -> bis.putInt;
+   theGlobalMonitor.scanMonitorTree
+   (# 
+   do current.id[] -> bis.putString;
+   #);
+   
+-- MLSetMonitorReceive:DoPart --
+do (* do nothing *) 
+   
+-- MLSetMonitorOrderOnError:DoPart --
+do (none, ErrorMLSetMonitorOrder -> getGlobalNames, what[]) -> addMonitorError;
+   true->continue; 
+   
+-- MLGenerateMonitorTemplateCodeSend:DoPart --
+do 450 -> bis.putInt;
+   2 -> bis.putInt;
+   
+   (if theMonitor.type = DataCollectionType then
+       theMonitor.isTimed -> bis.putbool;
+   if);
+   
+   (* 1 -> bis.putInt; *) (* number of monitors to generate template code for *)
+   theMonitor.type -> bis.putInt;
+   theMonitor.numberOfPlaceInstances -> bis.putInt;
+   theMonitor.numberOfTransitionInstances -> bis.putInt;
+   theMonitor.scanPlaceInstances
+   (# 
+   do current.thePageInstance.MLInstanceNumber -> bis.putInt;
+   #);
+   theMonitor.scanTransitionInstances
+   (# 
+   do current.thePageInstance.MLInstanceNumber -> bis.putInt;
+   #);
+   
+   theMonitor.id[] -> bis.putString;
+   theMonitor.scanPlaceInstances
+   (# 
+   do current.thePlace.id[] -> bis.putString;
+   #);
+   theMonitor.scanTransitionInstances
+   (# 
+   do current.theTransition.id[] -> bis.putString;
+   #);   
+   
+-- MLGenerateMonitorTemplateCodeReceive:DoPart --
+do (# success: @boolean;
+      noOfErrors: @integer;
+      theWorkspace: ^CpnWorkspace;
+      creatingMonitorFromScratch: @boolean;
+   do bis.getBool -> success;
+      bis.getString; (* monitor id *)
+      (if success then
+          theMonitor.scanDeclarations
+          (# fun: ^Text;
+          do bis.getString -> fun[];
+             (if fun[] <> none then
+                 fun[] -> current.parse;
+                 (any_status, compiled) -> current.mlDecl.changeStatus;
+                 current.changed;
+             if);
+          #);
+       else
+          this(Workspace)[] -> theWorkspace[];
+          bis.getInt -> noOfErrors;
+          (for noOfErrors repeat
+               bis.getString; (*id*)
+               bis.getString -> theWorkspace.status.error;
+          for);
+          false -> creatingMonitorFromScratch;
+          loop:theMonitor.scanDeclarations
+          (# 
+          do (if current.mlDecl[]=none then
+                 true -> creatingMonitorFromScratch;
+                 leave loop;
+             if);
+          #);
+          (if creatingMonitorFromScratch then
+              theMonitor[] -> theWorkspace.deleteMonitorNoRegister;
+              (this(cpnet)[] -> (getCommandManagerManager).getManager).removeMostRecent;
+          if);
+      if);
+   #);
+   
+-- MLGenerateMonitorTemplateCodeOnError:DoPart --
+do (theMonitor[], ErrorMLGenerateMonitorCode -> getGlobalNames, what[])
+     -> addMonitorError;
+   true -> continue;
+   
+-- MLReceiveMonitorDependenciesAndOverwrites:DoPart --
+do (# dependDecl: ^Decl;
+      depId: ^Text;
+      dependMonitor: ^Monitor;
+   do theMonitor.clearUsedBy;      
+      false -> theMonitor.forwardDependencies;
+      (for dependencies repeat           
+           bis.getString -> depId[];
+           depId[] -> theMonitor.theCPNet.theGlobals.lookupDecl -> dependDecl[];
+           (if dependDecl[] <> none then
+               theMonitor[] -> dependDecl.addUsedByMonitor;
+            else
+               depId[] -> theMonitor.theCPNet.theGlobalMonitor.lookupMonitor -> dependMonitor[];
+               (if (theMonitor[], dependMonitor[]) -> theMonitor.theCPNet.theGlobalMonitor.isBefore then
+                   theMonitor[] -> dependMonitor.addUsedBy;
+                else
+                   (if not theMonitor.forwardDependencies then
+                       true -> theMonitor.forwardDependencies;
+                       (theMonitor[], ErrorMonitorHasForwardDependencies -> getGlobalNames) 
+                         -> theMonitor.addError;
+                       theMonitor[] -> theMonitor.theCPNet.addMonitorToDeletionList;
+                   if);
+               if);
+           if);
+      for);
+      
+      theMonitor.scanOverwrites
+      (# 
+      do theMonitor[] -> current.removeOverwrites;
+      #);
+      theMonitor.clearOverwrites;
+      theMonitor.scanOverwrittenBy
+      (# 
+      do theMonitor[] -> current.removeOverwrittenBy;
+      #);
+      theMonitor.clearOverwrittenBy;
+      theMonitor.scanOverwritesDecl
+      (# 
+      do theMonitor[] -> current.removeOverwrittenByMonitor;
+         current.semanticChanged;
+      #);
+      theMonitor.clearOverwritesDecl;
+      (for overwrites repeat
+           bis.getString -> depId[];
+           depId[] -> theMonitor.theCPNet.theGlobals.lookupDecl -> dependDecl[];
+           (if dependDecl[] <> none then
+               theMonitor[] -> dependDecl.addOverwrittenByMonitor;
+               dependDecl[] -> theMonitor.addOverwritesDecl;
+               (theMonitor[], ErrorMonitorOverwritesADeclaration -> getGlobalNames) -> theMonitor.addError;
+               (dependDecl[], ErrorDeclarationIsOverwrittenByMonitor -> getGlobalNames) -> dependDecl.addError;
+               (any_status, incorrect) -> dependDecl.changeStatus;
+            else
+               depId[] -> theMonitor.theCPNet.theGlobalMonitor.lookupMonitor -> dependMonitor[];
+               theMonitor[] -> dependMonitor.addOverwrittenBy;
+               dependMonitor[] -> theMonitor.addOverwrites;
+               (theMonitor[], ErrorMonitorOverwritesAnotherMonitor -> getGlobalNames) -> theMonitor.addError;
+               (dependMonitor[], ErrorMonitorIsOverwrittenByAnotherMonitor -> getGlobalNames) -> dependMonitor.addError;
+               theMonitor[] -> theMonitor.theCPNet.addMonitorToDeletionList;
+               dependMonitor[] -> theMonitor.theCPNet.addMonitorToDeletionList;
+           if);
+      for);
+   #);
+   
+-- MLSyntaxCheckAndGenerateMonitorSend:DoPart --
+do 450 -> bis.putInt;
+   3 -> bis.putInt;
+   
+   theMonitor.removeError;
+   
+   theMonitor.id[] -> bis.putString;
+   theMonitor.getSimulationName -> bis.putString;
+   
+   theMonitor.scanOptions
+   (# 
+   do (if true
+       // current## <= TextOption## then
+          current.theValue[] -> bis.putString;
+       // current## <= BooleanOption## then
+          current[] -> qua
+          (# as:: BooleanOption;
+          do thisObj.theValue -> bis.putBool;
+          #);
+      if);
+   #);
+   
+   theMonitor.type -> bis.putInt;
+   theMonitor.numberOfPlaceInstances -> bis.putInt;
+   theMonitor.numberOfTransitionInstances -> bis.putInt;
+   theMonitor.scanPlaceInstances
+   (# 
+   do current.thePageInstance.MLInstanceNumber -> bis.putInt;
+   #);
+   theMonitor.scanTransitionInstances
+   (# 
+   do current.thePageInstance.MLInstanceNumber -> bis.putInt;
+   #);
+   
+   theMonitor.scanDeclarations
+   (# 
+   do (if current.mlDecl[] <> none then
+          current.mlDecl.id[] -> bis.putString;
+          current.mlDecl.data[] -> bis.putString;
+          (any_status, checking) -> current.mlDecl.changeStatus;
+      if);
+   #);
+   theMonitor.scanPlaceInstances
+   (# 
+   do current.thePlace.id[] -> bis.putString;
+   #);
+   theMonitor.scanTransitionInstances
+   (# 
+   do current.theTransition.id[] -> bis.putString;
+   #);
+   
+-- MLSyntaxCheckAndGenerateMonitorReceive:DoPart --
+do (# errors, dependencies, overwrites: @integer;  
+      theDecl: ^Decl;
+   do bis.getInt; (* number of monitors *)
+      bis.getInt -> errors;
+      bis.getInt -> dependencies;
+      bis.getInt -> overwrites;
+      
+      bis.getString; (* monitor id *)
+      (for errors repeat
+           bis.getString -> theMonitor.getDecl -> theDecl[];
+           (if theDecl[]<>none then
+               (any_status, incorrect) -> theDecl.changeStatus;           
+               (theDecl[], bis.getString) -> theDecl.addError;
+            else
+               (theMonitor[],bis.getString) -> theMonitor.addError;
+           if);
+           theMonitor[] -> theMonitor.theCPNet.addMonitorToDeletionList;
+      for);
+
+      theMonitor.scanDeclarations
+      (# theDecl: ^Declaration;
+      do (if current.mlDecl[] <> none then
+             (checking, compiled) -> current.mlDecl.changeStatus;
+             (if current.mlDecl.getDeclaration <> none then
+                 current.mldecl.getDeclaration -> thedecl[];
+                 (current.mlDecl.getDeclaration).observers.scan
+                 (# 
+                 do (if current## <= IndexNode## then
+                        thedecl.mldecl[] -> current.onSemanticChanged;
+                    if);
+                 #);
+             if);
+         if);
+      #);
+
+      (theMonitor[], dependencies, overwrites, bis[]) -> MLReceiveMonitorDependenciesAndOverwrites;
+      
+      (if errors=0 then          
+          theMonitor.scanTransitionInstances
+          (# 
+          do current.theTransition[] -> theMonitor.theCPNet.regenerateTransition;
+          #);
+      if);
+      theMonitor.changed; 
+   #);
+   
+-- MLSyntaxCheckAndGenerateMonitorOnError:DoPart --
+do (theMonitor[], ErrorMLSyntaxCheckAndGenerateMonitor -> getGlobalNames, what[])
+     -> addMonitorError;
+   true -> continue;
+   
+-- MLCreateSingleNodeMonitorSend:DoPart --
+do 450 -> bis.putInt;
+   getSubCommand -> bis.putInt;
+   
+   theMonitor.removeError;
+   theMonitor.scanOptions
+   (# 
+   do (if true
+       // current## <= TextOption## then
+          current.theValue[] -> bis.putString;
+       // current## <= BooleanOption## then
+          current[] -> qua
+          (# as:: BooleanOption;
+          do thisObj.theValue -> bis.putBool;
+          #);
+      if);
+   #);
+   (# theInstance: ^NodeInstance;
+   do (theMonitor.getSingleNode) -> theInstance[];
+
+      theInstance.thePageInstance.MLInstanceNumber -> bis.putInt;
+      
+      theMonitor.id[] -> bis.putString;
+      theMonitor.getSimulationName -> bis.putString;
+      
+      ((theMonitor.getSingleNode).getNode).id[] -> bis.putString;
+      
+      (if debugging then
+          'Creating single node monitor for %s with instance number %i.' -> debugMonitor
+          (# 
+          do theInstance.getLongName -> s;
+             theInstance.thePageInstance.MLInstanceNumber -> i;
+          #);
+      if);
+   #);
+   
+-- MLCreateSingleNodeMonitorReceive:DoPart --
+do (# dependencies, overwrites, transitions, instanceNumber, noOfErrors: @integer;
+      theTransitionInstance: ^TransitionInstance;
+      transitionInstances: ^IntObjSequence;
+      currentInteger: ^IntegerObject;
+   do bis.getInt -> dependencies;
+      bis.getInt -> overwrites;
+      (if dependOnTransitions then
+          bis.getInt -> transitions;
+          &IntObjSequence[] -> transitionInstances[];
+          transitionInstances.init;
+          (for transitions repeat
+               &IntegerObject[] -> currentInteger[];
+               bis.getInt -> currentInteger;
+               currentInteger[] -> transitionInstances.append;
+          for);
+      if);
+      bis.getInt -> noOfErrors;
+      
+      bis.getString; (*monitor id*)
+      
+      (if noOfErrors=0 then
+          (theMonitor[], dependencies, overwrites, bis[]) -> MLReceiveMonitorDependenciesAndOverwrites;
+          (if transitionInstances[]<>none then
+              transitionInstances.scan
+              (# 
+              do (current, bis.getString) 
+                   -> theMonitor.theCPNet.lookupTransitionInstance
+                   -> theTransitionInstance[]
+                   -> theMonitor.addNodeInstance;
+                 theTransitionInstance.theTransition[] -> theMonitor.theCPNet.regenerateTransition;
+              #);
+          if);
+       else
+          (for dependencies+overwrites+transitions repeat
+               bis.getString;
+          for);
+          (for noOfErrors repeat
+               bis.getString; (*id*)
+               (theMonitor[],bis.getString) -> theMonitor.addError;
+          for);
+          theMonitor[] -> theMonitor.theCPNet.addMonitorToDeletionList;
+      if);
+   #);
+   
+-- MLCreateSingleNodeMonitorOnError:DoPart --
+do (theMonitor[], getErrorMsg, what[]) -> addMonitorError;
+   true -> continue;
+      
+-- MLSetModelNameDirAndOutputSend:DoPart --
+do (# isDefaultDir: 
+        (# dirToTest: ^Text;
+        enter dirToTest[]
+        exit '<same as model>' -> dirToTest.equalNCS
+        #);
+   do 200 -> bis.putInt;
+      9 -> bis.putInt;
+   
+      theName[] -> bis.putString;
+	path[] -> cygwinify -> bis.putString;
+      (if not (getOutputDir->isDefaultDir) then
+	(getOutputDir).trim -> cygwinify -> bis.putString;
+       else
+          '' -> bis.putString;
+      if);
+      (if debugging then
+          'Setting model name dir and output send' -> debugMonitor;
+      if);
+   #);
+   
+-- MLSetModelNameDirAndOutputReceive:DoPart --
+do (# succes: @boolean;
+   do bis.getBool -> succes;
+      (if debugging then
+          'MLSetModelNameDirAndOutput receive' -> debugMonitor;
+      if);
+      (if not succes then
+          (if debugging then
+              'MLSetModelNameDirAndOutput receive not succes' -> debugMonitor;
+          if);
+          bis.getString -> onError;
+          
+      if);
+   #);
+   
+-- MLSetModelNameDirAndOutputOnError:DoPart --
+do (none, ErrorMLSetModelNameDirAndOutput -> getGlobalNames, what[])
+     -> addMonitorError;
+   true -> continue;
+   
+-- MLSetSimReportOptionsSend:doPart --
+do 200 -> bis.putInt;
+   13 -> bis.putInt;
+   
+   (getSimreportOptions).scanOptionsRecursively
+   (# 
+   do current[] -> qua
+      (# as::BooleanOption;
+      do thisObj.theValue -> bis.putBool;
+      #);
+   #);
+-- MLSetSimReportOptionsReceive:doPart --
+do
+   
+-- MLSetSimReportOptionsOnError:doPart --
+do
+   
+-- MLSetRepReportOptionsSend:doPart --
+do 200 -> bis.putInt;
+   14 -> bis.putInt;
+   
+   (getRepreportOptions).scanOptionsRecursively
+   (# 
+   do current[] -> qua
+      (# as::BooleanOption;
+      do thisObj.theValue -> bis.putBool;
+      #);
+   #);
+-- MLSetRepReportOptionsReceive:doPart --
+do
+   
+-- MLSetRepReportOptionsOnError:doPart --
+do
+   
+-- MLRemoveMonitorSend:DoPart --
+do 450 -> bis.putInt;
+   4 -> bis.putInt;
+   
+   theMonitor.id[] -> bis.putString;
+   
+-- MLRemoveMonitorReceive:DoPart --
+do (if not bis.getBool then
+       (theMonitor[], ErrorMLRemoveMonitor -> getGlobalNames, bis.getString)
+         -> addMonitorError;
+   if);
+   
+-- MLRemoveMonitorOnError:DoPart --
+do (theMonitor[], ErrorMLRemoveMonitor -> getGlobalNames, what[])
+     -> addMonitorError;
+   true -> continue;
+   
+-- MLToggleEnablingForMonitorSend:DoPart --
+do 450 -> bis.putInt;
+   5 -> bis.putInt;
+   
+   not theMonitor.disabled -> bis.putBool;
+   theMonitor.id[] -> bis.putString
+   
+-- MLToggleEnablingForMonitorReceive:DoPart --
+do
+   
+-- MLToggleEnablingForMonitorOnError:DoPart --
+do (theMonitor[], ErrorToggleEnablingForMonitor -> getGlobalNames, what[])
+     -> addMonitorError;
+   true -> continue;

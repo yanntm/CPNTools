@@ -1,0 +1,1360 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../hierarchyinstruments';
+
+INCLUDE '../creationinstruments';
+INCLUDE '../deletioninstruments';
+INCLUDE '../../wselements/statusbubble';
+INCLUDE '../../resources/texts/texts';
+
+-- AddMembersToFusionSet:DoPart --
+do (# theCommand: ^Command;
+      theCommandList: ^CommandList;
+      theNet: ^CPNet;
+      expandPlaceList:
+        (# tmpList: @PlaceList;
+        do tmpList.init;
+           thePlaceList.scan
+           (# 
+           do current.scanFusionSet
+              (# 
+              do (if not (current[] -> thePlaceList.has) then
+                     current[] -> tmpList.append;
+                 if);
+              #);
+           #);
+           tmpList[] 
+             -> thePlaceList.concatenate
+             -> thePlaceList[];
+        #);
+   do &CommandList[] -> theCommandList[];
+      theCommandList.init;
+      expandPlaceList;
+      (thePlaceList.first).getCPNet -> theNet[];
+      thePlaceList.scan
+      (# theClipping: ^FusionSetClipping;
+         insertCommand: ^AddMemberToFusionSetCommand;
+         removeCommand: ^RemoveMemberFromFusionSetCommand;
+      do (if current.getFusionSet <> none then
+             &FusionSetClipping[] -> theClipping[];
+             current[] -> theClipping.init;
+             &RemoveMemberFromFusionSetCommand[] -> removeCommand[];
+             removeCommand.init;
+             current.getFusionSet -> removeCommand.prepare;
+             theClipping[] -> removeCommand.clip[];
+             removeCommand[] -> theCommandList.append;             
+         if);
+         &FusionSetClipping[] -> theClipping[];
+         current[] -> theClipping.init;
+         &AddMemberToFusionSetCommand[] -> insertCommand[];
+         insertCommand.init;
+         theFusionSet[] -> insertCommand.prepare;
+         theClipping[] -> insertCommand.clip[];
+         insertCommand[] -> theCommandList.append;
+      #);
+
+      &Command 
+      (#
+         getName:: 
+           (# 
+           do (if theCommandList.size > 1 then
+                  'Add Place to FusionSet...' -> name[]; 
+               else
+                  'Add Place to FusionSet' -> name[]; 
+              if);
+           #);
+         apply:: (# do redo; #);
+         undo:: (# do theCommandList.scanReverse (# do current.undo; #); #);
+         redo:: (# do theCommandList.redo; #); 
+      #)[] -> theCommand[];
+      theCommand.apply;
+      (theNet[],theCommand[]) -> registerCommand;
+   #);
+   
+-- AssignPortSocket:DoPart --
+do (# theClipping: ^AssignmentClipping;
+      theCommand: ^AssignPortSocketCommand;
+      portAndSocketAreTheSame:
+        (# res: @boolean;
+        do theSocket[] = thePort[] -> res;
+           (if res then
+               'Operation not performed: Port and socket are the same place' -> reportError;
+           if);
+        exit res
+        #);
+      portPlacePageNotSubpageOfSocketPlace:
+        (# res: @boolean;
+           theSubTrans: ^Transition;
+        do false -> res;
+           (if theSubTransition.getCPNPage<>theSocket.getCPNPage then
+               true -> res;
+               'Page containing the selected port place is not a subpage of the page containing the selected socket place' -> reportError;
+           if);
+        exit res
+        #);            
+      badPortType:
+        (# res, arcsOK, hasInArc, hasOutArc: @boolean;
+           arcsEvaluator: 
+             (# res: @boolean;
+                thePlace: ^Place;
+                theArc: ^Arc;
+             enter thePlace[]
+             do false -> res;
+                check: thePlace.scanArcs
+                  (# 
+                  do (if current.transend[] = theSubTransition[] then
+                         current[] -> theArc[];
+                         INNER arcsEvaluator;
+                         (if res then
+                             leave check;
+                         if);
+                     if);
+                  #);
+             exit res
+             #);
+           hasInArcs: arcsEvaluator
+             (# 
+             do (theArc.getOrientation = PtoT) or 
+                (theArc.getOrientation = BothDir) -> res;
+             #);
+           hasOutArcs: arcsEvaluator
+             (# 
+             do (theArc.getOrientation = TtoP) or 
+                (theArc.getOrientation = BothDir) -> res;                  
+             #);               
+        do false -> res;              
+           
+           theSocket[] -> hasInArcs -> hasInArc;
+           theSocket[] -> hasOutArcs -> hasOutArc;
+           
+           (if (thePort.getPortType = NONE) OR
+               (not 
+               (('out' -> ((thePort.getPortType).getCPNML).equalNCS) AND not hasInArc AND hasOutArc) AND
+               not
+               (('in' -> ((thePort.getPortType).getCPNML).equalNCS) AND hasInArc AND not hasOutArc) AND
+               not
+               (('i/o' -> ((thePort.getPortType).getCPNML).equalNCS) AND hasInArc AND hasOutArc)) then
+               (if thePort.getPortType = none then
+                   'The chosen place as port has no port type' -> reportError;
+                else
+                   'Type of port and arcs from socket to substitution'
+                   ' transtion are not consistent' -> reportError;
+               if);
+               true -> res;                   
+           if);                
+        exit res
+        #);
+      unequalPlaceTypes:
+        (# res: @boolean
+        do false -> res;
+           (if not 
+               ((((theSocket.GetPlaceType) <> NONE) AND
+               ((thePort.GetPlaceType) <> NONE) AND
+               ((theSocket.GetPlaceType).getInscription 
+                 -> ((thePort.GetPlaceType).getInscription).equal)) 
+               OR
+               (((theSocket.GetPlaceType) = NONE) AND
+               ((thePort.GetPlaceType) = NONE))) then
+               'Inconsistent colour sets on port and socket' -> reportError;
+               true -> res;             
+           if);
+        exit res
+        #);
+      socketNotConnectedToSubTrans: (* #928 *)
+        (# res: @boolean;
+           msg: @Text;
+        do true -> res;
+           check: theSocket.scanArcs
+             (# 
+             do (if current.transend[] = theSubTransition[] then
+                    false -> res;
+                    leave check;
+                if);
+             #);
+           (if res then
+               'Socket must be connected to the substitution transtion \'%s\' on page \'%s\'' -> 
+               msg.putFormat
+               (# 
+               do theSubTransition.theName.copy -> s;
+                  (theSubTransition.getCPNPage).theName.copy -> s;
+               #);
+               msg[] -> reportError;
+           if);
+        exit res
+        #);
+      reportError:
+        (# msg: ^Text;
+        enter msg[]
+        do msg[] -> status.error;                        
+        #);
+   do ('thePort[] <> none', thePort[] <> none) -> assert (# #);
+      ('theSocket[] <> none', theSocket[] <> none) -> assert (# #);
+      ('theSubTransition[] <> none', theSubTransition[] <> none) -> assert (# #);
+      (if not 
+          (socketNotConnectedToSubTrans or
+          portAndSocketAreTheSame or 
+          portPlacePageNotSubpageOfSocketPlace or
+          badPortType or
+          unequalPlaceTypes) then
+          &AssignmentClipping[] -> theClipping[];            
+          (thePort[], theSubTransition[]) -> theClipping.init;
+          
+          &AssignPortSocketCommand[] -> theCommand[];
+          theCommand.init;
+          theSocket[] -> theCommand.prepare;
+          theClipping[] -> theCommand.apply;
+          
+          theCommand[] -> theAssignPortSocketCommand[];
+      if);
+   #);
+   
+-- MoveToSubpageCommandUndo:DoPart --
+do theMoveGroupToSubpageCommand.undo;
+   theGroup[] -> theCPNPage.removeGroup;
+   
+-- MoveToSubpage:DoPart --
+do (# theGroup: ^Group;
+      theMoveGroupToSubpageCommand: ^MoveGroupToSubpageCommand;
+      theMoveToSubpageCommand: ^MoveToSubpageCommand;
+      isMonitored: @boolean;
+      errorMsg: ^Text;
+   do false -> isMonitored;
+      locateMonitor:theTransition.scanInstances
+      (# 
+      do current.scanMonitors
+         (# 
+         do true -> isMonitored;
+            leave locateMonitor;
+         #);
+      #);
+      (if isMonitored then
+          &Text[] -> errorMsg[];
+          TransitionMonitored -> getGlobalNames -> errorMsg.putformat
+          (# 
+          do theTransition.theName[] -> s;
+          #);
+          errorMsg[] -> status.error;
+       else
+          &Group[] -> theGroup[];
+          theGroup.init;
+          theTransition.theName[] -> theGroup.theName[];
+          theGroup[] -> (theTransition.getCPNPage).addGroup;
+          theTransition[] -> theGroup.addElement;
+          theGroup[] 
+            -> BuildMoveGroupToSubpage
+            -> theMoveGroupToSubpageCommand[];
+          (if theMoveGroupToSubpageCommand[] <> none then
+              &MoveToSubpageCommand[] -> theMoveToSubpageCommand[];
+              (theMoveGroupToSubpageCommand[], theGroup[], theTransition.getCPNPage)
+                -> theMoveToSubpageCommand.init;
+              theMoveToSubpageCommand.apply;
+              (theTransition.getCPNet, theMoveToSubpageCommand[]) ->registerCommand;
+           else
+              theGroup[] -> (theTransition.getCPNPage).removeGroup;
+              GroupNotValidForAMoveToSubpageOperation 
+                -> getGlobalNames
+                -> status.error;
+              
+          if);
+      if);
+   #);
+
+-- CreateSubpageCommand:doPart --
+do (# noErrors: @boolean;
+      theClipping: ^CPNPageClipping;        
+      (* check for circularity could be made more efficient if a table
+       * of previously seen nodes in hierachy is used /krell *)        
+      reportError:
+        (# msg: ^Text;
+           thePage: ^CPNPage;
+        enter thePage[]
+        do &Text[] -> msg[];
+           INNER;
+           msg[] -> status.error;
+        #);
+      reportCircularity: reportError
+        (# 
+        do 'Operation not performed: Operation will cause circularity in the hierachy'-> msg[];
+        #);
+      reportAlreadySubpage: reportError
+        (# 
+        do 'Operation not performed: Page "' -> msg.puttext;
+           thePage.theName.copy -> msg.puttext;
+           '" is already subpage of the transition' -> msg.puttext;
+        #);
+   do true -> noErrors;
+      (if (thePage[] -> (theTransition.getCPNPage).hasInTopCPNPageTree) then
+          reportCircularity;
+          false -> noErrors;
+      if);
+      (if thePage[] = theTransition.getSubpage then
+          thePage[] -> reportAlreadySubpage;
+          false -> noErrors;
+      if);
+      (if noErrors then
+          &CPNPageClipping[] -> theClipping[];
+          thePage[] -> theClipping.init;
+          
+          &SetSubpageCommand[] -> theCommand[];
+          theTransition[] -> theCommand.prepare; 
+          theClipping[] -> theCommand.clip[];
+      if);
+   #);   
+   
+-- SetSubPage:doPart --
+do (# theCommand: ^SetSubPageCommand;
+   do (thePage[], theTransition[])
+        -> CreateSubpageCommand
+        -> theCommand[];
+      false -> didSetSubPageGoWell;
+      (if theCommand[] <> none then
+          theCommand.redo;
+          (theTransition.getCPNet,theCommand[]) -> registerCommand;
+          true -> didSetSubPageGoWell;
+      if);
+   #);
+   
+-- flattenCommandPrivate:descriptor --
+(# PairOfPlaces:
+     (# portClone,socket: ^Place;
+        init:
+          (#
+          enter (portClone[],socket[])
+          #);
+        getPortClone: (# exit portClone[] #);
+        getSocket: (# exit socket[] #);
+     #);
+   PairOfPlacesList: List(# element:: PairOfPlaces; #);
+   nameOfPortAssignedToPlusOneSocket:
+     (# portPlaces: @PlaceIDDictionary;
+        nameOfOffendingPort: ^Text;
+     do NONE -> nameOfOffendingPort[];
+        portPlaces.init;
+        portPlaces.clear;
+        goThroughAssignments:theSubTransition.SocketPlaces.scan
+        (# currentPort: ^Place;
+        do current.getPort -> currentPort[];
+           (if (currentPort.id[]->portPlaces.lookup)=NONE then
+               (currentPort.id[],currentPort[]) -> portPlaces.associate;
+            else
+               currentPort.theName[] -> nameOfOffendingPort[];
+               leave goThroughAssignments;
+           if);
+        #);
+     exit nameOfOffendingPort[]
+     #);
+   cloneElements:
+     (# elementsOnSubpageList: ^PageElementList;
+        keepSubpages: @boolean;
+        placesToMergeList: ^PairOfPlacesList;
+        cloneOfTheSubPage: ^CPNPage;   
+        substitutionTransitionClones: ^TransitionList;
+     do true -> keepSubpages;
+        keepSubpages -> theSubpage.cloneAndGetAssociations
+          -> (cloneOfTheSubPage[],associationsBetweenSubpageAndClone[]);
+        &PageElementList[] -> elementsOnSubpageList[];
+        elementsOnSubpageList.init;
+        cloneOfTheSubPage.scanPageElements
+        (# 
+        do current[] -> elementsOnSubpageList.append;
+        #);
+        
+        theSubPage.scanPageElements
+        (# 
+        do (if current## <= Place## then
+               theSubPage[] -> current.setCPNPage;
+           if);
+        #);
+        elementsOnSubpageList.scanArcs
+        (# 
+        do current[] -> current.placeEnd.removeArc;
+           current[] -> current.transEnd.removeArc;
+        #);
+        
+        &PairOfPlacesList[] -> placesToMergeList[];
+        placesToMergeList.init;
+        createListOfPlacesToMerge: theSubTransition.socketPlaces.scan
+          (# originalPort: ^Place;
+             clonedPort: ^Place;
+             aPairOfPlaces: ^PairOfPlaces;
+          do current.getPort -> originalPort[];
+             originalPort.id[] -> associationsBetweenSubpageAndClone.lookup -> clonedPort[];
+             &PairOfPlaces[] -> aPairOfPlaces[];
+             (clonedPort[],(current.getSocket)) -> aPairOfPlaces.init;
+             aPairOfPlaces[] -> placesToMergeList.append;
+          #);
+        &TransitionList[] -> substitutionTransitionClones[];
+        substitutionTransitionClones.init;
+     exit (elementsOnSubpageList[],placesToMergeList[])
+     #);
+   insertElements:
+     (# MyCreateCommand: CreateCommand
+          (# theInsertedElements: ^PageElementList;
+             groupWithInsertedElements: ^Group;
+             groupsCreatedFromGroupsOnSubPage: ^GroupList;
+             previousSelectedGroup: ^Group;
+             init:: 
+               (# 
+               enter theInsertedElements[] 
+               do theTopPage.getSelectedGroup -> previousSelectedGroup[];
+               #);
+             redo:: 
+               (# 
+               do &Group[] -> groupWithInsertedElements[];
+                  groupWithInsertedElements.init;
+                  (theSubPage.name).copy -> groupWithInsertedElements.theName[];
+                  addElementsToGroup:theInsertedElements.scan
+                    (# 
+                    do current[] -> groupWithInsertedElements.addElement;
+                    #);
+                  groupWithInsertedElements[] -> theTopPage.addGroup;
+                  &GroupList[] -> groupsCreatedFromGroupsOnSubPage[];
+                  groupsCreatedFromGroupsOnSubPage.init;
+                  addSubPageGroupsToTopPage: theSubPage.scanGroups
+                    (# aGroup: ^Group;
+                    do (if not current.all then
+                           &Group[] -> aGroup[];
+                           aGroup.init;
+                           current.theName.copy -> aGroup.theName[];
+                           addElements: current.scanElements
+                             (# aPageElement: ^PageElement;
+                             do current.id[] -> associationsBetweenSubpageAndClone.lookup
+                                  -> aPageElement[];
+                                (if aPageElement[]<>NONE then
+                                    aPageElement[] -> aGroup.addElement;
+                                if);
+                             #);
+                           aGroup[] -> theTopPage.addGroup;
+                           aGroup[] -> groupsCreatedFromGroupsOnSubPage.append;
+                       if);                  
+                    #);
+                  groupWithInsertedElements[] -> theTopPage.setSelectedGroup;
+                  theTopPage[] -> groupWithInsertedElements.onSelect;
+               #);
+             undo:: 
+               (# 
+               do groupWithInsertedElements[] -> theTopPage.removeGroup;
+                  NONE -> groupWithInsertedElements[];
+                  removeCreatedGroups: groupsCreatedFromGroupsOnSubPage.scan
+                    (# 
+                    do current[] -> theTopPage.removeGroup;
+                    #);
+                  NONE -> groupsCreatedFromGroupsOnSubPage[];
+                  previousSelectedGroup[] -> theTopPage.setSelectedGroup;
+                  thetopPage[] -> previousSelectedGroup.onSelect;
+               #);
+          #);
+        theInsertElementsCommand: ^MyCreateCommand;
+        elementsToInsert: ^PageElementList;
+        theClip: ^PageClip;        
+     enter elementsToInsert[]
+     do &PageClip[] -> theClip[];
+        elementsToInsert.scan
+        (# 
+        do current[] -> ClippingFactory -> theClip.add;
+        #);        
+        &MyCreateCommand[] -> theInsertElementsCommand[];        
+        elementsToInsert[] -> theInsertElementsCommand.init;
+        theTopPage[] -> theInsertElementsCommand.prepare;
+        theClip[] -> theInsertElementsCommand.apply; 
+     exit theInsertElementsCommand[]
+     #);
+   deleteSubstitutionTransitionAndArcs:
+     (# theDeleteSubTransAndArcCommand: ^DeleteCommand;
+        theClip: ^PageClip;
+        theTransitionClipping: ^TransitionClipping;
+     do &PageClip[] -> theClip[];
+        theSubTransition[] -> ClippingFactory -> theTransitionClipping[] -> theClip.add;
+        theSubTransition.scanArcs
+        (# 
+        do current[] -> ClippingFactory -> theClip.add;
+        #);
+        &DeleteCommand[] -> theDeleteSubTransAndArcCommand[];
+        theDeleteSubTransAndArcCommand.init;
+        theTopPage[] -> theDeleteSubTransAndArcCommand.prepare;        
+        theClip[] -> theDeleteSubTransAndArcCommand.apply; 
+     exit theDeleteSubTransAndArcCommand[]
+     #);
+   mergePlaces:
+     (# MergePlacesCommand: Command
+          (# placesToMerge: ^PairOfPlacesList;
+             newArcs: ^ArcList;
+             theClip: ^PageClip;
+             aDeleteSocketCommand: ^DeleteCommand;
+             deleteSocketCommandList: ^CommandList;
+             deleteSocketsCommand: ^MultipleCommand;
+             init::
+               (# ptm: ^PairOfPlacesList;
+               enter ptm[]
+               do ptm[] -> placesToMerge[];
+                  &ArcList[] -> newArcs[];
+                  newArcs.init;
+                  &CommandList[] -> deleteSocketCommandList[];
+                  deleteSocketCommandList.init;
+               #);
+             apply:: (# do redo; #);
+             redo::
+               (# 
+               do placesToMerge.scan
+                  (# thePlacePair: ^PairOfPlaces;
+                  do current[] -> thePlacePair[];         
+                     &PageClip[] -> theClip[];                     
+                     (thePlacePair.getPortClone) -> ClippingFactory -> theClip.add;
+                     cloneArcsAndAddOriginalToClipping: (thePlacePair.getPortClone).scanArcs
+                     (# newArc: ^Arc;
+                     do current.clone -> newArc[];                        
+                        current[] -> ClippingFactory -> theClip.add;
+                        
+                        current.transEnd[] -> newArc.setTransEnd;
+                        thePlacePair.getSocket -> newArc.setPlaceEnd;
+                        theTopPage[] -> newArc.setCPNPage;
+                        newArc[] -> theTopPage.addArc;
+                        newArc[] -> newArc.transEnd.addArc;
+                        newArc[] -> newArc.placeEnd.addArc;                        
+                        
+                        (if not (current.getBends).empty then
+                            (current.getBends).copy -> newarc.setBends;
+                            (newarc.getBends).scan(# do current[] -> newarc.addBendPoint; #);
+                        if);
+                        
+                        newArc.startTextEditor;
+                        newArc[] -> newArcs.append;
+                        
+                        newArc.getAnnotation -> newArc.computeInitialAttachpoint;
+                        (newArc.getAnnotation).computePosition;
+                     #);
+                     changePortAssignments: (thePlacePair.getPortClone).scanAssignments
+                       (# 
+                       do ((current.getPort),(thePlacePair.getSocket),(current.getSubTransition)) 
+                            -> AssignPortSocketAndCreateCommand;
+                       #);
+                     &DeleteCommand[] -> aDeleteSocketCommand[];
+                     theTopPage[] -> aDeleteSocketCommand.prepare;
+                     aDeleteSocketCommand.init;
+                     theClip[] -> aDeleteSocketCommand.apply;
+                     aDeleteSocketCommand[] -> deleteSocketCommandList.append;
+                  #);
+               #);
+             undo::
+               (# 
+               do deleteSocketCommandList.scanReverse(# do current.undo; #);
+                  deleteSocketCommandList.clear;
+                  newArcs.scan(# do current.delete; #);
+                  newArcs.clear;
+               #);
+          #);        
+        theMergePlacesCommand: ^MergePlacesCommand;
+        placesThatShouldBeMerged: ^PairOfPlacesList;
+     enter placesThatShouldBeMerged[]
+     do &MergePlacesCommand[] -> theMergePlacesCommand[];
+        placesThatShouldBeMerged[] -> theMergePlacesCommand.init;
+        theMergePlacesCommand.prepare;
+        theMergePlacesCommand.apply;
+     exit theMergePlacesCommand[]        
+     #);
+   deleteSubpage:
+     (# theDeleteSubpageCommand: ^DeletePageCommand;
+        removeSheets: @boolean;
+     do true -> removeSheets;
+        (NONE,theSubPage[],removeSheets) -> CreateDeletePageCommand 
+          -> theDeleteSubpageCommand[];
+        theDeleteSubpageCommand.apply;
+     exit theDeleteSubpageCommand[]
+     #);
+   theSubTransition: ^Transition;   
+   theTopPage: ^CPNPage;
+   theSubpage: ^CPNPage;
+   associationsBetweenSubpageAndClone: ^PageElementIDDictionary;
+   placesToMerge: ^PairOfPlacesList;
+   elementsOnSubPage: ^PageElementList;
+   flattenCommands: ^CommandList;
+   fixedStatus: ^Workspace.fixedStatusBubble;
+   setBusyCursorAndStatusBubble:
+        (# 
+        do ObjectPool.get(# Type::FixedStatusBubble; #) -> fixedStatus[];
+           'Flattening' -> fixedStatus.running;
+           fixedStatus.start;
+           setBusyCursor;
+           theTopPage.net.MLCheckerThread.stop;
+        #);
+   unsetBusyCursorAndStausBubble:
+     (# 
+     do theTopPage.net.MLCheckerThread.resume;
+        unsetBusyCursor;
+        fixedStatus.stop;
+     #);
+#)
+
+-- flattenCommandPrepare:doPart --
+do 'prepare' -> debugFlatten;
+   target[] -> private.theSubTransition[];
+   target.getCPNPage -> private.theTopPage[];
+   target.getSubpage -> private.theSubpage[];   
+   &CommandList[] -> private.flattenCommands[];
+   private.flattenCommands.init; 
+   
+-- flattenCommandApply:doPart --
+do (# theSubpageHasTheSameNoOfInstancesAsTheTopPage: @boolean;      
+      checkNoOfInstances:
+        (# 
+        do private.theSubpage.numberOfInstances=private.theTopPage.numberOfInstances 
+             -> theSubpageHasTheSameNoOfInstancesAsTheTopPage;
+        #);      
+      applyCommandsAndAddToCommandList:
+        (# 
+        do private.cloneElements -> (private.elementsOnSubPage[],private.placesToMerge[]);
+           'inserting elements' -> debugFlatten;
+           private.elementsOnSubPage[] -> private.insertElements -> private.flattenCommands.append;
+           'deleting substitution transition and arcs' -> debugFlatten;
+           private.deleteSubstitutionTransitionAndArcs -> private.flattenCommands.append;
+           'merging places' -> debugFlatten;
+           private.placesToMerge[] -> private.mergePlaces -> private.flattenCommands.append;
+           (if theSubpageHasTheSameNoOfInstancesAsTheTopPage then
+               'deleting subpage' -> debugFlatten;
+               private.deleteSubpage -> private.flattenCommands.append;
+           if);
+        #);
+      offendingPortName: ^Text;
+      status: ^Workspace.statusBubble;
+      tmp: ^Text;
+   do 'apply' -> debugFlatten;
+      private.nameOfPortAssignedToPlusOneSocket -> offendingPortName[];
+      (if offendingPortName[]=NONE then
+          true -> succes;
+          private.setBusyCursorAndStatusBubble;
+          checkNoOfInstances;
+          applyCommandsAndAddToCommandList;
+          private.theTopPage[] -> (private.theTopPage.getSelectedGroup).onSelect;
+          private.unsetBusyCursorAndStausBubble;
+       else
+          false -> succes;
+          ObjectPool.get(# Type::Statusbubble; #) -> status[];
+          &Text[] -> tmp[];
+          (FlattenErrorPortAssignedToTwoSockets ->getGlobalNames) -> tmp.putformat
+          (# 
+          do THIS(FlattenCommand).private.theSubTransition.theName[] -> s;
+             offendingPortName[] -> s;
+          #) -> status.error;
+      if);      
+   #);
+   
+-- flattenCommandUndo:doPart --
+do (if not notUndoable then
+       private.setBusyCursorAndStatusBubble;
+       private.flattenCommands.scanReverse
+       (# 
+       do current.undo;
+       #);
+       private.unsetBusyCursorAndStausBubble;
+   if);
+   
+-- flattenCommandRedo:doPart --
+do (if not notUndoable then
+       private.setBusyCursorAndStatusBubble;
+       private.flattenCommands.redo;
+       private.unsetBusyCursorAndStausBubble;
+   if);
+
+-- FusionInstrumentPickUpFusionInstrumentRelevant:DoPart --
+do (theFusionSet[] = none) and 
+   not target.hasAssignments and
+   (target.getPortType = none) -> value;
+   
+-- FusionInstrumentPickUpFusionInstrumentApply:DoPart --
+do (# thePlaceList: ^PlaceList;
+   do (if target.getFusionSet = NONE then 
+          &PlaceList[] -> thePlaceList[];
+          thePlaceList.init;
+          (if (not ((target.getCPNPage).getSelectedGroup).all) and 
+              (target[] -> ((target.getCPNPage).getSelectedGroup).isMember) then
+              ((target.getCPNpage).getSelectedGroup).scanElements
+              (# thePlace: ^Place;
+              do (if current## <= Place## then
+                     current[] -> thePlace[];
+                     (if (thePlace.getFusionSet = NONE) and
+                         not thePlace.hasAssignments and
+                         (thePlace.getPortType = none) then
+                         thePlace[] -> thePlaceList.append;
+                     if);
+                 if);
+              #);
+           else
+              target[] -> thePlaceList.append;
+          if);
+          (if 'fusionname' -> options.lookupText -> freshFusionName.equal then
+              (thePlaceList[], none) -> CreateFusionSet;
+           else
+              (thePlaceList[], 'fusionname' -> options.lookupText) -> CreateFusionSet;
+          if);
+      if);
+      target.getFusionSet -> updateFusionInfo;
+      finish;
+   #);
+   
+-- FusionInstrumentPickUpAssignFusionInstrumentRelevant:DoPart --
+do (theFusionSet[] <> none) and
+   not target.hasAssignments and 
+   (target.getPortType = none) and
+   (target.getCPNet = theFusionSet.net[]) -> value;
+   
+-- FusionInstrumentAssignFusionInstrumentApply:DoPart --
+do (# thePlaceList: ^PlaceList;
+   do &PlaceList[] -> thePlaceList[];
+      thePlaceList.init;
+      (if not ((target.getCPNPage).getSelectedGroup).all and 
+          (target[] -> ((target.getCPNPage).getSelectedGroup).isMember)then
+          ((target.getCPNpage).getSelectedGroup).scanElements
+          (# thePlace: ^Place;
+          do (if current## <= Place## then
+                 current[] -> thePlace[];
+                 (if (thePlace.getFusionSet = NONE) and 
+                     (not thePlace.hasAssignments) and
+                     (thePlace.getPortType = NONE) then
+                     thePlace[] -> thePlaceList.append;
+                 if);
+             if);
+          #);
+       else
+          target[] -> thePlaceList.append;
+      if);
+      (if not (target[] -> theFusionSet.has) then
+          (thePlaceList[], theFusionSet[]) -> AddMembersToFusionSet;
+      if);
+      finish;     
+   #);          
+   
+-- PortClipping:DoPart --
+do removedAssignments.clear;
+   (if previousPortType[] = none then
+       elm.scanAssignments
+       (# 
+       do (if current.getPort = elm[] then
+              current[] -> removedAssignments.append;
+              current.delete;
+          if);
+       #);
+   if);
+   (if previousPortType[]<>NONE then
+       previousPortType[] -> elm.createPortType -> elm.setPortType;
+    else
+       NONE -> elm.setPortType;
+   if);
+   (if removedAssignments.size > 0 then
+       elm.semanticChangedOnPlaceGraph;
+   if);
+   
+-- CreateDeletePageCommandLib:Attributes --
+buildPageCommand:
+  (# 
+  do &CPNPageClipping[] -> theClipping[];
+     (thePage[]) -> theClipping.init;
+     
+     &RemoveSubpageCommand[] -> theRemovePageCommand[];
+     theRemovePageCommand.init;
+     theTransition[] -> theRemovePageCommand.prepare;
+     theClipping[] -> theRemovePageCommand.clip[];
+  #);
+buildWorkspaceCommands:
+  (# 
+     processBinder:
+       (# theBinder: ^Folder;
+          theSheet: ^CPNSheet;
+       enter theBinder[]
+       do theBinder.sheets.scan
+          (# 
+          do (if current## <= CPNSheet## then                      
+                 current[] -> theSheet[];                      
+                 (if ((theSheet.content.theTransition[] = NONE) AND (theSheet.content.thePage[]  = thePage[])) OR
+                     ((theSheet.content.theTransition[] <> NONE) AND (theSheet.content.theTransition[] = theTransition[])) then
+                     (theSheet[],theBinder[]) -> buildCloseTabCommand -> theCommandList.append;
+                 if);
+             if);
+          #);
+       #);
+  do &CommandList[] -> theCommandList[];
+     
+     (if removeSheets then
+         folderManager.theStandardLayer.folders.scan
+         (# 
+         do current[] -> processBinder;
+         #);
+     if);
+  #);     
+
+-- CreateDeletePageCommand:doPart --
+do buildWorkspaceCommands;     
+   buildPageCommand;
+   
+   &DeletePageCommand[] -> theCommand[];
+   (theRemovePageCommand[], theCommandList[]) -> theCommand.init;
+   theCommand.prepare;
+   
+-- CPNPageClippingLib:attributes --
+buildSubpageCommand:
+  (# theTransition: ^Transition;
+     theSuperInstance, theSubInstance: ^PageInstance;
+     theClipping: ^PageInstanceClipping;
+     theCommand: ^SetSubpageInstanceCommand;
+  enter (theTransition[], theSuperInstance[], theSubInstance[])
+  do &PageInstanceClipping[] -> theClipping[];
+     (theSubInstance[], theTransition[]) -> theClipping.init;          
+     &SetSubpageInstanceCommand[] -> theCommand[];
+     theCommand.init;
+     theSuperInstance[] -> theCommand.prepare;
+     theClipping[] -> theCommand.clip[];
+  exit theCommand[]
+  #);     
+isAtTopLevel:
+  (# thePageInstance: ^PageInstance;
+     res: @boolean;          
+  enter thePageInstance[]
+  do thePageInstance.getsuperpageInstance = none -> res;
+  exit res
+  #); 
+getFirstPageInstance:
+  (# theCPNPage: ^CPNPage;
+     thePageInstance: ^PageInstance;
+  enter theCPNPage[]
+  do scan: theCPNPage.scanInstances
+       (# 
+       do current[] -> thePageInstance[];
+          leave scan
+       #);
+  exit thePageInstance[]
+  #);
+isOnlyAttachedToSameTransition:
+  (# theCPNPage: ^CPNPage;
+     theTransition: ^Transition;
+     res: @boolean;
+  enter theCPNPage[]
+  do (theCPNPage[] -> getFirstPageInstance).theTransition[] -> theTransition[];
+     true -> res;
+     scan: theCPNPage.scanInstances
+       (# 
+       do (if theTransition[] <> current.theTransition[] then
+              false -> res;
+              leave scan;
+          if);
+       #);
+  exit res
+  #);
+
+-- CPNPageClippingInit:doPart --
+do oldSubpageCommands.init;
+   newSubpageCommands.init; 
+
+-- CPNPageClippingInsert:doPart --
+do (# (* the commands build concerns the subpages of the involved transition *)
+      buildOldSubpageCommands:
+        (# theTransition: ^Transition;   
+        enter theTransition[]
+        do (if theTransition.getSubpage <> none then
+               theTransition.scanSubpageInstances
+               (# 
+               do (theTransition[], theSubpageInstance.getSuperpageInstance, theSubpageInstance[])
+                    -> buildSubpageCommand -> oldSubpageCommands.append;
+                  (if (theTransition.getSubpage).numberOfInstances = (theTransition.getCPNPage).numberOfInstances then
+                      (none, none, theSubpageInstance[]) 
+                        -> buildSubpageCommand -> newSubpageCommands.append
+                  if);
+               #);
+           if);
+        #);
+      (* the commands build concerns elm being the subpage of the transition *)
+      buildNewSubpageCommands:
+        (# theTransition: ^Transition;          
+           thePageInstance: ^PageInstance;
+           useFirstPageInInstances: @boolean;
+        enter theTransition[]
+        do (elm.numberOfInstances = 1) and (elm[] -> getFirstPageInstance -> isAtTopLevel) 
+             -> useFirstPageInInstances;
+           (theTransition.getCPNPage).scanInstances
+           (# 
+           do (if useFirstPageInInstances then          
+                  (* first remove page from top-level *)
+                  (none, none, elm[] -> getFirstPageInstance)
+                    -> buildSubpageCommand -> oldSubpageCommands.append;
+                  (* then insert it in the correct position in the hierarhy *)
+                  (theTransition[], current[], elm[] -> getFirstPageInstance) 
+                    -> buildSubpageCommand -> newSubpageCommands.append;
+                  false -> useFirstPageInInstances;
+               else 
+                  (current[],theTransition[]) -> elm.createPageInstance -> thePageInstance[];
+                  (theTransition[], current[], thePageInstance[]) 
+                    -> buildSubpageCommand -> newSubpageCommands.append;
+              if);             
+           #);
+        #);
+      buildCommands:
+        (# 
+        do (if (oldSubpageCommands.size = 0) and
+               (newSubpageCommands.size = 0) then               
+               context[] -> buildOldSubpageCommands;
+               context[] -> buildNewSubpageCommands;
+           if);
+        #);
+   do (if (context[] <> none) and (removedSubpage[] = none) then
+          context.getSubpage -> removedSubpage[];
+      if);
+      
+      (if context[] <> none then
+          (if newSubpageInfo[] = none then
+              context.getSubpageInfo -> oldSubpageInfo[];
+              elm.theName[]
+                -> context.createSubpageInfo
+                -> context.setSubPageInfo;
+           else
+              newSubpageInfo[] -> context.setsubpageinfo;
+          if);
+          
+      if);
+      
+      buildCommands;
+      oldSubpageCommands.scan (# do current.undo #);               
+      newSubpageCommands.scan (# do current.redo #); 
+       elm[] -> (elm.getSelectedGroup).onselect;
+      elm.semanticChanged;
+   #);
+   
+-- CPNPageClippingRemove:doPart --
+do (# (* this build a single command removing elm from top level *)
+      removeElmFromTopLevel:
+        (# theElmPageInstance: ^PageInstance;
+           reinsertedPages: @IDDictionary (# Element:: PageInstance #);
+           allUnderSamePageInstance: BooleanValue
+             (# theCPNPage: ^CPNPage;
+             enter theCPNPage[]
+             do true -> value;
+                theCPNPage.scanInstances
+                (# 
+                do value and 
+                   (current.getsuperpageInstance = theElmPageInstance[])
+                     -> value;
+                #);
+             #);
+        do (* should only run once due to the assertion below /krell *)
+           ('elm.numberOfInstances = 1', elm.numberOfInstances = 1) -> assert (# #);
+           elm.scanInstances (# do current[] -> theElmPageInstance[]; #);               
+           
+           (theElmPageInstance.theTransition[], 
+           theElmPageInstance.getSuperpageInstance, 
+           theElmPageInstance[]) -> buildSubpageCommand -> newSubpageCommands.append;   
+           
+           reinsertedPages.init;
+           
+           theElmPageInstance.scanSubpageInstances
+           (# 
+           do (if (current.thePage[] -> allUnderSamePageInstance) and
+                  ((current.thePage.id[] -> reinsertedPages.lookup) = none) then
+                  (current.thePage.id[], current[])
+                    -> reinsertedPages.associate;
+                  (none, none, current[]) 
+                    -> buildSubpageCommand
+                    -> oldSubpageCommands.append;
+              if);
+           #);
+        #);
+      (* this build commands that involves elm as subpage of context *)
+      removeElmAsSubpage:
+        (# theSuperpageInstance, theSubpageInstance: ^PageInstance;
+        do (context.getCPNPage).scanInstances
+           (#
+           do current[] -> theSuperpageInstance[];
+              theSuperpageInstance.scanSubpageInstances
+              (#
+              do current[] -> theSubpageInstance[];
+                 (if theSubpageInstance.theTransition[] = context[] then
+                     (context[], theSuperpageInstance[], theSubpageInstance[])
+                       -> buildSubpageCommand -> newSubpageCommands.append;
+                 if);
+              #);
+           #);
+           (if elm.numberOfInstances = newSubpageCommands.size then
+               (none, none, elm[] -> getFirstPageInstance) 
+                 -> buildSubpageCommand -> oldSubpageCommands.append;
+           if);
+        #);
+      buildCommands:
+        (# 
+        do (if (oldSubpageCommands.size = 0) and
+               (newSubpageCommands.size = 0) then
+               (if context[] = none then
+                   removeElmFromTopLevel;
+                else
+                   removeElmAsSubpage;
+               if);
+           if);
+        #);      
+   do
+      (if context[] <> none then
+          context.getSubpageInfo -> newSubpageInfo[];
+          oldSubpageInfo[] -> context.setSubPageInfo;
+      if);
+      buildCommands;     
+      
+      newSubpageCommands.scan (# do current.undo #);
+      oldSubpageCommands.scan (# do current.redo #);      
+   #);
+   
+-- PageInstanceClippingInit:doPart --
+do (# initializeDatastructures:
+        (# 
+        do theSubpageClippings.init;
+           removedAssignments.init;
+        #);
+      buildSubpageClipping:
+        (# theSubInstance: ^PageInstance;
+           theClipping: ^PageInstanceClipping;
+        enter theSubInstance[]
+        do &PageInstanceClipping[] -> theClipping[];
+           (theSubInstance[], theSubInstance.theTransition[]) -> theClipping.init;
+        exit theClipping[]                   
+        #);
+      buildListOfRemovedAssignments:
+        (# elmOnlySubpageInstanceOfTransition: BooleanValue
+             (# theSubTransition: ^Transition;
+             enter theSubTransition[]
+             do false -> value;
+                search: elm.thePage.scanInstances                    
+                  (# 
+                  do (if (current.theTransition[] = theSubTransition[]) then
+                         (if not value then
+                             true -> value;
+                          else
+                             false -> value;
+                             leave search;
+                         if);
+                     if);
+                  #);
+             #);                 
+        do (if (elm.theTransition[] <> none) then
+               elm.thePage.scanPlaces
+               (# 
+               do current.scanAssignments
+                  (# 
+                  do (if (current.getSubTransition = elm.theTransition[]) and
+                         (current.getSubTransition -> elmOnlySubpageInstanceOfTransition) then
+                         current[] -> removedAssignments.append
+                     if);
+                  #);
+               #);       
+               if);
+        #);
+   do initializeDatastructures;   
+      buildListOfRemovedAssignments;
+      elm.scanSubpageInstances
+      (# theSubInstance: ^PageInstance;
+      do current[] -> theSubInstance[];
+         (if (theSubInstance.getSuperpageInstance).thePage[] = elm.thePage[] then
+             theSubInstance[] -> buildSubpageClipping -> theSubpageClippings.prepend;
+         if);
+      #);
+   #);
+   
+-- PageInstanceClippingInsert:doPart --
+do (# setContextAsSuperInstance:
+        (# 
+        do context[] -> elm.setsuperpageInstance;
+        #);
+      assertElmMemberOfPage:
+        (# 
+        do (if (context[] = none) then
+               elm[] -> elm.thePage.prime[];
+            else
+               none -> elm.thePage.prime[];
+           if);
+           elm[] -> elm.thePage.addPageInstance;
+           (if (elm.thePage.id[] -> elm.thePage.net.lookupCPNPage) = none then
+               elm.thePage[] -> elm.thePage.net.addCPNPage;                   
+           if);
+        #);
+      setTransition:
+        (# 
+        do elm.thePage[] -> theTransition.setSubpage;
+           theTransition[] -> elm.theTransition[];
+        #);
+      setAssignments:
+        (# 
+        do removedAssignments.scan
+           (# 
+           do (current.getPort, current.getSocket, current.getSubTransition) -> current.init;
+           #);
+        #);
+      makeSubstitution:
+        (# 
+        do (if context[] <> none then
+               elm[] -> context.addSubpageInstance;  
+            else
+               elm[] -> elm.thePage.net.addInstanceRoot;
+           if);               
+        #);
+      updateSemantics:
+        (# 
+        do (if theTransition[] <> none then
+               (theTransition.getCPNPage).scanInstances
+               (# theTransitionInstance: ^TransitionInstance;
+               do theTransition.id.copy 
+                    -> current.lookupTransitionInstance
+                    -> theTransitionInstance[];
+                  false -> theTransitionInstance.setEnabled;
+               #);                   
+               theTransition.localCheck;
+           if);               
+           
+           elm.updateInstanceTree;                     
+           elm.thePage.scanInstances
+           (# 
+           do (if current.theTransition[] <> none then
+                  current.theTransition.semanticChanged;
+              if);
+           #);                       
+        #);
+      insertOnSubpageInstances:
+        (# 
+        do theSubpageClippings.scanReverse
+           (# 
+           do elm[] -> current.insert;
+           #);
+        #);
+   do setContextAsSuperInstance;
+      assertElmMemberOfPage;
+      (if theTransition[] <> none then
+          setTransition;                 
+      if);
+      makeSubstitution;           
+      (if theTransition[] <> none then
+          setAssignments;
+      if);
+      updateSemantics;
+      
+      (if context[] <> none then
+          elm.thePage.nofsuper + 1 -> elm.thePage.nofsuper;
+      if);
+      
+      insertOnSubpageInstances;          
+      
+      elm.thePage.scanPlaces
+      (# 
+      do current.changedAssignmentToSocket;         
+      #);
+      (if theTransition[] <> none then
+          theTransition.scanArcs
+          (# 
+          do (current.getPlaceEnd).portPlaceHasChangedType;
+          #);
+      if);
+   #);
+   
+-- PageInstanceClippingRemove:doPart --
+do (# recurseOnSubpageInstances:
+        (# 
+        do theSubpageClippings.scan
+           (# 
+           do elm[] -> current.remove;
+           #);
+        #);   
+      removeElmFromPage:
+        (# dummyCPNPage: @CPNPage;
+        do none -> elm.theTransition[];
+           elm[] -> elm.thePage.removePageInstance;
+           (if elm.thePage.numberOfInstances = 0 then
+               elm.thePage[] -> elm.thePage.net.removeCPNPage;
+           if);
+        #);
+      removeAssignments:
+        (# 
+        do removedAssignments.scan
+           (# 
+           do current.delete;
+           #);
+        #);
+      removeSubstitution:
+        (# 
+        do (if context[] <> none then
+               elm[] -> context.removeSubpageInstance;
+            else
+               elm[] -> elm.thePage.net.removeInstanceRoot;
+           if);               
+        #);          
+      updateSemantics:
+        (# 
+        do (if theTransition[] <> none then
+               (theTransition.getCPNPage).scanInstances
+               (# 
+               do false -> (theTransition.id.copy -> current.lookupTransitionInstance).setEnabled;
+               #); 
+           if);
+           
+           (if elm[] <> elm.thePage.prime[] then
+               elm[] -> elm.onRemoved;
+           if);                  
+           (if theTransition[] <> none then                   
+               theTransition.semanticChanged;
+           if);
+           
+           elm.updateInstanceTree;                    
+           elm.thePage.scanInstances
+           (# 
+           do (if current.theTransition[] <> none then
+                  current.theTransition.semanticChanged;
+              if);
+           #);                       
+        #);
+      lastInstanceOfElmPageAttached: BooleanValue
+        (#
+        do false -> value;
+           check: elm.thePage.scanInstances
+             (#
+             do (if value and (current.theTransition[] = theTransition[]) then
+                    false -> value;
+                    leave check;
+                if);
+                (if (not value) and (current.theTransition[] = theTransition[]) then
+                    true -> value;
+                if);
+             #);
+        #);        
+   do recurseOnSubpageInstances;         
+      none -> elm.thePage.prime[];
+      
+      (if (theTransition[] <> none) and
+          lastInstanceOfElmPageAttached then    
+          removeAssignments;
+          none -> theTransition.setSubpage;
+      if);          
+      
+      theTransition[] -> elm.theTransition[];
+      removeSubstitution;
+      removeElmFromPage;
+      none -> elm.setSuperpageInstance;
+      
+      updateSemantics;
+      
+      (if context[] <> none then
+          elm.thePage.nofsuper - 1 -> elm.thePage.nofsuper;
+      if);
+      
+      elm.thePage.scanPlaces
+      (# 
+      do current.changedAssignmentToSocket;         
+      #);
+      (if theTransition[] <> none then
+          theTransition.scanArcs
+          (# 
+          do (current.getPlaceEnd).portPlaceHasChangedType;
+          #);
+      if);
+   #);
+   
+-- FusionSetClippingInit:DoPart --
+do elm.getFusionInfo -> theFusionInfo[];
+   (if theFusionInfo[] = none then
+       &Text[] -> elm.createFusionInfo -> theFusionInfo[];
+   if);
+   (elm.getInitMark).getInscription -> theInitMark[];
+   (elm.getPlaceType).getInscription -> thePlaceType[];
+   
+-- FusionSetClippingInsert:DoPart --
+do elm[] -> context.addPlace;
+   context.getName -> theFusionInfo.setCPNML;
+   theFusionInfo[] -> elm.setFusionInfo;
+   theFusionInfo.update;
+   elm.changed;
+   context.propagateChanges;
+   
+-- FusionSetClippingRemove:DoPart --
+do elm[] -> context.removePlace;
+   none -> elm.setFusionInfo;
+   theInitMark[] -> (elm.getInitMark).setInscription;
+   thePlaceType[] -> (elm.getPlaceType).setInscription;
+   elm.changed;
+   elm.semanticChanged;
+   context.propagateChanges;
+   
+-- AssignmentClippingLib:attributes --
+-- AssignmentClippingInsert:doPart --
+do (# foundExisting: @boolean;
+   do (if newAssignment[] = none then              
+          &Assignment[] -> newAssignment[];
+      if);
+      (if oldAssignment[] = none then
+          theSubTrans.socketPlaces.scan
+          (# 
+          do (if current.getSocket = context[] then
+                 current[] -> oldAssignment[]; 
+             if);
+          #);
+      if);
+      (if oldAssignment[] <> none then
+          oldAssignment.delete;
+      if);       
+      (if oldAssignment2[] = none then
+          theSubTrans.socketPlaces.scan
+          (#
+          do (if current.getPort = elm[] then
+                 current[] -> oldAssignment2[];
+             if);
+          #);
+      if);
+      (if oldAssignment2[] <> none then
+          oldAssignment2.delete;
+      if);
+      (elm[], context[], theSubTrans[]) -> newAssignment.init;
+      elm.semanticChangedOnPlaceSubtree;
+   #); 
+   
+-- AssignmentClippingRemove:doPart --
+do (if newAssignment[] = none then
+       scan: elm.scanAssignments
+         (# 
+         do (if (current.getPort = elm[]) and
+                (current.getSocket = context[]) and
+                (current.getSubTransition = theSubTrans[]) then
+                current[] -> newAssignment[];
+                leave scan;
+            if);
+         #);
+   if); 
+   (if newAssignment[] <> none then
+       newAssignment.delete;          
+   if);
+   (if oldAssignment[] <> none then
+       (oldAssignment.getPort, oldAssignment.getSocket, theSubTrans[]) -> oldAssignment.init;
+       (oldAssignment.getPort).semanticChangedOnPlaceSubtree;
+   if);          
+   (if oldAssignment2[] <> none then
+       (oldAssignment2.getPort, oldAssignment2.getSocket, theSubTrans[]) -> oldAssignment2.init;
+       (oldAssignment2.getPort).semanticChangedOnPlaceSubtree;
+   if);
+   
+-- SubpageInfoClippingInit:doPart --
+do elm.getTransition -> theTransition[];
+   
+-- SubpageInfoClippingInsert:doPart --
+do elm[] -> theTransition.setSubpageInfo;
+   
+-- SubpageInfoClippingRemove:doPart --
+do none -> theTransition.setSubpageInfo;

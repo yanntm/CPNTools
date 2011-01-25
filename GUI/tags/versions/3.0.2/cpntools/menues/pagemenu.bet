@@ -1,0 +1,587 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN 'cpnmenu';
+
+INCLUDE '../instruments/workspaceinstruments';
+INCLUDE '../instruments/creationinstruments';
+INCLUDE '../instruments/deletioninstruments';
+INCLUDE '../instruments/groupinstruments';
+INCLUDE '../instruments/hierarchyinstruments';
+INCLUDE '../instruments/styleinstruments';
+INCLUDE '../instruments/simulationinstruments';
+INCLUDE '../instruments/bindingdialoginstruments';
+Include '../instruments/statespaceinstruments';
+INCLUDE '../resources/texts/texts';
+INCLUDE '~beta/basiclib/pcre';
+
+BODY 'private/pagemenubody';
+
+-- CpnWorkSpaceLib: attributes --
+
+
+
+PageMenu: CPNMenu
+  (# TargetType:: CPNSheet;
+     
+     undoItem: @SimpleItem
+       (#
+          onSelect::
+            (# theCommandManager: ^CommandManager;
+            do target.getCPNet ->  (getCommandManagerManager).getManager -> theCommandManager[];
+               theCommandManager.undo;
+            #);
+          init::
+            (#
+            do 'Undo' -> name[];
+               3 -> direction;
+            #);
+       #);
+     
+     redoItem: @SimpleItem
+       (# onSelect::
+            (# theCommandManager: ^CommandManager;
+            do target.getCPNet ->  (getCommandManagerManager).getManager -> theCommandManager[];
+               theCommandManager.redo;
+            #);
+          
+          init::
+            (#
+            do 'Redo' -> name[];
+               1 -> direction;
+            #);
+       #);
+     
+     RightItem::
+       (# init::
+            (#
+            do NamesPageMenuTransItem -> getGlobalNames -> name[];
+               'trans' -> theInstrumentList.lookup -> theInstrument[];
+            #);
+
+       #);
+
+     LeftItem::
+       (# init::
+            (#
+            do NamesPageMenuPlaceItem -> getGlobalNames -> name[];
+               'place' -> theInstrumentList.lookup -> theInstrument[];
+            #);
+       #);
+
+     CloneItem::
+       (# init::
+            (#
+            do 'CreateAuxLabel' -> theInstrumentList.lookup -> theInstrument[];
+               NamesPageMenuCreateAuxText -> getGlobalNames -> name[];
+            #);
+       #);
+
+     DeleteItem::
+       (# init::
+            (#
+            do &DropToolInstrument[] -> theInstrument[];
+               theInstrument.init;
+               NamesCommandMenudropTool -> getGlobalNames -> name[];
+            #);
+       #);
+     
+     init::
+       (#
+       do redoItem.init;
+          redoItem[] -> add;
+          undoItem.init;
+          undoItem[] -> add;
+       #);
+  #);
+
+PageElementMenu: CPNMenu
+  (# TargetType::< PageElement;
+
+     relevant::<
+       (#
+       do (if (target.getCPNPage = NONE) or
+              (target## <= BendPoint##) then
+              false -> value;
+          if);
+          INNER;
+       #);
+
+     DeleteItem::
+       (# init::
+            (#
+            do NamesPageMenuDeleteItem -> getGlobalNames -> name[];
+               &GenericDeleteInstrument[] -> theInstrument[];
+               theInstrument.init;
+            #);
+          makeDynamicName::
+            (# thePageElement: ^PageElement;
+               theGenericDeleteInstrument: ^GenericDeleteInstrument;
+            do target[] -> thePageElement[];
+               theInstrument[] -> theGenericDeleteInstrument[];
+               (if (target[],theInstrument.theHand[]) ->
+                   theGenericDeleteInstrument.theDeleteGroupElementsInstrument.relevant then
+                   name[] -> txt.putFormat (# do 'elements' -> s; #);
+                else
+                   name[] -> txt.putFormat(# do thePageElement.menuName -> s; #);
+               if);
+            #);
+       #);
+
+     CloneItem::
+       (# init::
+            (#
+            do 'clone' -> theInstrumentList.lookup -> theInstrument[];
+            #);
+          makeDynamicName::
+            (# thePageElement: ^PageElement;
+               theCreateCloneInstrument: ^CreateCloneInstrument;
+            do target[] -> thePageElement[];
+               theInstrument[] -> theCreateCloneInstrument[];
+               (if (target[], theInstrument.theHand[]) ->
+                   theCreateCloneInstrument.pageElementsInstrument.relevant then
+                   NamesGroupMenuCloneElementsItem -> getGlobalNames -> txt[];
+                else
+                   NamesPageMenuCloneItem -> getGlobalNames -> txt.putFormat(# do thePageElement.menuName -> s; #);
+               if);
+
+            #);
+       #);
+
+     LeftItem::<
+       (# init::<
+            (#
+            do NamesPageMenuToggleGroupItem -> getGlobalNames -> name[];
+               'Group' -> theInstrumentList.lookup -> theInstrument[];
+               INNER;
+            #);
+       #);
+  #);
+
+
+NodeMenu: PageElementMenu
+  (# TargetType::< CPNNode;
+     Relevant::<
+       (#
+       do INNER;
+       #);
+     
+     MMArcInstrument: Instrument
+       (# apply::
+            (# OneShotArcInstrument: ArcInstrument (# DropAfterFirstInvocation:: TrueObject; #);
+               theArcInstrument: ^OneShotArcInstrument;
+            do &OneShotArcInstrument[] -> theArcInstrument[];
+               theArcInstrument.init;
+               (if (target[], theHand[]) -> theArcInstrument.relevant then
+                   (theHand[], target[]) -> theArcInstrument.prepare;
+                   theArcInstrument.apply;
+               if);
+               finish;
+            #);
+       #);
+
+     RightItem::
+       (# init::
+            (#
+            do NamesPageMenuArcItem -> getGlobalNames -> name[];
+               &MMArcInstrument[] -> theInstrument[];
+               theInstrument.init;
+            #);
+       #);
+     BottomRightItem::<
+       (# init::<
+            (# 
+            do &AddSurroundingNodesToGroupInstrument[] -> theInstrument[];
+               theInstrument.init;
+               INNER;
+            #);
+          makeDynamicName::<
+            (#
+            do (if not ((target.getCPNPage).getSelectedGroup).all then
+                   (if true
+                    // target## <= Transition## then
+                       NamesAddPlaces -> getGlobalNames -> txt[];
+                    // target## <= Place## then
+                       NamesAddTransitions -> getGlobalNames -> txt[];
+                   if);
+                else
+                   ' ' -> txt[];
+                   INNER;
+               if);
+            #);
+       #);
+  #);
+
+TransitionMenu: NodeMenu
+  (# TargetType:: Transition;     
+     FireTransitionAndToggleGroupInstrument: @GenericInstrument
+       (# FireTransitionInstrument: @OneStepTransitionInstrument
+            (# relevant::
+                 (# theTransitionInstance: ^TransitionInstance;
+                 do (theHand[],target[]) -> getTransitionInstance -> theTransitionInstance[];
+                    value and
+                    (theTransitionInstance[]<>NONE) and
+                    theTransitionInstance.enabled and
+                    ((target.getCPNPage).getSelectedGroup).all -> value;
+                 #);
+            #);
+          TransitionToggleGroupInstrument: @ToggleGroupInstrument;
+          
+          init::
+            (#
+            do FireTransitionInstrument.init;
+               FireTransitionInstrument[] -> register;
+               TransitionToggleGroupInstrument.init;
+               TransitionToggleGroupInstrument[] -> register;
+            #);
+       #);
+     GetBindingsAndFireCloseInstrument: @GenericInstrument
+       (# theGetPossibleBindingsInstrumentAdapter: @GetPossibleBindingsInstrumentAdapter;
+          theFireAndCloseInstrumentAdapter: @FireAndCloseInstrumentAdapter;
+          
+          init::
+            (# 
+            do
+               theGetPossibleBindingsInstrumentAdapter.init;
+               theGetPossibleBindingsInstrumentAdapter[] -> register;
+               
+               theFireAndCloseInstrumentAdapter.init;
+               theFireAndCloseInstrumentAdapter[] -> register;
+            #);          
+       #);
+     LeftItem::
+       (#  init::
+            (#
+            do NamesPageMenuToggleGroupItem -> getGlobalNames -> name[];
+               FireTransitionAndToggleGroupInstrument[] -> theInstrument[];
+               theInstrument.init;
+            #);
+          makeDynamicName::
+            (#
+	    do (if ((target[], theHand[]) -> theInstrument.relevant) then
+                   (if (target[], theHand[]) -> 
+                       FireTransitionAndToggleGroupInstrument.FireTransitionInstrument.relevant then
+                       NamesInstanceNodeMenuFireTransition -> getGlobalNames -> txt[];
+                    else
+                       NamesPageMenuToggleGroupItem -> getGlobalNames -> txt[];
+                   if);
+                else
+                   ' ' -> txt[];
+               if);
+            #);
+       #);
+     BottomLeftItem::
+       (# init::
+            (# 
+            do NamesBindingDialogBindManually -> getGlobalNames -> name[];
+               GetBindingsAndFireCloseInstrument[] -> theInstrument[];
+               theInstrument.init;
+            #);
+          makeDynamicName::
+            (# 
+            do (if true
+                    // ((target[], theHand[])
+                         -> GetBindingsAndFireCloseInstrument.theGetPossibleBindingsInstrumentAdapter.relevant) then
+                       name[] -> txt[];
+                    // ((target[], theHand[])
+                         -> GetBindingsAndFireCloseInstrument.theFireAndCloseInstrumentAdapter.relevant) then
+                       NamesBindingDialogFireAndClose -> getGlobalNames -> txt[];
+                else
+                   ' ' -> txt[];
+               if);
+            #);          
+       #);
+     BottomRightItem::
+       (# FireAndShowAddSurroundingPlacesFlattenInstrument: @CPNGenericInstrument
+            (# theFireAndShowInstrument: @FireAndShowBindingTransitionInstrument;
+               theAddInstrument: @AddSurroundingNodesToGroupInstrument;
+               theFlattenInstrument: @FlattenSubTransInstrument;
+               init::
+                 (# 
+                 do 
+                    theFireAndShowInstrument.init;
+                    theFireAndShowInstrument[] -> register;
+                    theAddInstrument.init;
+                    theAddInstrument[] -> register;
+                    theFlattenInstrument.init;
+                    theFlattenInstrument[] -> register;
+                 #);
+            #);
+          init::
+            (# 
+            do FireAndShowAddSurroundingPlacesFlattenInstrument[] -> theInstrument[];
+               theInstrument.init;
+            #);
+          makeDynamicName::
+            (# 
+            do (if true
+                   // ((target[], theHand[])-> 
+                   FireAndShowAddSurroundingPlacesFlattenInstrument.theFireAndShowInstrument.relevant) then
+                   NamesFireAndShow -> getGlobalNames -> txt[];
+                   // ((target[], theHand[]) ->
+                   FireAndShowAddSurroundingPlacesFlattenInstrument.theFlattenInstrument.relevant) then
+                   NamesReplaceBySubpageItem -> getGlobalNames -> txt[];
+               if);
+            #);
+       #);
+  #);
+
+PlaceMenu: NodeMenu
+  (# TargetType:: Place;     
+     relevant::< (# do target.getPlaceType <> none -> value; #);
+     ShowMarkingAndToggleGroupInstrument: @GenericInstrument
+       (# ShowMarkingInstrument: @Instrument
+            (# TargetType:: Place;               
+               thePlaceInstance: ^PlaceInstance;
+               relevant::
+                 (# 
+                 do (((target.getCPNPage).getSelectedGroup).all AND
+                     (target.status = compiled)) -> value;
+                 #);
+               prepare:: (# <<SLOT PlaceMenuShowMarkingAndToggleGroupInstrumentShowMarkingInstrumentPrepare:DoPart>> #);                 
+               apply::
+                 (# theTextEditor: ^TextEditor;                    
+                 do true -> thePlaceInstance.allwaysShowMarking;
+                    false -> thePlaceInstance.hidemarkings;
+                    (if (thePlaceInstance.thePlaceMarking[] = none) or
+                        ('empty' -> thePlaceInstance.theMarking.equal) then
+                        ('empty', 0) -> thePlaceInstance.marking;
+                    if);                     
+                    thePlaceInstance.thePlaceMarking[] -> makeTextEditor -> theTextEditor[];
+                    finish;
+                 #);
+            #);
+          PlaceToggleGroupInstrument: @ToggleGroupInstrument;
+          init::
+            (#
+            do ShowMarkingInstrument.init;
+               ShowMarkingInstrument[] -> register;
+               PlaceToggleGroupInstrument.init;
+               PlaceToggleGroupInstrument[] -> register;
+            #);
+       #);
+     LeftItem::
+       (#  init::
+            (#
+            do NamesPageMenuToggleGroupItem -> getGlobalNames -> name[];
+               ShowMarkingAndToggleGroupInstrument[] -> theInstrument[];
+               theInstrument.init;
+            #);
+          makeDynamicName::
+            (#
+	    do (if (target[], ShowMarkingAndToggleGroupInstrument.theHand[]) -> 
+                   ShowMarkingAndToggleGroupInstrument.ShowMarkingInstrument.relevant then
+                   NamesPageMenuPlaceShowMarking -> getGlobalNames -> txt[];
+                else
+                   (if (target[], ShowMarkingAndToggleGroupInstrument.theHand[]) -> 
+                       ShowMarkingAndToggleGroupInstrument.PlaceToggleGroupInstrument.relevant then
+                       NamesPageMenuToggleGroupItem -> getGlobalNames -> txt[];
+                    else
+                       ' ' -> txt[];
+                   if);
+               if);
+            #);
+       #);
+     BottomLeftItem::
+       (#
+          init::
+            (# 
+            do NamesPageMenuAssignToSocket -> getGlobalNames -> name[];
+               &AssignPortSocketInstrument[] -> theInstrument[];
+               theInstrument.init;
+            #);
+          makeDynamicName::
+            (# theAssignmentPortSocketInstrument: ^AssignPortSocketInstrument;
+            do theInstrument[] -> theAssignmentPortSocketInstrument[];
+               (if (target[],theInstrument.theHand[]) ->
+                   theAssignmentPortSocketInstrument.SelectSocketInstrument.relevant then
+                   NamesPageMenuAssignToPort -> getGlobalNames -> txt[];
+                else
+                   (if (target[],theInstrument.theHand[]) ->
+                       theAssignmentPortSocketInstrument.SelectPortInstrument.relevant then
+                       Name[] -> txt[];
+                    else
+                       ' ' -> txt[];
+                   if);
+               if);                   
+            #);
+       #);
+  #);
+
+SSNodeMenu: CPNMenu
+  (# TargetType:: SSNode;
+
+     BottomLeftItem::
+       (#
+	  init::
+	    (#
+	    do NamesSSNodeMenuDisplayPredecessors -> getGlobalNames -> Name[];
+	       &DisplayPredecessorsInstrument[] -> theInstrument[];
+	       theInstrument.init;
+	    #);
+          
+       #);
+
+     BottomRightItem::
+       (#
+	  init::
+	    (#
+	    do NamesSSNodeMenuDisplaySuccessors -> getGlobalNames -> Name[];
+	       &DisplaySuccessorsInstrument[] -> theInstrument[];
+	       theInstrument.init;
+	    #);
+          
+       #);
+
+     DeleteItem::
+       (# init::
+            (#
+            do NamesPageMenuDeleteItem -> getGlobalNames -> name[];
+               &GenericDeleteInstrument[] -> theInstrument[];
+               theInstrument.init;
+            #);
+          makeDynamicName::
+            (# thePageElement: ^PageElement;
+               theGenericDeleteInstrument: ^GenericDeleteInstrument;
+            do target[] -> thePageElement[];
+               theInstrument[] -> theGenericDeleteInstrument[];
+               (if (target[],theInstrument.theHand[]) ->
+                   theGenericDeleteInstrument.theDeleteGroupElementsInstrument.relevant then
+                   name[] -> txt.putFormat (# do 'elements' -> s; #);
+                else
+                   name[] -> txt.putFormat(# do thePageElement.menuName -> s; #);
+               if);
+            #);
+       #);
+
+     LeftItem::<
+       (# init::<
+            (#
+            do NamesPageMenuToggleGroupItem -> getGlobalNames -> name[];
+               'Group' -> theInstrumentList.lookup -> theInstrument[];
+               INNER;
+            #);
+       #);
+  #);
+
+SSArcMenu: CPNMenu
+  (# TargetType:: SSArc;
+  
+     DeleteItem::
+       (# init::
+            (#
+            do NamesPageMenuDeleteItem -> getGlobalNames -> name[];
+               &GenericDeleteInstrument[] -> theInstrument[];
+               theInstrument.init;
+            #);
+          makeDynamicName::
+            (# thePageElement: ^PageElement;
+               theGenericDeleteInstrument: ^GenericDeleteInstrument;
+            do target[] -> thePageElement[];
+               theInstrument[] -> theGenericDeleteInstrument[];
+               (if (target[],theInstrument.theHand[]) ->
+                   theGenericDeleteInstrument.theDeleteGroupElementsInstrument.relevant then
+                   name[] -> txt.putFormat (# do 'elements' -> s; #);
+                else
+                   name[] -> txt.putFormat(# do thePageElement.menuName -> s; #);
+               if);
+            #);
+       #);
+
+     LeftItem::<
+       (# init::<
+            (#
+            do NamesPageMenuToggleGroupItem -> getGlobalNames -> name[];
+               'Group' -> theInstrumentList.lookup -> theInstrument[];
+               INNER;
+            #);
+       #);
+  #);
+
+ArcMenu: PageElementMenu
+  (# TargetType:: Arc;
+
+     Relevant:: (# do (if (target## = SSArc##) then false -> value; if); #);
+     RightItem::
+       (# init::
+            (#
+            do NamesPageMenuCycleArcItem -> getGlobalNames -> name[];
+               'setArcDirection' -> theInstrumentList.lookup -> theInstrument[];
+            #);
+       #);
+     BottomLeftItem::
+       (# init::
+          (#
+          do 'Delete\nBendPoint' -> name[];
+             &DeleteBendPointInstrument[] -> theInstrument[];
+          #);
+       #);
+  #);
+
+BendPointMenu: CPNMenu
+  (# TargetType:: BendPoint;
+     DeleteItem::
+       (# init::
+            (#
+            do NamesBendPointDelete -> getGlobalNames -> name[];
+               &DeletePageElementInstrument[] -> theInstrument[];
+               theInstrument.init;
+            #);
+       #);
+  #);
+
+AuxMenu: PageElementMenu
+  (# TargetType:: AUX #);
+
+AuxLabelMenu: PageElementMenu
+  (# TargetType:: Aux;
+     theMLEvaluateInscriptionInstrument: ^GenericMLEvaluateInstrument;
+
+     RightItem::
+       (# init:: (# <<SLOT AuxLabelMenuRightItemInit:DoPart>> #);
+       #);
+     LeftItem::
+       (# init:: (# <<SLOT AuxLabelMenuLeftItemInit:DoPart>> #);
+       #);
+     
+      relevant::
+       (#
+       do (target[], theMLEvaluateInscriptionInstrument.theHand[])
+            -> theMLEvaluateInscriptionInstrument.relevant -> value;
+       #);
+  #);
+
+GuidelineMenu: CPNMenu
+  (# TargetType:: Guideline;
+
+     DeleteItem::
+       (# init::
+            (#
+            do NamesGuidelineDelete -> getGlobalNames -> name[];
+               &DeletePageElementInstrument[] -> theInstrument[];
+               theInstrument.init;
+            #);
+       #);
+  #);

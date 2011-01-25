@@ -1,0 +1,186 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../bindingindex.bet';
+
+--bindingindexInitNodes:doPart--
+do
+   &TextSequence[] -> groupContent[];
+   groupContent.init;
+   &IntegerObject[] -> varsInThisGroup[];
+   &IntegerObject[] -> noOfBindingsInThisGroup[];
+   &IntegerObject[] -> noOfBindingGroups[];
+   1->thisGroupsEndPoint;
+   (1-> infoOnContent.get) -> noOfBindingGroups[];
+   noOfBindingGroups ->initBindingGroupAndMarkingCollections;
+   1->i;
+   2->indexForNoOfVars;
+   initBindingGroups:
+     (if i<noOfBindingGroups+1 then
+         thisGroupsEndPoint -> currentPoint;
+         indexForNoOfVars -> infoOnContent.get -> varsInThisGroup[];
+         indexForNoOfVars +1 -> infoOnContent.get -> noOfBindingsInThisGroup[];
+         indexForNoOfVars +2 -> indexForNoOfVars;
+         currentPoint + varsInThisGroup + varsInThisGroup*noOfBindingsInThisGroup
+           -> thisGroupsEndPoint;
+         groupContent.clear;
+         calcArgsToInitThisBindingGroup:
+           (if currentPoint<thisGroupsEndPoint then
+               currentPoint -> content.get -> groupContent.append;
+               currentPoint +1 -> currentPoint;
+               restart calcArgsToInitThisBindingGroup;
+           if);
+         (i, varsInThisGroup, groupContent[]) -> initBindingGroup;
+         i+1->i;
+         restart initBindingGroups;
+     if);
+   1->i;
+   addVarNodesToIndex:
+     (if i<bindingGroups.size+1 then
+         addThisBindingGroup: (i->bindingGroups.get).scan
+         (# 
+         do current.checkForSingleChild;
+            current.sortIndexNodesByName;
+            current[] -> addIndexNode;                   
+         #);
+         i+1 -> i;
+         restart addVarNodesToIndex;
+     if);
+   
+--bindingindexInitBindingGroup:doPart--
+do
+   bgNo -> bindingGroups.get -> memberNodes[];
+   memberNodes.init;
+   &TextSequence[] -> childrenToAdd[];
+   childrenToAdd.init;
+   &IntObjListSequence[] -> childrenAltNo[];
+   childrenAltNo.init;
+   &Text[] -> childToCheck[];
+   &IntegerObject[] -> altNoObj[];
+   &IntObjList[] -> altNo[];
+   altNo.init;
+   1 -> i;
+   createVarNodes:
+     (if i<noOfMembers+1 then
+         &BindingNode[] -> varNode[];
+         (i->content.get,bgNo) -> varNode.init;
+         varNode[] -> memberNodes.append;
+         childrenToAdd.clear;
+         childrenAltNo.clear;
+         i+noOfMembers -> j; (*j starts at the first possible binding*)
+         findThisMembersChildren:
+           (if j<content.size+1 then
+               j -> content.get -> childToCheck[];
+               1 -> k;
+               checkForDuplicates:
+                 (if k<childrenToAdd.size+1 then
+                     (if (childToCheck[] -> (k->childrenToAdd.get).equal) then
+                         &IntegerObject[] -> altNoObj[];
+                         ((j-i)/noOfMembers-1)->altNoObj;
+                         altNoObj[] ->(k->childrenAltNo.get).append;
+                         j+noOfMembers -> j;
+                         restart findThisMembersChildren;
+                     if);
+                     k+1 -> k;
+                     restart checkForDuplicates;
+                 if);
+               
+               childToCheck[] -> childrenToAdd.append;
+               &IntegerObject[] -> altNoObj[];
+               &IntObjList[] -> altNo[];
+               ((j-i)/noOfMembers-1) -> altNoObj;
+               altNoObj[] -> altNo.append;
+               altNo[] -> childrenAltNo.append;
+               j+noOfMembers -> j;
+               restart findThisMembersChildren;
+           if);
+         1 -> l;
+         createThisMembersChildren:
+           (if l<childrenToAdd.size+1 then
+               &BindingValueNode[] -> valNode[];
+               (l->childrenToAdd.get, l->childrenAltNo.get) -> valNode.init;
+               valNode[] -> varNode.addIndexNode;
+               l+1 -> l;
+               restart createThisMembersChildren;
+           if);
+         i+1 -> i;
+         restart createVarNodes;
+     if);
+   (bgNo,memberNodes[]) -> bindingGroups.put;
+   &IntObjList[] -> markings[];
+   content.size/noOfMembers -1 -> noOfMarkings;
+   (for i:noOfMarkings repeat
+        &IntegerObject[] -> altNoObj[];
+        (i-1) -> altNoObj;
+        altNoObj[] -> markings.append;
+   for);
+   (bgNo,markings[]) -> possibleMarkings.put;
+
+   
+--bindingindexGetChosenBindings:doPart--   
+do
+   &IntObjList[] -> bindings[];
+   bindings.init;
+   (if not isBindingDone then
+       pickAValForAllVar: scanIndexNodes
+         (# type:: BindingNode;
+            chosen,inx: @integer;
+         do
+            (if current.theIndexNodes.size > 1 then
+                (1,current.theIndexNodes.size) -> ignuin -> chosen;
+                1 -> inx;
+                pickAVal: current.scanIndexNodes
+                  (# type:: BindingValueNode;
+                  do
+                     (if inx=chosen then
+                         current.chooseThisValue;
+                         leave pickAVal;
+                      else
+                         inx+1 -> inx;
+                     if); 
+                  #);
+            if);
+         #);
+   if);
+   putIntList: possibleMarkings.scan
+     (# 
+     do
+        (if (current.head) <> NONE then
+            (current.head).elm[] -> bindings.append; 
+         else
+            ('No possible bindings for current variable',false) -> assert(# #);
+        if);
+     #);
+   
+--bindingindexIsBindingDone:doPart--
+do true -> bindingDone;
+   checkEachVarNodeIsChildFree: scanIndexNodes
+     (# 
+     do (if current.theIndexNodes.size <> 0 then
+            false -> bindingDone;
+            leave checkEachVarNodeIsChildFree;
+        if);
+     #);
+

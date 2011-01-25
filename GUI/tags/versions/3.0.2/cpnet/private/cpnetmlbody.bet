@@ -1,0 +1,1646 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../mlcoms';
+INCLUDE '~beta/basiclib/random';
+INCLUDE '../../cpntools/cpnworkspace';
+INCLUDE '../../cpntools/wselements/statusbubble';
+INCLUDE '../runtimeerror';
+INCLUDE '~beta/basiclib/private/basicsystemenvbody';
+
+
+---mlGetMLName:doPart---
+do(# i: @integer;
+  do '' -> mlName[];
+     (if not ('' -> equal) then
+         1 -> i;
+         findPartToInclude:
+           (# current: ^Text;
+           do (i,i) -> sub -> current[];
+              (if current.isMLNameChar or ((i -> inxget) =ascii.newLine) then
+                  current[] -> mlName.append;
+                  (if i<length then
+                      i+1 -> i;
+                      restart findPartToInclude;
+                  if);
+               else
+                  leave findPartToInclude;
+              if);
+           #);
+         mlName.trim;
+         (if not (mlName.isUpperCaseLetter or mlName.isLowerCaseLetter) then
+             '' -> mlName[];
+          else
+             mlName.reset;
+             (for i:mlName.length repeat
+                  (if (i->inxget) -> ascii.iswhitespace then
+                      ('_',i) -> mlName.inxput;
+                  if);
+             for);
+         if);
+     if);
+  #);
+
+---mlHasIllegalContent:doPart---
+do (# i: @integer;
+   do true -> legal;
+      1 -> i;
+      lookForIllegalCaracters:
+    (# current: ^Text;
+    do (i,i) -> sub -> current[];
+       (if (current[] -> illegal) then
+           false -> legal;
+           leave lookForIllegalCaracters;
+       if);
+       (if i<length then
+           i+1 -> i;
+           restart lookForIllegalCaracters;
+       if);
+    #);
+   #);
+   INNER;
+---mlGenerateInstancesSend:DoPart---
+do 'mlGenerateInstances' -> debugSyntaxCheck;
+   (# 
+   do (if debugging then
+          'mlGenerateInstancesSend: Generate instances' -> debugCPNet;
+      if);
+      500 -> bis.putInt; (* CPN simulate command. *)
+      3 -> bis.putInt; (* Generate instances command. *)
+      update -> bis.putBool; (* update = false => Generate from scratch / update = true => update. *)
+      
+      (* Put the places on the BIS. *)
+      0 -> count;
+      plist.scan
+      (# 
+      do (if current.status <> compiled then
+             (if (current.getFusionSet <> NONE) and
+                 (((current.getFusionSet).id[] -> net.knownFusionSets.lookUp) = none) then
+                 (checked, compiling) -> current.ChangeStatus;
+                 'FusionSet ID' -> debugSyntaxCheck;
+                 (current.getFusionSet).id[] -> bis.putString;
+                 'Place ID' -> debugSyntaxCheck;
+                 current.id[] -> bis.putString;
+                 count + 1 -> count;                 
+                 ((current.getFusionSet).id[], current.getFusionSet) -> net.knownFusionSets.associate;
+              else
+                 (checked, compiling) -> current.ChangeStatus;
+                 'Place ID' -> debugSyntaxCheck;
+                 current.id[] -> bis.putString;    
+             if);
+         if);
+      #);
+      'count' -> debugSyntaxCheck;
+      plist.size + count -> bis.putInt;
+
+      (* For now we ignore refs. *)
+      0 -> bis.putInt;
+      
+      (* Put the transitions on the BIS. *)
+      'Transition count' -> debugSyntaxCheck;
+      tlist.size -> bis.putInt;
+      tlist.scan
+      (# 
+      do 
+         (checked, compiling) -> current.ChangeStatus;
+         'Transition ID' -> debugSyntaxCheck;
+         current.id[] -> bis.putString;
+      #);
+   #);
+---mlGenerateInstancesReceive:DoPart---
+do (if debugging then 'Generate instances: (OK)' -> debugCPNet; if);
+   (# num_pages: @integer;
+      cur_page_id: ^Text;
+      num_instances_cur_page: @integer;
+      cur_page_has_super_node: @boolean;
+      super_page_id: ^Text;
+      subst_node_id: ^Text;
+      super_page_inst: @integer;
+      thePage: ^CPNPage;
+   do bis.getInt -> num_pages;
+      (for i: num_pages repeat
+           bis.getString -> cur_page_id[];
+           bis.getInt -> num_instances_cur_page;
+           (for j: num_instances_cur_page repeat
+                NONE -> thePage[];
+                search: net.scanCPNPages
+                  (# 
+                  do (if cur_page_id[] -> current.id.equal then
+                         current[] -> thePage[];
+                         leave search;
+                     if);
+                  #);
+                bis.getBool -> cur_page_has_super_node;
+                (if cur_page_has_super_node then
+                    bis.getString -> super_page_id[];
+                    bis.getString -> subst_node_id[];
+                    bis.getInt -> super_page_inst;
+                    (if thePage[] <> NONE then
+                        search: thePage.scanInstances
+                          (# 
+                          do num_instances_cur_page -> current.MLinstances;
+                             (if (current.getSuperpageinstance <> NONE) AND
+                                 (super_page_id[] -> (current.getSuperpageinstance).thePage.id.equal) AND
+                                 (super_page_inst = (current.getSuperpageinstance).mlinstancenumber) AND
+                                 (current.theTransition[] <> NONE) AND
+                                 (subst_node_id[] -> current.theTransition.id.equal) then
+                                 j -> current.MLinstancenumber;
+                                 leave search;
+                             if);
+                          #);
+                    if);
+                 else
+                    (if thePage[] <> NONE then
+                        search: thePage.scanInstances
+                          (#
+                          do num_instances_cur_page -> current.MLinstances;
+                             (if (current.getSuperpageinstance = NONE) and
+                                 (current.theTransition[] = NONE) then
+                                 j -> current.MLinstancenumber;                                 
+                                 leave search;
+                             if);
+                          #);
+                    if);
+                if);
+           for);
+      for);
+      
+      (* Mark the transitions and places as compiled. *)
+      tlist.scan
+      (#
+      do (compiling, compiled) -> current.changeStatus;
+      #);
+      plist.scan
+      (#
+      do (if current.getFusionSet <> NONE then
+             (current.getFusionSet).scanFusionSet (# do (compiling,compiled) -> current.changeStatus; #);
+         if);
+         (compiling,compiled) -> current.changeStatus;
+      #);   
+   #);
+   
+-- MLGenerateInstancesReceiveAborted:DoPart --
+do tlist.scan
+   (#
+   do (if (current.id[] -> (current.getCPNPage).lookupTransition) <> none then
+          (compiling, checked) -> current.changeStatus;
+      if);
+   #);
+   plist.scan
+   (#
+   do (if (current.id[] -> (current.getCPNPage).lookupPlace) <> none then
+          (if current.getFusionSet <> NONE then
+              (current.getFusionSet).scanFusionSet (# do (compiling,checked) -> current.changeStatus; #);
+          if);
+          (compiling,checked) -> current.changeStatus;
+      if);
+   #);  
+   
+---mlGenerateInstancesError:DoPart---
+do (if debugging then 'mlGenerateInstancesError: (FAILED)' -> debugCPNet; if);
+   true -> continue;
+   
+   (* Revert to being incorrect - not compiled. *)
+   tlist.scan
+   (#
+   do (compiling,incorrect) -> current.changeStatus;
+   #);
+   plist.scan
+   (#
+   do (compiling,incorrect) -> current.changeStatus;
+   #);
+   
+   (if (plist.size + tlist.size) = 1 then
+       (if plist.size = 1 then
+           plist.scan
+           (# 
+           do (current[], what[]) -> current.addError;
+           #);
+        else
+           tlist.scan
+           (# 
+           do (current[], what[]) -> current.addError;
+           #);
+       if);
+   if);
+   
+---mlCPNetInitML:DoPart---
+do setBusyCursor; (*** LOCK-INTERACTION ***)
+   
+   
+   try:
+     (# temptext:^text;
+        status: ^StatusBubble;
+        dumpname: @text;
+     do (* initMLmutex.P; *)
+        ObjectPool.get(# Type:: StatusBubble; #) -> status[];
+        
+        (host[], port, user[], password[], path[], image[])->ML.Init;
+        
+        
+        
+        'ML.start'->debugMLInit;
+        ML.start;
+        'MLBootstrap'->debugMLInit;
+        (if localsim then
+		'cpntoolsdump.sml'->temporaryFile -> cygwinify -> dumpname.puttext;
+	else
+		'cpntoolsdump.sml'-> dumpname.puttext;
+	if);
+        (if isRealTimeStamp then 
+            (ML[], 'real', '0.0', dumpname[]) -> MLBootstrap;
+         else
+            (ML[], 'intinf', 'IntInf.fromInt 0', dumpname[]) -> MLBootstrap;
+         if);
+        (* initMLmutex.V; *)
+        'CPN\'Settings.use_manbind := true;' -> ML.Evaluate;
+        'CPN\'Settings.use_dmo := false;' -> ML.Evaluate;
+        'ML[] -> MLInitSyntaxCheck'->debugMLInit;
+        ML[] -> MLInitSyntaxCheck;  
+        'getSimulationOptions -> setSimulationOptions'->debugMLInit;
+        getSimulationOptions -> setSimulationOptions; (* silly, but necessary due to #703 *)
+        'MLsetInitialisationSimulationOptions'->debugMLInit;
+        (ML[],false,false,'1209') -> MLsetInitialisationSimulationOptions;
+        
+        
+        
+        
+        (if not ML.Initialized then
+            
+            (if debugging then
+                'mlCPNetInitML: Couldn\'t start ML engine on %s:%i'->debugCPNet
+                (# 
+                do host[]->s;
+                   port->i;
+                #);
+                'cpnetmlbody.bet: mlCPNetInitML: Try initializing the ML engine using a different port!'->debugCPNet;
+            if);
+            (if (localsim and (not allreadyRetried)) then
+                (* If we want to use the local simulator, but a connection fails,
+                 * we wish to start a new simulator. If we fail at starting a new
+                 * simulator, we run without simulator support.
+                 *)
+        (if 'linux' -> (machine_type).equal then
+            'cpnsim/cpnmld.x86-linux' -> relativeFile -> daemon.init;
+            '2098' -> daemon.argument.append;
+            &Text[] -> temptext[];
+            'cpnsim/run.x86-linux' -> relativeFile -> temptext.puttext;
+            temptext[]->daemon.argument.append;
+            &Text[] -> temptext[];
+            'cpnmld.log'->temporaryFile->temptext.puttext;
+            temptext[]->daemon.argument.append;
+         else
+            'cpnsim\\cpnmld.x86-cygwin' -> relativeFile->daemon.init;
+            '2098' -> daemon.argument.append;
+            '"'->temptext[]; 
+            'cpnsim\\run.x86-cygwin"' -> relativeFile -> cygwinify -> temptext.puttext;
+            (*'cpnsim\\save-sim.ML.x86-win32.exe"'->relativeFile->temptext.puttext; *)
+            temptext[]->daemon.argument.append;
+            '"'->temptext[];
+            'cpnmld.log"'->temporaryFile->cygwinify->temptext.puttext;
+            temptext[]->daemon.argument.append;
+        if);
+        'trying to start daemon'->debugMLInit;
+                
+        'command: %s '->debugMLInit(# do  daemon.argument.argument[] -> s #);
+                daemon.start;
+                'daemon started'->debugMLInit;
+                1 -> sleep;
+                (if debugging then
+                    'Starting local simulator ... ' -> debugCPNet;
+                if);
+                true -> allreadyRetried;
+                restart try;
+             else
+        'Could not start a simulator.  You will not be able to check or simulate nets.' -> debugtemp;
+                'Could not start a simulator.  You will not be able to check or simulate nets.' -> status.error;
+                (if debugging then
+                    'Bailing out - no simulator support!' -> debugCPNet;
+                if);
+            if);
+         else
+            (* This evaluation is used to throw stuff away from the dmoEval. *)
+            '1' -> ML.Evaluate;
+            (if debugging then 
+                'mlCPNetInitML: ML engine initialized!' -> debugCPNet; 
+            if);
+        if);
+        
+     #);
+   
+   unsetBusyCursor; (*** UNLOCK-INTERACTION ***)
+   'done initializing'->debugMLInit;
+   
+-- MLCompileDeclarationReceiveAborted:DoPart --
+do (checking, unchecked) -> declaration.changeStatus;
+   
+---mlCPNetCompileDeclError:DoPart---
+do (if debugging then 
+       'mlCPNetCompileDeclError: (FAILED)' -> debugCPNet; 
+       what[] -> debugCPNet;
+   if);
+   true -> continue;  
+   
+-- MLCPNetCompileDeclarationSend:DoPart --  
+do 300 -> bis.putInt;
+   1 -> bis.putInt;
+   bis[] -> declaration.putOnBIS;
+   
+-- MLCompileDeclarationReceive:DoPart --
+do (# theNet: ^CPNet;
+      decls: @Integer;
+   do (***
+       * 
+       * Verified that all ID's refer to elements still in
+       * existance.
+       * 
+       * NOTE: The overwritecode are never used, since the
+       * simulator never gives that information.
+       ***)
+      (declaration.getDeclaration).getCPNet -> theNet[];
+      
+      (if theNet[] <> none then
+          bis.getInt -> decls;
+          (for i: decls repeat
+               (# theCurrentDecl: ^Decl;
+                  error: ^Text;
+                  u, o: @Integer;
+                  d2: ^Decl;
+                  WrongOrder: @Boolean;
+                  oldOverwrites: @List (# element:: Decl; #);
+                  overwritesWereFound: @boolean;
+                  testForDownwardDependcy: @boolean;
+                  useIds: @TextList;
+                  overwriteIds: @TextList;
+                  declID: ^Text;
+               do 
+                  bis.getString -> declID[];
+                  
+                  bis.getString -> error[];
+                  bis.getInt -> u;
+                  bis.getInt -> o;
+                  
+                  (for j: u repeat
+                       bis.getString -> useIds.append;
+                  for);
+                  
+                  (for k: o repeat
+                       bis.getString -> overwriteIds.append;
+                  for);
+                  
+                  declID[] -> theNet.theGlobals.lookupDecl -> theCurrentDecl[];
+                  (if theCurrentDecl[] <> NONE then
+                      (*
+                       * Check for used-by stuff
+                       *)
+                      theCurrentDecl.clearUsedBy;
+                      useIds.scan
+                      (#
+                      do current[] -> theNet.theGlobals.lookupDecl -> d2[];
+                         (if d2[] <> NONE then
+                             theCurrentDecl[] -> d2.addUsedBy;
+                         if);
+                      #);
+                      
+                      (* 
+                       * check for overwrite stuff.
+                       * This is never used, since the simulator does not
+                       * give that information.
+                       *)
+                      theCurrentDecl.overwrites.scan
+                      (# 
+                      do current.onNoSyntaxError;
+                         theCurrentDecl[] -> current.overwrittenBy.at -> current.overwrittenBy.delete;
+                         current[] -> oldOverwrites.append;
+                      #);
+                      theCurrentDecl.overwrites.clear;
+                      false -> overwritesWereFound;
+                      overwriteIds.scan
+                      (#
+                      do current[] -> theNet.theGlobals.lookupDecl -> d2[];
+                         (if d2[] <> NONE then
+                             d2[] -> theCurrentDecl.overwrites.append;
+                             theCurrentDecl[] -> d2.overwrittenBy.at -> d2.overwrittenBy.delete;
+                             theCurrentDecl[] -> d2.overwrittenBy.append;
+                             (if theCurrentDecl[] <> d2[] then
+                                 true -> overwritesWereFound;                                 
+                                 (any_status, incorrect) -> d2.changeStatus;
+                                 (d2[], 'Declaration is overwritten by another declaration')
+                                   -> d2.addError;
+                                 d2[] -> (d2.getDeclaration).markForDeletion;
+                             if);
+                         if);
+                      #);                      
+                      (if (error[]=NONE) or (error.length=0) then
+                          (if overwritesWereFound then
+                              'Declaration overwrites another declaration'
+                                -> theCurrentDecl.onSyntaxError;
+                              (* '1: %s '->debugtemp (# do theCurrentDecl.tostring->s#); *)
+                              theCurrentDecl[] -> (theCurrentDecl.getDeclaration).markForDeletion;
+                           else
+                              theCurrentDecl.onNoSyntaxError;
+                              false -> testForDownwardDependcy;
+                              search: ((theCurrentDecl.getDeclaration).getCPNet).theGlobals.scanDeclTree
+                              (#
+                              do (if true
+                                  // testForDownwardDependcy and
+                                     ((theCurrentDecl.id[] -> current.lookupUsedBy) <> none) and
+                                     (current.status = compiled) then
+                                     (theCurrentDecl[], 'Declaration depend on something after this declaration')
+                                       -> theCurrentDecl.addError;                                     
+                                     (* '2: %s '->debugtemp (# do theCurrentDecl.tostring->s#); *)
+                                     theCurrentDecl[] -> ((theCurrentDecl.getDeclaration).getCPNet).theGlobals.markForDeletion;
+                                     leave search;
+                                  // current[] = theCurrentDecl[] then
+                                     true -> testForDownwardDependcy
+                                 if);
+                              #);
+                          if);
+                       else
+                          (* '3: %s: %s '->debugtemp (# do theCurrentDecl.tostring->s;error.copy->s#); *)
+                          (any_status, incorrect) -> theCurrentDecl.changeStatus;
+                          (theCurrentDecl[], error[]) -> theCurrentDecl.addError;
+                          theCurrentDecl[] -> ((theCurrentDecl.getDeclaration).getCPNet).theGlobals.addUsedBy;
+                      if);                         
+                  if);
+               #);
+          for);
+      if);
+   #);
+   
+-- mlCPNPageCheckPageSendInitializeMessage:doPart --
+do 'sendInitializeMessage' -> debugSyntaxCheck;
+   400 -> bis.PutInt; 
+   2 -> bis.PutInt;
+   'Page id' -> debugSyntaxCheck;
+   id[] -> bis.PutString;    
+   (if THIS(CPNPage).net.checkNames then
+       (if namestatus = unchecked then
+           (unchecked,checking) -> changeNameStatus;
+           (name,THIS(CPNPage)[],page_type) -> checkName 
+           (# onError:: 
+                (# 
+                do (checking,incorrect) -> changeNameStatus;
+                #);
+           #) -> checkedName[] -> bis.PutString;
+           (checking,checked) -> changeNameStatus;
+        else
+           checkedName[] -> bis.putString;
+       if);
+    else
+       name -> bis.putString;
+   if);
+   (if prime[] <> NONE then
+       1 -> bis.PutInt; (* multiplicity *)
+    else
+       0 -> bis.PutInt; (* multiplicity *)
+   if);
+   true -> bis.PutBool; (* isIncludedInSim *)   
+   
+-- mlCPNPageCheckPageSendsendCheckedFusionSets:doPart --
+do 'sendCheckedFusionSets' -> debugSyntaxCheck;
+   0 -> count;
+   fusionSets.clear;
+   scanPlaces
+   (# 
+   do (if ((current.status = checked) or
+          (current.status = compiled)) then
+          (if (current.getFusionSet <> NONE) AND
+              ((current.getFusionSet -> fusionSets.at) = NONE) then
+              current.getFusionSet -> fusionSets.append;
+          if);
+          (*'checked place: %s '->debugtemp(# do current.theName.copy->s#);*)
+          1 + count -> count;
+          'Place ID' -> debugSyntaxCheck;
+          current.id[] -> bis.putString;
+      if);
+   #);
+   fusionSets.scan
+   (# 
+   do 'FusionSet ID' -> debugSyntaxCheck;
+      current.id[] -> bis.putString;
+      count + 1 -> count;
+   #);
+   'count' -> debugSyntaxCheck;
+   count -> bis.putInt;
+   
+-- mlCPNPageCheckPageSendsendCheckedTransitions:doPart --
+do 'sendCheckedTransitions' -> debugSyntaxCheck;
+   0 -> count;
+   scanTransitions
+   (# 
+   do (if (current.status = checked) or
+          (current.status = compiled) then
+          1 + count -> count;
+          'Transition ID' -> debugSyntaxCheck;
+          current.id[] -> bis.putString;
+      if);
+   #);
+   'count' -> debugSyntaxCheck;
+   count -> bis.putInt;
+   
+-- mlCPNPageCheckPageSendsendUncheckedPlaces:doPart --
+do 'sendUncheckedPlaces' -> debugSyntaxCheck;
+   (* 'mlCPNPageCheckPageSendsendUncheckedPlaces'->debugtemp; *)
+   0 -> count;
+   scanPlaces
+   (# thePlaceType: ^PlaceType;
+      theInitMark: ^InitMark;
+   do (if (current.getFusionSet = NONE) and
+          (current.status = unchecked) then
+          (if (current.getCPNPage).net.checkNames and
+              (current.namestatus = unchecked) then
+              (unchecked,checking) -> current.changeNameStatus;
+              (current.theName[],THIS(CPNPage)[],place_type) -> checkName 
+              (# onError:: 
+                   (# 
+                   do (checking,incorrect) -> current.changeNameStatus;
+                   #);
+              #) -> current.checkedName[];
+              (checking,checked) -> current.changeNameStatus;
+          if);
+
+          (unchecked, checking) -> current.changeStatus;              
+          
+          (if current.status = checking then
+              (* Make sure the old dependencies are removed. *)
+              current.clearDependencies;
+              names[] -> current.localCheck;     
+              
+              (if current.status = checking then                  
+                  count + 1 -> count;
+                  'PLACE ID' -> debugSyntaxCheck;
+                  current.id[] -> bis.putString;
+                  'checkedName' -> debugSyntaxCheck;
+                  current.checkedName[] -> bis.putString;
+
+                  (* Send the type. *)
+                  (* A place ALWAYS has a place type here
+                   * otherwise the local check would have failed *)
+                  current.getPlaceType -> thePlaceType[];
+                  'Place Type' -> debugSyntaxCheck;
+                  (if not (thePlaceType.defaultInscription
+                        -> (thePlaceType.getInscription).equal) then
+                      thePlaceType.getInscription -> bis.putString;
+                   else
+                      '' -> bis.putString;
+                  if);
+                  
+                  (* Send the initial marking. *)
+                  current.getInitMark -> theInitMark[];
+                  'Initial Marking' -> debugSyntaxCheck;
+                  (if not (theInitMark.defaultInscription
+                        -> (theInitMark.getInscription).equal) then 
+                      theInitMark.getInscription -> bis.putString;
+                   else
+                      '' -> bis.putString;
+                  if);
+              if);
+          if);
+      if);
+   #);
+   (* size(<unchecked places>) + size(<unchecked instance fusion places>) *) 
+   'count' -> debugSyntaxCheck;
+   count -> bis.putInt; 
+   
+-- mlCPNPageCheckPageSendsendUncheckedFusionPlaces:doPart --
+do 'sendUncheckedFusionPlaces' -> debugSyntaxCheck;
+   0 -> count;
+   scanPlaces
+   (# thePlaceType: ^PlaceType;
+      theInitMark: ^InitMark;
+   do (if (current.getFusionSet <> NONE) and
+          (current.status = unchecked) then
+          (if (current.getCPNPage).net.checkNames then
+              (if current.namestatus = unchecked then
+                  (unchecked,checking) -> current.changeNameStatus;
+                  (current.theName[],THIS(CPNPage)[],place_type) -> checkName
+                  (# onError::
+                       (# 
+                       do (checking,incorrect) -> current.changeNameStatus;   
+                       #);
+                  #) -> current.checkedName[];
+                  (checking,checked) -> current.changeNameStatus; 
+              if);
+          if);
+          (unchecked,checking) -> current.changeStatus;
+          (* What to do in else case??? Is some dummy value needed??? *)
+          (if current.status = checking then              
+              (* FIXME: Experiment with this - but I think it has to be here *)
+              current.clearDependencies;
+              
+              names[] -> current.localCheck;
+              
+              (if current.status = checking then                   
+                  count + 1 -> count;
+                  'Place ID' -> debugSyntaxCheck;
+                  current.id[] -> bis.putString;
+                  'FusionSet ID' -> debugSyntaxCheck;
+                  (current.getFusionSet).id[] -> bis.putString; 
+                  'checkedName' -> debugSyntaxCheck;
+                  current.checkedName[] -> bis.putString;
+                  
+                  (* Send the type. *)
+                  'Place Type' -> debugSyntaxCheck;
+                  current.getPlaceType -> thePlaceType[];
+                  (if not thePlaceType.isBeingEdited and
+                      not (thePlaceType.defaultInscription
+                        -> (thePlaceType.getInscription).equal) then 
+                      thePlaceType.getInscription -> bis.putString;
+                   else
+                      (checking,unchecked) -> current.changeStatus;
+                      (if debugging then
+                          'Type is being edited, ignoring' -> debugCPNet;
+                      if);
+                      '' -> bis.putString
+                  if);
+                  
+                  (* Send the initial marking. *)
+                  'Initial Marking' -> debugSyntaxCheck;
+                  current.getInitMark -> theInitMark[];
+                  (if not theInitMark.isBeingEdited and
+                      not (theInitMark.defaultInscription 
+                        -> (theInitMark.getInscription).equal) then 
+                      theInitMark.getInscription -> bis.putString;
+                   else
+                      (*(checking,unchecked) -> current.changeStatus;*)
+                      (if debugging then
+                          'Inscription is being edited, ignoring' -> debugCPNet;
+                      if);
+                      '' -> bis.putString;
+                  if);
+              if);
+          if);
+      if);
+   #);   
+   count -> bis.putInt; (* size(<unchecked page fusion places>) + size(<unchecked global fusion places>) *)
+   
+-- mlCPNPageCheckPageSendsendNumberOfUncheckedSubstitutionTransitions:doPart --
+do 'sendNumberOfUncheckedSubstitutionTransitions' -> debugSyntaxCheck;
+   0 -> count;
+   scanTransitions     
+   (# 
+   do (if current.status = unchecked then
+          (if current.isSubstitutionTransition then
+              1 + count -> count;
+          if); 
+      if);
+   #);
+   'count' -> debugSyntaxCheck;
+   count -> bis.putInt; (* size(<unchecked subst transitions>) *)
+   
+   scanTransitions
+   (# 
+   do (*'page/transition/state: %s/%s/%d '->debugtemp (# do theName.copy->s; current.theName.copy->s;current.status->d #);*)
+      (if (current.status = unchecked) and
+          current.isSubstitutionTransition then
+          (if (current.getCPNPage).net.checkNames then
+              (if current.namestatus = unchecked then
+                  (unchecked,checking) -> current.changeNameStatus;
+                  (current.theName[],THIS(CPNPage)[],trans_type) -> checkName 
+                  (# onError:: 
+                       (# 
+                       do (checking,incorrect) -> current.changeNameStatus;
+                       #);
+                  #) -> current.checkedName[];                      
+                  (checking,checked) -> current.changeNameStatus;
+              if);
+          if);
+          (* Make sure the old dependencies are removed. *)
+          (unchecked,checking) -> current.changeStatus;
+          (* What to do in else case??? Is some dummy value needed??? *)
+          (if current.status = checking then
+              current.clearDependencies;
+              names[] -> current.localcheck;
+              'Transition ID' -> debugSyntaxCheck;
+              current.id[] -> bis.putString;
+              'checkedName' -> debugSyntaxCheck;
+              current.checkedName[] -> bis.putString;
+              'Subpage ID' -> debugSyntaxCheck;
+              (current.getSubpage).ID[] -> bis.putString;
+              
+              0 -> count;
+              
+              current.socketPlaces.scan
+              (#
+              do (if not (current.getSocket).hasAssignmentGraphError then
+                     1 + count -> count;
+                     'Port ID' -> debugSyntaxCheck;
+                     (current.getport).id[] -> bis.putString;
+                     'Socket ID' -> debugSyntaxCheck;
+                     (current.getsocket).id[] -> bis.putString;
+                 if);
+              #);
+              'count' -> debugSyntaxCheck;
+              count -> bis.putInt;
+          if);
+      if);
+   #);
+   
+-- mlCPNPageCheckPageSendsendUncheckedTransitions:doPart --
+do 'sendUncheckedTransitions' -> debugSyntaxCheck;
+   0 -> count;
+   scanTransitions
+   (# 
+   do (if (current.status = unchecked) and
+          (NOT current.isSubstitutionTransition) then
+          (unchecked,checking) -> current.changeStatus;
+          (if current.status = checking then
+              names[] -> current.localCheck;
+              (if current.status = checking then
+                  1 + count -> count;
+                  (checking,unchecked) -> current.changeStatus;
+              if);
+          if);
+      if);
+   #);
+   'count' -> debugSyntaxCheck;
+   count -> bis.putInt; (* size(<unchecked transitions>) *)
+   
+   scanTransitions
+   (# annotationFound: @boolean;
+      t: ^Transition;
+      time: ^TransTime;
+      guard: ^TransGuard;
+      action: ^TransAction;
+      channel: ^TransChannel;
+      priority: ^TransPriority;
+   do (if (current.status = unchecked) and
+          (NOT current.isSubstitutionTransition) then
+          (if (current.getCPNPage).net.checkNames then
+              (if current.namestatus = unchecked then
+                  (unchecked,checking) -> current.changeNameStatus;
+                  (current.theName[],THIS(CPNPage)[],trans_type) -> checkName 
+                  (# onError:: 
+                       (# 
+                       do (checking,incorrect) -> current.changeNameStatus;
+                       #);
+                  #) -> current.checkedName[];
+                  (checking,checked) -> current.changeNameStatus;
+              if);
+          if);
+          (unchecked,checking) -> current.changeStatus;
+          (if current.status = checking then
+              names[] -> current.localCheck;
+              (if current.status = checking then
+                  (* Make sure the old dependencies are removed. *)
+                  current.clearDependencies;
+                  
+                  current[] -> t[];
+                  current.id[] -> bis.putString;
+                  current.checkedName[] -> bis.putString;
+                  
+                  NOT current.isExplicit -> bis.putbool;
+                  
+                  current.getTransGuard -> guard[];
+                  (if not (guard.defaultInscription
+                        -> (guard.getInscription).equal) then 
+                      guard.getInscription -> bis.putString;
+                   else
+                      '' -> bis.putString;  (* ignored guard *)
+                      (if debugging then
+                          'Guard is being edited, ignoring' -> debugCPNet;
+                      if);
+                  if);
+                  
+                  current.getTransTime -> time[];
+                  (if not (time.defaultInscription
+                        -> (time.getInscription).equal) then 
+                      time.getInscription -> bis.putString;  (* timeexp *)
+                   else
+                      '' -> bis.putString; (* ignored timeexp *)
+                      (if debugging then
+                          'Time is being edited, ignoring' -> debugCPNet;
+                      if);
+                  if);
+                  
+                  current.getTransAction -> action[];
+                  (if not (action.defaultInscription
+                        -> (action.getInscription).equal) then 
+                      action.getInscription -> bis.putString;
+                   else
+                      '' -> bis.putString; (* ignored action *)
+                      (if debugging then
+                          'Action is being edited, ignoring' -> debugCPNet;
+                      if);
+                  if);
+            
+                  current.getTransChannel -> channel[];
+                  (if current.isChannelTransition then 
+                      channel.getInscription -> bis.putString;
+                   else
+                      '' -> bis.putString; (* ignored action *)
+                      (if debugging then
+                          'Channel is being edited, ignoring' -> debugCPNet;
+                      if);
+                  if);
+            
+                  current.getTransPriority -> priority[];
+                  (if not (priority.defaultInscription
+                        -> (priority.getInscription).equal) then
+                        priority.getInscription -> bis.putString;
+                   else
+                      '' -> bis.putString; (* ignored priority *)
+                      (if debugging then
+                          'Priority is being edited, ignoring' -> debugCPNet;
+                      if);
+                  if);
+                  
+                  0 -> count;
+                  scanArcs
+                  (# 
+                  do (* scan incoming arcs *)
+                     (if (current.transend[] = t[]) and (current.getOrientation = PtoT) then
+                         1 + count -> count;
+                         current.id[] -> bis.putString;
+                         current.placeEnd.id[] -> bis.putString;
+                         false -> annotationFound;
+                         current.getAnnotation ->
+                         (# current: ^Inscription;
+                         enter current[]
+                         do (if (current[]<> NONE) then
+                                (if (current.getInscription<> NONE) and
+                                    not (current.defaultInscription -> (current.getInscription).equal) then
+                                    current.getInscription -> bis.putString;
+                                    true -> annotationFound;
+                                if);
+                            if);
+                         #);
+                         (if not annotationFound then '' -> bis.PutString; if);
+                     if);
+                  #);
+                  count -> bis.putInt;
+                  
+                  0 -> count;
+                  scanArcs
+                  (# 
+                  do (* scan outgoing arcs *)
+                     (if (current.transend[] = t[]) and (current.getOrientation = TtoP) then
+                         1 + count -> count;
+                         current.id[] -> bis.putString;
+                         current.placeEnd.id[] -> bis.putString;
+                         false -> annotationFound;
+                         current.getAnnotation -> 
+                         (# current: ^Annotation; 
+                         enter current[]
+                         do (if (current.getInscription<> NONE) and
+                                not (current.defaultInscription -> (current.getInscription).equal) then
+                                current.getInscription -> bis.putString;
+                                true -> annotationFound;
+                            if);
+                         #);
+                         (if not annotationFound then '' -> bis.putString; if);
+                     if);
+                  #);
+                  count -> bis.putInt;
+                  
+                  0 -> count;
+                  scanArcs
+                  (# 
+                  do (* scan in/outgoing arcs *)
+                     (if (current.transend[] = t[]) and (current.getOrientation = BothDir) then
+                         1 + count -> count;
+                         current.id[] -> bis.putString;
+                         current.placeEnd.id[] -> bis.putString;
+                         false -> annotationFound;
+                         current.getAnnotation -> 
+                         (# current: ^Annotation;
+                         enter current[]
+                         do (if (current.getInscription<> NONE) and
+                                not (current.defaultInscription -> (current.getInscription).equal) then
+                                current.getInscription -> bis.putString;
+                                true -> annotationFound;
+                            if);
+                         #);
+                         (if not annotationFound then '' -> bis.putString; if);
+                     if);
+                  #);
+                  count -> bis.putInt; (* size(in/out(arcs(trans))) *)
+              if);
+          if);
+      if);
+   #);
+
+---mlCPNPageCheckPageSend:DoPart---
+do (*numberOfTimesThisPageBeenChecked + 1 -> numberOfTimesThisPageBeenChecked;
+    'CPNPageCheck: %s checked %d time(s) '->debugtemp (# do theName.copy -> s;numberOfTimesThisPageBeenChecked -> d #);*)
+   (* 'checking page %s (instances = %d) '->debugtemp(# do tostring->s; numberOfInstances -> d#); *)
+   (if debugging then 
+       'mlCPNPageCheckPageSend: Syntax checking page %s\n' -> debugCPNet
+       (# 
+       do name -> s;
+       #);
+   if);
+   'Syntax checking page %s\n' -> debugSyntaxCheck(# do (name).copy -> s; #);
+   initializeMessage;
+   sendCheckedFusionSets;
+   sendCheckedTransitions;
+   sendUncheckedPlaces;
+   sendUncheckedFusionPlaces;
+   sendUncheckedSubstitutionTransitions;
+   sendUncheckedTransitions;   
+   'Finished syntax checking page %s\n' -> debugSyntaxCheck(# do (name).copy -> s; #);
+   (* 'send all information %s (%s) '->debugtemp(# do thename.copy->s;status->statusToString->s#); *)
+
+-- CPNPageSyntaxCheckReceive:DoPart --
+do (# numerrors, decls: @Integer;
+      uses: @Integer;
+      id, use: ^Text;
+      err: ^Text;
+      errors: @boolean;
+      elem: ^Element;
+      elemNode: ^Node;
+      elemArc: ^Arc;
+      elemPage: ^CPNPage;
+   do (* 'getting feedback on %s (%s) '->debugtemp (# do theName.copy->s; status->statusToString->s#); *)
+      (if debugging then 'mlCPNPageCheckReceive: (OK)' -> debugCPNet; if);
+      
+      (**
+       * Verify that all IDs refers to element still in existance
+       *)
+      
+      (* Get the errors. *)
+      bis.getInt -> numerrors;
+      (for i: numerrors repeat
+           true -> errors;
+           bis.getString -> id[];
+           bis.getString -> err[];           
+           id[] -> lookupPageElement -> elem[];
+           (* '%s %t '->debugtemp(# do id.copy -> s;elem[] <> none->tv#); *)
+           (if true
+            // elem[] <> NONE then
+               (if true 
+                // elem## <= Node## then
+                   elem[] -> elemNode[]; 
+                   (if elemNode.status = checking then                    
+                       (# len: @integer;
+                       do (if (err.length -> len) > 0 then
+                              (if err.length -> err.inxget
+                               // ascii.nl
+                               // ascii.cr then
+                                  (len, len) -> err.delete;
+                              if);
+                          if);
+                       #);
+                       (if debugging then 
+                           'cpnetmlbody.bet: mlCPNPageCheckReceive: Syntax error on node' -> debugCPNet;
+                           elemNode[] -> getPatternName -> debugCPNet;
+                           err.copy -> debugCPNet;
+                       if);
+                       err.copy -> elemNode.onSyntaxError;
+                    else
+                       (if debugging then
+                           'mlCPNPageCheckReceive: Discarding error on %s due to change while checking!' -> debugCPNet
+                           (# 
+                           do elemNode.id[] -> s;
+                           #);
+                       if);
+                   if);
+                // elem## <= Arc## then
+                   elem[] -> elemArc[];
+                   (if elemArc.transend.status = checking then
+                       (# len: @integer;
+                       do (if (err.length -> len) > 0 then
+                              (if err.length -> err.inxget
+                               // ascii.nl
+                               // ascii.cr then
+                                  (len, len) -> err.delete;
+                              if)
+                          if);
+                       #);
+                       (if debugging then 'cpnetmlbody.bet: mlCPNPageCheckReceive: Syntax error on arc!' -> debugCPNet; if);
+                       err.copy -> elemArc.onSyntaxError;
+                    else
+                       (if debugging then
+                           'cpnetmlbody.bet: mlCPNPageCheckReceive: Discarding error on %s due to change while checking!' -> debugCPNet
+                           (# 
+                           do elemArc.id[] -> s;
+                           #);
+                       if);
+                   if);
+                // elem## <= CPNPage## then
+                   (* If the error is reported on something that is
+                    * not an arc, nor a node it's probably a page. *)
+                   (if debugging then 
+                       elem[] -> elemPage[];
+                       'cpnetmlbody.bet: mlCPNPageCheckReceive: Syntax error on page %s' -> debugCPNet
+                       (# 
+                       do elemPage.name -> s;
+                       #);
+                       elemPage.onSyntaxError;
+                   if);
+                else
+                   (if debugging then 
+                       'cpnetmlbody.bet: mlCPNPageCheckReceive: Syntax error on strange stuff with id %s' -> debugCPNet
+                       (# 
+                       do id[] -> s;
+                       #);
+                   if);
+               if);
+            // (id[] -> net.lookupFusionSet) <> none then
+               id[] -> net.lookupFusionSet -> QUA
+               (# as:: FusionSet;
+               do thisObj.scanFusionSet 
+                  (# 
+                  do (if current.status = checking then
+                         (# len: @integer;
+                         do (if (err.length -> len) > 0 then
+                                (if err.length -> err.inxget
+                                 // ascii.nl
+                                 // ascii.cr then
+                                    (len, len) -> err.delete;
+                                if);
+                            if);
+                         #);
+                         err.copy -> current.onSyntaxError;
+                     if);
+                  #);       
+               #);
+            else
+               (if debugging then
+                   'cpnetmlbody.bet: mlCPNPageCheckReceive: Syntax error reported on non-existing node %s' -> debugCPNet
+                   (# 
+                   do id[] -> s;
+                   #);
+               if);
+           if);
+      for);
+      
+      (* Get the uses lists. *)
+      (# n: ^Node;
+         d: ^Decl;
+         x,x2: ^Notifier;
+         theNet: ^CPNet;
+         
+      do net[] -> theNet[];
+         bis.getInt -> decls;
+         (for i: decls repeat
+              (# useIds: @TextList;
+              do bis.getInt -> uses;
+                 bis.getString -> id[];
+                 (for j: uses repeat
+                      bis.getString -> useIds.append;
+                 for);
+                 
+                 (*id[] -> theNet.elements.lookup -> x[];*)
+                 id[] -> lookupPageElement -> x[];
+                 (if x[] <> NONE then
+                     (if x## <= Node## then
+                         x[] -> n[];
+                         useIds.scan
+                         (#
+                         do current[] -> theNet.theGlobals.lookupDecl -> x2[];
+                            (if x2[] <> NONE then
+                                (if x2## <= Decl## then
+                                    x2[] -> d[];
+                                    n[] -> d.addUsedByNode;
+                                    d[] -> n.uses.append;
+                                 else
+                                    'Node "%s" uses a notifier with id "%s" which is not a Decl! (bug #662)' 
+                                      -> FIXME(# do id[] -> s; current[] -> s; #);
+                                if);
+                            if);
+                         #);
+                      else
+                         id.copy -> debugtemp;
+                     if);                  
+                 if);
+              #);
+         for);
+      #);
+
+      (# i, asts: @integer;
+         pelm: ^PageElement;
+         theFusionSet: ^FusionSet;
+         txt: ^Text;
+      do bis.getInt -> asts;
+         'Received ASTS: %i\n' -> debugAST (# do asts -> i; #);
+         (for i: asts repeat
+              bis.getString -> txt[] -> lookupPageElement -> pelm[];
+              (if pelm[] <> NONE then
+                  (if true
+                   // pelm## <= Arc## then
+                      bis.getString -> ((pelm[] -> QUA(#as::Arc#)).getAnnotation).setAST;
+                   // pelm## <= Place## then
+                      bis.getString -> ((pelm[] -> QUA(#as::Place#)).getInitMark).setAST;
+                   // pelm## <= Transition## then
+                      bis.getString -> ((pelm[] -> QUA(#as::Transition#)).getTransGuard).setAST;
+                  if);
+               else
+                  txt[] -> net.lookupFusionSet -> theFusionSet[];
+                  (if theFusionSet[] <> NONE then
+                      bis.getString -> theFusionSet.scanFusionSet
+                      (# txt: ^Text; enter txt[] do txt[] -> (current.getInitMark).setAST #);
+                   else
+                      'unknow id return in AST processing ' -> FIXME;
+                  if);
+              if);
+     for);
+      #);
+      
+      (* Set the status of the nodes checked in this loop. *)
+      scanNodes
+      (# 
+      do (*'setting status on %s to %d '->debugtemp (# do current.theName.copy->s;current.status->d#);*)
+         (checking,checked) -> current.changeStatus;
+         (if current.status = incorrect then
+             (* If one of the nodes are incorrect, so is the page. *)
+             (checking,incorrect) -> changeStatus;
+         if);      
+      #);
+      (* If none of the nodes were incorrect, the page status is
+       * changed from 'checking' to 'checked'. Otherwise the page status 
+       * is 'incorrect' and    (checking,checked) -> changeStatus; has 
+       * no effect. *)
+      (checking,checked) -> changeStatus;
+   #);
+   
+-- CPNPageSyntaxCheckReceiveAborted:DoPart --
+do scanNodes
+   (# 
+   do (checking,unchecked) -> current.changeStatus;            
+   #);
+   (checking,unchecked) -> changeStatus;   
+   
+---mlCPNPageCheckError:DoPart---
+do (if debugging then 'mlCPNPageCheckError: (FAILED)' -> debugCPNet; if);
+   true -> continue; 
+   
+   (* Set status of page to unchecked. *)
+   (any_status,unchecked) -> changeStatus;
+   
+   (* Set status of all non-changed nodes to unchecked. *)
+   scanNodes
+   (# 
+   do (checking,unchecked) -> current.changeStatus;
+   #);
+   
+---mlCreateInstancesSend:DoPart---
+do (if debugging then 
+       'cpnetmlbody.bet: mlCreateInstancesSend: Create instances'->debugCPNet;
+   if);
+   500->bis.PutInt; (* CPN simulate command. *)
+   1->bis.PutInt; (* Create instances command. *)
+   
+---mlCreateInstancesReceive:DoPart---
+do (if debugging then 'mlCreateInstancesReceive: (OK)'->debugCPNet; if);
+   bis.getInt -> num_pages;
+   (for i: num_pages repeat
+        bis.getString -> cur_page_id[];
+        bis.getInt -> num_instances_cur_page;
+        (for j: num_instances_cur_page repeat
+             NONE -> thePage[];
+             search: net.scanCPNPages
+               (# 
+               do (if cur_page_id[] -> current.id.equal then
+                      current[] -> thePage[];
+                      leave search;
+                  if);
+               #);
+             bis.getBool -> cur_page_has_super_node;
+             (if cur_page_has_super_node then
+                 bis.getString -> super_page_id[];
+                 bis.getString -> subst_node_id[];
+                 bis.getInt -> super_page_inst;
+                 (if thePage[] <> NONE then
+                     search: thePage.scanInstances
+                       (# 
+                       do num_instances_cur_page -> current.MLinstances;
+                          (if (current.getsuperpageinstance <> NONE) and
+                              (super_page_id[] -> (current.getsuperpageinstance).thePage.id.equal) and
+                              (super_page_inst = (current.getsuperpageinstance).mlinstancenumber) and
+                              (current.theTransition[] <> NONE) and
+                              (subst_node_id[] -> current.theTransition.id.equal) then
+                              j -> current.MLinstancenumber;
+                              leave search;
+                          if);
+                       #);
+                 if);
+              else
+                 (if thePage[] <> NONE then
+                     search: thePage.scanInstances
+                       (#
+                       do num_instances_cur_page -> current.MLinstances;
+                          (if (current.getSuperpageinstance = NONE) and
+                              (current.theTransition[] = NONE) then
+                              j -> current.MLinstancenumber;
+                              leave search;
+                          if);
+                       #);
+                 if);
+             if);
+        for);
+   for);
+   
+---mlCreateInstancesError:DoPart---
+do (if debugging then 'mlCreateInstancesError: (FAILED)'->debugCPNet; if);
+   true->continue;
+   
+---mlPageInstFireRandom:DoPart---
+do enabledList.clear;
+   scanTransitionInstances
+   (#
+   do (if current.enabled then
+          current[] -> enabledList.append;
+      if);
+   #);
+   (if enabledList.size > 0 then
+       (1,enabledList.size) -> ignuin -> chosen; 
+       (* ignuin = Integer Generate Uniform Integer *)
+       chosen -> enabledList.get -> theTransitionInstance[];
+       thePage.net.ml[] -> theTransitionInstance.fireTransition;
+   if);
+   
+---mlTransInstFireSend:DoPart---
+do (if debugging then
+       'Fire transition %s instance number %i ...' -> debugCPNet
+       (# 
+       do theTransition.theName[] -> s;
+          thePageInstance.mlinstancenumber -> i;
+       #);
+   if);
+   500 -> bis.putint;
+   12 -> bis.putint;
+   thePageInstance.mlinstancenumber -> bis.putint;
+   theTransition.ID[] -> bis.putString;
+   
+---mlTransInstFireReceive:DoPart---
+do (if debugging then
+       'mlTransInstFireReceive: (OK)' -> debugCPNet;
+   if);
+   bis.GetString->tmp[]; (* Get step *)
+   bis.GetString->tmp[]; (* Get time *)
+   bis.GetString->tmp[]; (* Get reason *)
+   tmp[] -> testReasonForError;
+   (if (not errorOccured) and (not ('The transition instance has occured!' -> tmp.equal)) then
+       false -> (net).ML.isSimulating;
+       ObjectPool.get(# Type::StatusBubble; #) -> status[];
+       tmp[] -> status.message;
+   if);
+   
+---mlTransInstFireError:DoPart---
+do (if debugging then
+       'mlTransInstFireError: (FAILED)' -> debugCPNet;
+       what[] -> debugCPNet;
+   if);
+   true -> errorOccured;
+   (what[],THIS(TransitionInstance).net, thePageInstance[]) -> addArcRuntimeError -> handled;
+   (if NOT handled then
+       (what[],theTransition[],THIS(TransitionInstance).net) -> addRuntimeError -> handled;
+   if);
+   false -> (net).ML.isSimulating;
+   true -> continue;
+   
+--mlTransInstBindManuallyGetBindingsSend:doPart--
+do (if debugging then
+       'Getting possible bindings for transition %s instance number %i ...' -> debugCPNet
+       (# 
+       do theTransition.theName[] -> s;
+          thePageInstance.mlinstancenumber -> i;
+       #);
+   if);
+   500 -> bis.putint;
+   15 -> bis.putint;
+   thePageInstance.mlinstancenumber -> bis.putint;
+   theTransition.ID[] -> bis.putString;
+   
+--mlTransInstBindManuallyGetBindingsReceive:doPart--
+do (if debugging then
+       'mlTransInstBindManuallyGetBindingsReceive: (OK)' -> debugCPNet;
+   if);
+   &IntObjSequence[] -> ilist[];
+   ilist.init;
+   &TextSequence[] -> slist[];
+   slist.init;
+   &IntegerObject[] -> current[];
+   bis.getInt -> noOfIntElm; (*This should be RESPKIND=60*)
+   (if noOfIntElm<>60 then
+       false -> succes;
+       bis.getString; (*Returns step*)
+       bis.getString; (*Returns time*)
+       bis.getString -> slist.append; (*Returns reason*)
+    else
+       true -> succes;
+       bis.getInt -> noOfIntElm; (*This is the no of binding groups*)
+       noOfIntElm -> current;
+       current[] -> ilist.append;
+       noOfIntElm*2 -> noOfIntElm;
+       false -> calcNoOfStringElmInThisGroup;
+       0 -> noOfStringElm;
+       (for i:noOfIntElm repeat
+            &IntegerObject[] -> current[];
+            bis.getInt -> current;
+            current[] -> ilist.append;
+            (if calcNoOfStringElmInThisGroup then
+                noOfStringElm + noOfVarsInThisGroup*(current+1) -> noOfStringElm;
+                false -> calcNoOfStringElmInThisGroup;
+             else
+                current -> noOfVarsInThisGroup;
+                true -> calcNoOfStringElmInThisGroup
+            if);
+       for);
+       (for j:noOfStringElm repeat
+            bis.getString -> slist.append;
+       for);
+   if);
+
+--mlTransInstFireManBoundSend:doPart--
+do (if debugging then
+       'Fire manually bound transition %s instance number %i ...' -> debugCPNet
+       (# 
+       do theTransition.theName[] -> s;
+          thePageInstance.mlinstancenumber -> i;
+       #);
+   if);
+   true -> bis.putBool;
+   putChosenBindingsOnBis: chosenBindings.scan
+     (# 
+     do current -> bis.putInt;
+     #);
+   
+--mlTransInstFireManBoundReceive:doPart--   
+do (if debugging then
+       'Fired manually bound transition %s instance number %i (OK) ...' -> debugCPNet
+       (# 
+       do theTransition.theName[] -> s;
+          thePageInstance.mlinstancenumber -> i;
+       #);
+   if);
+   bis.GetString->tmp[]; (* Get step *)
+   bis.GetString->tmp[]; (* Get time *)
+   bis.GetString->tmp[]; (* Get reason *)
+   tmp[] -> testReasonForError;
+   
+--mlTransInstAbortManualBindingSend:doPart--
+do (if debugging then
+       'Aborting manually binding of transition %s instance number %i ...' -> debugCPNet
+       (# 
+       do theTransition.theName[] -> s;
+          thePageInstance.mlinstancenumber -> i;
+       #);
+   if);
+   false -> bis.putBool;
+   
+--mlTransInstAbortManualBindingReceive:doPart--
+do (if debugging then
+       'Manually binding of transition %s instance number %i aborted (OK) ...' -> debugCPNet
+       (# 
+       do theTransition.theName[] -> s;
+          thePageInstance.mlinstancenumber -> i;
+       #);
+   if); 
+   bis.GetString->tmp[]; (* Get step *)
+   bis.GetString->tmp[]; (* Get time *)
+   bis.GetString->tmp[]; (* Get reason *)
+   tmp[] -> testReasonForError;
+   
+---mlTransSyntaxError:DoPart---
+do (# t: ^text;
+   do (if debugging then 
+          'cpnetmlbody.bet: mlTransSyntaxError: Syntax error in transition = "%s"' -> debugCPNet
+            (# 
+            do error[] -> s;
+            #);
+      if); 
+      &text[]->t[];
+      error.reset;
+      (if error.length > 50 then
+          (for x: 50 repeat
+          error.get->t.put;
+          for);
+      if);   
+      (if 'Transition not checked because a neighbour place h' -> t.equalNCS then
+          (if debugging then 'Ignoring unchecked transition error' -> debugCPNet; if); 
+          (any_status,unchecked) -> changeStatus;
+          (* Ignore this: no bubble *)
+       else
+          &text[]->t[];       
+          error.reset;       
+          (if error.length > 0 then
+              (for x: 10 repeat
+                  error.get->t.put;
+              for);           
+
+              (if true
+               // 'Error in g'->t.equalNCS then               
+                  (getTransGuard, error[]) -> addError;
+               // 'Error in t'->t.equalNCS then               
+                  (getTransTime, error[]) -> addError;
+               // 'Error in a'->t.equalNCS then               
+                  (getTransAction, error[]) -> addError;
+               // 'Un-bound v'->t.equalNCS then               
+                  (NONE, error[]) -> addError;
+               else
+                  (NONE, error[]) -> addError;
+              if);
+           else
+              (* this case is when error has length zero. I have observed that it is usually when 
+               * places does not have a place type, allthough there may be other cases /krell
+               *)
+              (NONE, 'A semantic error has occured. The following possibilities could be the reason:\n1) There exist places connected to this transition which do not have a place type\n2) Port types of places assigned to socket places connected to this transition are not correct') -> addError;
+          if);
+      if);
+   #);
+   
+---mlPlaceSyntaxError:Dopart---
+do (# t: ^Text;
+   do (if debugging then 
+          'cpnetmlbody.bet: mlPlaceSyntaxError: Syntax error on place = "%s"' -> debugCPNet
+            (# 
+            do error[] -> s;
+            #);
+      if);
+      (*presenthalo;*)
+      &text[] -> t[];
+      error.reset;
+      (if (error.length>=16) then
+          (for x: 16 repeat
+               error.get->t.put;
+          for);
+          (* !P! generate *)
+          
+          (if true
+           // ('Error in initial'->t.equalNCS) then
+              (getInitMark, error[]) -> addError;
+           // ('Error in color-s'->t.equalNCS)
+           // ('Color-set not de'->t.equalNCS) then
+              (getPlaceType, error[]) -> addError;
+           // 'Mismatch in Port' -> t.equalNCS then
+              (NONE, error[]) -> addError;
+           else
+              (NONE, error[]) -> addError;
+          if);
+       else
+          (NONE, error[]) -> addError;
+      if);
+      scanInstances
+      (# 
+      do current.clearTokens;
+      #);      
+   #);
+   
+---mlArcSyntaxError:DoPart---
+do (checking,incorrect) -> transend.changeStatus;
+   
+   transend[] -> (transend.getCPNPage).net.theGlobals.addUsedByNode;
+   (* error on an arc means that the transition it's connected to
+    * can not be enabled.
+    *)
+   (getCPNPage).scanInstances
+   (# 
+   do (if current.thePage[] = getCPNPage then 
+          current.scanTransitionInstances
+          (# 
+          do (if current.theTransition[] = transend[] then
+                 false -> current.setEnabled;
+             if);
+          #);
+      if);
+   #);
+   (if debugging then
+       'cpnetmlbody.bet: mlArcSyntaxError: Error in arc = "%s"' -> debugCPNet
+       (# 
+       do error[] -> s;
+       #);
+   if);
+   (* !A! generate *)
+   (if error.length = 0 then
+       'Syntax error in arc' -> error[];
+       'Arc syntax error: Why is there no error to show?' -> FIXME;
+   if);
+   (getAnnotation, error[]) -> addError;
+   
+--mlCPNetSetStopCriteria:DoPart--
+do &text[] -> simulationOptions.until_step[];
+   &text[] -> simulationOptions.add_step[];
+  
+   (if AbsoluteSteps > 0 then
+       AbsoluteSteps -> simulationOptions.until_step.putInt;
+   if);
+   (if AdditionalSteps > 0 then
+       AdditionalSteps -> simulationOptions.add_step.putInt;
+   if);
+   setSimulationOptions;
+   
+---mlGetAllEnabledTransitions:doPart---
+do &TransitionList[] -> tlist[];
+   scanCPNPages
+   (# 
+   do current.scanTransitions
+      (# 
+      do (if current.status = compiled then
+             current[] -> tlist.append;
+         if);
+      #);
+   #);
+   (ml[], tlist[]) -> getEnabledTransitions -> foundEnabled;   
+      
+---mlGetAllMarkings:doPart---
+do &PlaceList[] -> plist[];
+   scanCPNPages
+   (# 
+   do current.scanPlaces
+      (# 
+      do (if current.status = compiled then
+             current[] -> plist.append;
+         if);
+      #);
+   #);
+   plist[] -> getMarkings;
+   
+-- mlCheckerThreadflattenPageInstances:doPart --
+do (# split:
+        (# thePageInstance: ^PageInstance;
+           thePageInstances: ^PageInstanceList;
+        enter thePageInstances[]
+        do scanOnce: thePageInstances.scan
+           (# 
+           do current[] -> thePageInstance[]; leave scanOnce;
+           #);
+           (if thePageInstances.size > 1 then
+               thePageInstances.tail -> thePageInstances[];
+            else
+               &PageInstanceList[] -> thePageInstances[];
+           if);
+        exit (thePageInstance[], thePageInstances[])
+        #);
+      computePageInstances:
+        (# queue, tail, result: ^PageInstanceList;
+           head: ^PageInstance;
+           has: @boolean;
+        enter queue[]
+        do queue[] -> split -> (head[], tail[]);
+           (if head[] = none then
+               &PageInstanceList[] -> result[];
+            else
+               head.scanSubpageInstances
+               (# thePageInstance: ^PageInstance;
+               do current[] -> thePageInstance[];                  
+                  thePageInstance[] -> tail.append;
+               #);
+               tail[] -> computePageInstances -> result[];
+               
+               (if head.thepage[] <> none then
+                   (if (head.thepage.id[] -> seenPages.lookup) = none then
+                       (head.thepage.id[], head.thepage[]) -> seenPages.associate;
+                       head[] -> result.append;
+                   if);
+               if);
+           if);
+        exit result[]
+        #);
+      tmpPageInstance: ^PageInstance;
+      seenPages: @IDDictionary (# Element:: CPNPage; #);
+   do &PageInstanceList[] -> thePageInstances[];
+      thePageInstances.init;
+      seenPages.init;
+      &PageInstance[] -> tmpPageInstance[];
+      scanInstanceRoots
+      (# 
+      do current[] -> tmpPageInstance.addSubpageInstance;
+      #);
+      tmpPageInstance[] -> thePageInstances.append;
+      thePageInstances[] -> computePageInstances -> thePageInstances[];
+      tmpPageInstance[] -> thePageInstances.at -> thePageInstances.delete;
+      scanInstanceRoots
+      (# 
+      do current[] -> tmpPageInstance.removeSubpageInstance;
+      #);
+   #);
+   
+-- MLCheckerThreadAddMonitorError:DoPart --
+do (# status: ^StatusBubble;
+   do ObjectPool.get(# Type:: StatusBubble; #) -> status[];
+      '\n' -> errorMsg.append;
+      what[] -> errorMsg.append;
+      errorMsg[] -> status.error;
+      (if theMonitor[] <> none then
+          (theMonitor[], errorMsg[]) -> theMonitor.addError;
+      if);
+   #); 
+   
+-- mlwithLock:doPart --
+do INNER;
+   
