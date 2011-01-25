@@ -1,0 +1,1654 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../cpnet';
+
+INCLUDE '~beta/basiclib/timedate';
+INCLUDE 'xmlgetdata';
+INCLUDE '../cpnetxml.bet';
+INCLUDE '../../cpntools/cpnworkspace.bet';
+INCLUDE '../../cpntools/wselements/cpnbinder';
+INCLUDE '../../cpntools/wselements/index';
+INCLUDE '../netvisitor';
+INCLUDE '../descriptordialog';
+
+-- Workspacelib: attributes --
+
+PackVisitor: NetVisitor
+  (# elmStack: @Stack(# element:: theXML.Element; #);
+     tmpElm: ^theXML.Element;
+     getResult: 
+       (# elm: ^theXML.Element;
+       <<SLOT PackVisitorGetResult:doPart>>
+       exit elm[] 
+       #);
+     createAndPushElm:
+       (# tag: ^Text;
+          id: ^Text;
+       enter (tag[], id[])
+       <<SLOT PackVisitorCreateAndPushElm:doPart>>
+       #);
+     popElm:
+       (# elm: ^theXML.Element;
+       <<SLOT PackVisitorPopElm:doPart>>
+       exit elm[] 
+       #);
+     
+     packPageElement:
+       (# current: ^PageElement;
+       enter current[]
+       <<SLOT PackVisitorPackPageElement:doPart>>
+       #);
+     packArc:
+       (# current: ^Arc;
+       enter current[]
+       <<SLOT PackVisitorPackArc:doPart>>
+       #);
+     packSSArc:
+       (# current: ^SSArc;
+       enter current[]
+       <<SLOT PackVisitorPackSSArc:doPart>>
+       #);
+     packNode:
+       (# current: ^Node;
+       enter current[]
+       <<SLOT PackVisitorPackNode:doPart>>
+       #);
+     packInscription:
+       (# current: ^Inscription;
+       enter current[]
+       <<SLOT PackVisitorPackInscription:doPart>>
+       #);
+     packHierarchyInfo:
+       (# current: ^HierarchyInfo;
+       enter current[]
+       <<SLOT PackVisitorPackHierarchyInfo:doPart>>
+       #);
+     packGuideline:
+       (# current: ^Guideline;
+       enter current[]
+       <<SLOT PackVisitorPackGuideline:doPart>>
+       #);     
+     
+     init:: (# do elmStack.init; #);
+     visitCPNet:: (# <<SLOT PackVisitorVisitCPNet:doPart>> #);
+     visitGlobals:: (# <<SLOT PackVisitorVisitGlobals:doPart>> #);
+     visitCPNPage:: (# <<SLOT PackVisitorVisitCPNPage:doPart>> #);
+     visitPlace:: (# <<SLOT PackVisitorVisitPlace:doPart>> #);
+     visitPlaceType:: (# <<SLOT PackVisitorVisitPlaceType:doPart>> #);
+     visitInitMark:: (# <<SLOT PackVisitorVisitInitMark:doPart>> #);
+     visitFusionInfo:: (# <<SLOT PackVisitorVisitFusionInfo:doPart>> #);
+     visitPortType:: (# <<SLOT PackVisitorVisitPortType:doPart>> #);
+     visitTransition:: (# <<SLOT PackVisitorVisitTransition:doPart>> #);
+     visitTransGuard:: (# <<SLOT PackVisitorVisitTransGuard:doPart>> #);
+     visitTransTime:: (# <<SLOT PackVisitorVisitTransTime:doPart>> #);
+     visitTransAction:: (# <<SLOT PackVisitorVisitTransAction:doPart>> #);
+     visitTransChannel:: (# <<SLOT PackVisitorVisitTransChannel:doPart>> #);
+     visitTransPriority:: (# <<SLOT PackVisitorVisitTransPriority:doPart>> #);
+     visitSubpageInfo:: (# <<SLOT PackVisitorVisitSubpageInfo:doPart>> #);
+     visitArc:: (# <<SLOT PackVisitorVisitArc:doPart>> #); 
+     visitBendPoint:: (# <<SLOT PackVisitorVisitBendPoint:doPart>> #);
+     visitAnnotation:: (# <<SLOT PackVisitorVisitAnnotation:doPart>> #);
+     visitAux:: (# <<SLOT PackVisitorVisitAux:doPart>> #);
+     visitGroup:: (# <<SLOT PackVisitorVisitGroup:doPart>> #);
+     visitFusionSet:: (# <<SLOT PackVisitorVisitFusionSet:doPart>> #);
+     visitHorizontalGuideLine:: (# <<SLOT PackVisitorVisitHorizontalGuideLine:doPart>> #);
+     visitVerticalGuideLine:: (# <<SLOT PackVisitorVisitVerticalGuideLine:doPart>> #);
+     visitMonitor:: (# <<SLOT PackVisitorVisitMonitor:DoPart>> #);
+     visitMonitorBlock:: (# <<SLOT PackVisitorVisitMonitorBlock:DoPart>> #);
+     visitSSArc:: (# <<SLOT PackVisitorVisitSSArc:doPart>> #);
+     visitSSNode:: (# <<SLOT PackVisitorVisitSSNode:doPart>> #);
+     
+     (* The following patterns should be moved to a seperate visitor
+      * along with visitGlobals, in order to make the declaration
+      * structure selfcontained enough to move it to a seperate file
+      *)
+     PackDecl:
+       (# xmlElm: ^theXML.Element;
+          tmpElm: ^theXML.Element;
+          elm: ^theXML.Element;
+          declType:< Decl;
+          theDecl: ^declType;
+       enter theDecl[]
+       <<SLOT PackVisitorPackDecl:doPart>>
+       exit elm[]
+       #);
+
+     PackEmptyDecl: PackDecl
+       (#  #);
+
+     PackBlockDecl: PackDecl
+       (# declType:: BlockDecl;
+       <<SLOT PackVisitorPackBlockDecl:doPart>>
+       #);
+
+     PackErrorDecl: PackDecl
+       (#  
+       do 'errordecl' -> elm.tag[];
+          theDecl.data[] -> theXML.createDataElement -> elm.addElement;
+       #);
+
+     PackOWErrorDecl: PackDecl
+       (#  #);
+
+
+     PackVarDecl: PackDecl
+       (# declType:: VarDecl;
+       <<SLOT PackVisitorPackVarDecl:doPart>>
+       #);
+
+     PackGlobRefDecl: PackDecl
+       (# declType:: GlobRefDecl;
+       <<SLOT PackVisitorPackGlobRefDecl:doPart>>
+       #);
+
+     PackUseDecl: PackDecl
+       (# declType:: UseDecl;
+       <<SLOT PackVisitorPackUseDecl:doPart>>
+       #);
+
+     PackMLDecl: PackDecl
+       (# declType:: MLDecl;
+       <<SLOT PackVisitorPackMLDecl:DoPart>>       
+       #);
+
+     PackColorSetDecl: PackDecl
+       (# declType:: ColorSetDecl;
+
+          <<SLOT PackVisitorPackColorSetDeclAttr:attributes>>
+
+       <<SLOT PackVisitorPackColorSetDecl:doPart>>
+
+       #);
+     
+     PackInvariantDecl: PackDecl
+       (# declType:: InvariantDecl;
+       <<SLOT PackVisitorPackInvariantDecl:doPart>>
+       #);
+     PackChannelDecl: PackDecl
+       (# declType:: ChannelDecl;
+       <<SLOT PackVisitorPackChannelDecl:doPart>>
+       #);
+  #);
+
+-- Autosave: doPart --
+do tryAutosave:
+     (# status: ^Workspace.StatusBubble;
+        filename: ^Text;
+     do (if theNet.path[] <> NONE THEN
+            theNet.path.copy -> filename[];
+            DirectoryChar -> filename.put;
+            '#' -> filename.append;
+            theNet.name -> filename.append;
+            theNet[] -> 
+            SaveNet
+            (#
+               diskPath::(# do filename.copy -> value[]; #);
+               myError:: (# do msg[]-> THIS(Autosave).myError; 
+                            leave tryAutoSave; #);
+               markNetSaved::(# do false -> value; #);
+            #);
+            theNet.autoSaved;
+         else
+            'No file location chosen for net' -> myError;
+        if);
+     #);
+   
+-- DeleteAutosave: doPart --
+do (# theFile: @fileObject;
+      filename: ^text;
+   do (if theNet.path[] <> NONE then
+          theNet.path.copy -> filename[];
+          DirectoryChar -> filename.put;
+          '#' -> filename.append;
+          theNet.name -> filename.append;
+          filename[] -> theFile.name;
+          (if theFile.entry.exists then
+              theFile.delete;
+         if);
+      if);
+   #);
+   
+-- SaveNetAttributes: attributes --   
+saveFile: fileObject
+  (#
+     myError:< 
+            (# msg: ^Text;
+            enter msg[]
+            do 'Error during save: ' -> msg.prepend;
+               INNER; 
+            #);
+     
+     AccessError:: (# msg: ^Text; do (name).copy->msg[]; ': Insufficient access privilegies.'->msg.append; msg[] -> myError; #);
+     WriteError:: (# msg: ^Text; do (name).copy->msg[]; ': Write error.'->msg.append; msg[] -> myError; #);
+     ReadError:: (# msg: ^Text; do (name).copy->msg[]; ': Read error.'->msg.append; msg[] -> myError; #);
+     EOSerror:: (# msg: ^Text; do (name).copy->msg[]; ': Unexpected end-of-file.'->msg.append; msg[] -> myError; #);
+     NoSuchFileError:: (# msg: ^Text; do (name).copy->msg[]; ': No such file.'->msg.append; msg[] -> myError; #);
+     FileExistsError:: (# msg: ^Text; do (name).copy->msg[]; ': File exists.'->msg.append; msg[] -> myError; #);
+     NoSpaceError:: (# msg: ^Text; do (name).copy->msg[]; ': No space left on device.'->msg.append; msg[] -> myError; #);
+     OtherError:: (# msg: ^Text; do (name).copy->msg[]; ': Unknown error.'->msg.append; msg[] -> myError; #);
+  #);
+
+save:
+  (# XMLList: List(# Element:: theXML.Element; #);
+     fileName: ^Text;
+     saveList: @XMLList;
+     err: @boolean;
+     msg: ^text;
+     myError:<
+       (# msg: ^Text;
+       enter msg[]
+       do INNER;
+       #);
+     add:<
+       (# xmlElm: ^theXML.Element;
+       enter xmlElm[]
+       do (if xmlElm[] <> none then
+              xmlElm[] -> saveList.append;
+          if);
+       #);
+  enter fileName[]
+  do INNER;
+     process_savefile:
+       (# 
+          mySaveFile: saveFile
+            (# myError::
+                 (# 
+                 do msg[] -> THIS(save).myError;
+                    leave process_savefile;
+                 #);
+            #);
+          
+          savetmp, tmp: ^Text;
+          tmpFile: ^mySaveFile;
+          delFile: ^mySaveFile;
+          rootElm, generatorElm: ^theXML.Element;
+       do 
+          
+          (* Open file *)
+          &mySaveFile[]->tmpFile[];
+          fileName.copy->savetmp[];
+          '.tmp'->savetmp.puttext;
+          savetmp[]->tmpFile.name;
+          
+          (* Build full XML tree*)
+          &Text[] -> tmp[];
+          'workspaceElements' -> theXML.createElement -> rootElm[];
+          'generator' -> theXML.createElement -> generatorElm[] -> rootElm.addElement;
+          ('tool',toolname) -> generatorElm.createTextAttribute;
+          ('version',version) -> generatorElm.createTextAttribute;
+          ('format', xmlformat) -> generatorElm.createIntAttribute;
+          saveList.scan(# do current[] -> rootElm.addElement; #);
+          
+          (* Write XML info *)               
+          tmpFile.openWrite;
+          
+          '<?xml version="1.0" encoding="iso-8859-1"?>' -> tmpFile.putline;
+          '<!DOCTYPE workspaceElements PUBLIC "-//CPN//DTD CPNXML 1.0//EN" "http://www.daimi.au.dk/~cpntools/bin/DTD/6/cpn.dtd">' -> tmpFile.putline;
+          
+          (* Write the XML tree *)
+          (rootElm[], tmpfile[]) -> theXML.print;
+          tmpFile.close;
+          
+          (* Delete old file *)
+          &mySaveFile[]->delFile[];
+          fileName.copy -> delFile.name;
+          (if delFile.entry.exists then
+              delFile.delete;
+          if);
+          
+          (* Rename temporary file *)
+          fileName.copy -> tmpFile.entry.rename;
+          NamesStatusBubbleSaveSucces -> getGlobalNames -> tmp[];
+          fileName[] -> tmp.prepend;
+       #);
+  exit err
+  #);
+   
+-- SaveNet: doPart --   
+do (# suffix: ^Text;
+      theDiskEntry: @diskEntry;
+      status: ^StatusBubble;
+      successMessage: @Text;
+      getNetName: 
+        (# idx: @integer;
+           pos: @integer;
+           absoluteFilename: ^Text;
+           netName: ^Text;
+        enter absoluteFilename[]
+        do &Text[] -> netName[];
+           1 -> idx;
+           absoluteFilename.scanAll 
+           (# 
+           do (if (ch = '/') or (ch = '\\') then idx + 1 -> pos if);
+              idx + 1 -> idx;
+           #);  
+           (pos, absoluteFilename.length) -> absoluteFilename.sub -> netName[];
+        exit netName[]
+  #);   
+   do AttemptSave: 
+        (#
+        do (if diskPath = NONE then
+               (if theNet.path[] = NONE then
+                   'Error during save: no path set' -> myError;
+                   'saveNet called with no diskPath and no net.path set' -> FIXME;
+                   leave AttemptSave;
+               if);
+               theNet.path.copy -> savename[];
+               DirectoryChar -> savename.put;
+               theNet.name -> savename.append;
+               savename[] -> theDiskEntry.path;
+               theDiskEntry.path.name.suffix -> suffix[];
+               (if not ('.cpn' -> suffix.equal) then
+                   (*append .cpn if it is not there already*)
+                   '.cpn' -> savename.append;
+                   '.cpn' -> theNet.theName.append;
+               if);
+            else
+               diskPath -> savename[];
+           if);
+           savename[] -> save(# myError::
+                                  (#
+                                  do msg[] -> THIS(SaveNet).myError;
+                                     leave AttemptSave;
+                                  #);
+                                theSaver: ^PackVisitor;
+                             do &PackVisitor[] -> theSaver[];
+                                theSaver.init;
+                                theNet[] -> theSaver.visitCPNet;
+                                theSaver.getResult -> add;
+                             #);
+           (if markNetSaved then
+               theNet.saved;
+               theNet[] -> DeleteAutosave;
+               ObjectPool.get(# Type::StatusBubble; #) -> status[];
+               savename[] -> getNetName -> successMessage.append;
+               ' saved successfully' -> successMessage.append;
+               successMessage[] -> status.message;
+           if);
+           theNet.changed;
+        #);
+   #);
+   
+(* ------------------ new pack code ------------- *)
+-- PackVisitorGetResult: doPart --
+do elmStack.pop->elm[];
+   (if debugging then
+       'Done, popped <%s>, stack is %i high, elm contains: ' -> 
+       debugSave
+       (# 
+       do elm.tag[]->s; 
+          elmStack.size->i; 
+       #);
+       elm.scanElements
+       (# 
+       do '  <%s>'->debugSave(# do current.tag[]->s; #); 
+       #);
+   if);
+   
+-- PackVisitorCreateAndPushElm: doPart--
+do (# elm: ^theXML.Element;
+   do tag[]->theXML.createElement->elm[];
+      (if NOT elmStack.empty then
+          elm[]->(elmStack.top).addElement;
+          (if debugging then
+              'adding <%s> to <%s>, stack is %i high' -> 
+              debugSave
+              (# 
+              do elm.tag[]->s; 
+                 (elmStack.top).tag[]->s; 
+                 elmStack.size->i; 
+              #);
+          if);
+       else
+          (if debugging then
+              'top of stack <%s>, stack is %i high' -> 
+              debugSave
+              (# 
+              do elm.tag[]->s; 
+                 elmStack.size->i; 
+              #);
+          if);
+      if);
+      elm[]->elmStack.push;
+      (if id[] <> NONE then
+          ('id', id[])->elm.createTextAttribute;
+      if);
+   #);
+   
+-- PackVisitorPopElm: doPart --
+do elmStack.pop->elm[];
+   (if debugging then
+       'popping <%s>, stack is %i high, top is <%s>' -> 
+       debugSave
+       (# 
+       do elm.tag[]->s; 
+          elmStack.size->i; 
+          (if NOT elmStack.empty then
+              (elmStack.top).tag[]->s;
+           else
+              ''->s;
+          if);
+       #);
+   if);
+   
+-- PackVisitorPackPageElement: doPart --
+do (# theX, theY: @Real;
+   do (if debugging then
+          'packing %s %s [%f,%f].' ->
+          debugSave
+          (# do current[]->getpatternname->s;
+             current.id[]->s;
+             current.x->f;
+             current.y->f;
+          #);
+      if);
+
+      'posattr'->theXML.createElement->tmpElm[]->(elmStack.top).addElement;
+      current.PositionForSave->(theX,theY);
+      ('x',(theX->unscale))->tmpElm.createRealAttribute;
+      ('y',((-theY)->unscale))->tmpElm.createRealAttribute;
+      
+      'fillattr'->theXML.createElement->tmpElm[]->(elmStack.top).addElement;
+      ('colour', (current.fillColor[]->colortable.findKey))->tmpElm.createTextAttribute;
+      ('pattern', current.fillpattern[])->tmpElm.createTextAttribute;
+      ('filled', current.filled)->tmpElm.createBoolAttribute;
+
+      (if debugging then
+          'LineColor [%f,%f,%f]'->debugSave(# do current.lineColor.rgb->(f,f,f); #);
+          'Colortable: '->debugSave;
+          colortable.scanAssociations
+          (# theColor: ^Color;
+             theName: ^Text;
+          do e[]->theColor[];
+             k[]->theName[];
+             ' - %s [%f,%f,%f]'->debugSave(# do theName[]->s; theColor.rgb->(f,f,f); #);
+          #);
+      if);
+
+      'lineattr'->theXML.createElement->tmpElm[]->(elmStack.top).addElement;
+      ('colour', (current.lineColor[]->colortable.findKey))->tmpElm.createTextAttribute;
+      ('thick', current.strokeWidth)->tmpElm.createIntAttribute;
+      ('type', current.linetype[])->tmpElm.createTextAttribute;
+      
+      'textattr'->theXML.createElement->tmpElm[]->(elmStack.top).addElement;
+      ('colour', (current.textColor[]->colortable.findKey))->tmpElm.createTextAttribute;
+      ('bold', current.bold)->tmpElm.createBoolAttribute;
+      
+      (*    (if debugging then
+       *        (# msg: ^Text;
+       *        do (if elm[] = none then
+       * 	      'Packing of %s %s canceled'->msg[];
+       * 	   else
+       * 	      (if 'pageelement'->elm.tag.equal then
+       * 		  '  - - - - - PANIK %s %s has no pack:: '->msg[];
+       * 	       else
+       * 		  'Done with %s %s.'->msg[];
+       * 	      if);
+       * 	  if);
+       * 	  msg[]->debugSave(# 
+       * 			    do theElement[]->getpatternname->s;
+       * 			       theElement.id[]->s;
+       * 			    #);
+       *        #);
+       *    if);
+       *)
+   #);
+   
+-- PackVisitorPackArc:doPart --
+do (# dir: ^Text;
+   do current[]->packPageElement;
+      &Text[]->dir[];
+      (if current.getOrientation
+       //BothDir then
+          'BOTHDIR'->dir[];
+       //PtoT then
+          'PtoT'->dir[];
+       //TtoP then
+          'TtoP'->dir[];
+       else
+          ''->dir[];
+      if);
+      ('orientation', dir[])->(elmStack.top).createTextAttribute;
+      ('order',current.getOrder) -> (elmStack.top).createIntAttribute;
+      
+      'arrowattr'->theXML.createElement->tmpElm[]->(elmStack.top).addElement;
+      ('headsize', current.arrowHeadSize)->tmpElm.createRealAttribute;
+      ('currentcyckle', current.currentSize)->tmpElm.createIntAttribute;
+      
+      (if current.transend[] <> none then
+          'transend'->theXML.createElement->tmpElm[]->(elmStack.top).addElement;
+          ('idref', current.transend.ID[])->tmpElm.createTextAttribute;
+      if);
+      (if current.placeend[] <> none then
+          'placeend'->theXML.createElement->tmpElm[]->(elmStack.top).addElement;
+          ('idref', current.placeend.ID[])->tmpElm.createTextAttribute;
+      if);
+      
+      
+      current.scanBendPoints
+      (# serial: @integer;
+      do serial + 1 -> serial;
+         serial -> current.serial;
+         current[] -> visitBendPoint;
+      #);
+   #);
+   
+-- PackVisitorPackSSArc:doPart --
+do (# 
+   do current[]->packPageElement;
+      
+      ('order',current.getOrder) -> (elmStack.top).createIntAttribute;
+      
+      'arrowattr'->theXML.createElement->tmpElm[]->(elmStack.top).addElement;
+      ('headsize', current.arrowHeadSize)->tmpElm.createRealAttribute;
+      ('currentcyckle', current.currentSize)->tmpElm.createIntAttribute;
+      
+      (if current.transend[] <> none then
+          'source'->theXML.createElement->tmpElm[]->(elmStack.top).addElement;
+          ('idref', current.transend.ID[])->tmpElm.createTextAttribute;
+      if);
+      (if current.placeend[] <> none then
+          'destination'->theXML.createElement->tmpElm[]->(elmStack.top).addElement;
+          ('idref', current.placeend.ID[])->tmpElm.createTextAttribute;
+      if);
+      
+      
+      current.scanBendPoints
+      (# serial: @integer;
+      do serial + 1 -> serial;
+         serial -> current.serial;
+         current[] -> visitBendPoint;
+      #);
+   #);
+      
+-- PackVisitorPackNode: doPart --
+do current[]->packPageElement;
+   (if current.theName[] <> NONE then
+       'text'->theXML.createElement->tmpElm[]->(elmStack.top).addElement;
+       current.theName[]->theXML.createDataElement->tmpElm.addElement;
+   if);
+
+-- PackVisitorPackInscription: doPart --
+do (# ast: ^Text;
+      astOK: @Boolean;
+      astXML: ^theXML.Element;
+   do current[]->packPageElement;
+      current.getAST -> ast[];
+      (if emit_structured_inscriptions AND
+          (ast[] <> NONE) AND
+          NOT(ast.empty) then
+          (if NOT('unknown' -> ast.containsSubstring) then
+              true -> astOK;
+              ast[] -> theXML.parse
+              (# onError:: 
+                   (# 
+                   do 'Parsing the string "%s" into XML failed' -> 
+                      FIXME(# do ast[] -> s; #);
+                      false -> astOK;
+                      true -> continue;
+                   #); 
+              #) -> astXML[];
+              (if astOK then
+                  'structure'->theXML.createElement->tmpElm[]->(elmStack.top).addElement;
+                  astXML[] -> tmpElm.addElement;
+              if);
+           else
+              'An "<unknown/>" element was found in the AST' -> debugAST;
+          if);
+      if);
+      'text'->theXML.createElement->tmpElm[]->(elmStack.top).addElement;
+      ('tool',toolname) -> tmpElm.createTextAttribute;
+      ('version',version) -> tmpElm.createTextAttribute;
+      (if NOT current.isDefaultInscription then
+          current.getInscription->theXML.createDataElement->tmpElm.addElement;
+      if);
+   #);
+   
+-- PackVisitorPackHierarchyInfo: doPart --
+do current[]->packPageElement;
+   
+-- PackVisitorPackGuideline:doPart --
+do current.scanGuideElements
+   (# do 'guideline_elm' -> theXML.createElement -> tmpElm[] -> (elmStack.top).addElement;
+      ('idref', current.ID[]) -> tmpElm.createTextAttribute;
+   #);  
+   
+-- PackVisitorVisitCPNet:doPart --
+do (# visitedPages: @IDDictionary (# Element:: CPNPage; #);
+      visitInstanceTree:
+        (# thePageInstance: ^PageInstance;
+        enter thePageInstance[]
+        do (if (thePageInstance.thePage.id[] -> visitedPages.lookup) = none then
+               (thePageInstance.thePage.id[], thePageInstance.thePage[])
+                 -> visitedPages.associate;
+               
+               thePageInstance.thePage[] -> visitCPNPage;
+               
+               thePageInstance.scanSubpageInstances
+               (# 
+               do current[] -> visitInstanceTree;
+               #);
+           if);
+        #);
+      saveInstances:
+        (# elm: ^theXML.Element;
+        do 'instances' -> theXML.createElement -> elm[];
+           current.scanInstanceRoots
+           (#
+           do current[] -> saveInstance -> elm.addElement;
+           #);
+        exit elm[]
+        #);
+      
+      saveInstance:
+        (# instance: ^PageInstance;
+           elm: ^theXML.Element;
+        enter instance[]
+        do 'instance' -> theXML.createElement -> elm[];
+           ('id', instance.id[]) -> elm.createTextAttribute;
+           (if instance.theTransition[] <> NONE then
+               ('trans', instance.theTransition.id[]) -> elm.createTextAttribute;
+            else
+               ('page',instance.thePage.id[]) -> elm.createTextAttribute;
+           if);
+           instance.scanSubpageInstances
+             (#
+             do current[] -> saveInstance -> elm.addElement;
+             #);
+        exit elm[]
+        #);
+      
+      saveBinders:
+        (# elm: ^theXML.Element;
+        do 'binders' -> theXML.createElement -> elm[];
+           (# theCPNWorkspace: ^CPNWorkspace;
+           do THIS(WorkSpace)[] -> theCPNWorkspace[];
+              theCPNWorkspace.scanBinders
+             (# 
+             do (if current.theNet[] = THIS(visitCPNet).current[] then
+                    current[] -> CpnBinderSaver -> elm.addElement;
+                if);
+             #);
+           #);
+        exit elm[]
+        #);
+      
+   do ('cpnet', NONE) -> createAndPushElm;
+      'packing CPNet' -> debugSave;
+      current.theGlobals[] -> visitGlobals;
+      'packing pages' -> debugSave;
+      current.scanInstanceRoots (# do current[] -> visitInstanceTree; #);
+      current.scanFusionSets(# do current[] -> visitFusionSet; #);
+      current.scanGlobalGroups (# do current[] -> visitGroup; #);
+      saveInstances -> (elmStack.top).addElement;
+      current.options[] -> OptionsSaver -> (elmStack.top).addElement;
+      saveBinders -> (elmStack.top).addElement;
+      current.theGlobalMonitor[] -> visitMonitorBlock;
+      (# theCPNWorkspace: ^CPNWorkspace;
+      do THIS(Workspace)[] -> theCPNWorkspace[];
+         current[] -> theCPNWorkspace.theIndex.getNetNode -> IndexNodeSaver -> (elmStack.top).addElement;
+      #);
+      (* any future code for packing ToolCollections should be added here *)
+      'done packing net'->debugSave;
+      ('Stack must contain one element (the root, cpnet)', 
+      (elmStack.size = 1))->assert(# #);
+   #);
+   
+-- PackVisitorVisitGlobals: doPart --
+do ('globbox', NONE)->createAndPushElm;
+   (current.getTopDeclaration).scanDeclarations
+   (# 
+   do (if current.mldecl[] <> NONE then
+          (if true
+           //current.mldecl## <= EmptyDecl## then 
+              current.mldecl[]->PackEmptyDecl->(elmStack.top).addElement;
+           //current.mldecl## <= BlockDecl## then 
+              current.mldecl[]->PackBlockDecl->(elmStack.top).addElement;
+           //current.mldecl## <= ErrorDecl## then 
+              current.mldecl[]->PackErrorDecl->(elmStack.top).addElement;
+           //current.mldecl## <= OWErrorDecl## then 
+              current.mldecl[]->PackOWErrorDecl->(elmStack.top).addElement;
+           //current.mldecl## <= VarDecl## then 
+              current.mldecl[]->PackVarDecl->(elmStack.top).addElement;
+           //current.mldecl## <= MSVarDecl## then 
+              current.mldecl[]->PackVarDecl->(elmStack.top).addElement;
+           //current.mldecl## <= GlobRefDecl## then 
+              current.mldecl[]->PackGlobRefDecl->(elmStack.top).addElement;
+           //current.mldecl## <= UseDecl## then 
+              current.mldecl[]->PackUseDecl->(elmStack.top).addElement;
+           //current.mldecl## <= MLDecl## then 
+              current.mldecl[]->PackMLDecl->(elmStack.top).addElement;
+           //current.mldecl## <= ColorSetDecl## then 
+              current.mldecl[]->PackColorSetDecl->(elmStack.top).addElement;
+           //current.mldecl## <= InvariantDecl## then 
+              current.mldecl[]->PackInvariantDecl->(elmStack.top).addElement;
+           //current.mldecl## <= ChannelDecl## then 
+              current.mldecl[]->PackChannelDecl->(elmStack.top).addElement;
+           //current.mldecl## <= ErrorDecl## then
+              current.mldecl[] -> packErrorDecl -> (elmStack.top).addElement;
+          if);
+      if);
+   #);
+   popElm;
+
+--PackVisitorVisitCPNPage: doPart--
+do ('page', current.ID[])->createAndPushElm;
+   (if debugging then
+       'packing CPNPage %s.'->debugSave(# do current.id[]->s; #);
+   if);
+   'pageattr'->theXML.createElement->tmpElm[]->(elmStack.top).addElement;
+   ('name',current.name)->tmpElm.createTextAttribute;
+   
+   current.scanPlaces(# do current[] -> visitPlace; #);
+   current.scanTransitions(# do current[] -> visitTransition; #);
+   current.scanArcs(# do current[] -> visitArc; #);
+   current.scanHorizontalGuidelines(# do current[] -> visitHorizontalGuideline; #);
+   current.scanVerticalGuidelines(# do current[] -> visitVerticalGuideline; #);
+   current.scanAuxs(# do current[] -> visitAux; #);
+   current.scanGroups(# do current[] -> visitGroup; #);
+   current.scanSSArcs(# do current[] -> visitSSArc; #);
+   current.scanSSNodes(# do current[] -> visitSSNode; #);
+   
+   (if debugging then
+       'done packing CPNPage %s.'->debugSave(# do current.id[]->s; #);
+   if);
+   popElm;
+
+--PackVisitorVisitPlace: doPart--
+do (# dx, dy: @real;
+      
+      snapinfo: ^XML.Element;
+      
+   do ('place', current.ID[])->createAndPushElm;
+      current[]->packNode;
+      
+      'ellipse'->theXML.createElement->tmpElm[]->(elmStack.top).addElement;
+      ('w', current.width->unscale)->tmpElm.createRealAttribute;
+      ('h', current.height->unscale)->tmpElm.createRealAttribute;
+      
+      current.packTokenDelta -> (dx, dy);
+      'token'->theXML.createElement->tmpElm[]->(elmStack.top).addElement;
+      ('x', dx->unscale)->tmpElm.createRealAttribute;
+      ('y', dy->unscale)->tmpElm.createRealAttribute;
+      
+      
+      current.packMarkingDelta -> (dx, dy);
+      'marking'->theXML.createElement->tmpElm[]->(elmStack.top).addElement;
+      ('x', dx->unscale)->tmpElm.createRealAttribute;
+      ('y', dy->unscale)->tmpElm.createRealAttribute;
+      ('hidden', current.hidemarkings)->tmpElm.createBoolAttribute;
+      'snap' -> theXML.createElement->snapinfo[]->tmpElm.addElement;
+      ('snap_id', current.markingSnapId)->snapinfo.createIntAttribute;
+      ('anchor.horizontal', current.markingAnchorHorizontal)->snapinfo.createIntAttribute;
+      ('anchor.vertical', current.markingAnchorVertical)->snapinfo.createIntAttribute;
+      (* Pack slaves: PlaceTypes, InitMarks, PortTypes, FusionInfos *)
+      current.getPlaceType -> visitPlaceType;
+      current.getInitMark -> visitInitMark;
+      (if current.getFusionInfo <> NONE then
+          current.getFusionInfo -> visitFusionInfo;
+      if);
+      (if current.getPortType <> NONE then
+          current.getPortType -> visitPortType;
+      if);
+      popElm;
+   #);
+   
+--PackVisitorVisitPlaceType: doPart--
+do ('type', current.ID[])->createAndPushElm;
+   current[]->packInscription;
+   popElm;
+   
+--PackVisitorVisitInitMark: doPart--
+do ('initmark', current.ID[])->createAndPushElm;
+   current[]->packInscription;
+   popElm;
+   
+--PackVisitorVisitFusionInfo: doPart--
+do ('fusioninfo', current.ID[])->createAndPushElm;
+   current[]->packHierarchyInfo;
+   ('name', current.getCPNML)->(elmStack.top).createTextAttribute;
+   popElm;
+   
+--PackVisitorVisitPortType: doPart--
+do ('port', current.ID[])->createAndPushElm;
+   current[]->packHierarchyInfo;
+   ('type', current.getCPNML)->(elmStack.top).createTextAttribute;
+   popElm;
+   
+--PackVisitorVisitTransition: doPart--
+do (# portsock: ^Text;
+      x,y: @Real;
+   do ('trans', current.ID[])->createAndPushElm;
+      current[]->packNode;
+      
+      'box'->theXML.createElement->tmpElm[]->(elmStack.top).addElement;
+      ('w', current.width->unscale)->tmpElm.createRealAttribute;
+      ('h', current.height->unscale)->tmpElm.createRealAttribute;
+      
+      (if current.getSubpage <> NONE then
+          ('subst',NONE) -> createAndPushElm;
+    
+          ('subpage', (current.getSubpage).ID[])->(elmStack.top).createTextAttribute;
+          &Text[]->portsock[];
+          current.socketplaces.scan
+	  (# 
+	  do '('->portsock.puttext;
+	     (current.getport).ID[]->portsock.puttext;
+	     ','->portsock.puttext;
+	     (current.getsocket).ID[]->portsock.puttext;
+	     ')'->portsock.puttext;
+          #);
+          ('portsock', portsock[])->(elmStack.top).createTextAttribute;
+          current.getSubpageInfo -> visitSubpageInfo;
+          popElm;
+      if);
+
+      'binding' -> theXML.createElement -> tmpElm[] -> (elmStack.top).addElement;
+      current.deltaPositionOfBindingIndex -> (x,y);
+      ('x', x -> unscale) -> tmpElm.createRealAttribute;
+      ('y', y -> unscale) -> tmpElm.createRealAttribute;
+
+      (* pack slaves: TransTime, TransGuard, TransCodeKey, TransAction *)
+      current.getTransGuard -> visitTransGuard;
+      current.getTransTime -> visitTransTime;
+      current.getTransAction -> visitTransAction;
+      current.getTransChannel -> visitTransChannel;
+      current.getTransPriority -> visitTransPriority;
+      ('explicit', current.isExplicit) -> (elmStack.top).createBoolAttribute;
+      popElm;
+   #);
+   
+-- PackVisitorVisitTransGuard: doPart --
+do ('cond', current.ID[])->createAndPushElm;
+   current[]->packInscription;
+   popElm;
+   
+-- PackVisitorVisitTransTime: doPart --
+do ('time', current.ID[])->createAndPushElm;
+   current[]->packInscription;
+   popElm;
+   
+-- PackVisitorVisitTransAction: doPart --
+do ('code', current.ID[])->createAndPushElm;
+   current[]->packInscription;
+   popElm;
+
+-- PackVisitorVisitTransChannel: doPart --
+do ('channel', current.ID[])->createAndPushElm;
+   current[]->packInscription;
+   popElm;
+
+-- PackVisitorVisitTransPriority: doPart --
+do ('priority', current.ID[])->createAndPushElm;
+   current[]->packInscription;
+   popElm;
+   
+-- PackVisitorVisitSubpageInfo: doPart --
+do ('subpageinfo', current.ID[]) -> createAndPushElm;
+   current[] -> packHierarchyInfo;
+   ('name', current.getCPNML) -> (elmStack.top).createTextAttribute;
+   popElm;
+   
+--PackVisitorVisitArc: doPart--
+do ('arc', current.ID[])->createAndPushElm;
+   current[] -> packArc;
+   (if current.getAnnotation <> NONE then
+       current.getAnnotation -> visitAnnotation;
+   if);
+   popElm;
+   
+-- PackVisitorVisitSSArc:doPart --
+do (# tmpElm: ^XML.Element;
+      txtElm: ^XML.Element;
+      dx, dy: @real;
+      dialog: ^DescriptorDialog;
+   do ('ssarc', current.ID[])->createAndPushElm;
+      current[] -> packSSArc;
+      ('number', current.number) -> (elmStack.top).createIntAttribute;
+      'descriptor'->theXML.createElement->tmpElm[]->(elmStack.top).addElement;
+      current.delta -> (dx, dy);
+      ('x', dx->unscale) -> tmpElm.createRealAttribute;
+      ('y', dy->unscale) -> tmpElm.createRealAttribute;
+      (if current.dialog[] = NONE then
+          ('visible', current.visible) -> tmpElm.createBoolAttribute;
+       else
+          current.dialog[] -> dialog[];
+          ('visible', dialog.visible) -> tmpElm.createBoolAttribute;
+      if);
+      ('dead', current.deadinfo) -> tmpElm.createBoolAttribute;
+      
+      'text'->theXML.createElement->txtElm[]->tmpElm.addElement;
+      current.descriptor[]->theXML.createDataElement->txtElm.addElement;
+      popElm;
+   #);
+   
+-- PackVisitorVisitSSNode:doPart --
+do (# tmpElm: ^XML.Element;
+      txtElm: ^XML.Element;
+      dx, dy: @real;
+      dialog: ^DescriptorDialog;
+   do ('ssnode', current.ID[]) -> createAndPushElm;
+      current[] -> packPageElement;
+      
+      ('number', current.number) -> (elmStack.top).createIntAttribute;
+      ('predecessors', current.pred) -> (elmStack.top).createIntAttribute;
+      ('successors', current.suc) -> (elmStack.top).createIntAttribute;
+      
+      'descriptor'->theXML.createElement->tmpElm[]->(elmStack.top).addElement;
+      current.delta -> (dx, dy);
+      ('x', dx->unscale) -> tmpElm.createRealAttribute;
+      ('y', dy->unscale) -> tmpElm.createRealAttribute;
+      (if current.dialog[] = NONE then
+          ('visible', current.visible) -> tmpElm.createBoolAttribute;
+       else
+          current.dialog[] -> dialog[];
+          ('visible', dialog.visible) -> tmpElm.createBoolAttribute;
+      if);
+      ('dead', current.deadinfo) -> tmpElm.createBoolAttribute;
+      
+      'text'->theXML.createElement->txtElm[]->tmpElm.addElement;
+      current.descriptor[]->theXML.createDataElement->txtElm.addElement;
+      'roundbox'->theXML.createElement->tmpElm[]->(elmStack.top).addElement;
+      ('w', current.width->unscale)->tmpElm.createRealAttribute;
+      ('h', current.height->unscale)->tmpElm.createRealAttribute;
+      popelm;
+   #);
+   
+-- PackVisitorVisitBendPoint: doPart --
+do ('bendpoint', current.ID[])->createAndPushElm;
+   current[]->packPageElement;
+   ('serial', current.serial)->(elmStack.top).createIntAttribute;
+   popElm;
+   
+-- PackVisitorVisitAnnotation: doPart --
+do ('annot', current.ID[])->createAndPushElm;
+   current[]->packInscription;
+   popElm;
+   
+-- PackVisitorVisitAux: doPart --
+do ('Aux', current.ID[])->createAndPushElm;
+   current[]->packPageElement;
+   (if current.theShape[] <> none then
+       (if true
+        //current.theShape## <= current.BoxShape## then
+           'box'->theXML.createElement->tmpElm[]->(elmStack.top).addElement;
+           ('w', (current.theShape.width->unscale))->tmpElm.createRealAttribute;
+           ('h', (current.theShape.height->unscale))->tmpElm.createRealAttribute;
+        //current.theShape## <= current.LabelShape## then
+           'label'->theXML.createElement->tmpElm[]->(elmStack.top).addElement;
+           (*('w', (current.theShape.width->unscale))->tmpElm.createRealAttribute;
+           ('h', (current.theShape.height->unscale))->tmpElm.createRealAttribute;*)
+(*        //current.theShape## <= current.PNGShape## then
+           'png'->theXML.createElement->tmpElm[]->(elmStack.top).addElement;
+           ('w', (current.theShape.width->unscale))->tmpElm.createRealAttribute;
+           ('h', (current.theShape.height->unscale))->tmpElm.createRealAttribute;
+           ('path', (current.theShape.thePath[]->current.movepng))->tmpElm.createTextAttribute;*)
+        //current.theShape## <= current.EllipseShape## then
+           'ellipse'->theXML.createElement->tmpElm[]->(elmStack.top).addElement;
+           ('w', (current.theShape.width->unscale))->tmpElm.createRealAttribute;
+           ('h', (current.theShape.height->unscale))->tmpElm.createRealAttribute;
+        //current.theShape## <= current.LineShape## then
+           'line'->theXML.createElement->tmpElm[]->(elmStack.top).addElement;
+           (# points: ^Text;
+           do &Text[]->points[];
+	      current.theShape.points.scan
+              (# do '('->points.put;
+                 current.x->unscale->points.putReal;
+                 ','->points.put;
+                 -current.y->unscale->points.putReal;
+                 ')'->points.put;
+              #);
+	      ('points', points[])->tmpElm.createTextAttribute;
+           #);
+       if);
+   if);
+   (if current.getText<> none then
+       'text'->theXML.createElement->tmpElm[]->(elmStack.top).addElement;
+       current.getText->theXML.createDataElement->tmpElm.addElement;
+   if);
+   popElm;
+
+-- PackVisitorVisitGroup: doPart --
+do (if current.IsGlobal or
+       (current[] <> (current.getCPNPage).all[]) then
+       ('group', current.ID[])->createAndPushElm;
+       ('name', current.name)->(elmStack.top).createTextAttribute;
+       current.scanElements
+       (# 
+       do 'group_elm'->theXML.createElement->tmpElm[]->(elmStack.top).addElement;
+          ('idref', current.ID[])->tmpElm.createTextAttribute;
+       #);
+       popElm;
+   if);
+
+-- PackVisitorVisitFusionSet: doPart --
+do ('fusion', current.ID[])->createAndPushElm;
+   ('name',current.getName)->(elmStack.top).createTextAttribute;
+   current.scanFusionSet
+   (# 
+   do 'fusion_elm'->theXML.createElement->tmpElm[]->(elmStack.top).addElement;
+      ('idref',current.ID[])->tmpElm.createTextAttribute;
+   #);
+   popElm;
+
+-- PackVisitorVisitHorizontalGuideLine:doPart --
+do ('hguideline', current.ID[]) -> createAndPushElm;
+   current[] -> packGuideline;
+   ('y', current.y) -> (elmStack.top).createRealAttribute;
+   popElm;
+   
+-- PackVisitorVisitVerticalGuideLine:doPart --
+do ('vguideline', current.ID[]) -> createAndPushElm;
+   current[] -> packGuideline;
+   ('x', current.x) -> (elmStack.top).createRealAttribute;
+   popElm;
+   
+-- PackVisitorVisitMonitor:DoPart --
+do (# monitorType: ^Text;
+   do ('monitor', current.id[]) -> createAndPushElm;
+      ('name', current.name[]) -> (elmStack.top).createTextAttribute;
+      ('type', current.type) -> (elmStack.top).createIntAttribute;
+      (if current.type
+       // MarkingSizeType then 'Marking size' -> monitorType[];
+       // BreakpointType then 'Breakpoint' -> monitorType[];
+       // UserDefinedType then 'User defined' -> monitorType[];
+       // DataCollectionType then 'Data collection' -> monitorType[];          
+       // WriteInFileType then 'Write in file' -> monitorType[];          
+       // ListLengthDataCollectionType then 'List length data collection' -> monitorType[];          
+       // CountTransitionOccurrenceDataCollectionType then 'Count transition occurrence data collection' -> monitorType[];          
+       // PlaceContentBreakpointType then 'Place content break point' -> monitorType[];          
+       // TransitionEnabledBreakpointType then 'Transition enabled break point' -> monitorType[];          
+      if);
+      ('typedescription', monitorType[]) -> (elmStack.top).createTextAttribute;
+      (if current.disabled then
+          ('disabled', 'true') -> (elmStack.top).createTextAttribute;
+       else
+          ('disabled', 'false') -> (elmStack.top).createTextAttribute;          
+      if);
+      current.scanNodeInstances
+      (# 
+      do ('node', none) -> createAndPushElm;
+         ('idref', (current.getNode).id[]) -> (elmStack.top).createTextAttribute;
+         ('pageinstanceidref', current.thePageInstance.id[]) -> (elmStack.top).createTextAttribute;
+         popElm;
+      #);
+      current.scanDeclarations
+      (# 
+      do ('declaration', none) -> createAndPushElm;
+         ('name', description[]) -> (elmStack.top).createTextAttribute;
+         (if current.mlDecl[] <> none then
+             current.mlDecl[] -> PackMLDecl -> (elmStack.top).addElement;
+         if);
+         popElm;
+      #);
+      current.scanOptions
+      (# 
+      do ('option', current.id[]) -> createAndPushElm;
+         ('name', current.dname) -> (elmStack.top).createTextAttribute;
+         (if true
+          // current## <= TextOption## then
+             ('value', current.theValue[]) -> (elmStack.top).createTextAttribute;
+          // current## <= BooleanOption## then
+             current[] -> qua
+             (# as:: BooleanOption;
+             do (if thisObj.theValue then
+                    ('value', 'true') -> (elmStack.top).createTextAttribute;
+                 else
+                    ('value', 'false') -> (elmStack.top).createTextAttribute;
+                if);
+             #);
+         if);
+         popElm;
+      #);
+      popElm;
+   #);
+   
+-- PackVisitorVisitMonitorBlock:DoPart --
+do ('monitorblock', none) -> createAndPushElm;
+   ('name', current.name[]) -> (elmStack.top).createTextAttribute;
+   current.scanAbstractMonitors
+   (# 
+   do (if current##<=Monitor## then
+          current[] -> visitMonitor;
+       else
+          current[] -> visitMonitorBlock;
+      if);
+   #);
+   popElm;
+   
+--PackVisitorPackDecl:doPart--
+do 'decl' -> theXML.createElement -> elm[];
+   ('id', theDecl.ID[]) -> elm.createTextAttribute;
+   INNER;
+   (if theDecl.rawLayout[] <> NONE then
+       'layout'->theXML.createElement->tmpElm[]->elm.addElement;
+       theDecl.rawLayout[]->theXML.createDataElement->tmpElm.addElement;
+   if);
+
+
+--PackVisitorPackColorSetDeclAttr: attributes--
+PackInternalDecl: 
+  (# Type:< InternalDecl;
+     theColorSet: ^Type;
+     elm: ^theXML.Element;
+     tmpElm: ^theXML.Element;
+     mlElm: ^theXML.Element;
+     idElm: ^theXML.Element;
+     xmlElm: ^theXML.Element;
+  enter theColorSet[]
+  do 'internaldecl'->theXML.createElement->elm[];
+     INNER;
+  exit elm[]
+  #);
+
+PackAliasColorSet: PackInternalDecl
+  (# Type:: theDecl.AliasColorSetDecl;
+  do 'alias'->elm.tag[];
+
+     (if theColorSet.theid[] <> none then
+	 'id'->theXML.createElement->xmlElm[]->elm.addElement;
+	 theColorSet.theid[]->theXML.createDataElement->xmlElm.addElement;
+     if);
+  #);
+
+PackRecordColorSet: PackInternalDecl
+  (# Type:: theDecl.RecordColorSetDecl;
+  do 'record'->elm.tag[];
+
+     (if (theColorSet.recFieldList[] <> none) and (not theColorSet.recFieldList.empty) then
+	 theColorSet.recFieldList.scan
+         (# 
+         do 'recordfield'->theXML.createElement->xmlElm[]->elm.addElement;
+            'id'->theXML.createElement->tmpElm[]->xmlElm.addElement;
+            current.left[]->theXML.createDataElement->tmpElm.addElement;
+            'id'->theXML.createElement->tmpElm[]->xmlElm.addElement;
+            current.right[]->theXML.createDataElement->tmpElm.addElement;
+         #);
+     if);
+  #);
+
+PackUnionColorSet: PackInternalDecl
+  (# Type:: theDecl.UnionColorSetDecl;
+  do 'union'->elm.tag[];
+
+     (if (theColorSet.unionFieldList[] <> none) and (not theColorSet.unionFieldList.empty) then
+	 theColorSet.unionFieldList.scan
+         (# 
+         do 'unionfield'->theXML.createElement->xmlElm[]->elm.addElement;
+            'id'->theXML.createElement->tmpElm[]->xmlElm.addElement;
+            current.id[]->theXML.createDataElement->tmpElm.addElement;
+            (* The simulator seems to accept unionfields without a type.
+             * See bug #569 *)
+            (if current.type[] <> NONE then
+                'type'->theXML.createElement->tmpElm[]->xmlElm.addElement;
+                'id'->theXML.createElement->idElm[]->tmpElm.addElement;
+                current.type[]->theXML.createDataElement->idElm.addElement;
+            if);
+         #);
+     if);
+  #);
+
+
+PackIntColorSet: PackInternalDecl
+  (# Type:: theDecl.IntColorSetDecl;
+  <<SLOT PackVisitorPackIntColorSet: doPart>>
+  #);
+
+PackProductColorSet: PackInternalDecl
+  (# Type:: theDecl.ProductColorSetDecl;
+  <<SLOT PackVisitorPackProductColorSet: doPart>>
+  #);
+
+PackEnumColorSet: PackInternalDecl
+  (# Type:: theDecl.EnumColorSetDecl;
+  do 'enum'->elm.tag[];
+     theColorSet.idlist.scan
+     (# 
+     do 'id'->theXML.createElement->xmlElm[]->elm.addElement;
+        current[]->theXML.createDataElement->xmlElm.addElement;
+     #);
+  #);
+
+PackSubsetColorSet: PackInternalDecl
+  (# Type:: theDecl.SubsetColorSetDecl;
+  <<SLOT PackVisitorPackSubsetColorSet: doPart>>
+  #);
+
+PackBoolColorSet: PackInternalDecl
+  (# Type:: theDecl.BoolColorSetDecl;
+  <<SLOT PackVisitorPackBoolColorSet: doPart>>
+  #);
+
+PackRealColorSet: PackInternalDecl
+  (# Type:: theDecl.RealColorSetDecl;
+  <<SLOT PackVisitorPackRealColorSet: doPart>>
+  #);
+
+PackIndexColorSet: PackInternalDecl
+  (# Type:: theDecl.IndexColorSetDecl;
+  <<SLOT PackVisitorPackIndexColorSet: doPart>>
+  #);
+
+PackStringColorSet: PackInternalDecl
+  (# Type:: theDecl.StringColorSetDecl;
+  <<SLOT PackVisitorPackStringColorSet: doPart>>
+  #);
+
+PackUnitColorSet: PackInternalDecl
+  (# Type:: theDecl.UnitColorSetDecl;
+  do 'unit'->elm.tag[];
+     (if theColorSet.theid[] <> none then
+	 'with'->theXML.createElement->xmlElm[]->elm.addElement;
+	 'id'->theXML.createElement->tmpElm[]->xmlElm.addElement;
+	 theColorSet.theid[]->theXML.createDataElement->tmpElm.addElement;
+     if);
+  #);
+
+PackListColorSet: PackInternalDecl
+  (# Type:: theDecl.ListColorSetDecl;
+  <<SLOT PackVisitorPackListColorSet: doPart>>
+  #);
+
+
+
+
+--PackVisitorPackGlobRefDecl: doPart--
+do 'globref'->elm.tag[];
+
+   (if theDecl.mlid[] <> none then
+       'id'->theXML.createElement->xmlElm[]->elm.addElement;
+       theDecl.mlid[]->theXML.createDataElement->xmlElm.addElement;
+   if);
+   (if theDecl.mlexp[] <> none then
+       'ml'->theXML.createElement->xmlElm[]->elm.addElement;
+       theDecl.mlexp[]->theXML.createDataElement->xmlElm.addElement;
+   if);
+
+--PackVisitorPackUseDecl: doPart--
+do 'use'->elm.tag[];
+   (if theDecl.mlexp[] <> none then
+       'ml'->theXML.createElement->xmlElm[]->elm.addElement;
+       theDecl.mlexp[]->theXML.createDataElement->xmlElm.addElement;
+   if);
+
+-- PackVisitorPackMLDecl:DoPart --
+do 'ml' -> elm.tag[];
+          
+   (if theDecl.data[] <> none then
+       theDecl.data[] -> theXML.createDataElement -> elm.addElement;
+   if);   
+   
+--PackVisitorPackBlockDecl: doPart--
+do 'block'->elm.tag[];
+   'id'->theXML.createElement->tmpElm[]->elm.addElement;
+   theDecl.data[]->theXML.createDataElement->tmpElm.addElement;
+   theDecl.theDeclaration.scanDeclarations
+   (# 
+   do (if current.mldecl[] <> NONE then
+          (if true
+           //current.mldecl## <= EmptyDecl## then current.mldecl[]->PackEmptyDecl->elm.addElement;
+           //current.mldecl## <= BlockDecl## then current.mldecl[]->PackBlockDecl->elm.addElement;
+           //current.mldecl## <= ErrorDecl## then current.mldecl[]->PackErrorDecl->elm.addElement;
+           //current.mldecl## <= OWErrorDecl## then current.mldecl[]->PackOWErrorDecl->elm.addElement;
+           //current.mldecl## <= VarDecl## then current.mldecl[]->PackVarDecl->elm.addElement;
+           //current.mldecl## <= ChannelDecl## then current.mldecl[]->PackChannelDecl->elm.addElement;
+           //current.mldecl## <= InvariantDecl## then current.mldecl[]->PackInvariantDecl->elm.addElement;
+           //current.mldecl## <= MSVarDecl## then current.mldecl[]->PackVarDecl->elm.addElement;
+           //current.mldecl## <= GlobRefDecl## then current.mldecl[]->PackGlobRefDecl->elm.addElement;
+           //current.mldecl## <= UseDecl## then current.mldecl[]->PackUseDecl->elm.addElement;
+           //current.mldecl## <= MLDecl## then current.mldecl[]->PackMLDecl->elm.addElement;
+           //current.mldecl## <= ColorSetDecl## then current.mldecl[]->PackColorSetDecl->elm.addElement;
+          if);
+      if);
+   #);
+
+--PackVisitorPackVarDecl: doPart--
+do theDecl.XMLTag->elm.tag[];
+
+   'type'->theXML.createElement->xmlElm[]->elm.addElement;
+   'id'->theXML.createElement->tmpElm[]->xmlElm.addElement;
+   theDecl.type[]->theXML.createDataElement->tmpElm.addElement;
+
+   theDecl.idlist.scan(# 
+		      do 'id'->theXML.createElement->xmlElm[]->elm.addElement;
+			 current[]->theXML.createDataElement->xmlElm.addElement;
+                      #);
+
+
+--PackVisitorPackColorSetDecl: doPart--
+do 'color'->elm.tag[];
+   'id'->theXML.createElement->xmlElm[]->elm.addElement;
+   theDecl.mlid[]->theXML.createDataElement->xmlElm.addElement;
+
+   (if (theDecl.declareList[] <> NONE) and (not theDecl.declareList.empty) then
+       'declare'->theXML.createElement->xmlElm[]->elm.addElement;
+       theDecl.declareList.scan
+       (# 
+       do 'id'->theXML.createElement->tmpElm[]->xmlElm.addElement;
+          current[]->theXML.createDataElement->tmpElm.addElement;
+       #);
+   if);
+
+   (if theDecl.istimed then
+       'timed'->theXML.createElement->elm.addElement;
+   if);
+
+   theDecl.scan
+   (# type:: InternalDecl;
+   do (if true
+       //current## <= theDecl.IntColorSetDecl## then
+          current[]->PackIntColorSet->elm.addElement;
+       //current## <= theDecl.ProductColorSetDecl## then
+          current[]->PackProductColorSet->elm.addElement;
+       //current## <= theDecl.EnumColorSetDecl## then
+          current[]->PackEnumColorSet->elm.addElement;
+       //current## <= theDecl.SubsetColorSetDecl## then
+          current[]->PackSubsetColorSet->elm.addElement;
+       //current## <= theDecl.BoolColorSetDecl## then
+          current[]->PackBoolColorSet->elm.addElement;
+       //current## <= theDecl.RealColorSetDecl## then
+          current[]->PackRealColorSet->elm.addElement;
+       //current## <= theDecl.IndexColorSetDecl## then
+          current[]->PackIndexColorSet->elm.addElement;
+       //current## <= theDecl.StringColorSetDecl## then
+          current[]->PackStringColorSet->elm.addElement;
+       //current## <= theDecl.ListColorSetDecl## then
+          current[]->PackListColorSet->elm.addElement;
+       //current## <= theDecl.RecordColorSetDecl## then
+          current[]->PackRecordColorSet->elm.addElement;
+       //current## <= theDecl.UnionColorSetDecl## then
+          current[]->PackUnionColorSet->elm.addElement;
+       //current## <= theDecl.AliasColorSetDecl## then
+          current[]->PackAliasColorSet->elm.addElement;
+       //current## <= theDecl.UnitColorSetDecl## then
+          current[]->PackUnitColorSet->elm.addElement;
+
+       else 
+          current.pack->elm.addElement;
+      if);
+   #);
+
+--PackVisitorPackIntColorSet: doPart--
+do 'int'->elm.tag[];
+   (if (theColorSet.low[] <> none) and (theColorSet.high[] <> none) then
+       'with'->theXML.createElement->xmlElm[]->elm.addElement;
+       'ml'->theXML.createElement->mlElm[]->xmlElm.addElement;
+       theColorSet.low[]->theXML.createDataElement->mlElm.addElement;
+       'ml'->theXML.createElement->mlElm[]->xmlElm.addElement;
+       theColorSet.high[]->theXML.createDataElement->mlElm.addElement;
+   if);
+
+--PackVisitorPackProductColorSet: doPart--
+do 'product'->elm.tag[];
+   theColorSet.idlist.scan
+   (# 
+   do 'id'->theXML.createElement->xmlElm[]->elm.addElement;
+      current[]->theXML.createDataElement->xmlElm.addElement;
+   #);
+
+--PackVisitorPackSubsetColorSet: doPart--
+do 'subset'->elm.tag[];
+
+   (if theColorSet.mlid[] <> none then
+       'id'->theXML.createElement->xmlElm[]->elm.addElement;
+       theColorSet.mlid[]->theXML.createDataElement->xmlElm.addElement;
+   if);
+   (if theColorSet.listsubset then
+       'with'->theXML.createElement->xmlElm[]->elm.addElement;
+    else
+       'by'->theXML.createElement->xmlElm[]->elm.addElement;
+   if);
+   'ml'->theXML.createElement->tmpElm[]->xmlElm.addElement;
+   theColorSet.subset[]->theXML.createDataElement->tmpElm.addElement;
+
+--PackVisitorPackBoolColorSet: doPart--
+do 'bool'->elm.tag[];
+
+   (if (theColorSet.id1[] <> none) and (theColorSet.id2[] <> none) then
+       'with'->theXML.createElement->xmlElm[]->elm.addElement;
+       'id'->theXML.createElement->tmpElm[]->xmlElm.addElement;
+       theColorSet.id1[]->theXML.createDataElement->tmpElm.addElement;
+       'id'->theXML.createElement->tmpElm[]->xmlElm.addElement;
+       theColorSet.id2[]->theXML.createDataElement->tmpElm.addElement;
+   if);
+
+--PackVisitorPackRealColorSet: doPart--
+do 'real'->elm.tag[];
+
+   (if (theColorSet.low[] <> none) and (theColorSet.high[] <> none) then
+       'with'->theXML.createElement->xmlElm[]->elm.addElement;
+       'ml'->theXML.createElement->tmpElm[]->xmlElm.addElement;
+       theColorSet.low[]->theXML.createDataElement->tmpElm.addElement;
+       'ml'->theXML.createElement->tmpElm[]->xmlElm.addElement;
+       theColorSet.high[]->theXML.createDataElement->tmpElm.addElement;
+   if);
+
+--PackVisitorPackIndexColorSet: doPart--
+do 'index'->elm.tag[];
+
+   (if (theColorSet.low[] <> none) and (theColorSet.high[] <> none) then
+       'ml'->theXML.createElement->xmlElm[]->Elm.addElement;
+       theColorSet.low[]->theXML.createDataElement->xmlElm.addElement;
+       'ml'->theXML.createElement->xmlElm[]->Elm.addElement;
+       theColorSet.high[]->theXML.createDataElement->xmlElm.addElement;
+   if);
+   (if theColorSet.theid[] <> none then
+       'id'->theXML.createElement->xmlElm[]->Elm.addElement;
+       theColorSet.theid[]->theXML.createDataElement->xmlElm.addElement;
+   if);
+
+-- PackVisitorPackStringColorSet: doPart --
+do 'string'->elm.tag[];
+   (if (theColorSet.low[] <> none) and (theColorSet.high[] <> none) then
+       'with'->theXML.createElement->xmlElm[]->elm.addElement;
+
+       'ml'->theXML.createElement->mlElm[]->xmlElm.addElement;
+       theColorSet.low[]->theXML.createDataElement->mlElm.addElement;
+       'ml'->theXML.createElement->mlElm[]->xmlElm.addElement;
+       theColorSet.high[]->theXML.createDataElement->mlElm.addElement;
+
+       (if (theColorSet.lenlow[] <> none) and (theColorSet.lenhigh[] <> none) then
+	   'and'->theXML.createElement->tmpElm[]->xmlElm.addElement;
+
+	   'ml'->theXML.createElement->mlElm[]->tmpElm.addElement;
+	   theColorSet.lenlow[]->theXML.createDataElement->mlElm.addElement;
+	   'ml'->theXML.createElement->mlElm[]->tmpElm.addElement;
+	   theColorSet.lenhigh[]->theXML.createDataElement->mlElm.addElement;
+       if);
+   if);
+
+-- PackVisitorPackListColorSet: doPart --
+do 'list'->elm.tag[];
+
+   (if (theColorSet.low[] <> none) and (theColorSet.high[] <> none) then
+       'with'->theXML.createElement->xmlElm[]->elm.addElement;
+       'ml'->theXML.createElement->tmpElm[]->xmlElm.addElement;
+       theColorSet.low[]->theXML.createDataElement->tmpElm.addElement;
+       'ml'->theXML.createElement->tmpElm[]->xmlElm.addElement;
+       theColorSet.high[]->theXML.createDataElement->tmpElm.addElement;
+   if);
+   (if theColorSet.theid[] <> none then
+       'id'->theXML.createElement->xmlElm[]->Elm.addElement;
+       theColorSet.theid[]->theXML.createDataElement->xmlElm.addElement;
+   if);
+
+-- PackVisitorPackInvariantDecl: doPart --
+do 'invariant'->elm.tag[];
+   
+   'type'->theXML.createElement->xmlElm[]->elm.addElement;
+   'id'->theXML.createElement->tmpElm[]->xmlElm.addElement;
+   theDecl.type[]->theXML.createDataElement->tmpElm.addElement;
+   
+   'name'->theXML.createElement->xmlElm[]->elm.addElement;
+   theDecl.name[]->theXML.createDataElement->xmlElm.addElement;
+
+   'weights'->theXML.createElement->xmlElm[]->elm.addElement;
+   theDecl.weights.scanAssociations
+   (# xml: ^theXML.Element;
+   do 'weight'->theXML.createElement->xml[]->xmlElm.addElement;
+      ('id', k[])->xml.createTextAttribute;
+      e.mldecl.data[]->thexml.createDataElement->xml.addElement;
+   #);
+
+-- PackVisitorPackChannelDecl: doPart --
+do 'channel'->elm.tag[];
+   
+   'id'->theXML.createElement->tmpElm[]->elm.addElement;
+   theDecl.type[]->theXML.createDataElement->tmpElm.addElement;
+   
+   'name'->theXML.createElement->xmlElm[]->elm.addElement;
+   theDecl.name[]->theXML.createDataElement->xmlElm.addElement;
+   
+   (* --------------- end new pack code ------------- *)
+
+--DeclarationParse: doPart--
+do (if isBlock  then
+       (# block: ^BlockDecl;
+       do mldecl[]->block[];
+          input.copy->block.data[];
+       #);
+    else
+       (if debugging then
+	   'cpnet.bet: Declaration.parse: Parsing declaration\n'->debugCPNet;
+       if);
+       input.trim -> input[];
+       input.reset;
+       
+       (* Replace color with colset *)
+       (if 'color' -> ((1,5) -> input.sub).equal then
+           (6,input.length) -> input.sub -> input[];
+           'colset' -> input.prepend;
+       if);
+       
+       input[]->MLParse->(string[], error);
+       (if error then
+	   (* The string[] contains information about the error, but
+	    * currently we just preserve the text.
+	    *)
+	   (# e: ^ErrorDecl;
+	      errorXML: ^Text;
+	      errorInfo: ^Text;
+	      dummy: ^Text;
+	      dummyError: @Boolean;
+
+	      printErrors: 
+		(# errorXML: ^XML.Element;
+		enter errorXML[]
+		do errorXML.scanElements
+                   (# 
+                   do (if 'error'->current.tag.equalNCS then
+                          current.scanAttributes
+                          (# 
+                          do (if 'linenumber'->current.key.equalNCS then
+                                 'Error on line '->errorInfo.puttext;
+                                 current.value[]->errorInfo.puttext;
+                                 ': '->errorInfo.putline;
+                             if);
+                          #);
+                          current.getData->errorInfo.puttext;
+                          errorInfo.newline;
+                      if);
+                      current[]->printErrors;
+                   #);
+                #);
+	   do (* When there is an error, the parser buffers the
+	       * rest of the text send to it. This code gets
+	       * rid of the buffered text.
+	       *)
+	      L: (# 
+		 do '(* dummy *)'->MLParse->(dummy[], dummyerror);
+		    (if dummyerror then
+			restart L;
+		    if);
+                 #);
+	      &ErrorDecl[]->e[];
+	      e.init;
+	      input.copy->e.data[];
+	      (* Fetch out error information: *)
+
+	      &Text[]->errorXML[];
+	      string.reset;
+	      (* Get the version string: *)
+	      string.getline->errorXML.putline;
+	      (* Wrap it up: *)
+	      '<errordecl>'->errorXML.putline;
+	      loop: (if NOT string.eos then
+			string.getLine->errorXML.putline;
+			restart loop;
+		    if);
+	      '</errordecl>'->errorXML.putline;
+	      errorXML.reset;
+	      &Text[]->errorInfo[];
+	      errorXML[]->this(world).theXml.parse->printErrors;
+	      errorInfo[]->e.onSyntaxError;
+              e[] -> changeDecl;
+           #);
+	else
+	   (if string[] <> NONE then
+	       string.reset;
+	       string[]->this(WORLD).theXml.parse->globboxXml[];
+               (# theGlobalsLoader: @GlobalsLoader;
+               do (globboxXML[],NONE) -> theGlobalsLoader.load -> globbox[];
+               #);
+	       error->globbox.error;
+               (# first: @Boolean;
+                  previousDeclaration: ^Declaration;
+               do true -> first;
+                  (globbox.getTopDeclaration).scandeclarations
+                  (# newDeclaration: ^Declaration;
+                  do ('current.mldecl[] <> NONE', current.mldecl[] <> NONE) -> assert(# #);
+                     (current.mldecl[], input[])->SeperateFirst->(current.mldecl.rawLayout[], input[]);
+                     (if first then
+                         current.mldecl[] -> changeDecl;
+                         false -> first;
+                         THIS(Declaration)[] -> previousDeclaration[];
+                      else
+                         &Declaration[]->newDeclaration[];
+                         newDeclaration.init;
+                         ('newDeclaration[] <> NONE', newDeclaration[] <> NONE) -> assert(# #);
+                         ('previousDeclaration[] <> NONE', previousDeclaration[] <> NONE) -> assert(# #);
+                         ('previousDeclaration.getParent <> NONE', previousDeclaration.getParent <> NONE) -> assert(# #);
+                         (newDeclaration[], previousDeclaration[]) -> (getParent).addDeclarationAfter;
+                         current.mldecl[] -> newDeclaration.changeDecl;
+                         (*newDeclaration.node[] -> 
+                         qua
+                         (# as:: IndexNode; 
+                         do newDeclaration.shortName -> thisObj.setTextContent;
+                         #);*)
+                         newDeclaration[] -> previousDeclaration[];
+                     if);
+                  #);
+               #);
+	    else
+               (# new: ^Decl;
+               do &EmptyDecl[]->new[];
+	          new.init;
+                  new[]->changeDecl
+               #)
+	   if);
+       if);
+   if);
+   changed;

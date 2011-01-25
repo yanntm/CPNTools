@@ -1,0 +1,222 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '~beta/basiclib/basicsystemenv';
+INCLUDE 'mlsocket';
+INCLUDE 'mldispatcher';
+INCLUDE '../../cpntools/debug';
+BODY 'private/mlcombody';
+
+--- SystemLib:Attributes ---
+
+MLCom: Monitor
+  (# delay:<
+       (# value: @real;
+       do 0.5 -> value;
+          INNER;
+       exit value
+       #);
+     dispatch:<
+       (# bis: ^MLBis;
+          reply: ^MLBis;
+       enter bis[]
+       do INNER;
+       exit reply[]
+       #);
+     Init:: 
+       (# host: ^Text;
+          port: @Integer;
+          user: ^Text;
+          password: ^Text;
+          path: ^Text;
+          image: ^Text;
+       enter (host[], port, user[], password[], path[], image[])
+       <<SLOT MLComInit:DoPart>>   
+       #);
+     
+     Start: Entry 
+       (# onError:< LocalException;          
+       <<SLOT MLComStart:DoPart>> 
+       #);
+     
+     Stop:
+       (# onError:< LocalException;
+       <<SLOT MLComStop:DoPart>> 
+       #);
+     
+     Dispatcher: @MLDispatcher;
+     
+     Evaluate: Entry
+       (# onError:< LocalException;
+          onMLException:< 
+            (# exceptionNumber: @Char;
+               message: ^Text;
+            enter (message[], exceptionNumber)
+            do INNER;
+            #);
+          input: ^Text;
+          output: ^Text;
+       enter input[]
+       <<SLOT MLComEvaluate:DoPart>>
+       exit output[]
+       #);
+     
+     Execute: Entry
+       (# onError:< LocalException;
+          command: ^MLCommand;
+          clearDmoEval: @boolean;
+       enter (command[],clearDmoEval)
+       <<SLOT MLComExecute:DoPart>>
+       #);
+     
+     CommandType:< MLCommand;
+     doReceive:<
+       (# value: @boolean;
+       <<SLOT MLComDoReceive:DoPart>>
+       exit value
+       #);
+     receiveCommand:<
+       (# command: ^CommandType;
+          bis: ^MLBIS;
+       enter (command[], bis[])
+       <<SLOT MLComReceiveCommand:DoPart>>       
+       #);
+     
+     Initialized:
+       (# value: @Boolean;
+       <<SLOT MLComInitialized:DoPart>>
+       exit value   
+       #);
+     
+     onError:< Exception;
+     callOnError: (# do onError; #);
+     
+     onInternalError:<
+       (# what: ^Text;
+       enter what[]
+       do INNER;
+       #);
+     LocalException:
+       (# continue: @Boolean;
+          msg: @Text;
+          termCode: @Integer;
+       <<SLOT MLComLocalException:DoPart>>
+       #);
+     
+     ForceTimeout:
+       (# 
+       <<SLOT MLComForceTimeout:doPart>>
+       #);
+     
+     isSimulating: @boolean;
+     abortMultiFaseCommands:< (*For stuff that should be aborted*)
+       (# do INNER #);
+          
+     Private: @<<SLOT MLComPrivate:Descriptor>>;
+  #);
+
+MLCommand:
+  (# clearDmoEval: @boolean;
+     
+     Send:< 
+       (# bis: ^MLBIS;
+       do &MLBIS[]->bis[];
+          'MLCommandSend' -> debugSyntaxCheck;
+	    INNER;
+	    (if debugging then
+		    'END MLCommandSend' -> debugSyntaxCheck;
+		    bis.reset;
+		    'Send BIS opcode = %i\r' -> debugCommunication (# do bis.opcode -> i; #);
+		    '  B = %s\r' -> debugCommunication (#
+			    pos: @integer;
+			    str: @text;
+			    do	(for pos : bis.bools repeat
+					    (if bis.getBool then
+							'true' -> str.putText;
+						else
+							'false' -> str.putText;
+					    if);
+					    ', ' -> str.putText;
+					for);
+					str[] -> s;
+			#);
+		    '  I = %s\r' -> debugCommunication (#
+			    pos: @integer;
+			    str: @text;
+			    do	(for pos : bis.ints repeat
+					    bis.getInt -> str.putInt;
+					    ', ' -> str.putText;
+					for);
+					str[] -> s;
+			#);
+		    '  S = %s\r\n' -> debugCommunication (#
+			    pos: @integer;
+			    str: @text;
+			    do	(for pos : bis.strings repeat
+					    bis.getString -> str.putText;
+					    ', ' -> str.putText;
+					for);
+					str[] -> s;
+			#);
+			bis.reset;
+		if);
+       exit bis[]
+       #);
+     
+     Receive:<
+       (# bis: ^MLBIS;
+          i: @integer;
+       enter bis[]   
+       <<SLOT MLCommandReceive:DoPart>>       
+       #);
+     
+     GetText:
+       (# value: ^Text;
+       <<SLOT MLCommandGetText:DoPart>>
+       exit value[]
+       #);
+     
+     onError:< LocalException;
+     receiveAborted:< Object;
+     receiveAbortable:< BooleanObject;
+     LocalException:
+       (# continue: @Boolean;
+          msg: @Text;
+          termCode: @Integer;
+          what: ^Text;
+       enter what[]
+       <<SLOT MLCommandLocalException:DoPart>>
+       #);
+     
+     Private: @<<SLOT MLCommandPrivate:Descriptor>>;
+     
+     handler: ^MLCom;
+     
+  enter handler[]
+  do (if handler[] <> NONE then
+         INNER;
+         (THIS(MLCommand)[],THIS(MLCommand).clearDmoEval)->handler.Execute;
+     if);
+  #);

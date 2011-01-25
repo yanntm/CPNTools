@@ -1,6 +1,6 @@
 (************************************************************************)
 (* CPN Tools                                                            *)
-(* Copyright 2010-##LAST## AIS Group, Eindhoven University of Technology    *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
 (*                                                                      *)
 (* CPN Tools is originally developed by the CPN Group at Aarhus         *)
 (* University from 2000 to 2010. The main architects behind the tool    *)
@@ -23,3 +23,39 @@
 (* You should have received a copy of the GNU General Public License    *)
 (* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
 (************************************************************************)
+ORIGIN '../../private/cpnetbody';
+
+INCLUDE '../../../cpntools/consistency/engine';
+INCLUDE '../../../cpntools/debug';
+
+-- workspacelib: attributes --
+
+PlaceTest: ConsistencyTest
+  (# TargetType::Place;
+     
+     run::
+       (# 
+       do (* If the target place has a fusion set, it must be
+           * among the places in the fusion set *)
+          (if target.theFusionSet[] <> none then
+              (# found: @boolean;
+              do false -> found;
+                 l: target.theFusionSet.scanFusionSet
+                   (# 
+                   do (if current[] = target[] then
+                          true -> found;
+                          leave l;
+                      if);
+                   #);
+                 (if not found then 
+                     ConsistencyNotification
+                     (# 
+                     do 'Place has a fusion set, but is not among the places in the fusion set - Fusion set name: %s - Fusion set id: %s' 
+                          -> msg.putformat(# do target.theFusionSet.getName -> s; target.theFusionSet.id[] -> s; #);
+                     #);
+                 if);
+              #);
+          if);
+       #);
+  #);
+ 

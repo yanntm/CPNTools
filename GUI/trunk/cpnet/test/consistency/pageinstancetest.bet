@@ -1,0 +1,106 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../../private/cpnetbody';
+
+INCLUDE '../../../cpntools/consistency/engine';
+INCLUDE '../../../cpntools/debug';
+
+-- workspacelib: attributes --
+
+PageInstanceTest: ConsistencyTest
+  (# TargetType::PageInstance;
+     NoPageForInstanceNotification: ConsistencyNotification
+     (# 
+     do 'PageInstance has no page' -> msg.putformat(# do target.id[] -> s; #);
+     #);
+     InstanceNotAmongPageInstancesNotification: ConsistencyNotification
+       (# 
+       do 'PageInstance has page but is not among the page\'s instances - Page name: %s - Page id: %s' 
+            -> msg.putformat(# do target.thePage.checkedName[] -> s; target.thePage.id[] -> s;  #);
+       #);
+     PlaceOfPlaceInstanceHasWrongPageNotification: ConsistencyNotification
+       (# theInstance: ^PlaceInstance;
+       enter theInstance[]
+       do 'PageInstance has place instance, but the place of the place instance is not on the page of the PageInstance - Place instance id: %s - Place id: %s - Place page id: %s - PageInstance page id: %s' 
+            -> msg.putformat(# do theInstance.id[] -> s; theInstance.thePlace.id[] -> s; (theInstance.thePlace.getcpnpage).id[] -> s; target.thePage.id[] -> s; #);
+       #);
+     TransitionOfTransitionInstanceHasWrongPageNotification: ConsistencyNotification
+       (# theInstance: ^TransitionInstance;
+       enter theInstance[]
+       do 'PageInstance has transition instance, but the transition of the transition instance is not on the page of the PageInstance - Transition instance id: %s - Transition id: %s - Transition page id: %s - PageInstance page id: %s' 
+            -> msg.putformat(# do theInstance.id[] -> s; theInstance.theTransition.id[] -> s; (theInstance.theTransition.getcpnpage).id[] -> s; target.thePage.id[] -> s; #);
+       #);
+     
+     run::
+       (# found:@boolean;
+       do (* The target pageInstance must have a page *)
+          (if target.thePage[] = none then
+              NoPageForInstanceNotification;
+          if);
+          
+          (* The page of the target pageInstance must have the target
+           * pageInstance among its instances
+           *)
+          false -> found;
+          l:target.thePage.instances.scan
+          (# 
+          do (if current[] = target[] then
+                 true -> found;
+                 leave l;
+             if);
+          #);
+          (if not found then
+              InstanceNotAmongPageInstancesNotification;
+          if);
+          
+          (* If the target pageInstance has placeInstances, the
+           * place of each placeInstance must be on the page of
+           * the target pageInstance
+           *)
+          (if target.thePage[] <> none then
+              target.placeInstances.scan
+              (# 
+              do (if (current.thePlace[] <> none) and (current.thePlace.getcpnpage <> none) and (current.thePlace.getcpnpage <> target.thePage[]) then
+                     current[] -> PlaceOfPlaceInstanceHasWrongPageNotification;
+                 if);
+              #);
+          if);
+          
+          (* If the target pageInstance has transitionInstances, the
+           * transition of each transitionInstance must be on the page of
+           * the target pageInstance
+           *)
+          (if target.thePage[] <> none then
+              target.transitionInstances.scan
+              (# 
+              do (if (current.theTransition[] <> none) and (current.theTransition.getcpnpage <> none) and (current.theTransition.getcpnpage <> target.thePage[]) then
+                     current[] -> TransitionOfTransitionInstanceHasWrongPageNotification;
+                 if);
+              #);
+          if);
+       #);
+  #);
+ 

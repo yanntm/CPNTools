@@ -1,6 +1,6 @@
 (************************************************************************)
 (* CPN Tools                                                            *)
-(* Copyright 2010-##LAST## AIS Group, Eindhoven University of Technology    *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
 (*                                                                      *)
 (* CPN Tools is originally developed by the CPN Group at Aarhus         *)
 (* University from 2000 to 2010. The main architects behind the tool    *)
@@ -23,3 +23,43 @@
 (* You should have received a copy of the GNU General Public License    *)
 (* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
 (************************************************************************)
+ORIGIN '../../private/cpnetbody';
+
+INCLUDE '../../../cpntools/consistency/engine';
+INCLUDE '../../../cpntools/debug';
+
+-- workspacelib: attributes --
+
+PortTypeTest: ConsistencyTest
+  (# TargetType::PortType;
+     
+     NoFather:ConsistencyNotification
+       (# t:^Text;
+       do 'PortType [%s] has no father'
+            -> msg.putformat(# do target.cpnml[] -> s; #);
+       #);
+     NoChild:ConsistencyNotification
+       (# 
+       do 'PortType [%s] is not a child of its father'
+            -> msg.putformat(# do target.cpnml[] -> s; #);
+       #);
+     
+     run::
+       (# isChild: @Boolean;
+       do (if target.father[] = none then
+              NoFather;
+           else
+              search: target.father.scan
+                (# Type::PortType
+                do (if current[] = target[] then
+                       true -> isChild;
+                       leave search
+                   if);
+                #);
+              (if not isChild then
+                  NoChild;
+              if);
+          if);
+       #);
+  #);
+ 

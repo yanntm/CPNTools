@@ -1,0 +1,117 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../cpnetutilities';
+
+-- calcArrow: doPart --
+do (# p, m, q: ^Point2d;
+      vx, vy, ux, uy, rx, ry, l: @real;
+      (* Constants? Why? /dossen *)
+      A: (# exit 12 #);
+      B: (# exit 12 #);
+      C: (# exit 5 #);
+   do &PointList[] -> thePath[];
+      start.x - end.x -> vx;
+      start.y - end.y -> vy;
+      vx*vx + vy*vy -> sqrt -> l;
+      (if l > 0.0 then
+          vx/l -> ux;
+          vy/l -> uy;
+          (end.x + ux*A, end.y + uy*A) -> MakePoint -> m[];
+          B*ux -> rx;
+          B*uy -> ry;
+          (end.x + rx*0.5, end.y + ry*0.5) -> MakePoint -> attach[]; 
+          (end.x + rx - C*uy, end.y + ry + C*ux) -> MakePoint -> q[];
+          (end.x + rx + C*uy, end.y + ry - C*ux) -> MakePoint -> p[];
+          p[] -> thePath.append;
+          end[] -> thePath.append;
+          q[] -> thePath.append;
+      if);
+   #);
+   
+-- IdDictionaryhashFunction: doPart --
+do (# index, max: @integer;      
+   do k.length -> index;
+      maxInt / 2 -> max;
+      while:
+        (if index > 0 then
+            131 * value + k.T[index] -> value;
+            value mod max -> value;
+            index - 1 -> index;
+            restart while;
+        if);
+   #);
+   
+-- IdDictionarykeyEqual: doPart --
+do (left[] -> right.equal) -> value;
+   
+-- IdDictionaryAssociate:doPart --
+do (# anElm: ^Object;
+   do true -> associated;
+      ID[] -> theDictionary.lookup -> anElm[];
+      (if anElm[] <> none then
+          anElm[] -> theList.at -> theList.delete;
+          false -> associated;
+      if);
+      (ID[], elm[]) -> theDictionary.associate;
+      elm[] -> theList.append;            
+   #);
+   
+-- IdDictionaryDisassociate:doPart --
+do ID[] -> theDictionary.lookup -> elm[];
+   ID[] -> theDictionary.disassociate;
+   elm[] -> theList.at -> theList.delete;
+   
+-- TextListDefined:DoPart --
+do (if name[] <> NONE then
+       search: scan
+         (# 
+         do (if current[] -> name.equal then
+                true -> value;
+                leave search;
+            if);
+         #);
+    else
+       (* There is no name, so we want no error-msg *)
+       true -> value;
+   if);
+   
+-- SortedTextSequenceDefined:DoPart --
+do (if name[] <> NONE then
+       search: scan
+         (# 
+         do (if current[] -> name.equal then
+                true -> value;
+                leave search;
+            if);
+         #);
+    else
+       (* There is no name, so we want no error-msg *)
+       true -> value;
+   if);
+   
+-- SortedTextSequenceTextLess:doPart --
+do left[] -> right.less -> value;
+   

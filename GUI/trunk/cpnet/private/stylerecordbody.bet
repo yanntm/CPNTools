@@ -1,6 +1,6 @@
 (************************************************************************)
 (* CPN Tools                                                            *)
-(* Copyright 2010-##LAST## AIS Group, Eindhoven University of Technology    *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
 (*                                                                      *)
 (* CPN Tools is originally developed by the CPN Group at Aarhus         *)
 (* University from 2000 to 2010. The main architects behind the tool    *)
@@ -23,3 +23,49 @@
 (* You should have received a copy of the GNU General Public License    *)
 (* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
 (************************************************************************)
+ORIGIN '../stylerecord';
+-- StyleRecordprepare: doPart --
+do (# asArc: ^Arc;
+   do thePageElement.lineColor[] -> lineColor[];
+      thePageElement.fillColor[] -> fillColor[];
+      thePageElement.textColor[] -> textColor[];
+      thePageElement.filled -> filled;
+      thePageElement.linetype[] -> linetype[];
+      thePageElement.strokewidth -> strokewidth;
+(*      (if thePageElement[]->current.containsSubpage then true->result; if);*)
+      (if thePageElement## <= Arc## then
+          thePageElement[] -> asArc[];
+          asArc.arrowHeadSize -> arrowHeadSize;
+      if);
+   #);
+
+-- StyleRecordapply: doPart --
+do (# asArc: ^Arc;
+   do lineColor[] -> thePageElement.lineColor[];
+      fillColor[] -> thePageElement.fillColor[];
+      textColor[] -> thePageElement.textColor[];
+      filled -> thePageElement.filled;
+      linetype[] -> thePageElement.linetype[];
+      strokewidth -> thePageElement.strokewidth;
+      (if thePageElement## <= Arc## then
+          thePageElement[] -> asArc[];
+          arrowHeadSize -> asArc.arrowHeadSize;
+      if);
+      thePageElement.changed;
+   #);
+
+-- StyleRecordcreateBasicStyle: doPart --
+do &CompleteStyle[] -> bs[];
+   lineColor[] -> bs.stroke[];
+   (if filled then
+       textColor[] -> bs.fill[];
+    else
+       fillcolor[] -> bs.fill[];
+   if);
+   strokewidth -> bs.strokewidth;
+   (if arrowHeadSize > 0 then
+       arrowHeadSize -> bs.arrowHeadSize;
+       ARROW_END -> bs.arrow;
+       NONE -> bs.fill[];
+   if);
+   

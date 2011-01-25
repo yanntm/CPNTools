@@ -1,6 +1,6 @@
 (************************************************************************)
 (* CPN Tools                                                            *)
-(* Copyright 2010-##LAST## AIS Group, Eindhoven University of Technology    *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
 (*                                                                      *)
 (* CPN Tools is originally developed by the CPN Group at Aarhus         *)
 (* University from 2000 to 2010. The main architects behind the tool    *)
@@ -23,3 +23,60 @@
 (* You should have received a copy of the GNU General Public License    *)
 (* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
 (************************************************************************)
+ORIGIN '../mldispatcher';
+INCLUDE '~beta/containers/dictionary';
+
+--- MLDispatcherAccept:DoPart ---
+do (# subOpcode: @Integer;
+      intObj: ^integerObject;
+   do (if (bis.Ints >= 1) and (bis.opcode = -2) then
+          bis.GetInt->subOpcode;
+          &integerObject[]->intObj[];
+          subOpcode->intObj;
+          (if (intObj[]->Private.dispatchTable.Lookup) <> NONE then
+              true->value;
+          if);
+      if);
+   #);
+   
+--- MLDispatcherDispatch:DoPart ---
+do (# subOpcode: @Integer;
+      intObj: ^integerObject;
+      dispatch: ^MLDispatch;
+   do (if bis.Ints >= 1 then
+          bis.GetInt->subOpcode;
+          &integerObject[]->intObj[];
+          subOpcode->intObj;
+          intObj[]->Private.dispatchTable.Lookup->dispatch[];
+          (if dispatch[] <> NONE then
+              bis.Reset;
+              bis[]->dispatch->reply[];
+          if);
+      if);
+      (if reply[] = NONE then
+          (* no reply to non-dispatched messages *)
+      if);
+   #);
+   
+--- MLDispatcherRegister:DoPart ---
+do (# intObj: ^integerObject;
+   do &integerObject[]->intObj[];
+      subOpcode->intObj;
+      intObj[]->Private.dispatchTable.disassociate;
+      (intObj[], dispatch[])->Private.dispatchTable.associate;
+   #);
+   
+--- MLDispatcherUnregister:DoPart ---
+do (# intObj: ^integerObject;
+   do &integerObject[]->intObj[];
+      subOpcode->intObj;
+      intObj[]->Private.dispatchTable.disassociate;
+   #);
+   
+--- MLDispatcherPrivate:Descriptor ---
+(# dispatchTable: @Dictionary 
+     (# Key:: integerObject;
+        Element:: MLDispatch;
+        KeyEqual:: (# do (left = right)->value; #);
+     #);
+#)

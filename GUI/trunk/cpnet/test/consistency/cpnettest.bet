@@ -1,6 +1,6 @@
 (************************************************************************)
 (* CPN Tools                                                            *)
-(* Copyright 2010-##LAST## AIS Group, Eindhoven University of Technology    *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
 (*                                                                      *)
 (* CPN Tools is originally developed by the CPN Group at Aarhus         *)
 (* University from 2000 to 2010. The main architects behind the tool    *)
@@ -23,3 +23,34 @@
 (* You should have received a copy of the GNU General Public License    *)
 (* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
 (************************************************************************)
+ORIGIN '../../private/cpnetbody';
+
+INCLUDE '../../../cpntools/consistency/engine';
+INCLUDE '../../../cpntools/wselements/index';
+INCLUDE '../../../cpntools/cpnworkspace';
+
+-- workspacelib: attributes --
+
+CPNetTest: ConsistencyTest
+  (# TargetType::CPNet;
+     CPNetMemoryLeakNotification: ConsistencyNotification
+       (# net: ^CPNet;
+       enter net[]
+       do 'MemoryLeak: CPNet %s was not found in the index'
+            -> msg.putformat(# do net.id[] -> s; #);
+       #);
+     theWorkSpace: ^CPNWorkSpace;
+     run::
+       (# found: @boolean;
+       do false -> found;
+          this(Workspace)[] -> theWorkSpace[];
+          search: theWorkSpace.theIndex.scanIndexNodes
+            (# Type:: theWorkSpace.theIndex.NetNode;
+            do (if current.net[] = target[] then
+                   true -> found;
+                   leave search;
+               if);
+            #);
+          (if not found then target[] -> CPNetMemoryLeakNotification if);
+       #);
+  #);

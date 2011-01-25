@@ -1,6 +1,6 @@
 (************************************************************************)
 (* CPN Tools                                                            *)
-(* Copyright 2010-##LAST## AIS Group, Eindhoven University of Technology    *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
 (*                                                                      *)
 (* CPN Tools is originally developed by the CPN Group at Aarhus         *)
 (* University from 2000 to 2010. The main architects behind the tool    *)
@@ -23,3 +23,54 @@
 (* You should have received a copy of the GNU General Public License    *)
 (* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
 (************************************************************************)
+ORIGIN '../cpnet';
+
+--registercommandPrivate:descriptor--
+(# 
+   (* NetCommand is a special command pattern. 
+    * It is used by the registerCommand method.
+    * Its purpose is to "wrap" other commands, to
+    * keep track of autosave information, that is, the number
+    * of commands executed since last autosave.
+    *)
+   NetCommand: Command
+     (# CommandType:< Command;
+        theCommand: ^CommandType;
+        theNet: ^CPNet;
+        
+        init::
+          (#
+          enter (theNet[], theCommand[])
+          do theNet.commandApplied;
+          #);
+        
+        getName:: 
+          (# 
+          do (if (theCommand[] <> NONE) then
+                 theCommand.getName -> name[];
+             if);
+          #);
+        
+        undo:: 
+          (# 
+          do theCommand.undo; 
+             theNet.commandUndone;
+          #);
+        redo:: 
+          (# 
+          do theCommand.redo; 
+             theNet.commandRedone;
+          #);
+        
+     #);
+#)
+
+--registerCommand:doPart--
+do (# theCommandManager: ^CommandManager;
+      theNetCommand: ^private.NetCommand;
+   do 
+      &private.NetCommand[] -> theNetCommand[];
+      (theNet[],theCommand[]) -> theNetCommand.init;
+      theNet[] -> (getCommandManagerManager).getManager -> theCommandManager[];
+      theNetCommand[] -> theCommandManager.register;
+   #); 

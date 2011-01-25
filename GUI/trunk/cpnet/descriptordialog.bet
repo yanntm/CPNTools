@@ -1,6 +1,6 @@
 (************************************************************************)
 (* CPN Tools                                                            *)
-(* Copyright 2010-##LAST## AIS Group, Eindhoven University of Technology    *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
 (*                                                                      *)
 (* CPN Tools is originally developed by the CPN Group at Aarhus         *)
 (* University from 2000 to 2010. The main architects behind the tool    *)
@@ -23,3 +23,70 @@
 (* You should have received a copy of the GNU General Public License    *)
 (* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
 (************************************************************************)
+ORIGIN 'cpnet';
+BODY 'private/descriptordialogbody';
+
+-- WorkspaceLib: Attributes --
+
+DescriptorDialog: AbstractTransitionInstanceDialog
+  (# <<SLOT DescriptorDialogLib: Attributes>>;
+     getDescriptor:<
+       (# value: ^Text;
+       do INNER;
+       exit value[]
+       #);
+     showIndex:
+       (#
+       <<SLOT DescriptorDialogShowIndex:doPart>>
+       #);
+     clearIndex:
+       (#
+       <<SLOT DescriptorDialogClearIndex:doPart>>
+       #);
+     onClicked:: (# do toggle #);
+     toggle: (# <<SLOT DescriptorDialogToggle: doPart>> #);
+     private: @<<SLOT DescriptorDialogPrivate:descriptor>>;
+     init:: (# <<SLOT DescriptorDialogInit:dopart>> #);
+     update:: (# <<SLOT DescriptorDialogUpdate:doPart>> #);
+     hideProxy: @boolean;
+     visible: @boolean;
+  #);
+
+
+SSNodeDescriptorDialog: DescriptorDialog
+  (#
+     theSSNode: ^SSNode;
+     
+     getCPNet:: (# do theSSNode.getCPNet -> net[] #);
+     getDelta::
+       (#
+       do theSSNode.delta.XY -> value;
+       #);
+     setDelta::
+       (#
+       do value -> theSSNode.delta;
+          changed;
+       #);
+     getDescriptor::
+       (#
+       do theSSNode.descriptor[] -> value[];
+       #);
+  #);
+
+SSArcDescriptorDialog: DescriptorDialog
+  (# theSSArc: ^SSArc;
+     getCPNet:: (# do theSSArc.getCPNet -> net[] #);
+     getDelta::
+       (#
+       do theSSArc.delta.XY -> value;
+       #);
+     setDelta::
+       (#
+       do value -> theSSArc.delta;
+          changed;
+       #);
+     getDescriptor::
+       (#
+       do theSSArc.descriptor[] -> value[];
+       #);
+  #);

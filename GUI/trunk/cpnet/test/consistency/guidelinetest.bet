@@ -1,6 +1,6 @@
 (************************************************************************)
 (* CPN Tools                                                            *)
-(* Copyright 2010-##LAST## AIS Group, Eindhoven University of Technology    *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
 (*                                                                      *)
 (* CPN Tools is originally developed by the CPN Group at Aarhus         *)
 (* University from 2000 to 2010. The main architects behind the tool    *)
@@ -23,3 +23,27 @@
 (* You should have received a copy of the GNU General Public License    *)
 (* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
 (************************************************************************)
+ORIGIN '../../private/cpnetbody';
+
+INCLUDE '../../../cpntools/consistency/engine';
+INCLUDE '../../../cpntools/debug';
+
+-- workspacelib: attributes --
+
+GuideLineTest: ConsistencyTest
+  (# TargetType::GuideLine;
+     
+     GuideElementIsNoneNotification: ConsistencyNotification
+       (# 
+       do 'Guideline element is none' -> msg.append;
+       #);
+     
+     run::
+       (# 
+       do target.scanGuideelements(# 
+                     do (if current[] = none then
+                            GuideElementIsNoneNotification;
+                        if);
+                     #);
+       #);
+  #);

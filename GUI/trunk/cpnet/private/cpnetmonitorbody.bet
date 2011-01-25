@@ -1,0 +1,761 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../cpnet';
+
+-- AbstractMonitorPrivate:Descriptor --
+(# father: ^MonitorBlock;
+   disabled: @boolean;      
+   init:
+     (# 
+     do false -> disabled;
+     #);
+#)
+
+-- AbstractMonitorSetFatherMonitor:DoPart --
+do father[] -> private.father[];
+   
+-- AbstractMonitorGetFatherMonitor:DoPart --
+do private.father[] -> father[];
+   
+-- AbstractMonitorOnDisabledChanged:DoPart --
+do inner;
+   changed;
+   
+-- AbstractMonitorDisabledEnter:DoPart --
+do value -> private.disabled;
+   onDisabledChanged;   
+   
+-- AbstractMonitorDisabledExit:DoPart --
+do private.disabled -> value;
+   
+-- AbstractMonitorInit:DoPart --
+do private.init;
+   inner;
+   
+-- AbstractMonitorOnSemanticChanged:DoPart --
+do inner;
+   (if getFatherMonitor <> none then
+       source[] -> (getFatherMonitor).semanticChanged;
+   if);
+   
+-- AbstractMonitorGetCurrentHighlight:DoPart --
+do (if currentHighlight[] = none then
+       (if qerrorMsg[] <> none then
+           incorrect
+             -> getHighlight
+             -> currentHighlight[];
+        else
+           getStatus
+             -> getHighlight
+             -> currentHighlight[];
+       if);
+   if);
+   
+-- MonitorPrivate:Descriptor --
+(# nodes: @NodeInstanceIDDictionary; 
+   MonitorDeclaration: 
+     (# description: ^Text;
+        theDeclaration: ^Declaration;
+     enter (# enter (description[], theDeclaration[]) #)
+     exit (description[], theDeclaration[])        
+     #);
+   declarations: @IDDictionary (# Element:: MonitorDeclaration #);
+   options: @OptionSmartList;
+   status, nodeStatus: @integer;
+   generateTemplateCode, syntaxCheckAndGenerateMonitor: @Boolean;
+   hasForwardDependency, nodesAreSorted: @boolean;
+   numberOfPlaceInstances, numberOfTransitionInstances: @integer;
+   type: @integer;     
+   usedBy, overwrites, overwrittenBy: @MonitorIDDictionary;
+   overwritesDecl: @DeclIDDictionary;
+   init:
+     (# 
+     do nodes.init;
+        declarations.init;
+        options.init;
+        unchecked -> status;      
+        true -> generateTemplateCode;
+        false -> syntaxCheckAndGenerateMonitor;
+        0 -> numberOfPlaceInstances -> numberOfTransitionInstances;
+        usedBy.init;
+        overwrites.init;
+        overwrittenBy.init;
+        overwritesDecl.init;
+        false -> hasForwardDependency;
+        false -> nodesAreSorted;
+     #);
+   calculateStatus: IntegerObject
+     (# declStatus: @integer;
+        currentStatus: @integer;
+     do (if hasForwardDependency or
+            (overwritesDecl.size > 0) or
+            (overwrittenBy.size > 0) or
+            (overwrites.size > 0) then
+            incorrect -> value;
+         else
+            (if type = MarkingSizeType then
+                compiled -> declStatus;
+             else
+                maxInt -> declStatus;
+                scanDeclarations
+                (# 
+                do (if current.mldecl[] <> none then
+                       current.mldecl.status -> currentStatus;
+                    else
+                       unchecked -> currentStatus;
+                   if);
+                   (if currentStatus < declStatus then
+                       currentStatus -> declStatus;
+                   if);
+                #);
+            if);
+            
+            (if nodes.size = 0 then
+                compiled -> nodeStatus;
+             else
+                maxInt -> nodeStatus;
+                nodes.scan
+                (#
+                do (current.getNode).status -> currentStatus;
+                   (if currentStatus < nodeStatus then
+                       currentStatus -> nodeStatus;
+                   if);
+                #);
+            if);
+            (* (if 'New Monitor' -> name.equal *)
+            (*             then *)
+                (*             'decl = %s | node = %s '->debugtemp(# do declstatus->statustostring->s;nodestatus->statustostring->s; #); *)
+                (*         if); *)
+            (if declStatus < nodeStatus then
+                declStatus -> status;
+             else
+                nodeStatus -> status;
+            if);
+        if);
+     #);
+#)
+
+-- MonitorLib:Attributes --
+addNodeInstance:
+  (# theNodeInstance: ^NodeInstance;
+  enter theNodeInstance[]
+  <<SLOT MonitorAddNodeInstance:DoPart>>
+  #);
+removeNodeInstance:
+  (# theNodeInstance: ^NodeInstance;
+  enter theNodeInstance[]
+  <<SLOT MonitorRemoveNodeInstance:DoPart>>
+  #);
+scanNodeInstances: 
+  (# current: ^NodeInstance;
+  <<SLOT MonitorScanNodeInstances:DoPart>>
+  #);     
+scanPlaceInstances: 
+  (# current: ^PlaceInstance;
+  <<SLOT MonitorScanPlaceInstances:DoPart>>    
+  #);
+scanTransitionInstances: 
+  (# current: ^TransitionInstance;
+  <<SLOT MonitorScanTransitionInstances:DoPart>>    
+  #);
+addUsedBy:
+  (# theMonitor: ^Monitor;
+  enter theMonitor[]
+  <<SLOT MonitorAddUsedBy:DoPart>>
+  #);
+removeUsedBy:
+  (# theMonitor: ^Monitor;
+  enter theMonitor[]
+  <<SLOT MonitorRemoveUsedBy:DoPart>>
+  #);
+clearUsedBy: (# <<SLOT MonitorClearUsedBy:DoPart>> #);
+scanUsedBy:
+  (# current: ^Monitor;
+  <<SLOT MonitorScanUsedBy:DoPart>>
+  #);
+addOverwrites:
+  (# theMonitor: ^Monitor;
+  enter theMonitor[]
+  <<SLOT MonitorAddOverwrites:DoPart>>
+  #);
+removeOverwrites:
+  (# theMonitor: ^Monitor;
+  enter theMonitor[]
+  <<SLOT MonitorRemoveOverwrites:DoPart>>
+  #);     
+clearOverwrites:
+  (# theMonitor: ^Monitor;
+  <<SLOT MonitorClearOverwrites:DoPart>>          
+  #);
+scanOverwrites:
+  (# current: ^Monitor;
+  <<SLOT MonitorScanOverwrites:DoPart>>
+  #);
+addOverwrittenBy:
+  (# theMonitor: ^Monitor;
+  enter theMonitor[]
+  <<SLOT MonitorAddOverwrittenBy:DoPart>>
+  #);
+removeOverwrittenBy:
+  (# theMonitor: ^Monitor;
+  enter theMonitor[]
+  <<SLOT MonitorRemoveOverwrittenBy:DoPart>>
+  #);     
+clearOverwrittenBy:
+  (# theMonitor: ^Monitor;
+  <<SLOT MonitorClearOverwrittenBy:DoPart>>          
+  #);
+scanOverwrittenBy:
+  (# current: ^Monitor;
+  <<SLOT MonitorScanOverwrittenBy:DoPart>>
+  #);
+addOverwritesDecl:
+  (# theDecl: ^Decl;
+  enter theDecl[]
+  <<SLOT MonitorAddOverwritesDecl:DoPart>>
+  #);
+removeOverwritesDecl:
+  (# theDecl: ^Decl;
+  enter theDecl[]
+  <<SLOT MonitorRemoveOverwritesDecl:DoPart>>
+  #);     
+clearOverwritesDecl:
+  (# theDecl: ^Decl;
+  <<SLOT MonitorClearOverwritesDecl:DoPart>>          
+  #);
+scanOverwritesDecl:
+  (# current: ^Decl;
+  <<SLOT MonitorScanOverwritesDecl:DoPart>>
+  #);
+addDeclaration:
+  (# description: ^Text;
+     theDeclaration: ^Declaration;
+  enter (description[], theDeclaration[])
+  <<SLOT MonitorAddDeclaration:DoPart>>
+  #);
+clearDeclarations: (# <<SLOT MonitorClearDeclarations:DoPart>> #);
+scanDeclarations:
+  (# description: ^Text;
+     current: ^Declaration;
+  <<SLOT MonitorScanDeclarations:DoPart>>
+  #);
+scanOptions:
+  (# current: ^Option;
+  <<SLOT MonitorScanOptions:DoPart>>
+  #);          
+
+-- MonitorAddNodeInstance:DoPart --
+do (if (theNodeInstance.id[] -> private.nodes.lookup)=none then
+       (theNodeInstance.id[], theNodeInstance[]) -> private.nodes.associate;
+       (if theNodeInstance## <= PlaceInstance## then
+           private.numberOfPlaceInstances + 1 -> private.numberOfPlaceInstances;
+        else
+           private.numberOfTransitionInstances + 1 -> private.numberOfTransitionInstances;
+       if);
+       this(Monitor)[] -> (theNodeInstance.getNode).attach;
+       this(Monitor)[] -> theNodeInstance.addMonitor;
+       private.calculateStatus;
+       theNodeInstance[] -> added;
+       true -> private.syntaxCheckAndGenerateMonitor;
+       false -> private.nodesAreSorted;
+    else
+       'Trying to add nodeinstance already in monitor' -> fixme;
+   if);
+   
+-- MonitorRemoveNodeInstance:DoPart --
+do theNodeInstance.id[] -> private.nodes.disassociate;
+   (if theNodeInstance## <= PlaceInstance## then
+       private.numberOfPlaceInstances - 1 -> private.numberOfPlaceInstances;
+    else
+       private.numberOfTransitionInstances - 1 -> private.numberOfTransitionInstances;
+   if);
+   this(Monitor)[] -> (theNodeInstance.getNode).detach;
+   this(Monitor)[] -> theNodeInstance.removeMonitor;
+   private.calculateStatus;
+   theNodeInstance[] -> removed;
+   true -> private.syntaxCheckAndGenerateMonitor;
+   false -> private.nodesAreSorted;
+   
+-- MonitorScanNodeInstances:DoPart --
+do (# sortedNodes: @NodeInstanceList;
+      getPosition:
+        (# id: ^Text;
+           position: ^sortedNodes.theCellType;
+        enter id[]
+        do search: sortedNodes.scan
+             (# 
+             do (if id[] -> (current.getLongName).less then
+                    current[] -> sortedNodes.at -> position[];
+                    leave search;
+                if);
+             #);
+        exit position[]
+        #);
+   do (if not private.nodesAreSorted then
+          private.nodes.scan
+          (# position: ^sortedNodes.theCellType;
+          do current.getLongName -> getPosition -> position[];
+             (if position[] = none then
+                 current[] -> sortedNodes.append;
+              else
+                 (current[], position[]) -> sortedNodes.insertBefore;
+             if);
+          #);
+          private.nodes.clear;
+          sortedNodes.scan
+          (# 
+          do (current.id[], current[]) -> private.nodes.associate;
+          #);
+          true -> private.nodesAreSorted;
+      if);
+      private.nodes.scan
+      (# 
+      do current[] -> this(scanNodeInstances).current[];
+         inner scanNodeInstances;
+      #);
+   #);
+   
+-- MonitorScanPlaceInstances:DoPart --
+do scanNodeInstances
+   (# 
+   do (if current## <= PlaceInstance## then
+          current[] -> this(scanPlaceInstances).current[];
+          inner scanPlaceInstances;
+      if);
+   #);
+   
+-- MonitorScanTransitionInstances:DoPart --
+do scanNodeInstances
+   (# 
+   do (if current## <= TransitionInstance## then
+          current[] -> this(scanTransitionInstances).current[];
+          inner scanTransitionInstances;
+      if);
+   #);
+   
+-- MonitorAddUsedBy:DoPart --
+do (theMonitor.id[], theMonitor[]) -> private.usedBy.associate;
+   
+-- MonitorRemoveUsedBy:DoPart --
+do theMonitor.id[] -> private.usedBy.disassociate;
+   
+-- MonitorClearUsedBy:DoPart --
+do private.usedBy.clear;
+   
+-- MonitorScanUsedBy:DoPart --
+do private.usedBy.scan
+   (# 
+   do current[] -> this(scanUsedBy).current[];
+      inner scanUsedBy;
+   #);
+   
+-- MonitorAddOverwrites:DoPart --
+do (theMonitor.id[], theMonitor[]) -> private.overwrites.associate;
+   
+-- MonitorRemoveOverwrites:DoPart --
+do theMonitor.id[] -> private.overwrites.disassociate;
+   
+-- MonitorClearOverwrites:DoPart --
+do private.overwrites.clear;
+   
+-- MonitorScanOverwrites:DoPart --
+do private.overwrites.scan
+   (# 
+   do current[] -> this(scanOverwrites).current[];
+      inner scanOverwrites;
+   #);
+   
+-- MonitorAddOverwrittenBy:DoPart --
+do (theMonitor.id[], theMonitor[]) -> private.overwrittenBy.associate;
+   
+-- MonitorRemoveOverwrittenBy:DoPart --
+do theMonitor.id[] -> private.overwrittenBy.disassociate;
+   
+-- MonitorClearOverwrittenBy:DoPart --
+do private.overwrittenBy.clear;
+   
+-- MonitorScanOverwrittenBy:DoPart --
+do private.overwrittenBy.scan
+   (# 
+   do current[] -> this(scanOverwrittenBy).current[];
+      inner scanOverwrittenBy;
+   #);
+   
+-- MonitorIsOverwritten:DoPart --
+do private.overwrittenBy.size > 0 -> value;
+   
+-- MonitorAddOverwritesDecl:DoPart --
+do (theDecl.id[], theDecl[]) -> private.overwritesDecl.associate;
+   
+-- MonitorRemoveOverwritesDecl:DoPart --
+do theDecl.id[] -> private.overwritesDecl.disassociate;
+   
+-- MonitorClearOverwritesDecl:DoPart --
+do private.overwritesDecl.clear;
+   
+-- MonitorScanOverwritesDecl:DoPart --
+do private.overwritesDecl.scan
+   (# 
+   do current[] -> this(scanOverwritesDecl).current[];
+      inner scanOverwritesDecl;
+   #);
+
+-- MonitorOnChanged:DoPart --
+do (if true
+    // source## <= Monitor##
+    // source## <= Node## then
+       private.calculateStatus;
+       this(Monitor)[] -> (getFatherMonitor).semanticChanged;
+    // source## <= Option## then
+       semanticChanged;
+   if);
+   
+-- MonitorOnAdded:DoPart --
+do (* 'MonitorOnAdded' -> debugtemp; *)
+   
+-- MonitorOnSemanticChanged:DoPart --
+do private.calculateStatus;
+   true -> private.syntaxCheckAndGenerateMonitor;
+   (if private.type <> TransitionEnabledBreakpointType then
+       scanTransitionInstances
+       (# 
+       do (compiled, checked) -> current.theTransition.changeStatus;
+       #);
+   if);
+   private.usedBy.scan
+   (# 
+   do true -> current.syntaxCheckAndGenerateMonitor;
+   #);
+   theCPNet.semanticChanged;
+   (* '%s : %s '->debugtemp(# do name.copy -> s; getStatus -> statustostring->s#); *)
+   
+-- MonitorGetStatus:DoPart --
+do (if (private.overwrittenBy.size > 0) or
+       (private.overwrites.size > 0) then
+       incorrect -> value;
+    else
+       private.status -> value;
+   if);
+   
+-- MonitorGetNodeStatus:DoPart --
+do private.nodeStatus -> value;
+   
+-- MonitorCanChangeDeclarations:DoPart --
+do (private.type <> MarkingSizeType) and
+   (private.type <> ListLengthDataCollectionType) and
+   (private.type <> CountTransitionOccurrenceDataCollectionType) and
+   (private.type <> PlaceContentBreakpointType) and
+   (private.type <> TransitionEnabledBreakpointType)
+     -> value;
+   
+-- MonitorGenerateTemplateCodeEnter:DoPart --
+do value -> private.generateTemplateCode;
+   
+-- MonitorGenerateTemplateCodeExit:DoPart --
+do canChangeDeclarations and 
+   private.generateTemplateCode
+     -> value;
+   
+-- MonitorSyntaxCheckAndGenerateMonitorEnter:DoPart --
+do value -> private.syntaxCheckAndGenerateMonitor;
+   
+-- MonitorSyntaxCheckAndGenerateMonitorExit:DoPart --
+do private.syntaxCheckAndGenerateMonitor -> value;
+   
+-- MonitorForwardDependenciesEnter:DoPart --
+do value -> private.hasForwardDependency;
+   
+-- MonitorForwardDependenciesExit:DoPart --
+do private.hasForwardDependency -> value;
+   
+-- MonitorIsTimed:DoPart --
+do scan: scanOptions
+   (# 
+   do (if current.dname -> (NamesMonitorTimed -> getGlobalNames).equal then
+          current[] -> qua
+          (# as:: BooleanOption;
+          do thisObj.theValue -> value;
+          #);
+          leave scan;
+      if);
+   #);
+   
+-- MonitorNumberOfPlaceInstances:DoPart --
+do private.numberOfPlaceInstances -> value;
+   
+-- MonitorNumberOfTransitionInstances:DoPart --
+do private.numberOfTransitionInstances -> value;
+   
+-- MonitorType:DoPart --
+do private.type -> value;
+   
+-- MonitorTypeAsString:DoPart --
+do (if private.type
+    // MarkingSizeType then
+       NamesMarkingSizeType -> getGlobalNames -> str[];
+    // BreakpointType then
+       NamesBreakpointType -> getGlobalNames -> str[];
+    // UserDefinedType then
+       NamesUserDefinedType -> getGlobalNames -> str[];
+    // DataCollectionType then
+       NamesDataCollectionType -> getGlobalNames -> str[];
+    // WriteInFileType then
+       NamesWriteInFileType -> getGlobalNames -> str[];
+    // ListLengthDataCollectionType then
+       NamesListLengthDataCollectionType -> getGlobalNames -> str[];
+    // CountTransitionOccurrenceDataCollectionType then
+       NamesCountTransitionOccurrenceDataCollectionType -> getGlobalNames -> str[];
+    // PlaceContentBreakpointType then
+       NamesPlaceContentBreakpointType -> getGlobalNames -> str[];
+    // TransitionEnabledBreakpointType then
+       NamesTransitionEnabledBreakpointType -> getGlobalNames -> str[];
+    else
+       NamesUnkownMonitorType -> getGlobalNames -> str[];
+   if);
+   
+-- MonitorGetDecl:DoPart --
+do search: private.declarations.scan
+   (# 
+   do (if current.theDeclaration.mlDecl[] <> none then
+          (if current.theDeclaration.mlDecl.id[] -> id.equal then
+              current.theDeclaration.mlDecl[] -> theDecl[];
+              leave search;
+          if);
+      if);
+   #);
+   
+-- MonitorGetSingleNode:DoPart --
+do (if private.type
+    // MarkingSizeType
+    // ListLengthDataCollectionType
+    // PlaceContentBreakpointType then
+       scanPlaceInstances (# do current[] -> theNode[]; #);
+    // CountTransitionOccurrenceDataCollectionType 
+    // TransitionEnabledBreakpointType then
+       scanTransitionInstances (# do current[] -> theNode[]; #);
+   if);
+   
+-- hasNodeInstance:doPart --
+do (instance.id[] -> private.nodes.lookup)<>none -> result;
+   
+-- MonitorAddDeclaration:DoPart --
+do (# decl: ^private.MonitorDeclaration;
+   do &private.MonitorDeclaration[] -> decl[];
+      (description[], theDeclaration[]) -> decl;
+      this(Monitor)[] -> decl.theDeclaration.attach;
+      (decl.theDeclaration.id[], decl[]) -> private.declarations.associate;
+      false -> private.generateTemplateCode;
+      true -> private.syntaxCheckAndGenerateMonitor;
+      private.calculateStatus;
+   #);
+   
+-- MonitorClearDeclarations:DoPart --
+do private.declarations.scan
+   (# 
+   do current.theDeclaration[] -> removed;
+   #);
+   private.declarations.clear;
+   
+-- MonitorScanDeclarations:DoPart --
+do private.declarations.scan
+   (# 
+   do current -> (description[], this(scanDeclarations).current[]);
+      inner scanDeclarations;
+   #);
+   
+-- MonitorGetSimulationName:DoPart --
+do (# pre: @pcre;
+   do ' ' -> pre;
+      name.copy -> simulationName[];
+      loop:
+        (# ok: @boolean;
+        do (simulationName[], '_') -> pre.replace -> (ok, simulationName[]);
+           (if ok then restart loop; if);
+        #);
+   #);
+   
+-- MonitorScanOptions:DoPart --
+do private.options.scan
+   (# 
+   do current[] -> this(scanOptions).current[];
+      inner scanOptions;
+   #);
+   
+-- MonitorInit:DoPart --
+do (# makeDeclaration:
+        (# decl: ^private.MonitorDeclaration;
+        do &private.MonitorDeclaration[] -> decl[];
+           &Declaration[] -> decl.theDeclaration[];
+           decl.theDeclaration.init;
+           theCPNet[] -> decl.theDeclaration.setCPNet;
+           this(Monitor)[] -> decl.theDeclaration.attach;
+           inner;
+           (decl.theDeclaration.id[], decl[]) -> private.declarations.associate;
+        #);
+      makePredicate: makeDeclaration
+        (# 
+        do MonitorPredicate -> getGlobalNames -> decl.description[];           
+        #);
+      makeObserver: makeDeclaration
+        (# 
+        do MonitorObserver -> getGlobalNames -> decl.description[];           
+        #);
+      makeAction: makeDeclaration
+        (# 
+        do MonitorAction -> getGlobalNames -> decl.description[];           
+        #);
+      makeInit: makeDeclaration
+        (# 
+        do MonitorInit -> getGlobalNames -> decl.description[];           
+        #);
+      makeInitFun: makeDeclaration
+        (# 
+        do MonitorInitFun -> getGlobalNames -> decl.description[];           
+        #);
+      makeStop: makeDeclaration
+        (# 
+        do MonitorStop -> getGlobalNames -> decl.description[];
+        #);
+      makeOption:
+        (# OptionType:< Option;
+           opt: ^OptionType;
+           description: ^Text;
+           ValueType:< Object;
+           value: ^ValueType;
+        enter (description[], value[])
+        do &OptionType[] -> opt[];
+           value[] -> opt.theValue[];
+           opt.init;
+           opt[] -> private.options.append;
+           this(Monitor)[] -> opt.attach;
+           inner;
+        #);
+      makeBooleanOption: makeOption
+        (# OptionType:: BooleanOption (# dname:: (# do description[] -> value[] #) #);
+           ValueType:: BooleanObject;
+           bol: @Boolean;
+        enter bol
+        do bol -> value;
+        #);      
+      makeTextOption: makeOption
+        (# OptionType:: TextOption (# dname:: (# do description[] -> value[] #) #);
+           ValueType:: Text;
+        #);
+   do private.init;
+      type -> private.type;
+      theCPNet.theGlobalMonitor[] -> setFatherMonitor;
+      
+      (if type 
+       // DataCollectionType then
+          makePredicate;
+          makeObserver;
+          makeInitFun;
+          makeStop;
+          (NamesMonitorTimed -> getGlobalNames, &BooleanObject[], false) -> makeBooleanOption;
+          (NamesMonitorLogged -> getGlobalNames, &BooleanObject[], true) -> makeBooleanOption;
+       // MarkingSizeType then
+          (NamesMonitorLogged -> getGlobalNames, &BooleanObject[], true) -> makeBooleanOption;
+       // BreakpointType then
+          makePredicate;
+       // UserDefinedType then
+          makeInit;
+          makePredicate;
+          makeObserver;
+          makeAction;
+          makeStop;
+       // WriteInFileType then
+          makeInit;
+          makePredicate;
+          makeObserver;
+          makeStop;
+          (NamesMonitorFileExtension -> getGlobalNames, NamesMonitorFileExtensionDefault -> getGlobalNames)
+            -> makeTextOption;
+       // ListLengthDataCollectionType then
+          (NamesMonitorLogged -> getGlobalNames, &BooleanObject[], true) -> makeBooleanOption;
+       // CountTransitionOccurrenceDataCollectionType then
+          (NamesMonitorLogged -> getGlobalNames, &BooleanObject[], true) -> makeBooleanOption;
+       // PlaceContentBreakpointType then
+          (NamesMonitorIsEmpty -> getGlobalNames, &BooleanObject[], true) -> makeBooleanOption;
+       // TransitionEnabledBreakpointType then
+          (NamesMonitorIsEnabled -> getGlobalNames, &BooleanObject[], true) -> makeBooleanOption;
+      if);
+   #);      
+   
+-- MonitorOnDisabledChanged:DoPart --
+do this(Monitor)[] -> theCPNet.toggleMonitorEnabled;
+      
+-- MonitorDeleted:DoPart --
+do scanNodeInstances
+   (# 
+   do this(Monitor)[] -> current.removeMonitor;
+   #);
+   private.overwrites.scan
+   (# 
+   do current.semanticChanged;
+      this(Monitor)[] -> current.removeOverwrittenBy;
+   #);
+   private.overwrittenBy.scan
+   (# 
+   do current.semanticChanged;
+      this(Monitor)[] -> current.removeOverwrites;
+   #);
+   private.overwrites.clear;
+   private.overwrittenBy.clear;
+   
+-- MonitorUnDeleted:DoPart --
+do (# newNodeInstance: ^NodeInstance;
+      updateNodeInstance:
+        (# theNode: ^Node;
+           oldInstanceNumber: @integer;
+        enter (theNode[], oldInstanceNumber)
+        do findNewInstance:theNode.scanNodeInstances
+             (# 
+             do (if current.thePageInstance.MLInstanceNumber = oldInstanceNumber then
+                    current[] -> newNodeInstance[];
+                if);
+             #)
+        #);
+   do scanNodeInstances
+      (# 
+      do (if current##<=TransitionInstance## then
+             current[] -> QUA
+             (# as:: TransitionInstance;
+             do (thisObj.theTransition[],current.thePageInstance.MLInstanceNumber)
+                  -> updateNodeInstance;
+             #);
+          else
+             current[] -> QUA
+             (# as:: PlaceInstance;
+             do (thisObj.thePlace[],current.thePageInstance.MLInstanceNumber)
+                  -> updateNodeInstance;
+             #);
+         if);         
+         this(Monitor)[] -> newNodeInstance.addMonitor;
+         current[] -> removeNodeInstance;
+         newNodeInstance[] -> addNodeInstance;
+      #);
+      semanticChanged;
+   #);
