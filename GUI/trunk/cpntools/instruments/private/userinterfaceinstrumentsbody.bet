@@ -1,0 +1,193 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../userinterfaceinstruments';
+INCLUDE '../../wselements/index';
+
+-- SimpleSelectGroupInstrumentApply:DoPart --
+do (# theGroup: ^Group;      
+      testPage:
+        (# thePage: ^CPNPage;
+           theCommand: ^SelectGroupCommand;
+        enter thePage[]
+        do (if thePage.getSelectedGroup <> theGroup[] then
+               &SelectGroupCommand[] -> theCommand[];
+               target[] -> theCommand.target[];
+               theCommand.apply;
+               (thePage.net[],theCommand[]) -> registerCommand;
+            else
+               (if target.editable then
+                   target[] -> MakeTextEditor;
+               if);
+           if); 
+        #);
+   do target.getGroup -> theGroup[];
+      (if theGroup.IsGlobal then
+          target.father[] -> qua
+          (# as:: CPNSheet;
+          do thisObj.content.thePage[] -> testPage;
+          #);
+       else
+          theGroup.getCPNPage -> testPage;          
+      if);
+      finish;
+   #);
+   
+-- SelectGroupCommandApply:DoPart --
+do target.father.raised[] -> oldselected[];
+   redo;
+   
+-- ObserverMLEvaluateObject:DoPart --
+do (# theInstrument: ^Instrument;
+   do 'mlevaluate' -> theInstrumentList.lookup -> theInstrument[];
+      (if (theObject[], none) -> theInstrument.relevant then
+          (&Hand[], theObject[]) -> theInstrument.prepare;
+          theInstrument.apply;
+      if);
+   #);
+
+-- ObserverOnStart:doPart --
+do none -> com[];
+   (if true
+    // target## <= Inscription## then
+       &InscriptionTextCommand[] -> com[];
+    // target## <= FusionInfo## then       
+       &FusionInfoTextCommand[] -> com[];
+    // target## <= theIndex.DeclarationNode## then
+       &DeclarationTextCommand[] -> com[];
+    // target## <= theIndex.InstanceNode## then
+       &InstanceNodeTextCommand[] -> com[];
+    // target## <= CpnTab## then
+       &SheetTabTextCommand[] -> com[];
+    // target## <= Group## then
+       &GroupTextCommand[] -> com[];
+    // target## <= GroupTab## then
+       &GroupTabTextCommand[] -> com[];
+    // target## <= Place## then
+       &PlaceTextCommand[] -> com[];
+    // target## <= Transition## then
+       &TransitionTextCommand[] -> com[];
+    // target## <= Aux## then
+       &AuxTextCommand[] -> com[];
+    // target## <= theIndex.DeclBlockNode## then
+       &DeclBlockCommand[] -> com[];
+    // target## <= theIndex.Monitornode## then
+       &LegalMLIdentifierTextCommand[] -> com[];
+    // target## <= theIndex.MonitorBlockNode## then
+       &MonitorBlockTextCommand[] -> com[];
+    // target## <= DeclarationTextAdapter## then
+       &DeclarationTextAdapterTextCommand[] -> com[];
+    // not (target## <= theIndex.NetNode##) then
+       &GeneralTextCommand[] -> com[];
+   if);
+   (if com[] <> none then
+       com.init;
+       target[] -> com.prepare;
+   if);
+   
+-- ObserverOnStop:DoPart --
+do (# 
+   do (if com[] <> none then
+          com.apply;
+      if);
+   #);
+   
+-- ObserverOnKeyDown:DoPart --
+do (# theTextEditor: ^TextEditor;         
+      thePlaceType: ^PlaceType;
+   do (if true
+       // ch = Esc then
+          getTextEditor -> theTextEditor[];
+          theTextEditor.stop;
+       // (target[] <> NONE) and 
+          (target## = PlaceType##) then
+          target[] -> thePlaceType[];                     
+          (if (getTextEditor).asciiFilter[ch] or (ch = upArrow) or (ch = downArrow) then
+              ch -> thePlaceType.makeAutoCompletion;
+           else
+              thePlaceType.resetCycleCounter;
+          if);
+      if);
+   #);
+   
+-- ObserverOnAltKeyDown:DoPart --
+do (if ch = ';' then
+       target[] -> mlEvaluateObject;
+   if);
+   
+-- ObserverOnControlKeyDown:DoPart --
+do (if ch = 'e' then
+       target[] -> mlEvaluateObject;
+   if);
+   
+-- FusionInfoTextCommandInit:doPart --
+do &PlaceList[] -> mergedPlaces[];
+   mergedPlaces.init;
+   
+-- FusionInfoTextCommandApply:doPart --
+do target.getPlace -> thePlace[];
+   thePlace.getFusionSet -> fusionSetBefore[];
+   after[] -> (thePlace.getCPNPage).net.fusionSets.lookup -> fusionSetAfter[];
+   (if fusionSetAfter[] = none then
+       fusionSetBefore[] -> fusionSetAfter[];
+   if);
+   redo;  
+   
+-- FusionInfoTextCommandApplyText:doPart --
+do (if fusionSetBefore[] = fusionSetAfter[] then
+       string[] -> fusionSetBefore.net.fusionSets.disassociate;
+       string.copy -> fusionSetBefore.setName;
+       (fusionSetBefore.getName, fusionSetBefore[])
+         -> fusionSetBefore.net.fusionSets.associate;
+       fusionSetBefore.scanFusionSet
+       (# 
+       do current.semanticchanged;
+       #);
+    else (* merge/unmerge sets *)
+       (if thePlace.getFusionSet = fusionSetBefore[] then
+           (if mergedPlaces.size = 0 then
+               fusionSetBefore.scanFusionSet
+               (# 
+               do current[] -> mergedPlaces.append;
+               #);
+           if);
+           mergedPlaces.scan
+           (# 
+           do current[] -> fusionSetBefore.removePlace;
+              current[] -> fusionSetAfter.addPlace;
+           #);        
+           fusionSetBefore.getName -> fusionSetBefore.net.fusionSets.disassociate;
+           fusionSetAfter.getName -> fusionSetAfter.setName;
+        else
+           (fusionSetBefore.getName, fusionSetBefore[])
+             -> fusionSetBefore.net.fusionSets.associate;
+           mergedPlaces.scan
+           (# 
+           do current[] -> fusionSetAfter.removePlace;
+              current[] -> fusionSetBefore.addPlace;
+           #);
+           fusionSetBefore.getName -> fusionSetBefore.setName;
+       if);
+   if);

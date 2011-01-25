@@ -1,0 +1,402 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../simulationinstruments';
+
+-- OneStepWorkspaceInstrumentApply:doPart --
+do (# thePage: ^CPNPage;
+      theInstance: ^PageInstance;
+      count: @integer;
+      theNet: ^CPNet;
+      foundEnabled, timeIncreased: @boolean;
+      findCompiledNet: 
+        (#
+        do theIndex.getRandomNet -> theNet[];
+           (if not (theNet.status = compiled) then
+               restart findCompiledNet;
+           if);
+        #);
+   do findCompiledNet;
+      (if thenet[] <> NONE then
+          (1,0) -> thenet.setStopCriteria;
+          theNet.ML[] -> MLRun;
+          theNet.getAllMarkings;
+          L: (#
+             do thenet.getAllEnabledTransitions -> foundEnabled;
+                (if not foundEnabled then
+                    thenet.IncreaseModelTime -> timeIncreased;
+                    (if timeIncreased then
+                        restart L;
+                    if);
+                if);
+             #);
+          theNet.updateStepAndTime;
+      if);
+      finish;
+   #);
+   
+-- OneStepTransitionInstrumentApply:doPart --
+do (# foundEnabled, timeIncreased: @boolean;
+      theTransitionInstance: ^TransitionInstance;
+      theBindingDialog: ^BindingDialog;
+      msg: ^Text;
+      net: ^CPNet;
+   do (if (target.status = compiled) and (target.getSubpage = none) 
+          and transitionInstanceIsEnabled then
+          &Text[] -> msg[];
+          (if theInstance.thePage.numberOfInstances = 1 then
+              'Firing transition on page %s ' 
+                -> msg.putFormat (# do theInstance.getName -> s #);            
+           else
+              'Firing transition on page %s (%d) ' 
+                -> msg.putFormat (# 
+                                 do theInstance.getName -> s;
+                                    theInstance.thePage.numberOfInstances -> d; 
+                                 #);  
+          if);
+          msg[] -> fixedStatus.running;
+          fixedStatus.start;
+          setBusyCursor;
+          target.id[] -> theInstance.lookupTransitionInstance
+            -> theTransitionInstance[];
+          (*theBindingDialog is never NONE when the transition is enabled*)
+          theTransitionInstance.theBindingDialog[] -> theBindingDialog[];
+          (if (theBindingDialog[]<>NONE) and theBindingDialog.manualBindingStarted then
+              theBindingDialog.fireWithCurrentChoices;
+           else
+              theInstance.thePage.net[] -> net[];
+              L:
+                (#
+                do net.getAllEnabledTransitions -> foundEnabled;
+                   (if not foundEnabled then
+                       net.IncreaseModelTime -> timeIncreased;
+                       (if timeIncreased then
+                           restart L;
+                       if);
+                   if);
+                #);
+              net.ML[] -> theTransitionInstance.fireTransition;
+              L: (#
+                 do net.getAllEnabledTransitions -> foundEnabled;
+                    (if not foundEnabled then
+                        net.IncreaseModelTime -> timeIncreased;
+                        (if timeIncreased then
+                            restart L;
+                        if);
+                    if);
+                 #);
+              theTransitionInstance.getMarkingsOfSurroundingPIGs;
+              net.updateStepAndTime;
+          if);
+          UnsetBusyCursor;
+          fixedStatus.stop;
+      if);
+      finish;
+   #);
+   
+-- OneStepSubpageInfoInstrumentRelevant:DoPart --
+do (# theInstance: ^PageInstance;  
+   do (if ((target.getTransition).getCPNet).status=compiled then
+          search: theHand.selection.scan
+            (# theSheet: ^CPNSheet;
+            do current.scan
+               (#
+               do (if current## <= CPNSheet## then
+                      current[] -> theSheet[];
+                      theSheet.content[] -> theInstance[];
+                      leave search;
+                  if);
+               #);
+            #);
+          (if theInstance[] <> none then
+              (target.getTransition).id[] 
+                -> theInstance.lookupTransitionInstance
+                -> theTransitionInstance[];
+              scan: theTransitionInstance.theSubpageInstance.scanSubpageInstanceTree
+                (# 
+                do current.hasEnabledTransitions -> value;
+                   (if value then 
+                       leave scan
+                   if);
+                #);
+          if);
+       else
+          false -> value;
+      if);
+   #);
+      
+-- OneStepSubpageInfoInstrumentApply:DoPart --
+do (# enabledInstances: @TransitionInstanceSequence;
+   do enabledInstances.init;
+      theTransitionInstance.theSubpageInstance.scanSubpageInstanceTree
+      (# 
+      do (if current.hasEnabledTransitions then
+             current.scanTransitionInstances
+             (# 
+             do (if current.enabled then
+                    current[] -> enabledInstances.append;
+                if);
+             #);
+         if);
+      #);
+      
+      (1, enabledInstances.size) 
+        -> ignuin 
+        -> enabledInstances.get
+        -> FireTransitionAndUpdate;
+      
+      finish;
+   #);
+   
+-- FireRandomTransitionOnPageInstance:doPart --
+do (# msg: ^Text;
+   do &Text[] -> msg[];
+      (if thePageInstance.thePage.numberOfInstances = 1 then
+          'Firing transition on page %s ' 
+            -> msg.putFormat (# do thePageInstance.getName -> s #);            
+       else
+          'Firing transition on page %s (%d) ' 
+            -> msg.putFormat (# 
+                             do thePageInstance.getName -> s;
+                                thePageInstance.thePage.numberOfInstances -> d; 
+                             #);  
+      if);
+      msg[] -> fixedStatus.running;
+      fixedStatus.start;
+      setBusyCursor;     
+      (# foundEnabled, timeIncreased: @boolean;
+         errorMsg: ^Text; 
+         theTransitionInstance: ^TransitionInstance;
+      do L: (#
+            do thePageInstance.thePage.net.getAllEnabledTransitions -> foundEnabled;
+               (if not foundEnabled then
+                   thePageInstance.thePage.net.IncreaseModelTime -> timeIncreased;
+                   (if timeIncreased then
+                       restart L;
+                   if);
+               if);
+            #);
+         (if thePageInstance.hasEnabledTransitions then
+             thePageInstance.fireRandomTransition -> theTransitionInstance[];
+             theTransitionInstance.getMarkingsOfSurroundingPIGs;
+             L: (#
+                do thePageInstance.thePage.net.getAllEnabledTransitions -> foundEnabled;
+                   (if not foundEnabled then
+                       thePageInstance.thePage.net.IncreaseModelTime -> timeIncreased;
+                       (if timeIncreased then
+                           restart L;
+                       if);
+                   if);
+                #);
+             thePageInstance.thePage.net.updateStepAndTime;
+         if);
+      #);
+      UnsetBusyCursor;
+      fixedStatus.stop;
+   #);
+
+-- FireTransitionAndUpdate:doPart --
+do (# foundEnabled, timeIncreased: @boolean;
+   do (theTransitionInstance.net).ml[] -> theTransitionInstance.fireTransition;
+      theTransitionInstance.getMarkingsOfSurroundingPIGs;
+      L:
+    (#
+    do (theTransitionInstance.net).getAllEnabledTransitions -> foundEnabled;
+       (if not foundEnabled then
+           (theTransitionInstance.net).IncreaseModelTime -> timeIncreased;
+           (if timeIncreased then
+           restart L;
+           if);
+       if);
+        #);
+      (theTransitionInstance.net).updateStepAndTime;
+   #);
+
+-- OneStepCPNSheetInstrumentRelevant:doPart --
+do ((target.getCPNet).status = compiled) -> value;
+   (if value then   
+       (* Bugfix #1227 *)
+       scan: theHand.selection.scan
+         (# 
+         do current.scan
+            (# 
+            do (if true
+                //current## <= Transition## then
+                   false -> value;
+                   leave scan;
+                // current## <= CPNSheet## then
+                   leave scan;
+               if);
+            #);
+         #);     
+   if);
+   
+-- OneStepBinderInstrumentApply:DoPart --
+do (# enabledList: @Sequence(# Element:: TransitionInstance #);
+      chosenTransition: ^TransitionInstance;
+   do enabledList.init;
+      target.sheets.scan
+      (# theCPNSheet: ^CpnSheet;
+      do (if current## <= CpnSheet## then
+             current[] -> theCPNSheet[];
+             (if theCPNSheet.content.hasEnabledTransitions then
+                 theCPNSheet.content.scanTransitionInstances
+                 (#
+                 do (if current.enabled then
+                        current[] -> enabledList.append;
+                    if);
+                 #);
+             if);
+         if);
+      #);
+      (if enabledList.size > 0 then
+          (1, enabledList.size) -> ignuin -> enabledList.get -> chosenTransition[];
+          chosenTransition[] -> FireTransitionAndUpdate;
+      if);
+      finish;
+   #);
+   
+-- MLEvaluateCommandApply:DoPart --
+do INNER;
+   (if ((theML[]<>NONE) AND (input[]<>NONE)) then       
+       (target[], theML[], input[],'feedbackOnSucces'->options.lookupBoolean)
+         -> MLEvaluateExpression;
+   if);
+   
+-- GenericMLEvaluateInstrumentInit:DoPart --
+do 'evaluate_ml' -> helpname[];
+   
+   ('feedbackOnSucces','mlevaluate.feedbackonsuccess')->options.setAddOptionWithDefault(# OptionType:: BooleanOption(# dname:: (# do 'Feedback on no errors' -> value[]; #); #); #);
+   true -> feedbackOnSucces;
+   
+   options[] 
+     -> theMLEvaluateInscriptionInstrument.options[]
+     -> theMLEvaluateAuxLabelInstrument.options[];
+      
+   theMLEvaluateInscriptionInstrument.init;
+   theMLEvaluateInscriptionInstrument[] -> register;
+
+   theMLEvaluateAuxLabelInstrument.init;
+   theMLEvaluateAuxLabelInstrument[] -> register;  
+   
+-- PlayInstrumentInit:DoPart --
+do 'play' -> helpname[];
+   50 -> nSteps;   
+   ('numberofsteps','play.numberofsteps')->options.setAddOptionWithDefault(# OptionType:: IntegerOption(# dname:: (# do 'Number of steps' -> value[]; #); #); #);
+   1000 -> delay;
+   ('delay', 'play.delay')->options.setAddOptionWithDefault(# OptionType:: IntegerOption(# dname:: (# do 'Delay in milliseconds' -> value[]; #); #); #);
+   
+-- PlayApply:DoPart --
+do (# selectedInstance: ^TransitionInstance;
+      foundEnabled, timeIncreased: @boolean;
+      thePage: ^CPNPage;
+      theBinder:^CPNBinder;
+      numOfSteps: @integer;     
+      delay: @real;
+   do 
+      (if (target.content.thePage.net.status = compiled) then
+          target.content[] -> thePageInstance[];
+          thePageInstance.thePage[] -> thePage[];
+          (if not thePage.net.ML.isSimulating then
+              true -> thePage.net.ML.isSimulating;
+              'numberofsteps'->options.lookupInteger->numOfSteps;
+              ('delay'->options.lookupInteger)->delay;
+              &|System
+              (# count: @Integer;
+              do RunLoop:
+                   (# pos:@integer;
+                      timeStart, timeEnd: @integer;
+                      timeDelay: @real;
+                      error: @boolean;
+                   do getTickCount -> timeStart;
+                      L:(#
+                        do thePage.net.getAllEnabledTransitions -> foundEnabled;
+                           (if not foundEnabled then
+                               thePage.net.IncreaseModelTime -> timeIncreased;
+                               (if timeIncreased then
+                                   restart L;
+                               if);
+                           if);
+                        #);
+                      thePage.net.updateStepAndTime;
+                      (if foundEnabled then                          
+                          (if (thePage.net.ML.isSimulating) AND (count < numOfSteps) then
+                              tilist.clear;
+                              thePage.net.scanCPNPages
+                              (# 
+                              do current.scanInstances
+                                 (#
+                                 do current.scanTransitionInstances
+                                    (#
+                                    do (if current.enabled then
+                                           current[] -> tilist.append;
+                                       if);
+                                    #);
+                                 #);
+                              #);
+                              (if tilist.size = 0 then
+                                  (* If someone has deleted the last transition,
+                                   * while we're simulating. *)
+                                  restart RunLoop;
+                              if);
+                              (1, tilist.size) -> ignuin -> pos -> tilist.get -> selectedInstance[];
+                              scanBinders
+                              (#
+                              do (if current##<=CPNBinder## then
+                                     current[] -> theBinder[];
+                                     theBinder.sheets.scan
+                                     (# theSheet: ^CPNSheet;
+                                     do (if current## <= CPNSheet## then
+                                            current[] -> theSheet[];
+                                            (if theSheet.content[]=selectedInstance.thePageInstance[] then
+                                                theSheet[]->theBinder.raise;
+                                            if);
+                                        if);
+                                     #);
+                                 if);
+                              #);
+                              thePage.net.ML[] -> selectedInstance.fireTransition -> error;
+                              (if error then
+                                  leave RunLoop;
+                              if);
+                              selectedInstance.getMarkingsOfSurroundingPIGs;
+                              count + 1 -> count;
+                              (if count < numOfSteps then
+                                  getTickCount -> timeEnd;                                  
+                                  (delay - timeDelay) / 1000.0 -> sleep;
+                              if);
+                              restart RunLoop;
+                          if);
+                      if);
+                      (if thePage.net.ML.isSimulating then
+                          false -> thePage.net.ML.isSimulating;
+                          restart RunLoop;
+                      if);
+                      (* set to false so that we can use the playinstrument again *)
+                   #);
+              #)[] -> Fork;
+          if);
+      if);
+   #);

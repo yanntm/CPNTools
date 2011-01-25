@@ -1,0 +1,355 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../cpnworkspace';
+INCLUDE 'cpninstrument';
+INCLUDE 'cpncommands';
+INCLUDE 'binderinstruments';
+
+--- CPNWorkspaceLib:attributes---
+
+NewDeclGlobalInstrument: Instrument
+  (# TargetType:: theIndex.GlobalBoxNode;
+     apply::
+       (#
+       do (target.content.getTopDeclaration, NONE, false) -> CreateDeclaration;
+          finish;
+       #);
+  #);
+NewBlockGlobalInstrument: Instrument
+  (# TargetType:: theIndex.GlobalBoxNode;
+     apply::
+       (#
+       do (target.content.getTopDeclaration, NONE, true) -> CreateDeclaration;
+          finish;
+       #);
+  #);
+
+NewDeclInstrument: Instrument
+  (# TargetType:: theIndex.AbstractDeclNode;
+     apply::
+       (#
+       do (if target.content.isBlock then
+              (if target.expanded then
+                  (target.content[], NONE, false) -> CreateDeclaration;
+               else
+                  (target.content.getParent, target.content[], false) -> CreateDeclaration;
+              if);
+           else
+              (target.content.getParent, target.content[], false) -> CreateDeclaration;
+          if);
+          finish;
+       #);
+  #);
+NewBlockInstrument: Instrument
+  (# TargetType:: theIndex.AbstractDeclNode;
+     apply::
+       (#
+       do (if target.content.isBlock then
+              (if target.expanded then
+                  (target.content[], NONE, true) -> CreateDeclaration;
+               else
+                  (target.content.getParent, target.content[], true) -> CreateDeclaration;
+              if);
+           else
+              (target.content.getParent, target.content[], true) -> CreateDeclaration;
+          if);
+          finish;
+       #);
+  #);
+SimpleDeleteDeclInstrument: Instrument
+  (# TargetType:: theIndex.AbstractDeclNode;
+     relevant:: (# do value and not (target##<=theIndex.SimpleDeclarationNode##)->value;#);
+     apply::
+       (#
+       do target.content[] -> DeleteDeclaration;
+          finish;
+       #);
+  #);
+SimpleDeleteDeclTabInstrument: Instrument
+  (# TargetType:: TextTab;
+     relevant:: (# do value and not (target.theSheet##<=MonitorSheet##) -> value;   #);     
+     apply::
+       (#
+       do target.theSheet.content[] -> DeleteDeclaration;
+          finish;
+       #);
+  #);
+
+MakeDeclarationClipping:
+  (# target: ^Declaration;
+     clip: ^DeclarationClipping;
+  enter target[]
+  do (# container: ^Declaration;
+        before: ^Declaration;
+        
+     do target.getParent -> container[];
+        search: container.scanDeclarations
+        (#
+        do (if current[] = target[] then
+               leave search;
+            else
+               current[] -> before[];
+           if);
+        #);
+        &DeclarationClipping[] -> clip[];
+        (container[], before[], target[]) -> clip.prepare;
+     #);
+  exit clip[]
+  #);
+DeclarationClipping:
+  (# container: ^Declaration;
+     after: ^Declaration;
+     target: ^Declaration;
+     mldecl: ^Decl;
+     name:
+       (# txt: ^Text;
+       do target.shortName -> txt[];
+       exit txt[]
+       #);
+     prepare:
+       (#
+       enter (container[], after[], target[])
+       #);
+     insert:
+       (# node: ^IndexNode
+       do container.node[] -> node[];
+          (if node[] <> NONE then
+              true -> node.expanded;
+          if);
+          (target[],after[]) -> container.addDeclarationAfter;
+          (if (mldecl[] <> NONE) then
+              mldecl[] -> target.changeDecl;
+          if); 
+       #);
+     remove:
+       (# node: ^IndexNode
+       do container.node[] -> node[];
+          (if node[] <> NONE then
+              true -> node.expanded;
+          if);
+          target.mldecl[] -> mldecl[];
+          target.delete;
+          (if mldecl[] <> NONE then
+              mldecl.overwrittenBy.scan
+              (#
+              do current.semanticChanged;
+              #);
+              mldecl.overwrites.scan
+              (# 
+              do current.semanticChanged;
+                 current.scanUsedBy
+                 (# 
+                 do current.semanticChanged;
+                 #);
+                 current.scanUsedByNodes
+                 (# 
+                 do current.semanticChanged;
+                 #);
+              #);
+              mldecl.scanUsedBy
+              (#
+              do current.semanticChanged;
+              #);
+              mldecl.scanUsedByNodes
+              (#
+              do current.semanticChanged;
+              #);
+          if);
+       #);
+     getCPNet:
+       (# net: ^CPNet;
+       do target.getCPNet -> net[];
+       exit net[]
+       #);
+  #);
+DeclarationClippingList: List
+  (# element:: DeclarationClipping;
+     getCPNet:
+       (# net: ^CPNet;
+       do loop: scan
+            (#
+            do current.getCPNet -> net[];
+               leave loop;
+            #);
+       exit net[]
+       #);
+  #);
+DeclarationRemovalCommand: Command
+  (# 
+     clips: ^DeclarationClippingList;
+     workspaceCommands: ^CommandList;
+     
+     net: ^CPNet;
+     getName::
+       (#
+       do 'Delete ' -> name[];
+          loop: clips.scan
+            (#
+            do current.name -> name.puttext;
+               leave loop;
+            #);
+          (if clips.size > 1 then
+              '...' -> name.puttext;
+          if);
+       #);
+     apply::
+       (#
+       enter (clips[],workspaceCommands[])
+       do clips.getCPNet -> net[];
+          redo;
+       #);
+     redo::
+       (#
+       do workspaceCommands.scanreverse (# do current.redo; #);
+          clips.scanReverse
+          (#
+          do current.remove;
+          #);
+       #);
+     undo::
+       (#
+       do clips.scan
+          (#
+          do current.insert;
+          #);
+          workspaceCommands.scan (# do current.undo; #);
+       #);
+  #);
+
+DeclarationClippingCommand: Command
+  (# clip: ^DeclarationClipping;
+     net: ^CPNet;
+     getName::
+       (#
+       do (if clip.target.isBlock then
+              'New Block' -> name[];
+           else
+              'New Decl' -> name[];
+          if);
+       #);
+     apply::
+       (#
+       enter clip[]
+       do clip.insert;
+          clip.getCPNet -> net[];
+       #);
+     redo::
+       (#
+       do clip.insert;
+       #);
+     undo::
+       (#
+       do clip.remove;
+       #);
+  #);
+
+CreateDeclaration:
+  (# container: ^Declaration;
+     after: ^Declaration;
+     block: @boolean;
+     new: ^Declaration;
+  enter (container[], after[], block)
+  do (# node: ^IndexNode;
+        clip: ^DeclarationClipping;
+        com: ^DeclarationClippingCommand;
+     do &Declaration[] -> new[];
+        block -> new.isBlock;
+        new.init;
+        &DeclarationClipping[] -> clip[];
+        (container[], after[], new[]) -> clip.prepare;
+        &DeclarationClippingCommand[] -> com[];
+        clip[] -> com.apply;
+        (new.getCPNet,com[]) -> registerCommand;
+        new.node[] -> node[];
+        (if node[] <> NONE then
+            true -> node.expanded;
+            node[] -> makeTextEditor;
+        if);
+     #);
+  exit new[]
+  #);
+DeleteDeclaration:
+  (# target: ^Declaration;
+  enter target[]
+  do (# container: ^Declaration;
+        clips: ^DeclarationClippingList;
+        workspaceCommands: ^CommandList;
+        com: ^DeclarationRemovalCommand;
+        theNet: ^CPNet;
+        
+        buildWorkspaceCommands:
+          (# CreateCloseSheetCommands:
+             (# theDeclaration: ^Declaration;
+                processBinder:
+                  (# 
+                     theBinder: ^Folder;
+                  enter theBinder[]
+                  do theBinder.sheets.scan
+                     (#
+                     do (if current## <= TextSheet## then
+                            (if current.content[] = theDeclaration[] then
+                                (current[],theBinder[]) -> buildCloseTabCommand -> workspaceCommands.append;
+                            if);
+                        if);
+                     #);
+                  #);
+             enter theDeclaration[]
+             do folderManager.theStandardLayer.folders.scan
+                (#
+                do current[] -> processBinder;
+                #);
+                (if theDeclaration.isBlock then
+                    theDeclaration.scanDeclarations
+                    (#
+                    do current[] -> CreateCloseSheetCommands;
+                    #);
+                if);
+             #);
+          do &CommandList[] -> workspaceCommands[];
+             workspaceCommands.init;
+             target[] -> CreateCloseSheetCommands;
+          #);
+        delete:
+          (# target: ^Declaration;
+          enter target[]
+          do target[] -> MakeDeclarationClipping -> clips.append;
+             (if target.isBlock then
+                 target.scanDeclarations
+                 (#
+                 do current[] -> delete;
+                 #);
+             if);
+          #);
+     do buildWorkspaceCommands;
+        &DeclarationClippingList[] -> clips[];
+        target.getCPNet -> theNet[];
+        target[] -> delete;
+        &DeclarationRemovalCommand[] -> com[];
+        (clips[],workspaceCommands[]) -> com.apply;
+        (theNet[],com[]) -> registerCommand;
+     #);
+  #);
+

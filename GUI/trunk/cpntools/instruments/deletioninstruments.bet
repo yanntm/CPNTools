@@ -1,0 +1,634 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../cpnworkspace';
+
+INCLUDE 'cpncommands.bet';
+INCLUDE 'cpninstrument.bet';
+INCLUDE '../resources/figures/createfigures.bet';
+INCLUDE 'groupinstruments';
+INCLUDE 'binderinstruments';
+INCLUDE 'toolinstruments';
+INCLUDE 'creationinstruments';
+INCLUDE 'hierarchyinstruments';
+INCLUDE 'monitoringinstruments';
+INCLUDE 'declinstruments';
+
+BODY 'private/deletioninstrumentsbody';
+
+-- CPNWorkSpaceLib: attributes --
+
+
+DeletePageElementInstrument: GenericInstrument
+  (# DeletePortTypeInstrument: @Instrument
+       (# TargetType:: PortType;
+          apply::
+            (# 
+            do target.getPlace -> RemovePortType;
+               finish;
+            #);
+       #);     
+     DeleteAnnotationInstrument: @Instrument
+       (# TargetType:: Annotation;
+          apply::
+            (# 
+            do target[] -> DeleteAnnotation;
+               finish;
+            #);
+       #);
+     DeletePlaceTypeInstrument: @Instrument
+       (# TargetType:: PlaceType;
+          apply::
+            (# 
+            do target[] -> DeletePlaceType;
+               finish;
+            #);
+       #);
+     DeleteInitMarkInstrument: @Instrument
+       (# TargetType:: InitMark;
+          apply::
+            (# 
+            do target[] -> DeleteInitMark;
+               finish;
+            #);
+       #);
+     DeleteTransGuardInstrument: @Instrument
+       (# TargetType:: TransGuard;
+          apply::
+            (# 
+            do target[] -> DeleteTransGuard;
+               finish;
+            #);
+       #);
+     DeleteTransPriorityInstrument: @Instrument
+       (# TargetType:: TransPriority;
+          apply::
+            (# 
+            do target[] -> DeleteTransPriority;
+               finish;
+            #);
+       #);
+     DeleteTransTimeInstrument: @Instrument
+       (# TargetType:: TransTime;
+          apply::
+            (# 
+            do target[] -> DeleteTransTime;
+               finish;
+            #);
+       #);
+     DeleteTransActionInstrument: @Instrument
+       (# TargetType:: TransAction;
+          apply::
+            (# 
+            do target[] -> DeleteTransAction;
+               finish;
+            #);
+       #);
+     DeleteTransChannelInstrument: @Instrument
+       (# TargetType:: TransChannel;
+          apply::
+            (# 
+            do target[] -> DeleteTransChannel;
+               finish;
+            #);
+       #);
+     DeleteFusionInfoInstrument: @Instrument
+       (# TargetType:: FusionInfo;
+          apply::
+            (# 
+            do target[] -> DeleteFusionInfo;
+               finish;
+            #);
+       #);
+     DeleteSubpageInfoInstrument: @Instrument
+       (# TargetType:: SubpageInfo;
+          apply::
+            (# 
+            do (target.getTransition, (target.getTransition).getSubpage) -> DeletePage;
+               finish;
+            #);
+       #);
+     DeleteNodeInstrument: @Instrument
+       (# TargetType:: CPNNode;
+          
+          Apply::
+            (# daHand: ^Hand;
+               theTarget: ^Entity;
+               theInstrument: ^Instrument;
+               theArcInstrument: ^ArcInstrument;
+               picker: ^PickInstrument;          
+	    do theHand[] -> daHand[];
+               target[] -> DeleteNode;
+               Finish;
+               daHand.active[] -> picker[];
+               (if (picker.active[] <> none) and
+                   (picker.active## <= ArcInstrument##) then
+                   picker.active[] -> theArcInstrument[];
+                   (if theArcInstrument.source[] <> NONE then
+                       theArcInstrument.cancel;
+                       picker.DeactivateInstrument;                  
+                   if);
+               if);
+            #);
+       #);
+     DeleteSSNodeInstrument: @Instrument
+       (# TargetType:: SSNode;
+	  Apply::
+	    (#
+	    do target[] -> DeleteSSNode;
+               finish;
+	    #);
+       #);
+     DeleteAPageElementInstrument: @Instrument
+       (# TargetType:: PageElement;
+          relevant::
+            (# do not (target## <= Node##) -> value; #);
+          Apply::
+            (#         
+	    do target[] -> DeletePageElement;
+               Finish;
+            #);
+       #);  
+     
+     init::
+       (# 
+       do DeletePortTypeInstrument.init;
+          DeletePortTypeInstrument[] -> register;
+          DeleteAnnotationInstrument.init;
+          DeleteAnnotationInstrument[] -> register;
+          DeletePlaceTypeInstrument.init;
+          DeletePlaceTypeInstrument[] -> register;
+          DeleteInitMarkInstrument.init;
+          DeleteInitMarkInstrument[] -> register;
+          DeleteTransGuardInstrument.init;
+          DeleteTransGuardInstrument[] -> register;
+          DeleteTransPriorityInstrument.init;
+          DeleteTransPriorityInstrument[] -> register;
+          DeleteTransTimeInstrument.init;
+          DeleteTransTimeInstrument[] -> register;
+          DeleteTransActionInstrument.init;
+          DeleteTransActionInstrument[] -> register;
+          DeleteTransChannelInstrument.init;
+          DeleteTransChannelInstrument[] -> register;
+          DeleteFusionInfoInstrument.init;
+          DeleteFusionInfoInstrument[] -> register;
+          DeleteSubpageInfoInstrument.init;
+          DeleteSubpageInfoInstrument[] -> register;
+          DeleteNodeInstrument.init;
+          DeleteNodeInstrument[] -> register;
+	  DeleteSSNodeInstrument.init;
+          DeleteSSNodeInstrument[] -> register;
+          DeleteAPageElementInstrument.init;
+          DeleteAPageElementInstrument[] -> register;
+       #);
+  #);
+
+DeleteSimulationItemCommand: CPNCommand
+  (# TargetType:: SimulationItem;
+     oldMarking: ^Text;
+     getName::
+       (# 
+       do 'Delete current marking' -> name[];
+       #);
+     prepare::
+       (# 
+       do target.instance.marking -> oldMarking[]; 
+       #);
+     apply::
+       (# 
+       do redo;
+          ((target.instance.thePlace.getCPNPage).net[],THIS(DeleteSimulationItemCommand)[])
+            -> registerCommand;
+       #);
+     undo::
+       (# 
+       do stopTextEditor;
+          oldMarking[] -> target.instance.changeCurrentMarking;
+       #);
+     redo::
+       (# 
+       do stopTextEditor;
+          '' -> target.instance.changeCurrentMarking;
+       #);     
+  #);
+DeleteSimulationItemInstrument: CPNInstrument
+  (# CommandType:: DeleteSimulationItemCommand;     
+  #);
+
+deleteMonitorsFromNode:
+  (# theNode: ^Node;
+     theCommandList: ^CommandList;
+  enter (theNode[], theCommandList[])
+  do theNode.scanNodeInstances
+     (# currentNodeInstance: ^Nodeinstance;
+     do current[] -> currentNodeInstance[];
+	currentNodeInstance.scanMonitors
+        (# removeNodeCom: ^RemoveNodeFromMonitorCommand;
+        do (if not current.canChangeDeclarations then
+               current[] -> deleteMonitorNoRegister -> theCommandList.append;
+            else
+               &RemoveNodeFromMonitorCommand[] -> removeNodeCom[];
+               (currentNodeInstance[],theNode[],current[]) -> removeNodeCom.init;
+               removeNodeCom.apply;
+               removeNodeCom[] -> theCommandList.append;
+           if);
+        #);
+     #);
+  #);
+
+RemoveNodeFromMonitorCommand: Command
+  (# theMonitor: ^Monitor;
+     theNodeInstance: ^NodeInstance;
+     theNode: ^Node;
+     instanceNumber: @integer;
+     init:: 
+       (# 
+       enter (theNodeInstance[],theNode[],theMonitor[]) 
+       do theNodeInstance.thePageInstance.MLInstanceNumber -> instanceNumber;
+       #);
+     apply:: (# do redo; #);
+     redo:: (# do theNodeInstance[] -> theMonitor.removeNodeInstance; #);
+     undo:: 
+       (# 
+       do findTheRightNewInstance:theNode.scanNodeInstances
+            (# 
+            do (if current.thePageInstance.MLInstanceNumber = instanceNumber then
+                   current[] -> theNodeInstance[];
+                   leave findTheRightNewInstance;
+               if);
+            #);          
+          theNodeInstance[] -> theMonitor.addNodeInstance; 
+       #);           
+  #);
+
+DeleteNode:
+  (# theNode: ^Node;    
+  enter theNode[]
+  <<SLOT DeleteNode:DoPart>>
+  #);
+
+DeleteSSNode:
+  (# clip: ^PageClip;
+     theSSNode: ^SSNode;
+     com: ^DeleteCommand;
+     theSSNodeClipping: ^SSNodeClipping;
+     compositeCommand: ^Command;
+     theCommandList: ^CommandList;
+  enter theSSNode[]
+  do &PageClip[] -> clip[];
+     theSSNode[] -> ClippingFactory -> theSSNodeClipping[] -> clip.add;
+     theSSNode.scanArcs
+      (#
+      do current[] -> ClippingFactory -> clip.add;
+      #);
+     &DeleteCommand[] -> com[];
+     theSSNode.getCPNPage -> com.prepare;
+     clip[] -> com.apply;
+     (theSSNode.getCPNet,com[]) -> registerCommand;
+  #);
+
+DeletePageElement:
+  (# thePageElement: ^PageElement;
+  enter thePageElement[]
+  do (# clip: ^PageClip;
+        com: ^DeleteCommand;
+        theGroup: ^Group;
+        theNet: ^CPNet;
+     do &PageClip[] -> clip[];
+        thePageElement[] -> ClippingFactory -> clip.add;
+
+        &DeleteCommand[] -> com[];
+        thePageElement.getCPNPage -> com.prepare;
+        clip[] -> com.apply;
+        (thePageElement.getCPNPage).net[] -> theNet[];
+        (theNet[],com[]) -> registerCommand;
+     #);
+  #);
+
+GenericDeleteInstrument: CPNGenericInstrument
+  (# 
+     FigureT:: DeleteFigure;
+     
+     theDeletePageElementInstrument: @DeletePageElementInstrument;
+     theDeletePageInstrument: @DeletePageInstrument;
+     theDeleteToolCellInstrument: @DeleteToolCellInstrument;
+     theDeleteToolCollectionInstrument: @DeleteToolCollectionInstrument; 
+     theDeleteGroupInstrument: @SimpleDeleteGroupInstrument;
+     theDeleteGroupElementsInstrument: @DeleteGroupElementsInstrument;
+     theSimpleDeleteDeclInstrument: @SimpleDeleteDeclInstrument;
+     theDeleteMonitorInstrument: @DeleteMonitorInstrument;
+     theDeleteSimulationItemInstrument: @DeleteSimulationItemInstrument;
+          
+     tooltip::
+       (# 
+       do NamesDeleteElement -> getGlobalNames -> thetip[];
+       #);
+     
+     init::
+       (# 
+       do 'delete_element' -> helpname[];
+          theDeleteGroupElementsInstrument.init;
+          theDeleteGroupElementsInstrument[] -> register;
+          theDeletePageElementInstrument.init;
+          theDeletePageElementInstrument[] -> register;
+          theDeletePageInstrument.init;
+          theDeletePageInstrument[] -> register;
+          theDeleteToolCollectionInstrument.init;
+          theDeleteToolCollectionInstrument[] -> register;
+          theDeleteGroupInstrument.init;
+          theDeleteGroupInstrument[] -> register;
+          theSimpleDeleteDeclInstrument.init;
+          theSimpleDeleteDeclInstrument[] -> register;
+          theDeleteMonitorInstrument.init;
+          theDeleteMonitorInstrument[] -> register;
+          theDeleteSimulationItemInstrument.init;
+          theDeleteSimulationItemInstrument[] -> register;
+       #);
+  #);
+
+DeletePageInstrument: CPNGenericInstrument
+  (# DeletePageInBinderOnWorkspaceInstrument: @Instrument
+       (# TargetType:: CPNTab;
+          apply::
+            (# thePageInstance: ^PageInstance;
+            do target.theSheet.content[] -> thePageInstance[];
+               (thePageInstance.theTransition[], thePageInstance.thePage[]) -> DeletePage;
+               finish;
+            #);
+       #);
+     DeletePageInBindersIndexInstrument: @Instrument
+       (# TargetType:: theIndex.TabNode;
+          apply:: 
+            (# thePageInstance: ^PageInstance;
+            do target.theTab.theSheet.content[] -> thePageInstance[];
+               (thePageInstance.theTransition[], thePageInstance.thePage[]) -> DeletePage;
+               finish;
+            #);
+       #);
+     init::
+       (# 
+       do DeletePageInBinderOnWorkspaceInstrument[] -> register;
+          DeletePageInBindersIndexInstrument[] -> register;
+       #);
+  #);
+
+DeleteGroupElementsInstrument: Instrument
+  (# TargetType:: PageElement;
+     relevant:: (# <<SLOT DeleteGroupElementsInstrumentRelevant:DoPart>> #);
+     apply:: (# <<SLOT DeleteGroupElementsInstrumentApply:DoPart>> #);       
+  #);
+
+DeleteAnnotation:
+  (# theAnnotation: ^Annotation;
+  enter theAnnotation[]
+  do (# theClipping: ^AnnotationClipping;
+        theCommand: ^DeleteAnnotationCommand;
+     do theAnnotation[] -> ClippingFactory -> theClipping[];
+        &DeleteAnnotationCommand[] -> theCommand[];
+        theCommand.init;
+        theAnnotation.getArc -> theCommand.prepare;
+        theClipping[] -> theCommand.apply;
+        (theAnnotation.getCPNet,theCommand[]) -> registerCommand;
+     #);
+  #);
+
+MultipleCommand: Command
+  (# 
+     theCommandList: ^CommandList;
+     init::
+       (#
+       enter theCommandList[]
+       #);
+     apply:: (# <<SLOT MultipleCommandApply:DoPart>> #);
+     undo:: 
+       (#
+       do theCommandList.undo;
+       #);
+     redo::
+       (#
+       do theCommandList.redo;
+       #);
+  #);
+
+deleteInscription:
+  (# target: ^Inscription;
+  enter target[]
+  do (if true
+      // target##<=PlaceType## then
+         target[] -> deletePlaceType;
+      // target##<=InitMark## then                  
+         target[] -> deleteInitMark;
+      // target##<=TransGuard## then                  
+         target[] -> deletetransguard;
+      // target##<=TransPriority## then                  
+         target[] -> deletetranspriority;
+      // target##<=TransTime## then
+         target[] -> deleteTransTime;
+      // target##<=TransAction## then                  
+         target[] -> deletetransaction;
+      // target##<=Annotation## then
+         target.clearTextItem;
+     if);
+  #);
+
+DeletePlaceInscription:
+  (# InscriptionType:< PlaceInscription;
+     CommandType:< StandardRemoveCommand;
+     getTheName:< (# value: ^Text; do inner; exit value[] #);
+     getInscription:< 
+       (# theInscription: ^InscriptionType;
+          thePlace: ^Place;
+       enter thePlace[]
+       do inner;
+       exit theInscription[]
+       #);
+     theInscription: ^InscriptionType;
+  enter theInscription[]
+  <<SLOT DeletePlaceInscription:DoPart>>   
+  #);
+          
+DeletePlaceType: DeletePlaceInscription
+  (# InscriptionType:: PlaceType;
+     CommandType:: DeletePlaceTypeCommand;
+     getInscription:: (# do thePlace.getPlaceType -> theInscription[]; #);
+     getTheName:: (# do 'Delete Place type ' -> value[]; #);
+  #);
+DeleteInitMark: DeletePlaceInscription
+  (# InscriptionType:: InitMark;
+     CommandType:: DeleteInitMarkCommand;
+     getInscription:: (# do thePlace.getInitMark -> theInscription[]; #);
+     getTheName:: (# do 'Delete init mark ' -> value[]; #);
+  #);
+DeleteTransGuard:
+  (# theTransGuard: ^TransGuard;
+  enter theTransGuard[]
+  do (# theClipping: ^TransGuardClipping;
+        theCommand: ^DeleteTransGuardCommand;
+     do theTransGuard[] -> ClippingFactory -> theClipping[];
+        &DeleteTransGuardCommand[] -> theCommand[];
+        theCommand.init;
+        theTransGuard.getTransition -> theCommand.prepare;
+        theClipping[] -> theCommand.apply;
+        (theTransGuard.getCPNet,theCommand[]) -> registerCommand;
+     #);
+  #);
+DeleteTransPriority:
+  (# theTransPriority: ^TransPriority;
+  enter theTransPriority[]
+  do (# theClipping: ^TransPriorityClipping;
+        theCommand: ^DeleteTransPriorityCommand;
+     do theTransPriority[] -> ClippingFactory -> theClipping[];
+        &DeleteTransPriorityCommand[] -> theCommand[];
+        theCommand.init;
+        theTransPriority.getTransition -> theCommand.prepare;
+        theClipping[] -> theCommand.apply;
+        (theTransPriority.getCPNet,theCommand[]) -> registerCommand;
+     #);
+  #);
+DeleteTransTime:
+  (# theTransTime: ^TransTime;
+  enter theTransTime[]
+  do (# theClipping: ^TransTimeClipping;
+        theCommand: ^DeleteTransTimeCommand;
+     do theTransTime[] -> ClippingFactory -> theClipping[];
+        &DeleteTransTimeCommand[] -> theCommand[];
+        theCommand.init;
+        theTransTime.getTransition -> theCommand.prepare;
+        theClipping[] -> theCommand.apply;
+        (theTransTime.getCPNet,theCommand[]) -> registerCommand;
+     #);
+  #);
+DeleteTransAction:
+  (# theTransAction: ^TransAction;
+  enter theTransAction[]
+  do (# theClipping: ^TransActionClipping;
+        theCommand: ^DeleteTransActionCommand;
+     do theTransAction[] -> ClippingFactory -> theClipping[];
+        &DeleteTransActionCommand[] -> theCommand[];
+        theCommand.init;
+        theTransAction.getTransition -> theCommand.prepare;
+        theClipping[] -> theCommand.apply;
+        (theTransAction.getCPNet,theCommand[]) -> registerCommand;
+     #);
+  #);
+
+DeleteTransChannel:
+  (# theTransChannel: ^TransChannel;
+  enter theTransChannel[]
+  do (# theClipping: ^TransChannelClipping;
+        theCommand: ^DeleteTransChannelCommand;
+     do theTransChannel[] -> ClippingFactory -> theClipping[];
+        &DeleteTransChannelCommand[] -> theCommand[];
+        theCommand.init;
+        theTransChannel.getTransition -> theCommand.prepare;
+        theClipping[] -> theCommand.apply;
+        (theTransChannel.getCPNet,theCommand[]) -> registerCommand;
+     #);
+  #);
+
+DeleteFusionInfo:
+  (# theFusionInfo: ^FusionInfo;
+  enter theFusionInfo[]
+  do (# theClipping: ^FusionInfoClipping;
+        theCommand: ^DeleteFusionInfoCommand;
+     do theFusionInfo[] -> ClippingFactory -> theClipping[];
+        &DeleteFusionInfoCommand[] -> theCommand[];
+        theCommand.init;
+        theFusionInfo.getPlace -> theCommand.prepare;
+        theClipping[] -> theCommand.apply;
+        (theFusionInfo.getCPNet,theCommand[]) -> registerCommand;
+     #);
+  #);
+
+DeleteAnnotationCommand: StandardRemoveCommand
+  (# TargetType:: Arc;
+     ClippingType:: AnnotationClipping;
+     getName:: (# do 'Delete arc annotation' -> name[]; #);
+  #);
+DeletePlaceTypeCommand: StandardRemoveCommand
+  (# TargetType:: Place;
+     ClippingType:: PlaceTypeClipping;
+     getName::
+       (# 
+       do 'Delete place type' -> name[]
+       #);
+  #);
+DeleteInitMarkCommand: StandardRemoveCommand
+  (# TargetType:: Place;
+     ClippingType:: InitMarkClipping;
+     getName::
+       (# 
+       do 'Delete init mark' -> name[]
+       #);
+  #);
+DeleteTransGuardCommand: StandardRemoveCommand
+  (# TargetType:: Transition;
+     ClippingType:: TransGuardClipping;
+     getName::
+       (# 
+       do 'Delete transition guard' -> name[]
+       #);
+  #);
+DeleteTransPriorityCommand: StandardRemoveCommand
+  (# TargetType:: Transition;
+     ClippingType:: TransPriorityClipping;
+     getName::
+       (# 
+       do 'Delete transition priority' -> name[]
+       #);
+  #);
+DeleteTransTimeCommand: StandardRemoveCommand
+  (# TargetType:: Transition;
+     ClippingType:: TransTimeClipping;
+     getName::
+       (# 
+       do 'Delete transition time' -> name[]
+       #);
+  #);
+DeleteTransActionCommand: StandardRemoveCommand
+  (# TargetType:: Transition;
+     ClippingType:: TransActionClipping;
+     getName::
+       (# 
+       do 'Delete transition action' -> name[]
+       #);
+  #);
+DeleteTransChannelCommand: StandardRemoveCommand
+  (# TargetType:: Transition;
+     ClippingType:: TransChannelClipping;
+     getName::
+       (# 
+       do 'Delete transition channel' -> name[]
+       #);
+  #);
+DeleteFusionInfoCommand: StandardRemoveCommand
+  (# TargetType:: Place;
+     ClippingType:: FusionInfoClipping;
+     getName::
+       (#
+       do 'Delete fusion info' -> name[];
+       #);
+  #);
+
