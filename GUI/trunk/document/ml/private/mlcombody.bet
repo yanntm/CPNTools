@@ -1,0 +1,404 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../mlcom';
+
+--- MLComInit:DoPart ---
+do host[]->Private.host[];
+   port->Private.port;
+   user[]->Private.user[];
+   password[]->Private.password[];
+   path[]->Private.path[];
+   image[]->Private.image[];
+   10->Private.retries;
+   
+--- MLComStart:DoPart ---
+do (if not Private.initialized then
+       StartSequence: 
+         (# data: @MLData;
+         do (* Handshake protocol. *)
+            (if debugging then 'MLComStart: Stupid handshake'->debugMLCom; if);
+            Private.njsmld.init;
+            (if not ((Private.host[], Private.port)->Private.njsmld.shake) then
+                callonError;
+                (if debugging then 'Handshake (FAILED); first case' -> debugMLCom; if);
+                leave StartSequence;
+            if);
+            Private.dmoEval.init;
+            (if not ((Private.host[], Private.port)->Private.dmoEval.shake) then
+                callonError;
+                (if debugging then 'Handshake (FAILED); second case' -> debugMLCom; if);
+                leave StartSequence;
+            if);
+            Private.dmo.init;
+            (if not ((Private.host[], Private.port)->Private.dmo.shake) then
+                callonError;
+                (if debugging then 'Handshake (FAILED); third case' -> debugMLCom; if);
+                leave StartSequence;
+            if);
+            (if debugging then 'Handshake (OK)'->debugMLCom; if);
+            
+            (* Login protocol. *)
+            (if debugging then 'MLComStart: Login'->debugMLCom; if);
+            data.clear; 
+            Private.user[]->data.PutTextNull;
+            (if Private.password[] <> NONE then
+                (if Private.password.empty then
+                    2->data.Opcode; (* GRAM_NJSMLD_SunLogin *)
+                    ''->data.PutTextNull;
+                 else
+                    1->data.Opcode; (* GRAM_NJSMLD_Login *)
+                    Private.password[]->data.PutTextNull;
+                if);
+             else
+                2->data.Opcode; (* GRAM_NJSMLD_SunLogin *)
+                ''->data.PutTextNull;
+            if);
+            Private.path[]->data.PutTextNull;
+            (waitForEver, data[])->Private.njsmld.Put
+            (# onError:: 
+                 (# do (if debugging then 'Login send (FAILED)' -> debugMLCom; if); callonError; leave StartSequence; #);
+            #);
+            waitForEver->Private.njsmld.Get
+            (# onError::
+                 (# do (if debugging then 'Login recv (FAILED)'->debugMLCom; if); callonError; leave StartSequence; #);
+               onData:: 
+                 (# 
+                 do (if data.opcode = 1 then 
+                        (if debugging then 'Login (OK)'->debugMLCom; if);
+                     else
+                        (if debugging then 'Login opcode (FAILED)'->debugMLCom; if);
+                        leave StartSequence;
+                    if);
+                 #);
+            #);
+            
+            (* New session protocol. *)
+            (if debugging then 'MLComStart: New session'->debugMLCom; if);
+            data.clear;
+            3->data.Opcode; (* GRAM_NJSMLD_NewSession *)
+            Private.image[]->data.PutText;
+            (waitForEver, data[])->Private.njsmld.Put
+            (# onError:: 
+                 (# do (if debugging then 'New session send (FAILED)' -> debugMLCom; if); callonError; leave StartSequence; #);
+            #);
+            waitForEver->Private.njsmld.Get
+            (# onError::
+                 (# do (if debugging then 'New session recv (FAILED)' -> debugMLCom; if); callonError; leave StartSequence; #);
+               onData:: 
+                 (# 
+                 do (if data.opcode = 1 then 
+                        Private.dmoEval.getText
+                        (# onError::
+                             (# do (if debugging then 'New session text (FAILED)' -> debugMLCom; if); callonError; leave StartSequence; #);
+                        #) -> debugMLCom;
+                        (if debugging then 'New session (OK)'->debugMLCom; if);
+                     else
+                        (if debugging then 'New session opcode (FAILED)' -> debugMLCom; if);
+                        callonError;
+                        leave StartSequence;
+                    if);
+                 #);
+            #); 
+            
+            &|Private.ReceiverThread[]->Fork;
+            true->Private.initialized;
+         #);
+   if);
+   
+--- MLComStop:DoPart ---
+do (if Private.initialized then
+       (* Force a timeout to kill the receiver thread. *)
+       Private.dmo.forceTimeOut;
+   if);
+   
+--- MLComEvaluate:DoPart ---
+do (if Private.initialized then
+       EvaluateSequence:
+         (# data: @MLData;
+         do 1->data.Opcode; (* Evaluate *)
+            input[]->data.PutText;
+            (waitForEver, data[])->Private.dmo.Put
+            (# onError:: (# do THIS(MLCom).onError; Private.dmo.forceTimeOut; leave EvaluateSequence; #); #);
+            waitForEver->Private.dmoEval.getText
+            (# onError:: (# do THIS(MLCom).onError; Private.dmo.forceTimeOut; leave EvaluateSequence; #);
+               onMLException:: (# do (message[], exceptionNumber)->THIS(Evaluate).onMLException; #); 
+            #)->output[];
+         #);
+   if);
+   
+--- MLComExecute:DoPart ---
+do (if (command[] <> NONE) and (Private.initialized) then
+       ExecuteScope: 
+         (# 
+         do THIS(MLCom)[]->command.Private.currentMLCom[];
+            &onError[]->command.Private.errorHandler[];
+            command[]->Private.currentCommand[];
+            (waitForEver, command.Send)->Private.dmo.Put
+            (# onError:: (# do THIS(MLCom).onError; Private.dmo.forceTimeOut; leave ExecuteScope; #); #);
+            command.Private.lock.P;
+            NONE->command.Private.errorHandler[];
+            NONE->command.Private.currentMLCom[];
+         #);
+       (if clearDmoEval then
+           EvaluateSequence:
+             (# data: @MLData;
+             do 1->data.Opcode; (* Evaluate *)
+                '1'->data.PutText;
+                (waitForEver, data[])->Private.dmo.Put
+                (# onError:: (# do THIS(MLCom).onError; Private.dmo.forceTimeOut; leave EvaluateSequence; #); #);
+                waitForEver->Private.dmoEval.getText
+                (# onError:: (# do THIS(MLCom).onError; Private.dmo.forceTimeOut; leave EvaluateSequence; #);
+                   onMLException:: (# do true -> continue #);
+                #);
+             #);
+       if);
+   if);
+    
+--- MLComLocalException:DoPart ---
+do 
+   
+   (if THIS(LocalException)## = LocalException## then
+       THIS(MLCom).onError;
+    else
+       failureTrace->termCode;
+       INNER;
+       (if not continue then
+           (* We cannot call 'stop' here,
+            * because it is overwritten by MLCom. 
+            *)
+           Exception 
+           (# 
+           do THIS(LocalException).termCode->termCode; 
+              THIS(LocalException).msg->msg;
+           #);
+       if);
+   if);
+   
+-- MLComDoReceive:DoPart --
+do true -> value;
+   inner;
+   
+-- MLComReceiveCommand:DoPart --
+do INNER;
+   (if doReceive or not command.receiveAbortable then
+       bis[] -> command.receive;
+    else
+       command.receiveAborted;
+   if);
+  	    (if debugging then
+		    bis.reset;
+		    'Receive BIS opcode = %i\r' -> debugCommunication (# do bis.opcode -> i; #);
+		    '  B = %s\r' -> debugCommunication (#
+			    pos: @integer;
+			    str: @text;
+			    do	(for pos : bis.bools repeat
+					    (if bis.getBool then
+							'true' -> str.putText;
+						else
+							'false' -> str.putText;
+					    if);
+					    ', ' -> str.putText;
+					for);
+					str[] -> s;
+			#);
+		    '  I = %s\r' -> debugCommunication (#
+			    pos: @integer;
+			    str: @text;
+			    do	(for pos : bis.ints repeat
+					    bis.getInt -> str.putInt;
+					    ', ' -> str.putText;
+					for);
+					str[] -> s;
+			#);
+		    '  S = %s\r\n' -> debugCommunication (#
+			    pos: @integer;
+			    str: @text;
+			    do	(for pos : bis.strings repeat
+					    bis.getString -> str.putText;
+					    ', ' -> str.putText;
+					for);
+					str[] -> s;
+			#);
+			bis.reset;
+		if);
+ 
+--- MLComInitialized:DoPart ---
+do Private.initialized -> value;
+   
+-- MLComForceTimeout:doPart --
+do private.njsmld.forceTimeout;
+   private.dmoEval.forceTimeout;
+   private.dmo.forceTimeout;
+   
+--- MLComPrivate:Descriptor ---
+(# initialized: @Boolean;
+   njsmld: @MLSocket;
+   dmoEval: @MLSocket;
+   dmo: @MLSocket;
+   
+   host: ^Text;
+   port: @Integer;
+   user: ^Text;
+   password: ^Text;
+   path: ^Text;
+   image: ^Text;
+   retries: @integer;
+   counting: @integer;
+   
+   ReceiverThread: System
+     (#
+     do ReceiverLoop:
+          (#
+          do waitForEver->dmo.Get
+             (# timedOut:: (# do leave ReceiverLoop; #);
+                onError::
+                  (# 
+                  do THIS(MLCom).onError;
+                     true -> continue;                     
+                     leave ReceiverLoop;
+                  #);
+                
+                onBIS::
+                  (# reply: ^MLBis;
+                     
+                  do (if bis.opcode = 5 then
+                         bis.reset;
+                         (if bis.ints > 0 then
+                             (# tag: @integer;
+                             do bis.getInt -> tag;
+                                (if tag = 1 then
+                                    bis[] -> dispatch -> reply[];
+                                    (if reply[] <> NONE then
+                                        (waitForEver, reply[])->dmo.Put;
+                                    if);
+                                if);
+                             #);
+                         if);
+                     if);
+                     bis.reset;
+                     (if (bis[]->Dispatcher.Accept) then
+                         bis.Reset;
+                         bis[]->Dispatcher.Dispatch->reply[];
+                         (if reply[] <> NONE then
+                             (waitForEver, reply[])->dmo.Put;
+                         if);
+                      else
+                         (if (currentCommand[] <> NONE) then
+                             bis.Reset;
+                             (currentCommand[], bis[]) -> receiveCommand;
+                             currentCommand.Private.lock.V;
+                             NONE->currentCommand[];
+                         if);
+                     if);
+                  #);
+             #);
+             restart ReceiverLoop;
+          #);
+        Terminate;
+     #);
+   currentCommand: ^MLCommand;
+   
+   Terminate:
+     (# data: @MLData;
+     do false -> initialized;
+        
+        TerminateSequence:
+          (#
+          do (if debugging then 'MLComPrivate.Terminate: Terminate'->debugMLCom; if);
+             4->data.Opcode; (* GRAM_NJSMLD_Interrupt *)
+             (waitForEver, data[])->njsmld.Put
+             (# onError:: (# do (if debugging then 'Terminate (FAILED)' -> debugMLCom; if); callonError; leave TerminateSequence; #); #);
+             waitForEver->njsmld.Get
+             (# onError:: (# do (if debugging then 'Terminate (FAILED)' -> debugMLCom; if); callonError; leave TerminateSequence; #); 
+                onData:: 
+                  (# 
+                  do (if data.opcode = 1 then 
+                         (if debugging then 'Terminate (OK)'->debugMLCom; if);
+                      else
+                         (if debugging then 'Terminate (FAILED)' -> debugMLCom; if);
+                         onError;
+                         leave TerminateSequence;
+                     if);
+                  #);
+             #);
+          #);
+        
+        (* Close the sockets. *)
+        njsmld.close;
+        dmoEval.close;
+        dmo.close;
+     #);
+#)
+
+-- MLCommandReceive:DoPart --
+do 'MLCommandReceive' -> debugSyntaxCheck;
+   (if (bis.Ints < 1) then
+       bis.getString -> onError;
+    else
+       bis.GetInt -> i;
+       (if (i->private.isBis) then
+           INNER;
+        else
+           bis.getString -> onError;
+       if);
+   if);
+   'END MLCommandReceive' -> debugSyntaxCheck;
+   
+--- MLCommandGetText:DoPart ---
+do (if Private.currentMLCom[] <> NONE then
+       Private.currentMLCom.Private.dmoEval.getText->value[];
+   if);
+
+--- MLCommandLocalException:DoPart ---
+do (if THIS(LocalException)## = LocalException## then
+       Private.errorHandler;
+    else
+       failureTrace->termCode;
+       INNER;
+       (if not continue then
+           (termCode, msg[])->Stop;
+       if);
+   if);
+
+--- MLCommandPrivate:Descriptor ---
+(# lock: @Semaphore;
+   (* The lock semaphore is used to block execution of the command until
+    * the answer is recieved from the simulator.
+    * 
+    * The coroutine beeing blocked by this lock will normally be the checkerthread,
+    * since all commands are executed by that coroutine. Exceptions:
+    * 
+    *   - The command to change current marking.
+    *)
+   
+   errorHandler: ^MLCom.LocalException;
+   currentMLCom: ^MLCom;
+   isBis:
+     (# i: @integer;
+     enter i
+     exit ((i=1) or (i=2))
+     #);
+#)

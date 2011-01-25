@@ -1,6 +1,6 @@
 (************************************************************************)
 (* CPN Tools                                                            *)
-(* Copyright 2010-##LAST## AIS Group, Eindhoven University of Technology    *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
 (*                                                                      *)
 (* CPN Tools is originally developed by the CPN Group at Aarhus         *)
 (* University from 2000 to 2010. The main architects behind the tool    *)
@@ -23,3 +23,35 @@
 (* You should have received a copy of the GNU General Public License    *)
 (* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
 (************************************************************************)
+ORIGIN '../../private/cpnetbody';
+
+INCLUDE '../../../cpntools/consistency/engine';
+INCLUDE '../../../cpntools/debug';
+
+-- workspacelib: attributes --
+
+PageElementTest: ConsistencyTest
+  (# TargetType::PageElement;
+     NoPageNotification: ConsistencyNotification
+       (# 
+       do 'Pageelement has no page, father is %s'
+            -> msg.putformat
+          (# 
+          do (if target.father[] <> NONE then
+                 target.father[] -> getPatternName -> s; 
+              else
+                 'UNKNOWN!' -> s;
+             if);
+          #);
+       #);
+     
+     run::
+       (# 
+       do (* The target page element must have a page *)
+          (if target.getcpnpage = none then
+              (if not ('Template' -> ((1,8)->target.id.sub).equalNCS) then
+                  NoPageNotification;
+              if);
+          if);
+       #);
+  #);

@@ -1,6 +1,6 @@
 (************************************************************************)
 (* CPN Tools                                                            *)
-(* Copyright 2010-##LAST## AIS Group, Eindhoven University of Technology    *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
 (*                                                                      *)
 (* CPN Tools is originally developed by the CPN Group at Aarhus         *)
 (* University from 2000 to 2010. The main architects behind the tool    *)
@@ -23,3 +23,52 @@
 (* You should have received a copy of the GNU General Public License    *)
 (* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
 (************************************************************************)
+ORIGIN '~beta/basiclib/basicsystemenv';
+INCLUDE 'mlsocket';
+BODY 'private/mldispatcherbody';
+
+--- SystemLib:Attributes ---
+
+MLDispatch:
+  (# bis: ^MLBIS;
+     reply: ^MLBIS;
+  enter bis[]
+  do &MLBIS[] -> reply[];
+     7 -> reply.opcode;
+     INNER;
+  exit reply[]
+  #);
+
+MLDispatcher:
+  (# Accept:
+       (# bis: ^MLBIS;
+          value: @Boolean;
+       enter bis[]
+       <<SLOT MLDispatcherAccept:DoPart>>
+       exit value
+       #);
+     
+     Dispatch:
+       (# bis: ^MLBIS;
+          reply: ^MLBIS;
+       enter bis[]
+       <<SLOT MLDispatcherDispatch:DoPart>>
+       exit reply[]
+       #);
+     
+     Register:
+       (# subOpcode: @Integer;
+          dispatch: ^MLDispatch;
+       enter (subOpcode, dispatch[])
+       <<SLOT MLDispatcherRegister:DoPart>>
+       #);
+     
+     Unregister:
+       (# subOpcode: @Integer;
+       enter subOpcode
+       <<SLOT MLDispatcherUnregister:DoPart>>
+       #);
+     
+     Private: @<<SLOT MLDispatcherPrivate:Descriptor>>;
+  #);
+

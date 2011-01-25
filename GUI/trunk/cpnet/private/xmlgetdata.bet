@@ -1,6 +1,6 @@
 (************************************************************************)
 (* CPN Tools                                                            *)
-(* Copyright 2010-##LAST## AIS Group, Eindhoven University of Technology    *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
 (*                                                                      *)
 (* CPN Tools is originally developed by the CPN Group at Aarhus         *)
 (* University from 2000 to 2010. The main architects behind the tool    *)
@@ -23,3 +23,46 @@
 (* You should have received a copy of the GNU General Public License    *)
 (* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
 (************************************************************************)
+ORIGIN '~beta/xml/xml';
+
+-- XMLElementLib: Attributes --
+
+getData: 
+  (# data: ^Text;
+  do (# first, last, count: @Integer;
+        seenNonWhite: @Boolean;
+        temp: ^Text;
+     do &Text[]->temp[];
+        THIS(Element).scanData 
+        (# 
+        do current.data[]->temp.puttext;
+        #);
+        1 -> count;
+        temp.scanAll
+        (# 
+        do (if seenNonWhite then
+               (if NOT (ch->ascii.isWhiteSpace) then
+                   count->last;
+               if);
+            else
+               (if NOT (ch->ascii.isWhiteSpace) then
+                   count -> first;
+                   count -> last;
+                   true->seenNonWhite;
+               if);
+           if);
+           count + 1->count;
+        #);
+        (if seenNonWhite then
+            (first, last)->temp.sub->data[];
+            data.reset;
+            ascii.ht -> data.findAll
+            (# 
+            do (' ',inx) -> data.inxPut;
+            #);
+         else
+            '' -> data[];
+        if);
+     #);
+  exit data[]
+  #);

@@ -1,6 +1,6 @@
 (************************************************************************)
 (* CPN Tools                                                            *)
-(* Copyright 2010-##LAST## AIS Group, Eindhoven University of Technology    *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
 (*                                                                      *)
 (* CPN Tools is originally developed by the CPN Group at Aarhus         *)
 (* University from 2000 to 2010. The main architects behind the tool    *)
@@ -23,3 +23,33 @@
 (* You should have received a copy of the GNU General Public License    *)
 (* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
 (************************************************************************)
+ORIGIN 'cpnet';
+
+-- Workspacelib: Attributes --
+MLCompileDeclaration: CPNMLCommand
+  (# declaration: ^Decl;
+     Send:: (# <<SLOT MLCPNetCompileDeclarationSend:DoPart>> #);     
+     Receive:: (# <<SLOT MLCompileDeclarationReceive:DoPart>> #);
+     receiveAbortable:: TrueObject;
+     receiveAborted:: (# <<SLOT MLCompileDeclarationReceiveAborted:DoPart>> #);
+     onError:: (# <<SLOT mlCPNetCompileDeclError:doPart>> #);
+  enter declaration[]
+  do true -> clearDmoEval;
+  #);
+
+MLGenerateInstances: CPNMLCommand
+  (# tlist: ^TransitionList;
+     plist: ^PlaceList;
+     count: @integer;
+     update: @boolean;
+     net: ^CPNet;     
+     Send:: (# <<SLOT mlGenerateInstancesSend:doPart>> #);     
+     Receive:: (# <<SLOT mlGenerateInstancesReceive:doPart>> #);    
+     receiveAbortable:: TrueObject;
+     receiveAborted:: (# <<SLOT MLGenerateInstancesReceiveAborted:DoPart>> #);
+     onError:: (# <<SLOT mlGenerateInstancesError:doPart>> #);     
+  enter (net[], tlist[], plist[], update)
+  do true -> clearDmoEval;
+  #);
+
+

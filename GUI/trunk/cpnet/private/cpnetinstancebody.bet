@@ -1,0 +1,1172 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../cpnet';
+INCLUDE '../../cpntools/cpnworkspace';
+
+-- PlaceInstanceMarkingVisible:doPart --
+do (if (not hidemarkings) and (themarking[]<>NONE) then
+        (if ((not ('empty' -> themarking.equal)) and (not ('' -> themarking.equal))) or allwaysShowMarking then 
+            true -> value;
+        if);
+    if);
+   
+-- PageinstanceaddTransition: doPart --
+do &TransitionInstance[] -> ti[];
+   ti.init;
+   t[] -> ti.theTransition[];
+   ti[] -> t.attach;
+   (t.id[], ti[]) -> private.transitionInstances.associate;
+   THIS(PageInstance)[] -> ti.thePageInstance[];
+   (anyStatus, noRemarks) -> nodeChangedStatus;
+   
+-- PageinstanceremoveTransition: doPart --
+do (# theTransitionInstance: ^TransitionInstance;
+   do t.id[] -> private.transitionInstances.lookup -> theTransitionInstance[];
+      (theTransitionInstance.status, anyStatus) -> nodeChangedStatus;
+      (if theTransitionInstance.presentation[] <> none then
+          theTransitionInstance.delete;
+      if);
+      t.id[] -> private.transitionInstances.disassociate;
+   #);
+   
+-- PageinstanceaddPlace: doPart --
+do &PlaceInstance[] -> pi[];
+   pi.init;
+   p[] -> pi.thePlace[];
+   pi[] -> p.attach;
+   (p.id[], pi[]) -> private.placeInstances.associate;
+   THIS(PageInstance)[] -> pi.thePageInstance[];
+   (anyStatus, noRemarks) -> nodeChangedStatus;
+   
+-- PageinstanceremovePlace: doPart --
+do (# thePlaceInstance: ^PlaceInstance;
+   do p.id[] -> private.placeInstances.lookup -> thePlaceInstance[];
+      (thePlaceInstance.status, anyStatus) -> nodeChangedStatus;
+      (if thePlaceInstance.presentation[] <> none then
+          thePlaceInstance.delete;
+      if);
+      p.id[] -> private.placeInstances.disassociate;
+      thePlaceInstance[] -> p.detach;
+   #);   
+   
+-- PageInstanceAddArc:DoPart --
+do &ArcInstance[] -> theArcInstance[];
+   theArcInstance.init;
+   theArc[] -> theArcInstance.theArc[];
+   theArcInstance[] -> theArc.attach;
+   (theArc.id[], theArcInstance[]) -> private.arcInstances.associate;
+   this(PageInstance)[] -> theArcInstance.thePageInstance[];
+   (anyStatus, noRemarks) -> nodeChangedStatus;
+   
+-- PageInstanceRemoveArc:DoPart --
+do (# theArcInstance: ^ArcInstance;
+   do theArc.id[] -> private.arcInstances.lookup -> theArcInstance[];
+      (if theArcInstance[] <> none then
+          (theArcInstance.status, anyStatus) -> nodeChangedStatus;
+          (if theArcInstance.presentation[] <> none then
+              theArcInstance.delete;
+          if);
+          theArc.id[] -> private.arcInstances.disassociate;
+      if);
+   #);
+   
+-- Pageinstanceinit: doPart --
+do superpageInstance[] -> private.init;
+   (* Create transition and place instances. *)
+   thePage.scanTransitions
+   (# do current[] -> addTransition; #);
+   thePage.scanPlaces
+   (# do current[] -> addPlace;  #);
+   thePage.scanArcs
+   (# do current[] -> addArc; #);
+   (if superpageInstance[] = NONE then
+       THIS(PageInstance)[] -> thePage.net.addInstanceRoot;
+   if);
+   THIS(PageInstance)[] -> thePage.addPageInstance;
+   
+-- Pageinstancedelete: doPart --
+do (if private.superpageInstance[] = NONE then
+       THIS(PageInstance)[] -> thePage.net.removeInstanceRoot;
+    else
+       THIS(PageInstance)[] -> private.superpageInstance.removeSubpageInstance;
+   if);
+   scanSubPageInstances
+   (#
+   do current.delete;
+   #);
+   private.subpageInstances.clear;
+   this(PageInstance)[] -> thePage.removePageInstance;
+   private.transitionInstances.clear;
+   private.placeInstances.clear;
+   private.arcInstances.clear;
+   true -> deleted;
+
+-- PageInstancePrivate:descriptor --
+(# nodesStatus, subpageInstancesStatus: @InstanceStatusContainer;
+   transitionInstances: @TransitionInstanceIDDictionary;
+   placeInstances: @PlaceInstanceIDDictionary;
+   arcInstances: @ArcInstanceIDDictionary;
+   superpageInstance: ^PageInstance;
+   subPageInstances: @Notifier
+     (# instances: @ElementDeque
+          (# Element:: PageInstance;
+          #);
+        clear: 
+          (# 
+          do instances.clear;
+          #);
+        add:
+          (# elm: ^Element;
+          enter elm[]
+          do THIS(Element)[] -> elm.father[];
+             elm[] -> instances.append;
+             elm[] -> added;
+          #);
+        remove:
+          (# elm: ^Element;
+          enter elm[]
+          do elm[] -> instances.remove;
+             NONE -> elm.father[];
+             elm[] -> removed;
+          #);
+     #);
+   init:
+     (# 
+     enter superpageInstance[]
+     do nodesStatus.init;
+        subpageInstancesStatus.init;
+        transitionInstances.init;
+        placeInstances.init;
+        arcInstances.init;
+        subPageInstances;
+     #);
+#)
+   
+-- PageInstanceToString:doPart --
+do &Text[] -> str[];
+   '%s (%d) ' -> str.putFormat
+   (# 
+   do (if thePage.theName[] = none then
+          '<no name>' -> s;
+       else
+          thePage.theName.copy -> s;
+      if);
+      mlinstancenumber -> d;
+   #);  
+   
+-- PageInstanceOnChanged:doPart --
+do (if (theTransition[] <> none) and
+       theTransition.hasSubpageInfo then
+       (theTransition.getSubpageInfo).changed;
+       (theTransition.getSubpageInfo).changed;
+   if);
+   
+-- PageInstanceupdateInstanceTree: doPart --
+do scanSubPageInstances
+     (# 
+     do current.updateInstanceTree;
+     #);
+   thePage.scanPlaces
+     (# 
+     do current.semanticChanged;
+     #);
+   
+-- PageInstanceLookupTransitionInstance:DoPart --
+do id[] -> private.transitionInstances.lookup -> result[];
+   
+-- PageInstanceLookupPlaceInstance:doPart --
+do id[] -> private.placeInstances.lookup -> result[];
+   
+-- PageInstanceLookupArcInstance:doPart --
+do id[] -> private.arcInstances.lookup -> result[];
+   
+-- PageInstanceLookupNodeInstance:DoPart --
+do id[] -> private.placeInstances.lookup -> result[];
+   (if result[] = none then
+       id[] -> private.transitionInstances.lookup -> result[];
+   if);
+   
+-- PageInstancecontainsSubpage: doPart --
+do L: scanSubPageInstances
+     (# 
+     do	(if current[]=page[] then true->result; if);
+        (if page[]->current.containsSubpage then true->result; if);
+        (if result then leave L if);
+     #);
+   
+-- PageInstanceAddSubpageInstance:doPart --
+do (if theSubpageInstance[] -> containsSubpage then
+       'Attempted to add a page instance that was already added!' -> FIXME;
+    else
+       (# theTransitionInstance: ^TransitionInstance;
+       do theSubpageInstance[] -> private.subPageInstances.add;
+          (* this is because a page instance can be used as a non functional data structure
+           * with the correct type; ask krell *)
+          (if theSubpageInstance.theTransition[] <> none then 
+          theSubpageInstance.theTransition.id[] 
+                -> lookupTransitionInstance
+                -> theTransitionInstance[];
+              theSubpageInstance[] -> theTransitionInstance.theSubpageInstance[];
+              (anyStatus, theSubpageInstance.getNodesAndSubpagesStatus)
+                -> subpageInstanceStatusChanged;
+          if);
+       #);
+   if);
+   
+-- PageInstanceRemoveSubpageInstance:doPart --
+do (# theTransitionInstance: ^TransitionInstance;
+   do theSubpageInstance[] -> private.subPageInstances.remove;
+      (* this is because a page instance can be used as a non functional data structure
+       * with the correct type; ask krell *)
+      (if theSubpageInstance.theTransition[] <> none then
+          theSubpageInstance.theTransition.id[] 
+            -> lookupTransitionInstance
+            -> theTransitionInstance[];
+          none -> theTransitionInstance.theSubpageInstance[];
+          (theSubpageInstance.getNodesAndSubpagesStatus, anyStatus)
+            -> subpageInstanceStatusChanged;
+      if);      
+   #);
+   
+-- PageInstanceAttachSubpageInstances:DoPart --
+do theNotifier[] -> private.subpageinstances.attach;
+   
+-- PageInstanceScanSubpageInstances:doPart --
+do private.subPageInstances.instances.scan
+   (# 
+   do current[] -> this(scanSubpageInstances).current[];
+      INNER scanSubpageInstances;
+   #);
+   
+-- PageInstanceScanSubpageInstanceTree:DoPart --
+do (# visitPageInstance:
+        (# 
+        enter current[]
+        do inner scanSubpageInstanceTree;
+           current.scanSubpageInstances
+           (# 
+           do current[] -> visitPageInstance;
+           #);
+        #);
+   do this(PageInstance)[] -> visitPageInstance;
+   #);
+   
+-- PageInstanceScanPlaceInstances:doPart --
+do private.placeInstances.scan
+   (# 
+   do current[] -> this(scanPlaceInstances).current[];
+      inner scanPlaceInstances;
+   #);
+   
+-- PageInstanceScanTransitionInstances:doPart --
+do private.transitionInstances.scan
+   (# 
+   do current[] -> this(scanTransitionInstances).current[];
+      inner scanTransitionInstances;
+   #);
+   
+-- PageInstancegetCurrentHighlight: doPart --
+do (if (currentHighlight[] = none) and
+       (thePage.getHalo = none) then (* no halo *)
+       (if (getNodesStatus <> noRemarks) and
+           ((thePage.getNodesStatus = compiled) or
+           (thePage.getNodesStatus = unchecked) or
+           (thePage.getNodesStatus = nameerror)) then
+           getNodesStatus
+             -> getHighlight
+             -> currentHighlight[];       
+       else
+           thePage.getCurrentHighlight
+             -> currentHighlight[];
+       if);
+    else
+       thePage.getHalo -> currentHighlight[];
+   if);
+   
+-- PageInstanceGetCurrentHighlightOfSubpageTree:DoPart --
+do (if (getSubpagesStatus <> noRemarks) and
+       ((thePage.getSubpagesStatus = unchecked) or
+       (thePage.getSubpagesStatus = compiled)) then
+       getSubpagesStatus 
+         -> getHighlight
+         -> currentHighlight[];
+    else              
+       thePage.getCurrentHighlightOfSubpageTree 
+         -> currentHighlight[];
+   if);
+   
+-- PageInstanceGetCurrentHighlightOfNodesAndSubpageTree:DoPart --
+do (if (getNodesAndSubpagesStatus <> noRemarks) and
+       ((thePage.getNodesAndSubpagesStatus = unchecked) or
+       (thePage.getNodesAndSubpagesStatus = compiled)) then
+       getNodesAndSubpagesStatus 
+         -> getHighlight
+         -> currentHighlight[];
+    else              
+       thePage.getCurrentHighlightOfNodesAndSubpageTree 
+         -> currentHighlight[];
+   if);
+   
+-- PageInstanceSetSuperpageInstance:DoPart --
+do superpageInstance[] -> private.superpageInstance[];
+   
+-- PageInstanceGetSuperpageInstance:DoPart --
+do private.superpageInstance[] -> superpageInstance[];
+   
+-- PageInstanceHasEnabledTransitions:doPart --
+do private.nodesStatus.numberOfIsEnabled > 0 -> value;
+   
+-- PageInstanceNodeChangedStatus:doPart --
+do (# oldStatusOfNodes, newStatusOfNodes, statusOfSubpages, 
+      oldCombinedStatus, newCombinedStatus : @integer;
+      theTransitionInstance: ^TransitionInstance;
+   do private.nodesStatus.leastUpperBound -> oldStatusOfNodes;
+      
+      
+      (if from <> anyStatus then
+          from -> private.nodesStatus.decrement;
+      if);
+      (if to <> anyStatus then
+          to -> private.nodesStatus.increment;
+      if);
+      
+      private.nodesStatus.leastUpperBound -> newStatusOfNodes;
+      private.subpageInstancesStatus.leastUpperBound -> statusOfSubpages;
+      (oldStatusOfNodes, statusOfSubpages) -> min -> oldCombinedStatus;
+      (newStatusOfNodes, statusOfSubpages) -> min -> newCombinedStatus;
+      
+      (if oldCombinedStatus <> newCombinedStatus then
+          (if private.superpageInstance[] = none then
+              (oldCombinedStatus, newCombinedStatus) -> thePage.net.instanceRootsStatusChanged;
+           else
+              (oldCombinedStatus, newCombinedStatus) -> private.superpageInstance.subpageInstanceStatusChanged;
+          if);
+          (if (theTransition[] <> none) and
+              theTransition.hasSubpageInfo then
+              (theTransition.getSubpageInfo).changed;
+          if);
+      if);
+      changed;
+   #);
+      
+-- PageInstanceSubpageInstanceStatusChanged:DoPart --
+do (# oldStatusOfSubpages, newStatusOfSubpages, statusOfNodes,
+      oldCombinedStatus, newCombinedStatus: @integer;
+   do private.subpageInstancesStatus.leastUpperBound -> oldStatusOfSubpages;      
+      
+      (if from <> anyStatus then
+          from -> private.subpageInstancesStatus.decrement;    
+      if);
+      (if to <> anyStatus then
+          to -> private.subpageInstancesStatus.increment;
+      if);
+      
+      private.subpageInstancesStatus.leastUpperBound -> newStatusOfSubpages;          
+      private.nodesStatus.leastUpperBound -> statusOfNodes;
+      (oldStatusOfSubpages, statusOfNodes) -> min -> oldCombinedStatus;
+      (newStatusOfSubpages, statusOfNodes) -> min -> newCombinedStatus;
+      
+      (if oldCombinedStatus <> newCombinedStatus then
+          (if private.superpageInstance[] = none then
+              (oldCombinedStatus, newCombinedStatus) -> thePage.net.instanceRootsStatusChanged;
+           else
+              (oldCombinedStatus, newCombinedStatus) -> private.superpageInstance.subpageInstanceStatusChanged;
+          if);
+      if);
+   #);
+   
+-- PageInstanceGetNodesStatus:DoPart --
+do private.nodesStatus.leastUpperBound -> value;
+   
+-- PageInstanceGetSubpagesStatus:DoPart --
+do private.subpageInstancesStatus.leastUpperBound -> value;
+   
+-- PageInstanceGetNodesAndSubpagesStatus:DoPart --
+do (if private.nodesStatus.leastUpperBound < 
+       private.subpageInstancesStatus.leastUpperBound then
+       private.nodesStatus.leastUpperBound -> value;
+    else 
+       private.subpageInstancesStatus.leastUpperBound -> value;
+   if);
+   
+-- PageInstanceNodeStatusToString:DoPart --
+do &Text[] -> str[];
+   'Node status of %s\n%s ' 
+     -> str.putFormat
+   (# 
+   do toString -> s;
+      this(PageInstance).private.nodesStatus.toString -> s;
+   #);
+   
+-- PageInstanceSubpageInstancesStatusToString:DoPart --
+do &Text[] -> str[];
+   'Subpage status of %s\n%s ' 
+     -> str.putFormat
+   (# 
+   do toString -> s;
+      this(PageInstance).private.subpageInstancesStatus.toString -> s;
+   #);
+ 
+
+-- NodeInstancePrivate:Descriptor --
+(# monitors: @MonitorIDDictionary;
+   init:
+     (# 
+     do monitors.init;
+     #);
+#)
+   
+--  NodeInstanceDelete:DoPart --
+do inner;
+   (if presentation[]<>NONE then
+       presentation.clear;
+       NONE -> presentation[];
+   if);
+   true -> deleted;
+   
+-- NodeInstanceAddMonitor:DoPart --
+do (theMonitor.id[], theMonitor[]) -> private.monitors.associate;
+   INNER;
+      
+-- NodeInstanceRemoveMonitor:DoPart --
+do theMonitor.id[] -> private.monitors.disassociate;
+   INNER;
+      
+-- NodeInstanceScanMonitors:DoPart --
+do private.monitors.scan
+   (# 
+   do current[] -> this(scanMonitors).current[];
+      inner scanMonitors;
+   #);
+   
+-- NodeInstanceGetLongName:DoPart --
+do thePageInstance.thePage.theName.copy -> str[];
+   '\'' -> str.append;
+   (getNode).getNameWithNoWS -> str.append;
+   ' ' -> str.append;
+   thePageInstance.Mlinstancenumber -> str.putint;
+   ' (' -> str.append;
+   getNode -> getPatternName -> str.append;
+   ')' -> str.append;
+   
+-- NodeInstanceUpdate:doPart --
+do INNER;
+   (if (presentation[]<>NONE) and (qerror[]<>NONE) then
+       qerror.update;
+       qerror.present -> presentation.add;
+   if);
+   
+-- NodeInstanceBounds:doPart --
+do (if presentation[]<>NONE then
+       presentation.clear;
+   if);
+   present;
+   presentation.bounds -> (xmin,xmax,ymin,ymax);
+   INNER;
+   
+-- NodeInstanceInit:DoPart --
+do private.init;
+   inner;
+   
+-- PlaceInstancePrivate:Descriptor --
+(# unassigned: @boolean;
+   init:
+     (# 
+     do false -> unassigned;
+     #);
+#)
+
+-- PlaceInstanceInit:DoPart --
+do private.init;
+
+-- PlaceInstanceSetAssignedError:doPart --
+do (if newValue <> private.unassigned then
+       newValue -> private.unassigned;       
+       (if newValue then
+           (none, UnassignedPlaceInstance -> getGlobalNames) -> addError;
+           (0, 0) -> qerror.position;
+           (noRemarks, isUnassigned) -> thePageInstance.nodeChangedStatus;
+        else
+           removeError;
+           (isUnassigned, noRemarks) -> thePageInstance.nodeChangedStatus;
+       if);
+   if);
+   
+-- PlaceInstanceUnassigned:DoPart --
+do private.unassigned -> value;
+   
+-- PlaceInstanceonChanged: doPart --
+do update;
+   
+-- PlaceInstancedelete: doPart --
+do (if thePlacemarking[]<>NONE then
+       thePlacemarking.delete;
+   if);
+   (if theToken[]<>NONE then
+       theToken.delete;
+   if);
+   
+-- PlaceInstanceupdate: doPart --
+do (# highlightshape: ^Ellipse;
+      showHalo:
+        (# theColor: ^Color;
+        enter theColor[]
+        do (if theColor[] <> NONE then
+               (if (thePlace[] <> NONE) then
+                   thePlace.makeShape -> highlightshape[];
+                   thePlace.width+thePlace.strokeWidth -> highlightshape.width;
+                   thePlace.height+thePlace.strokeWidth -> highlightshape.height;
+                   (halo_width,theColor[]) -> &HaloStyle -> highlightshape.theStyle[];
+                   IGNORE -> highlightshape.status;
+                   highlightshape[] -> presentation.add;
+               if);
+           if);
+        #);
+   do (if presentation[]<>NONE then
+          presentation.clear;
+          thePlace.x -> x;
+          thePlace.y -> y;
+          x -> presentation.x;
+          y -> presentation.y;
+          
+          (if (qerror[] = none) and private.unassigned then
+              (none, UnassignedPlaceInstance -> getGlobalNames) -> addError;
+              (0, 0) -> qerror.position;
+          if);          
+          getCurrentHighlight -> showHalo;
+          (if (thePlace[]<>NONE) AND (thePlace.getCPNPage<>NONE) 
+              AND ((thePlace.getCPNPage).getSelectedGroup<>NONE) 
+              AND (NOT ((thePlace.getCPNPage).getSelectedGroup).all) 
+              AND (NOT (thePlace[]->((thePlace.getCPNPage).getSelectedGroup).isMember)) then
+              0.1->&AlphaStyle->presentation.theStyle[];
+           else
+              NONE -> presentation.theStyle[];
+          if);
+          (if false then
+              (getToken).present -> presentation.add;
+              (getPlaceMarking).present -> presentation.add;
+           else
+              (getToken).update;
+              (getPlaceMarking).update;
+          if);
+      if);
+   #);
+   
+-- PlaceInstancescanPlaceInstanceGroup:doPart --
+do (# visitedPlaceInstances: @IDDictionary (# Element:: PlaceInstance #);
+      scanPlaceInstance:
+        (# currentPlaceInstance: ^PlaceInstance;
+        enter current[]
+        do (if (current.id[] -> visitedPlaceInstances.lookup) = none then
+               (current.id[], current[]) -> visitedPlaceInstances.associate;
+               
+               INNER scanPlaceInstanceGroup;
+               
+               current[] -> currentPlaceInstance[];
+               currentPlaceInstance[] -> scanPortsAndSockets;
+               (if currentPlaceInstance.thePlace.getFusionSet <> none then
+                   currentPlaceInstance.thePlace[] -> scanFusionSet;
+               if);
+           if);
+        #);
+      scanPortsAndSockets:
+        (# currentPlaceInstance: ^PlaceInstance;
+        enter currentPlaceInstance[]
+        do currentPlaceInstance.scanSockets
+           (# 
+           do theSocketInstance[] -> scanPlaceInstance;
+           #);
+           currentPlaceInstance.scanPorts
+           (# 
+           do thePortInstance[] -> scanPlaceInstance;  
+           #);        
+        #);
+      scanFusionSet:
+        (# thePlace: ^Place;
+        enter thePlace[]
+        do thePlace.scanFusionSet 
+           (# 
+           do current.scanInstances
+              (# (* IT IS CURRENT, NOT thePlaceInstance *)
+              do current[] -> scanPlaceInstance;
+
+              #);
+           #);
+        #);
+   do visitedPlaceInstances.init;
+      this(PlaceInstance)[] -> scanPlaceInstance;      
+   #);
+   
+-- PlaceInstancescanPorts:doPart --
+do thePlace.scanAssignments
+   (# theAssignment: ^Assignment;
+   do (if thePlace[] = current.getSocket then
+          current[] -> theAssignment[];
+          thePageInstance.scanSubpageInstances
+          (# 
+          do (if theAssignment.getSubTransition = current.theTransition[] then
+                 (theAssignment.getPort).id[] -> 
+                 current.lookupPlaceInstance -> 
+                 thePortInstance[];         
+                 INNER scanPorts;
+             if);
+          #);
+      if);
+   #);
+   
+-- PlaceInstancescanSockets:doPart --
+do thePlace.scanAssignments
+   (# 
+   do (if thePlace[] = current.getPort then
+          (if current.getSubTransition = thePageInstance.theTransition[] then
+              (current.getSocket).id[] -> 
+              (thePageInstance.getsuperpageinstance).lookupPlaceInstance -> 
+              theSocketInstance[];
+              INNER scanSockets;
+          if);
+      if);
+   #);
+   
+-- PlaceInstanceScanSurroundingTransitionInstances:DoPart --
+do thePlace.scanSurroundingTransitions
+   (# 
+   do current.id[] 
+        -> thePageInstance.lookupTransitionInstance
+        -> this(scanSurroundingTransitionInstances).current[];
+      inner scanSurroundingTransitionInstances;
+   #);
+   
+-- PlaceInstanceStatus:DoPart --
+do (if true
+    // unassigned then
+       isUnassigned -> value;
+    else
+       noRemarks -> value;
+   if);
+
+-- PlaceInstancechangeCurrentMarking: doPart --
+do (# plist: ^PlaceList;
+      tlist: ^TransitionList;
+      isLegal: @Boolean;
+      tempMarking: ^Text;
+      surroundingTransitions:
+	(# aPlace: ^Place;
+	   transList: ^TransitionList;
+	enter aPlace[]
+	do &TransitionList[] -> transList[];
+	   aPlace.scanArcs
+             (# do current.transEnd[] -> transList.append;#);
+	exit transList[]
+        #);
+      fixedstatus: ^FixedStatusBubble;
+   do setBusyCursor;
+      ObjectPool.get(# Type:: FixedStatusBubble; #) -> fixedstatus[];
+      'Calculating current marking' -> fixedStatus.running;
+      fixedStatus.start;
+
+      &PlaceList[] -> plist[];
+      &TransitionList[] -> tlist[];
+      theMarking.copy -> tempMarking[]; (* save this in case of an error in MLCheckMarking *)
+
+      (* only when hole port/socket chain is checked *)
+      (thePlace.getPlaceType <> none) and
+      ((thePageInstance.thePage.net.ML[],theMarking[], 
+      (thePlace.getPlaceType).getInscription) -> MLCheckMarking)
+        -> isLegal;  
+
+      scanPlaceInstanceGroup
+	(#
+	do theMarking.copy -> current.theMarking[];
+	   (if isLegal then
+	       (current.thePageInstance.thePage.net.ML[],
+               current.thePlace.ID[],
+               current.thePageInstance.MLInstanceNumber) 
+                 -> MLChangeMarking;
+           if);
+	   current.thePlace[] -> plist.append;
+	   current.thePlace[] -> surroundingTransitions  -> tlist.concatenate -> tlist[];
+           current.changed;
+	#);
+      
+      (if thePlace.getFusionSet <> NONE then
+          thePlace.scanFusionSet
+	    (# 
+	    do current.scanInstances
+               (# 
+               do theMarking.copy -> current.theMarking[];
+                  (if isLegal then
+                      (current.thePageInstance.thePage.net.ML[],
+                      current.thePlace.ID[],
+                      current.thePageInstance.MLInstanceNumber) -> MLChangeMarking;
+                  if);
+                  current.thePlace[] -> plist.append;
+                  current.thePlace[] 
+                    -> surroundingTransitions 
+                    -> tlist.concatenate
+                    -> tlist[];
+                   current.changed;
+               #);
+            #);
+      if);
+      plist[] -> thePageInstance.thePage.net.getMarkings;
+      (if not isLegal then
+	  (# status: ^StatusBubble;
+	     errorText: ^Text;
+	  do tempMarking.copy -> errorText[];
+	     ' (* ' -> tempMarking.prepend;
+	     ' *) ' -> tempMarking.append;
+	     theMarking[] -> tempMarking.prepend;
+	     tempMarking.copy -> theMarking[];
+	     ObjectPool.get(# Type:: StatusBubble; #) -> status[];
+	     ':\n ' -> errorText.prepend;
+	     CurrentMarkingErrorMessage -> getGlobalNames -> errorText.prepend;
+	      errorText[] -> status.error;
+          #);
+      if);
+      (thePageInstance.thePage.net.ML[], tlist[])
+        -> thePageInstance.thePage.net.getEnabledTransitions;
+
+      fixedStatus.stop;
+      unsetBusyCursor;
+      
+   #);
+   
+
+   
+-- PlaceInstanceClearTokens:doPart --
+do 'empty'->themarking[];
+   0 -> numTokens;
+   update;
+   
+-- PlaceInstanceGetToken:doPart --
+do (if (theToken[] = NONE) then
+       &Token[] -> theToken[];
+       THIS(PlaceInstance)[] -> theToken.instance[];
+       theToken.init;
+       (thePlace.tokenDelta.x,thePlace.tokenDelta.y) -> theToken.delta;
+       thePlace[] -> theToken.thePlace[];
+       (if thePlace.tokenSnapId <> 0 then
+           thePlace.tokenSnapId -> theToken.snap_id;
+           (theToken.snap_id -> (thePlace.getAnchors).get).XY -> theToken.changePosition;
+       if);
+   if);
+   theToken.update;
+   
+-- PlaceInstanceGetPlaceMarking:doPart --
+do (if thePlaceMarking[]=NONE then
+       &PlaceMarking[] -> thePlaceMarking[];
+       THIS(PlaceInstance)[] -> thePlaceMarking.instance[];
+       thePlaceMarking.init;
+       (if (thePlace.markingSnapId <> 0) and (theToken[] <> NONE) then
+           thePlace.markingSnapId -> thePlaceMarking.snap_id;
+           thePlace.markingAnchorHorizontal -> thePlaceMarking.anchorHorizontal;
+           thePlace.markingAnchorVertical -> thePlaceMarking.anchorVertical;
+        else
+           LeftJustify -> thePlaceMarking.anchorHorizontal;
+           CenterJustify -> thePlaceMarking.anchorVertical;
+       if);
+       (thePlace.markingDelta.x,thePlace.markingDelta.y) -> thePlaceMarking.delta;
+   if);
+   thePlaceMarking.update;
+   
+   
+-- PlaceInstanceGetCurrentHighlight:doPart --
+do (if currentHighlight[] = NONE then
+       (if private.unassigned and
+           ((thePlace.status = unchecked) or
+           (thePlace.status = compiled)) then
+           isUnassigned
+             -> getHighlight
+             -> currentHighlight[];
+        else
+           thePlace.getCurrentHighlight -> currentHighlight[];
+       if);
+   if);
+   
+-- TransitionInstanceInit:doPart --
+do private.init;
+   false -> justFiredWithManualBinding;
+   
+-- TransitionInstanceRemoveMonitor:DoPart --
+do theTransition[] -> (net).regenerateTransition;
+   
+-- TransitionInstanceAddMonitor:DoPart --
+do theTransition[] -> (net).regenerateTransition;
+   
+-- TransitionInstanceSetEnabled:doPart --
+do (if private.preenabled then
+       false -> private.preenabled;
+       (if (en = private.enabled) then
+           changed;
+       if);
+   if);
+ 
+   (if (en <> private.enabled) then
+       (if en and
+           (status = noRemarks) then           
+           (noRemarks, isEnabled) -> thePageInstance.nodeChangedStatus;
+        else           
+           (if status = isEnabled then
+               (isEnabled, noRemarks) -> thePageInstance.nodeChangedStatus;
+           if);
+       if);
+       en -> private.enabled;
+       changed;          
+   if);
+    
+-- TransitionInstanceSetPreEnabled:doPart --
+do (if (en <> private.preenabled) then
+       en -> private.preenabled;
+       changed;          
+   if);
+   
+-- TransitionInstanceSetSimulationError:DoPart --
+do (if error <> private.simulationError then
+       (if error then
+           (status, hasSimulationError) -> thePageInstance.nodeChangedStatus;
+           error -> private.simulationError;
+        else
+           error -> private.simulationError;
+           (hasSimulationError, status) -> thePageInstance.nodeChangedStatus;
+       if);
+       changed;
+   if);
+   
+-- TransitionInstancegetMarkingsOfSurroundingPIGs:doPart --
+do (# thePlaceInstanceList: ^PlaceInstanceList;
+      storedValues: @IDDictionary (# Element:: BooleanValue #);
+   do &PlaceInstanceList[] -> thePlaceInstanceList[];
+      thePlaceInstanceList.init;
+      storedValues.init;
+      scanSurroundingPlaceInstances
+      (# hadAssignmentError: @boolean;
+         tmpPlaceInstanceList: ^PlaceInstanceList;
+      do false -> hadAssignmentError;
+         &PlaceInstanceList[] -> tmpPlaceInstanceList[];
+         tmpPlaceInstanceList.init;
+         scan: current.scanPlaceInstanceGroup
+           (# theBooleanValue: ^BooleanValue;
+           do current.id[] -> storedValues.lookup -> theBooleanValue[];
+              (if theBooleanValue[] = none then
+                  (if current.unassigned then
+                      (current.id[], &TrueObject[]) -> storedValues.associate;
+                      true -> hadAssignmentError;
+                      leave scan;
+                   else
+                      (current.id[], &FalseObject[]) -> storedValues.associate;
+                      current[] -> tmpPlaceInstanceList.append;
+                  if);
+               else
+                  (if theBooleanValue then
+                      true -> hadAssignmentError;
+                      leave scan;
+                  if);
+              if);
+           #);
+         (if not hadAssignmentError then
+             tmpPlaceInstanceList[] 
+               -> thePlaceInstanceList.concatenate
+               -> thePlaceInstanceList[];
+         if);
+      #);
+      (thePageInstance.thePage.net.ML[], thePlaceInstanceList[])
+        -> thePageInstance.thePage.net.getMarkingsOnPlaceInstances;
+   #);
+   
+-- TransitionInstanceScanSurroundingPlaceInstances:DoPart --
+do theTransition.scanArcs
+   (# 
+   do current.placeEnd.id[] 
+        -> thePageInstance.lookupPlaceInstance
+        -> this(scanSurroundingPlaceInstances).current[];
+      inner scanSurroundingPlaceInstances;
+   #);
+   
+-- TransitionInstanceGetCurrentHighlight:DoPart --
+do (if theTransition[] <> NONE then
+       (if theTransition.getCurrentHighlight <> NONE then
+           theTransition.getCurrentHighlight -> currentHighlight[];
+       if);
+   if);
+   (if private.preenabled then
+       preenabled_color -> currentHighlight[];
+   if);
+   
+-- TransitionInstancePrivate:Descriptor --
+(# enabled, simulationError: @boolean;
+   preenabled: @boolean;
+   init:
+     (# 
+     do false
+          -> enabled
+          -> simulationError;
+     #);
+#)
+   
+-- TransitionInstanceToString:doPart --
+do &Text[] -> str[];
+   '%s (%d)'
+     -> str.putFormat
+   (# 
+   do theTransition.theName.copy -> s;
+      thePageInstance.mlinstancenumber -> d;
+   #);
+   
+-- TransitionInstancecheckIfCanBeCheckedForEnabling:doPart --
+do (# test: @boolean;
+   do true -> test;
+      theTransition.scanArcs
+      (# 
+      do test and 
+         ((current.placeEnd.id[] -> thePageInstance.lookupPlaceInstance).canBeCheckedForCurrentMarking) -> test;
+      #);
+      test -> canBeCheckedForEnabling;
+   #);
+   
+-- TransitionInstanceEnabled:DoPart --
+do private.enabled -> value;
+   
+-- TransitionInstanceSimulationError:DoPart --
+do private.simulationError -> value;
+   
+-- TransitionInstanceNet:DoPart --
+do (if theTransition[] <> NONE then
+       theTransition.net -> theNet[];
+   if);
+       
+-- TransitionInstanceupdate: doPart --
+do (# showHalo: 
+        (# thePageElement: ^PageElement;
+           theColor: ^Color;
+           highlightshape: ^Item;
+           width, height: @real;
+        enter (thePageElement[], theColor[], width, height)
+        do thePageElement.makeShape -> highlightshape[];
+           thePageElement.x - theTransition.x -> highlightshape.x;
+           thePageElement.y - theTransition.y -> highlightshape.y;
+           (if highlightshape##<=Rect## then
+               highlightshape[] -> QUA
+               (# as:: Rect;
+               do width+thePageElement.strokeWidth -> thisObj.width;
+                  height+thePageElement.strokeWidth -> thisObj.height;
+               #);
+           if);
+           (halo_width,theColor[]) -> &HaloStyle -> highlightshape.theStyle[];
+           IGNORE -> highlightshape.status;
+           highlightshape[] -> presentation.add;
+        #);
+      showHaloOnTransition:
+        (# theColor: ^Color;           
+        enter theColor[]
+        do (if theTransition[] <> NONE then
+               (theTransition[], 
+               theColor[], 
+               theTransition.width,
+               theTransition.height) -> showHalo;
+           if);
+        #);
+      showHaloOnSubpageInfoTag:
+        (# theColor: ^Color;
+           theHighlightAble: ^Highlightable;
+        do (if (theTransition[] <> none) and
+               (theTransition.hasSubpageInfo) and
+               (thesubpageinstance[] <> none) and
+               (theTransition.isSubstituationTransition) then
+               theTransition.getSubpageInfo -> theHighlightAble[];
+               (if theHighlightAble.getHalo <> none then
+                   theHighlightAble.getHalo -> theColor[];
+                else
+                   thesubpageinstance.getCurrentHighlightOfNodesAndSubpageTree -> theColor[];
+               if);
+               (if theColor[] <> none then
+                   (theTransition.getSubpageInfo, 
+                   theColor[],
+                   (theTransition.getSubpageInfo).theRect.width,
+                   (theTransition.getSubpageInfo).theRect.height) -> showHalo;
+               if);
+           if);
+        #);
+      showAbstractTransitionInstanceDialog:
+        (# theDialog: ^AbstractTransitionInstanceDialog; 
+           dialogIndex: ^Composite;
+        enter theDialog[]   
+        do (-theTransition.width/2+0.7,theTransition.height/2-0.7)
+            -> (theDialog.x,theDialog.y);
+           theDialog.update;
+           theDialog.present -> dialogIndex[];
+           dialogIndex[] -> presentation.add;
+        #);
+      showBindingDialog:
+        (# 
+        do (if theBindingDialog[] = none then
+               &BindingDialog[] -> theBindingDialog[];
+               THIS(TransitionInstance)[] -> theBindingDialog.theTransitionInstance[];
+               theBindingDialog.init;               
+           if);
+           theBindingDialog[] -> showAbstractTransitionInstanceDialog;
+        #);
+      showPortSocketIndex:
+        (# 
+        do (if thePortSocketDialog[]=NONE then
+               &PortSocketDialog[] -> thePortSocketDialog[];
+               THIS(TransitionInstance)[] -> thePortSocketDialog.theTransitionInstance[];
+               thePortSocketDialog.init;
+           if);
+           thePortSocketDialog[] -> showAbstractTransitionInstanceDialog;
+        #);
+   do (if presentation[]<>NONE then
+          presentation.clear;
+          &item[] -> presentation.add;
+          theTransition.x -> THIS(NodeInstance).x;
+          theTransition.y -> THIS(NodeInstance).y;
+          THIS(NodeInstance).x -> presentation.x;
+          THIS(NodeInstance).y -> presentation.y;
+          
+          (if getCurrentHighlight <> NONE then
+              getCurrentHighlight -> showHaloOnTransition;
+           else
+              (if status
+               // isEnabled then
+                  enabled_color -> showHaloOnTransition;                  
+               // hasSimulationError then
+                  error_color -> showHaloOnTransition;
+              if);
+          if);
+          showHaloOnSubpageInfoTag;
+          (if (theTransition.getCPNPage<>NONE) 
+              AND ((theTransition.getCPNPage).getSelectedGroup<>NONE) 
+              AND (NOT ((theTransition.getCPNPage).getSelectedGroup).all) 
+              AND (NOT (theTransition[]->((theTransition.getCPNPage).getSelectedGroup).isMember)) then
+              0.1->&AlphaStyle->presentation.theStyle[];
+           else
+              NONE -> presentation.theStyle[];
+          if);
+          (if (private.enabled or justFiredWithManualBinding) then
+              showBindingDialog;
+           else
+              NONE -> theBindingDialog[];
+          if);
+          (if theTransition.isSubstituationTransition then
+              showPortSocketIndex;
+           else
+              NONE -> thePortSocketDialog[];
+          if);
+      if);
+   #);
+   
+      
+      
+-- TransitionInstancedelete: doPart --
+do (if debugging then
+       'TransitionInstance.delete' -> debugCPNet;
+   if);
+   
+-- TransitionInstanceStatus:DoPart --
+do (if true
+    // private.enabled then
+       isEnabled -> value;
+    // private.simulationError then
+       hasSimulationError -> value;
+    else
+       noRemarks -> value;
+   if);       
+   
+-- ArcInstancePrivate:Descriptor --
+(# simulationError: @boolean;
+   init:
+     (# 
+     do false -> simulationError;
+     #);
+#)
+
+-- ArcInstanceInit:DoPart --
+do private.init;
+   
+-- ArcInstanceUpdate:DoPart --
+do (# showHalo:
+        (# theColor: ^Color;
+           halo: ^Line;
+           theStyle: ^CompositeStyle;
+        enter theColor[]
+        do (if (theColor[] <> NONE) and
+               (theArc.points[] <> NONE) then
+               &Line[] -> halo[];
+               &CompositeStyle[] -> theStyle[];
+               halo.init;
+               theStyle[] -> halo.theStyle[];
+               theArc.points[] -> halo.points[];
+               (halo_width+theArc.strokeWidth-1,theColor[]) -> &HaloStyle -> theStyle.add;
+               15 -> &CurvatureStyle -> theStyle.add;
+               halo[] -> presentation.add;
+               theArc.present -> presentation.add;
+           if);
+        #);
+   do (if presentation[] <> NONE then
+          presentation.clear;
+          (if theArc.getCurrentHighlight = none then
+              getCurrentHighlight -> showHalo;
+          if);
+          (if (NOT ((theArc.getCPNPage).getSelectedGroup).all) and
+              (NOT (theArc[]->((theArc.getCPNPage).getSelectedGroup).isMember)) then
+              0.1->&AlphaStyle->presentation.theStyle[];
+           else
+              NONE -> presentation.theStyle[];
+          if);
+      if);
+   #);
+   
+-- ArcInstanceDelete:DoPart --
+do 
+   
+-- ArcInstanceStatus:DoPart --
+do (if true
+    // private.simulationError then
+       hasSimulationError -> value;
+    else 
+       noRemarks -> value;
+   if);
+   
+-- ArcInstanceGetCurrentHighlight:DoPart --
+do status -> getHighlight -> currentHighlight[];
+   
+-- ArcInstanceSetSimulationError:DoPart --
+do (if error <> private.simulationError then
+       (if error then
+           (status, hasSimulationError) -> thePageInstance.nodeChangedStatus;
+           error -> private.simulationError;       
+        else
+           error -> private.simulationError;                  
+           (hasSimulationError, status) -> thePageInstance.nodeChangedStatus;           
+       if);
+       changed;
+   if);
+         
+-- ArcInstanceOnChanged:DoPart --
+do (if qerror[] <> none then
+       (theArc.getAnnotation).changed;
+       qerror.update;
+   if);   
+   update;

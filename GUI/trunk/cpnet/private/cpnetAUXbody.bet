@@ -1,0 +1,375 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../cpnet';
+INCLUDE '../../cpntools/debug';
+
+(* bodyAUXPostProcessing: doPart is found in cpnetSurvbody.bet *)
+
+-- GuidelineSnapableSnap:doPart --
+do (# snappedHGL: ^HorizontalGuideline;
+      snappedVGL: ^VerticalGuideline;
+      guidelineSnap:
+        (#
+        do 
+           (getCPNPage).scanGuideLines
+           (# vgl: ^VerticalGuideline;
+              hgl: ^HorizontalGuideline;
+              csnap:@Real;
+              b: @Boolean;
+           do (if true
+               // (current## <= HorizontalGuideline##) then
+                  current[] -> hgl[];
+                  THIS(PageElement).y-hgl.y -> fabs -> csnap;
+                  (if (csnap<yDistance) then
+                      (if (snappedHGL[]<>NONE) then
+                          snappedHGL.Lolite;
+                      if);
+                      hgl[] -> snappedHGL[];
+                      csnap -> yDistance;
+                   else
+                      THIS(PageElement)[] -> hgl.RemoveGuideElement;
+                      hgl.Lolite;
+                  if);
+               // (current## <= VerticalGuideline##) then
+                  current[] -> vgl[];
+                  THIS(PageElement).x-vgl.x -> fabs -> csnap;
+                  (if (csnap<xDistance) then
+                      (if (snappedVGL[]<>NONE) then
+                          snappedVGL.Lolite;
+                      if);
+                      vgl[] -> snappedVGL[];
+                      csnap -> xDistance;
+                   else
+                      THIS(PageElement)[] -> vgl.RemoveGuideElement;
+                      vgl.Lolite;
+                  if);
+              if);
+           #);
+           (if snappedHGL[]<>NONE then
+               snappedHGL.Hilite;
+               snappedHGL.y -> newy;
+           if);
+           (if snappedVGL[]<>NONE then
+               snappedVGL.Hilite;
+               snappedVGL.x -> newx;
+           if);   
+        #);
+   do 15.0 -> xDistance;
+      15.0 -> yDistance;
+      x -> newx;
+      y -> newy;
+      guidelineSnap;
+      
+      INNER snap;
+      
+      (if snappedx then
+          (if snappedVGL[]<>NONE then
+              snappedVGL.Lolite;
+          if);
+      if);
+      (if snappedy then
+          (if snappedHGL[] <> NONE then
+              snappedHGL.Lolite;
+          if);
+      if);
+          
+      newx - x -> dx;
+      newy - y -> dy;
+      newx -> x;
+      newy -> y;
+   #);
+
+-- GuideLineSnapableDelete:doPart --
+do INNER;
+   (getCPNPage).scanGuideLines
+     (#
+     do THIS(GuideLineSnapable)[]->current.RemoveGuideElement;
+     #);
+
+--AuxShapeSnap:doPart--
+do (* We should really have a cache of the connected arcs.
+    * Otherwise a really big page will make the following code
+    * really slow! 
+    *)
+   (* (if not guidelineSnap then *)
+       x -> oldX;
+       y -> oldY;
+       10 -> snappedDistance; (* only snap to points nearer than 10 *)
+       collectSnapList;
+       snaplist.scan
+	 (# newDistance: @Real;
+	 do snappedDistance -> newDistance;
+	    (if ((oldX - current.x) -> fabs) < snappedDistance then
+		current.x -> x;
+		((oldX - current.x) -> fabs) -> newDistance;
+	    if);
+	    (if ((oldY - current.y) -> fabs) < snappedDistance then
+		current.y -> y;
+		(((oldY - current.y) -> fabs),newDistance) -> min -> newDistance;
+	    if);
+	    newDistance -> snappedDistance;
+	 #);
+   (* if); *)
+   INNER;
+   
+-- AuxSetText: doPart --
+do (if theShape## <= LabelShape## then
+       theShape[] -> ls[];
+       (if ls.label[] = NONE then
+           &ls.myTextItem[] -> ls.label[];
+       if);
+       theText[] -> ls.label.content[];
+   if);
+   
+-- AuxGetText: doPart --
+do (# ls: ^LabelShape;
+   do (if theShape## <= LabelShape## then
+          theShape[] -> ls[];
+          (if ls.label[] <> NONE then
+              ls.label.content[] -> theText[];
+          if);
+      if);
+   #);
+   
+
+-- AuxClone: doPart --
+do INNER;
+   (if true
+    // theShape## <= boxshape## then
+       &new.boxshape[] -> new.theshape[];
+    // theShape## <= EllipseShape## then
+       &new.EllipseShape[] -> new.theShape[];
+    // theShape## <= labelShape## then
+       &new.labelShape[] -> new.theShape[];
+       (getText).copy -> new.settext; 
+(*    // theShape## <= pngshape## then
+       &new.pngshape[] -> new.theshape[];
+       theShape.thePath.copy -> new.theShape.thePath[];
+       theshape.openname.copy -> new.theshape.openname[];*)
+    // theShape## <= lineShape## then
+       &new.lineShape[] -> new.theshape[];
+       theShape.points.copy -> new.theShape.points[];
+   if);
+   theshape.width -> new.theshape.width;
+   theshape.height -> new.theshape.height;     
+   
+-- AuxLabelShapemakeShape: doPart --
+do (if label[] = NONE then
+       &myTextItem[] -> label[];       
+    else
+       NONE -> label.father[]; (*** label are going to be added to a new composite,
+                                *** eventhough it already points to another composite,
+                                *** clearing the father pointer will fix a problem
+                                ***)
+   if);
+   (if NOT label.editActive then
+       getText -> label.content[]; 
+   if);
+   label[] -> theItem.add;
+   lineColor[] -> theStyle.stroke[];
+   strokeWidth -> theStyle.strokewidth;
+   
+-- AuxShapemakeShape: doPart --
+do &ItemType[] -> theItem[];
+   theItem.init;
+   &BasicStyle[] -> theStyle[];
+   INNER;
+   theStyle[] -> theItem.theStyle[];
+   
+-- AuxBoxShapemakeShape: doPart --
+do width -> theItem.width;
+   height -> theItem.height;
+   lineColor[] -> theStyle.stroke[];
+   strokeWidth -> theStyle.strokewidth;
+   fillColor[] -> theStyle.fill[];
+   
+-- AuxEllipseShapemakeShape: doPart --
+do width -> theItem.width;
+   height -> theItem.height;
+   lineColor[] -> theStyle.stroke[];
+   strokeWidth -> theStyle.strokewidth;
+   fillColor[] -> theStyle.fill[];
+
+-- AuxmakeShape: doPart --
+do (if theShape[] <> NONE then
+       theShape.makeShape -> theItem[];
+   if);
+   INNER;
+   
+-- AuxRemoveSpeechBubble: doPart --
+do (if qerror[] <> NONE then
+	      qerror.presentation[] -> presentation.remove;
+	      qerror.delete;
+	      none -> qerror[];
+	      changed;
+	  if); 
+-- AUXUpdate: doPart --
+do (# theItem: ^Item;
+   do makeShape -> theItem[];
+      (if theItem[] <> NONE then
+          theItem[] -> presentation.add;
+      if);
+   #);
+   
+-- AuxGetTextItem: dopart --
+do (# urgh: ^labelshape;
+   do (if theshape## <= LabelShape## then
+          theShape[] -> urgh[];
+          urgh.label[] -> theTextItem[];
+      if);
+   #);
+   INNER;
+   
+-- auxallowreturn: dopart --
+do (if theShape## <= labelshape## then
+       true -> value;
+   if);
+   INNER;
+   
+-- AuxShapeSnapCollectSnap:dopart --
+do (if snaplist[]=NONE then
+       &PointList[] -> snaplist[];
+    else
+       snaplist.empty;
+   if);
+   INNER;
+   
+-- auxshapegetanchors:dopart --
+do &PointList[] -> anchors[];
+   (width / 2) + 5 -> a;
+   (height / 2) + 5 -> b;
+   (x + a, y) -> MakePoint -> anchors.append;
+   (x - a, y) -> MakePoint -> anchors.append;
+   (x, y + b) -> MakePoint -> anchors.append;
+   (x, y - b) -> MakePoint -> anchors.append;
+   INNER;
+
+-- auxbounds:dopart --
+do x - theshape.width / 2 -> xmin;
+   x + theshape.width / 2 -> xmax;
+   y - theshape.height / 2 -> ymin;
+   y + theshape.height / 2 -> ymax; 
+   (if theshape## <= labelShape## then
+       (# theLabelShape: ^LabelShape;
+          w, h: @Real;
+       do 'lg' -> arial.measureText -> (w, h);
+          theshape[] -> theLabelShape[];
+          (if (theLabelShape.label[] <> NONE) then
+              (* Fix bug #995 by always forcing a new calculation of
+               * the size of the text, when we use it to compute bounds *)
+              theLabelShape.label.content[] -> 
+              arial.measureText -> 
+              (theLabelShape.width, theLabelShape.height);
+           else
+              (0,0) -> (theLabelShape.width, theLabelShape.height);
+          if);
+          x + theLabelShape.width -> xmax;
+          x  -> xmin;
+          (*y - theLabelShape.height + h -> ymin;*)
+          (*y + h -> ymax;*)
+          y - h -> ymin;
+          y + theLabelShape.height - h -> ymax;
+       #);
+   if);
+   
+(*-- pngItemInit:dopart --
+do (if thePath[] = NONE then
+       &Text[] -> thePath[];
+       'toucan.png' -> relativeFile -> thePath[];
+   if);
+   
+   openname[] -> entry.path;
+   (if entry.exists then
+       entry.path -> picture.load; picture[] -> content[];
+       picture.width -> width;
+       picture.height -> height;
+   if);*)
+   
+-- auxLineMake:dopart --
+do lineColor[] -> theStyle.stroke[];
+   strokeWidth -> theStyle.strokewidth;
+   points[] -> theItem.points[];
+   
+-- auxboxgetanchors:dopart --
+do (x + a, y + b) -> MakePoint -> anchors.append;
+   (x + a, y - b) -> MakePoint -> anchors.append;
+   (x - a, y + b) -> MakePoint -> anchors.append;
+   (x - a, y - b) -> MakePoint -> anchors.append;
+   
+-- auxellipsegetanchorsadd:dopart --
+do (x + (degree -> cose) * a, y + (degree -> sine)*b)
+     -> MakePoint
+     -> anchors.append;
+   
+-- auxellipsegetanchors:dopart --   
+do 45 -> add;
+   3*45 -> add;
+   5*45 -> add;
+   7*45 -> add;
+   
+
+   
+-- auxlabelmyText:dopart --
+do content[] -> arial.measureText -> (this(labelshape).width, this(labelshape).height);
+   
+-- AuxGetStyle: doPart --   
+do ('color',getColor) -> style.put;
+   (if (theShape## <= BoxShape##) OR (theShape## <= EllipseShape##) then
+       ('width',theShape.width) -> style.putReal;
+       ('height',theShape.height) -> style.putReal;
+       ('fill',filled) -> style.putBoolean;
+       ('lineWidth',strokewidth) -> style.putReal;
+   if);
+   
+-- AuxSetStyle: doPart --
+do (# newColor: ^Color;
+      newWidth,newHeight,newLineWidth: ^RealObject;
+      newFill: ^BooleanObject;
+   do 'color' -> style.get -> newColor[];
+      (if newColor[] <> NONE then
+          newColor[] -> setColor;
+      if);
+      (if (theShape## <= BoxShape##) OR (theShape## <= EllipseShape##) then
+          'width' -> style.get -> newWidth[];
+          (if newWidth[] <> NONE then
+              newWidth -> theShape.width;
+          if);
+          'height' -> style.get -> newHeight[];
+          (if newHeight[] <> NONE then
+              newHeight -> theShape.height;
+          if);
+      if);
+      'fill' -> style.get -> newFill[];
+      (if newFill[] <> NONE then
+          newFill -> setFill;
+      if);
+      'lineWidth' -> style.get -> newLineWidth[];
+      (if newLineWidth[] <> NONE then
+          newLineWidth -> strokewidth;
+      if);
+      changed;
+   #);
+   

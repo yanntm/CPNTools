@@ -1,0 +1,2818 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN 'cpnet';
+INCLUDE '../cpntools/wselements/cpnbinder';
+INCLUDE 'private/cpnetmonitorbody';
+INCLUDE '../cpntools/cpnworkspace';
+INCLUDE 'private/xmlgetdata';
+INCLUDE '../cpntools/instruments/cpninstrument';
+INCLUDE '../cpntools/resources/texts/texts';
+
+-- WorkspaceLib: attributes --
+Loader:
+  (# Type:< Object;
+     
+     init:<
+       (#
+       #);
+     
+     elmName:<
+       (# value: ^Text;
+       do INNER;
+       exit value[]
+       #);
+     
+     load:<
+       (# elm: ^theXML.element;
+          obj: ^Type;
+       enter elm[]
+       do INNER;
+       exit obj[]
+       #);
+  #);
+
+SimpleLoader:
+  (# Type:< Object;
+     obj: ^Type;
+     elm: ^theXML.Element;
+     elmName:<
+       (# value: ^Text;
+       do INNER;
+       exit value[]
+       #);
+  enter elm[]
+  do INNER;
+  exit obj[]
+  #);
+
+LoaderFactory:
+  (# Type:< Object;
+     LoaderType:< Loader;
+     loaders: @List (# element:: LoaderType; #);
+     init:<
+       (#
+       do loaders.init;
+          INNER;
+       #);
+     
+     createLoader:<
+       (#  elm: ^theXML.Element;
+          theLoader: ^LoaderType;
+          error:< exception;
+       enter elm[]
+       do findLoader: loaders.scan
+            (#
+            do (if elm.tag[] -> (current.elmName).equalNCS then
+                   current[] -> theLoader[];
+                   leave findLoader;
+               if);
+            #);
+          (if theLoader[] = NONE then
+              error;
+          if);
+       exit theLoader[]
+       #);
+     
+     register:
+       (# theLoader: ^LoaderType;
+       enter theLoader[]
+       do theLoader[] -> loaders.append;
+       #);
+  #);
+
+Task:
+  (# stage:< IntegerObject;
+  do INNER;
+  #);
+
+NotifierLoader: Loader
+  (# Type::< Notifier;
+     load::<
+       (#
+       do &Type[] -> obj[];
+          'id' -> elm.lookupText -> obj.id[];
+          INNER;
+       #);
+  #);
+
+CPNetLoader: Loader
+  (# Type:: CPNet;
+     
+     load::
+       (# errorDuringLoad: @boolean;
+          nonUniqueId: ^Text;
+          errorMessage: ^Text;
+          theCpnWorkspace: ^CpnWorkspace;
+          idDict: @IdDictionary;
+          
+          tasks: @List (# element::Task; #);
+          
+          scheduleTask:
+            (# theTask: ^Task;
+            enter theTask[]
+            do theTask[] -> tasks.append;
+            #);
+          
+          processStage:
+            (# stage: @integer;
+            enter stage
+            do tasks.scan 
+               (# 
+               do (if current.stage = stage then
+                      current; 
+                  if);
+               #);
+            #);
+          
+          lookupObject:
+            (# id: ^Text;
+               obj: ^Object;
+            enter id[]
+            do id[] -> idDict.lookup -> obj[];
+            exit obj[]
+            #);
+          
+          registerObject:
+            (# id: ^Text;
+               obj: ^Object;
+            enter (id[],obj[])
+            do (if (id[] -> lookupObject)<>NONE then
+                   id[] -> nonUniqueId[];
+                   true -> errorDuringLoad;
+                else
+                   (id[],obj[]) -> idDict.associate;
+               if);
+            #);
+          
+          getNet:
+            (#
+            exit obj[]
+            #);
+          
+          CPNetEntityLoader: Loader
+            (# Type::< Notifier;
+               load::<
+                 (# theid: ^Text;
+                 do 'id' -> elm.lookupText -> theid[];
+                    &Type[] -> obj[];
+                    theid[] -> obj.id[];
+                    INNER;
+                 #);
+            #);
+          
+          GroupLoader: CPNetEntityLoader
+            (# Type::< Group;
+               load::<
+                 (#
+                 do obj.init;
+                    'name' -> elm.lookupText -> obj.name;
+                    INNER;
+                    &Task
+                    (# stage:: (# do 1 -> value; #);
+                    do elm.scanElements
+                       (# idRef: ^Text;
+                          theMember: ^PageElement;
+                       do (if 'group_elm' -> current.tag.equalNCS then
+                              'idref' -> current.lookupText -> idRef[];
+                              (if idRef[] <> NONE then
+                                  idRef[] -> lookupObject -> theMember[];
+                                  (if theMember[] <> NONE then
+                                      theMember[] -> obj.addElement;
+                                  if);
+                              if);
+                          if);
+                       #);
+                    #)[] -> scheduleTask;
+                 #);
+               
+            #);
+          
+          GlobalGroupLoader: @GroupLoader;
+          
+          CPNPageLoader: @CPNetEntityLoader
+            (# Type:: CPNPage;
+               elmName:: (# do 'page' -> value[]; #);
+               load::
+                 (# getPage: (# exit obj[] #);
+                    
+                    PageElementLoader: CPNetEntityLoader
+                      (# Type::< PageElement;
+                         load::<
+                           (#
+                           do obj.init;
+                              elm.scanElements
+                              (# 
+                              do (if true
+                                  //'posattr'->current.tag.equalNCS then
+                                     'x'->current.lookupReal->scale->obj.x;
+                                     -('y'->current.lookupReal->scale)->obj.y;
+                                  //'fillattr'->current.tag.equalNCS then
+                                     'colour'->current.lookupText->colorTable.lookup->obj.fillColor[];
+                                     (if obj.fillColor[] = NONE then
+                                         'black'->colorTable.lookup->obj.fillColor[];
+                                     if);
+                                     'pattern'->current.lookupText->obj.fillPattern[];
+                                     'filled'->current.lookupBool->obj.filled;
+                                  //'lineattr'->current.tag.equalNCS then
+                                     'colour'->current.lookupText->colorTable.lookup->obj.lineColor[];
+                                     (if obj.lineColor[] = NONE then
+                                         'black'->colorTable.lookup->obj.lineColor[];
+                                     if);
+                                     'thick'->current.lookupInt->obj.strokeWidth;
+                                     'type'->current.lookupText->obj.lineType[];
+                                  //'textattr'->current.tag.equalNCS then
+                                     'colour'->current.lookupText->colorTable.lookup->obj.textColor[];
+                                     (if obj.textColor[] = NONE then
+                                         'black'->colorTable.lookup->obj.textColor[];
+                                     if);
+                                     'bold'->current.lookupBool->obj.bold;
+                                 if);
+                              #);    
+                              INNER;
+                           #);
+                      #);
+                    
+                    PageElementLoaderFactory: @LoaderFactory
+                      (#
+                         InscriptionLoader: PageElementLoader
+                           (# Type::< Inscription;
+                              load::<
+                                (#
+                                do (obj.id[],obj[]) -> registerObject;
+                                   elm.scanElements
+                                   (# theText: ^Text;
+                                   do none -> obj.setInscription;
+                                      (if true
+                                       // 'text' -> current.tag.equalNCS then
+                                          current.getData -> theText[];
+                                          (if '' -> theText.equal then
+                                              obj.defaultInscription -> obj.setInscription;
+                                           else
+                                              current.getData -> obj.setInscription;
+                                          if);
+                                      if);
+                                   #);
+                                   INNER;
+                                #);
+                           #);
+                         
+                         NodeLoader: PageElementLoader
+                           (# Type::< Node;
+                              load::<
+                                (# snapChild:
+                                     (# theChild: ^PageElement;
+                                     enter theChild[]
+                                     do theChild[] -> obj.snapTo;
+                                        theChild.x - obj.x -> theChild.dx;
+                                        theChild.y - obj.y -> theChild.dy;
+                                     #);
+                                   
+                                do (obj.id[],obj[]) -> registerObject;
+                                   &Text[]->obj.theName[];
+                                   elm.scanElements
+                                   (# 
+                                   do (if true
+                                       //'text'->current.tag.equalNCS then
+                                          current.getData->obj.theName.putText;
+                                      if);
+                                   #);
+                                   INNER;
+                                   moveDefaultInscriptions: (obj.getInscriptions).scan
+                                     (# 
+                                     do (if current.isDefaultInscription then
+                                            current.defaultSnap;
+                                        if);
+                                     #);
+                                   
+                                #);
+                           #);
+                         SSNodeLoader: PageElementLoader
+                           (# Type::< SSNode;
+                              elmName:: (# do 'ssnode' -> value[]; #);
+                              load::<
+                                (#
+				do (obj.id[],obj[]) -> registerObject;
+                                   elm.scanElements
+                                   (# 
+                                   do (if true
+                                       //'roundbox'->current.tag.equalNCS then
+                                          'w'->current.lookupReal->scale->obj.width;
+                                          'h'->current.lookupReal->scale->obj.height;
+                                       //'descriptor'->current.tag.equalNCS then
+                                          &Text[] -> obj.descriptor[];
+                                          current.scanElements
+                                          (# 
+                                          do (if true
+                                              //'text'->current.tag.equalNCS then
+                                                 current.getData->obj.descriptor.putText;
+                                             if);
+                                          #);
+                                          'x' -> current.lookupReal->scale->obj.delta.x;
+                                          'y' -> current.lookupReal->scale->obj.delta.y;
+                                          'visible' -> current.lookupBool->obj.visible;
+                                      if);
+                                   #);
+                                   'number' -> elm.lookupInt -> obj.number;
+                                   'predecessors' -> elm.lookupInt -> obj.pred;
+                                   'successors' -> elm.lookupInt -> obj.suc;
+                                   'dead' -> elm.lookupBool -> obj.deadInfo;
+				   COMPILED -> obj.status;
+                                   obj[] -> (getPage).addSSNode;
+                                #);
+                           #);
+                         HierarchyInfoLoader: PageElementLoader
+                           (# Type::< HierarchyInfo;
+                              load::<
+                                (#
+                                do 'name' -> elm.lookupText -> obj.setCPNML;
+                                   INNER;
+                                #);
+                           #);
+                         
+                         PlaceLoader: NodeLoader
+                           (# Type:: Place;
+                              elmName:: (# do 'place' -> value[]; #);
+                              load::
+                                (# getPlace: (# exit obj[] #);
+                                   
+                                   PlaceInscriptionLoader: InscriptionLoader
+                                     (# Type::< PlaceInscription;
+                                        load::<
+                                          (#
+                                          do getPlace -> obj.setPlace;
+                                             INNER;
+                                          #);
+                                        createDefault:<
+                                          (# obj: ^Type;
+                                          do &Type[] -> obj[];
+                                             obj.init;
+                                             getPlace -> obj.setPlace;
+                                             INNER;
+                                             obj.defaultSnap;
+                                          #);
+                                     #);
+                                   
+                                   InitMarkLoader: @PlaceInscriptionLoader
+                                     (# Type:: InitMark;
+                                        load::
+                                          (#
+                                          do obj[] -> (getPlace).setInitMark;
+                                          #);
+                                        createDefault::
+                                          (#
+                                          do obj[] -> (getPlace).setInitMark;
+                                          #);
+                                        
+                                     #);
+                                   
+                                   PlaceTypeLoader: @PlaceInscriptionLoader
+                                     (# Type:: PlaceType;
+                                        load::
+                                          (#
+                                          do obj[] -> (getPlace).setPlaceType;
+                                          #);
+                                        createDefault::
+                                          (#
+                                          do obj[] -> (getPlace).setPlaceType;
+                                          #);
+                                     #);
+                                   
+                                   PortTypeLoader: @PageElementLoader
+                                     (# Type:: PortType;
+                                        load::
+                                          (#
+                                          do 'type' -> elm.lookuptext -> obj.setCPNML;
+                                             (* This is needed since older versions used 'inout'
+                                              * rather than 'I/O'. See bug #1001. *)
+                                             (if ('inout'->(obj.getCPNML).equalNCS) or
+                                                 ('i/o'->(obj.getCPNML).equalNCS) or
+                                                 ('In/Out'->(obj.getCPNML).equalNCS) then 
+                                                 'I/O'->obj.setCPNML;
+                                             if);
+                                             (if 'out'->(obj.getCPNML).equalNCS then
+                                                 'Out'->obj.setCPNML;
+                                             if);
+                                             (if 'in'->(obj.getCPNML).equalNCS then
+                                                 'In'->obj.setCPNML;
+                                             if);
+                                             getPlace -> obj.setPlace;
+                                          #);
+                                     #);
+                                   
+                                   FusionInfoLoader: @HierarchyInfoLoader
+                                     (# Type:: FusionInfo;
+                                        load::
+                                          (#
+                                          do getPlace -> obj.setPlace;
+                                          #);
+                                     #);
+                                   
+                                do elm.scanElements
+                                   (# 
+                                   do (if true
+                                       //'ellipse'->current.tag.equalNCS then
+                                          'w'->current.lookupReal->scale->obj.width;
+                                          'h'->current.lookupReal->scale->obj.height;
+                                      if);
+                                   #);
+                                   elm.scanElements
+                                   (# x,y: @Real;
+                                   do (if true
+                                       //'type'->current.tag.equalNCS then
+	                                  current[] -> PlaceTypeLoader.load;
+                                       //'initMark'->current.tag.equalNCS then
+	                                  current[] -> InitMarkLoader.load;
+                                       //'token'->current.tag.equalNCS then
+                                          'x'->current.lookupReal->scale->x;
+                                          'y'->current.lookupReal->scale->y;
+                                          (x,y)->obj.unPackTokenDelta;
+                                       //'marking'->current.tag.equalNCS then
+                                          'x'->current.lookupReal->scale->x;
+                                          'y'->current.lookupReal->scale->y;
+                                          (x,y)->obj.unPackMarkingDelta;
+                                          'hidden'->current.lookupBool->obj.hidemarkings;
+                                          current.scanElements
+                                          (#
+                                          do (if 'snap' -> current.tag.equalNCS then
+                                                 'snap_id' -> current.lookupInt -> obj.markingSnapId;
+                                                 'anchor.horizontal' -> current.lookupInt -> obj.markingAnchorHorizontal;
+                                                 'anchor.vertical' -> current.lookupInt -> obj.markingAnchorVertical;
+                                             if);
+                                          #);
+                                       //'port' -> current.tag.equalNCS then
+                                          current[] -> PortTypeLoader.load -> obj.setPortType;
+                                       // 'fusioninfo' -> current.tag.equalNCS then
+                                          current[] -> FusionInfoLoader.load -> obj.setFusionInfo;
+                                      if);
+                                   #);
+                                   (if obj.getInitMark = NONE then
+                                       InitMarkLoader.createDefault;
+                                   if);
+                                   (if obj.getPlaceType = NONE then
+                                       PlaceTypeLoader.createDefault;
+                                   if);
+                                   
+                                   obj[] -> (getPage).addPlace;
+                                   
+                                   obj.getInitMark -> snapChild;
+                                   obj.getPlaceType -> snapChild;
+                                   &Task
+                                   (# stage:: (# do 1 -> value; #);
+                                   do 
+                                      (if obj.getFusionInfo <> NONE then
+                                          obj.getFusionInfo -> snapChild;
+                                      if);
+                                      (if obj.getPortType <> NONE then
+                                          obj.getPortType -> snapChild;
+                                      if);
+                                   #)[] -> scheduleTask;
+                                   &Task
+                                   (# stage:: (# do 4 -> value; #);
+                                   do obj.portPlaceHasChangedtype;
+                                      obj.changedAssignmentToSocket;
+                                   #)[] -> scheduleTask;
+                                #);
+                           #);
+                         
+                         TransitionLoader: NodeLoader
+                           (# Type:: Transition;
+                              elmName:: (# do 'trans' -> value[]; #);
+                              load::
+                                (# getTransition: (# exit obj[] #);
+                                   TransitionInscriptionLoader: InscriptionLoader
+                                     (# Type::< TransitionInscription;
+                                        load::<
+                                          (#
+                                          do getTransition -> obj.setTransition;
+                                             INNER;
+                                          #);
+                                        createDefault:<
+                                          (# obj: ^Type;
+                                          do &Type[] -> obj[];
+                                             obj.init;
+                                             getTransition -> obj.setTransition;
+                                             inner;
+                                             obj.defaultSnap;
+                                          exit obj[]
+                                          #);
+                                     #);
+                                   TransGuardLoader: @TransitionInscriptionLoader
+                                     (# Type:: TransGuard;
+                                        elmName:: (# do 'cond' -> value[]; #);
+                                        load::
+                                          (#
+                                          do obj[] -> (getTransition).setTransGuard;
+                                          #);
+                                        createDefault::
+                                          (#
+                                          do obj[] -> (getTransition).setTransGuard;
+                                          #);
+                                     #);
+                                   TransTimeLoader: @TransitionInscriptionLoader
+                                     (# Type:: TransTime;
+                                        elmName:: (# do 'time' -> value[]; #);
+                                        load::
+                                          (#
+                                          do obj[] -> (getTransition).setTransTime;
+                                          #);
+                                        createDefault::
+                                          (#
+                                          do obj[] -> (getTransition).setTransTime;
+                                          #);
+                                     #);
+                                   TransActionLoader: @TransitionInscriptionLoader
+                                     (# Type:: TransAction;
+                                        elmName:: (# do 'code' -> value[]; #);
+                                        load::
+                                          (#
+                                          do obj[] -> (getTransition).setTransAction;
+                                          #);
+                                        createDefault::
+                                          (#
+                                          do obj[] -> (getTransition).setTransAction;
+                                          #);
+                                     #);
+                                   TransChannelLoader: @TransitionInscriptionLoader
+                                     (# Type:: TransChannel;
+                                        elmName:: (# do 'channel' -> value[]; #);
+                                        load::
+                                          (#
+                                          do obj[] -> (getTransition).setTransChannel;
+                                          #);
+                                        createDefault::
+                                          (#
+                                          do obj[] -> (getTransition).setTransChannel;
+                                          #);
+                                     #);
+                                   TransPriorityLoader: @TransitionInscriptionLoader
+                                     (# Type:: TransPriority;
+                                        elmName:: (# do 'priority' -> value[]; #);
+                                        load::
+                                          (#
+                                          do obj[] -> (getTransition).setTransPriority;
+                                          #);
+                                        createDefault::
+                                          (#
+                                          do obj[] -> (getTransition).setTransPriority;
+                                          #);
+                                     #);
+                                   SubpageInfoLoader: @HierarchyInfoLoader
+                                     (# Type:: SubpageInfo;
+                                        load::
+                                          (#
+                                          do getPage -> obj.setCPNPage;
+                                             getTransition -> obj.setTransition;
+                                          #);
+                                     #);
+                                   
+                                do elm.scanElements
+                                   (# 
+                                   do (if true
+                                       //'box'->current.tag.equalNCS then
+                                          'w'->current.lookupReal->scale->obj.width;
+                                          'h'->current.lookupReal->scale->obj.height;
+                                      if);
+                                   #);
+                                   elm.scanElements
+                                   (# x,y: @Real;
+                                   do (if true
+                                       //'time' -> current.tag.equalNCS then
+                                          current[] -> TransTimeLoader.load;
+                                       //'cond' -> current.tag.equalNCS then
+                                          current[] -> TransGuardLoader.load;
+                                       //'code' -> current.tag.equalNCS then
+                                          current[] -> TransActionLoader.load;
+                                       //'channel' -> current.tag.equalNCS then
+                                          current[] -> TransChannelLoader.load;
+                                       //'priority' -> current.tag.equalNCS then
+                                          current[] -> TransPriorityLoader.load;
+                                       //'binding' -> current.tag.equalNCS then
+                                          'x' -> current.lookupReal -> scale -> x;
+                                          'y' -> current.lookupReal -> scale -> y;
+                                          (x,y) -> obj.deltaPositionOfBindingIndex;
+                                      if);
+                                   #);
+                                   (if obj.getTransTime = NONE then
+                                       TransTimeLoader.createDefault;
+                                   if);
+                                   (if obj.getTransAction = NONE then
+                                       TransActionLoader.createDefault;
+                                   if);
+                                   (if obj.getTransGuard = NONE then
+                                       TransGuardLoader.createDefault;
+                                   if);
+                                   (if obj.getTransChannel = NONE then
+                                       TransChannelLoader.createDefault;
+                                   if);
+                                   (if obj.getTransPriority = NONE then
+                                       TransPriorityLoader.createDefault;
+                                   if);
+                                   obj.getTransGuard -> snapChild;
+                                   obj.getTransAction -> snapChild;
+                                   obj.getTransTime -> snapChild;
+                                   obj.getTransChannel -> snapChild;
+                                   obj.getTransPriority -> snapChild;
+                                   false -> obj.setExplicit;
+                                   scan: elm.scanAttributes
+                                     (# 
+                                     do (if 'explicit' -> current.key.equal then
+                                            'explicit' -> elm.lookupBool -> obj.setExplicit;
+                                            leave scan;
+                                        if);
+                                     #);                                   
+                                   &Task
+                                   (# stage:: (# do 1 -> value; #);
+                                   do elm.scanElements
+                                      (#
+                                      do (if true 
+                                          // 'subst' -> current.tag.equalNCS then
+                                             (# theSubpageId: ^Text;
+                                                theSubpage: ^CPNPage;
+                                                portsock: ^Text;
+                                                
+                                                getId:
+                                                  (# input: ^Stream;
+                                                     id: ^Text;
+                                                  enter input[]
+                                                  do &Text[] -> id[];
+                                                     id.clear;
+                                                     (* read 'id' *)
+                                                     input.get -> id.put;
+                                                     input.get -> id.put;
+                                                     getDigits:
+                                                       (# ch: @char;
+                                                       do input.peek -> ch;
+                                                          (if ch -> Ascii.isDigit then
+                                                              input.get -> id.put;
+                                                           else leave getDigits;
+                                                          if);
+                                                          restart getDigits;
+                                                       #);
+                                                  exit id[]
+                                                  #);
+                                             do 'subpage' -> current.lookupText -> theSubpageId[];
+                                                (if theSubpageId[] <> NONE then
+                                                    theSubpageId[] -> lookupObject -> theSubpage[];
+                                                    (if theSubpage[] <> NONE then
+                                                        theSubpage[] -> obj.setSubpage;
+                                                        'portsock' -> current.lookupText -> portsock[];
+                                                        (if portsock[] <> NONE then
+                                                            portsock.reset;
+                                                            L: (# ID1, ID2: ^Text;
+                                                                  P1, P2: ^Place;
+                                                               do portsock.scanwhitespace;
+                                                                  (if portsock.eos then
+                                                                      leave L;
+                                                                  if);
+                                                                  portsock.get; (* get '(' *)
+                                                                  portsock.scanwhitespace;
+                                                                  portsock[] -> getId -> ID1[];
+                                                                  portsock.scanwhitespace;
+                                                                  portsock.get; (* get ',' *)
+                                                                  portsock.scanwhitespace;
+                                                                  portsock[] -> getID -> ID2[];
+                                                                  portsock.scanwhitespace;
+                                                                  portsock.get; (* get ')' *)
+                                                                  
+                                                                  ID1[]->(obj.getSubPage).lookupPlace->P1[];
+                                                                  ID2[]->(getPage).lookupPlace->P2[];
+                                                                  
+                                                                  
+                                                                  (if (P1[] <> NONE) and (P2[] <> NONE) then
+                                                                      ('not (id1[]->id2.equal', not (id1[]->id2.equal))->assert (# #);
+                                                                      (P1[],P2[])->obj.AddPortSocketAssignment;
+                                                                  if);
+                                                                  restart L;
+                                                               #);
+                                                        if);
+                                                        1 + (obj.getSubpage).nofsuper->(obj.getSubpage).nofsuper;
+                                                        current.scanElements
+                                                        (#
+                                                        do (if 'subpageinfo' -> current.tag.equalNCS then
+                                                               current[] -> SubpageInfoLoader.load -> obj.setSubPageInfo;
+                                                               obj.getSubPageInfo -> snapChild;
+                                                           if);
+                                                        #);
+                                                        (if obj.getSubPageInfo = NONE then
+                                                            (obj.getSubpage).name->obj.createSubPageInfo->obj.setSubPageInfo;
+                                                        if);
+                                                    if);
+                                                if);
+                                             #);
+                                         if);
+                                      #);
+                                   #)[] -> scheduleTask;
+                                   obj[] -> (getPage).addTransition;
+                                #);
+                           #);
+                         
+                         ArcLoader: PageElementLoader
+                           (# Type:: Arc;
+                              elmName:: (# do 'arc' -> value[]; #);
+                              load::
+                                (# getArc: (# exit obj[] #);
+                                   AnnotationLoader: @InscriptionLoader
+                                     (# Type:: Annotation;
+                                        elmName:: (# do 'annot' -> value[]; #);
+                                        load::
+                                          (# 
+                                          do obj[] -> (getArc).setAnnotation;
+                                          #);
+                                        createDefault:
+                                          (# obj: ^Type;
+                                          do  none -> (getArc).setAnnotation;
+                                             (getArc).getAnnotation -> obj[];
+                                          #);
+                                     #);
+                                   BendPointLoader: @PageElementLoader
+                                     (# type:: BendPoint;
+                                        load::
+                                          (#
+                                          do 'serial'->elm.lookupInt->obj.serial;
+                                          #);
+                                     #);
+                                   
+                                   dir: ^text;
+                                   parsePointList: 
+	                             (# str: ^text;
+	                                points: ^BendPointList;
+	                                theBendPoint,previous: ^BendPoint;
+	                                x, y: @real;
+	                             enter str[]
+	                             do (if str[] <> NONE then
+	                                    str.reset; 
+	                                    &BendPointList[]->points[];
+	                                    l: 
+	                                      (if NOT str.eos then
+		                                  &BendPoint[]->theBendPoint[];
+		                                  theBendPoint.init;
+		                                  str.get;
+		                                  str.getReal->x;
+		                                  str.get;
+		                                  str.getReal->y;
+		                                  str.get;
+		                                  (x->scale, -y->scale)->theBendPoint.XY;
+		                                  theBendPoint[]
+		                                    -> points.prepend;
+		                                  restart l;
+	                                      if);
+	                                if);
+	                             exit points[]
+                                     #);
+                                do (obj.id[],obj[]) -> registerObject;
+                                   'order' -> elm.lookupInt -> obj.setOrder;
+                                   'orientation'->elm.lookupText->dir[];
+                                   (if true
+                                    //'NODIR'->dir.equalNCS then
+	                               BothDir->obj.setOrientation;
+                                    //'BOTHDIR'->dir.equalNCS then
+	                               BothDir->obj.setOrientation;
+                                    //'PtoT'->dir.equalNCS then
+	                               PtoT->obj.setOrientation;
+                                    //'TtoP'->dir.equalNCS then
+	                               TtoP->obj.setOrientation;
+                                    else
+	                               (if debugging then
+	                                   'Arc.unPackAttributes: Unknown arc orientation: %s'->debugCPNet
+                                           (# 
+                                           do dir[]->s;
+                                           #);
+	                               if);
+                                   if); 
+                                   &BendPointList[] -> obj.setBends;
+                                   
+                                   elm.scanElements
+                                   (# aPageElement: ^PageElement;
+                                      (*                pref: ^PageElementReferenceTable.Reference;*)
+                                      idref: ^text;
+                                   do (if true
+                                       //'annot'->current.tag.equalNCS then
+                                          current[] -> AnnotationLoader.load;
+                                       //'bendpoint'->current.tag.equalNCS then
+                                          current[] -> BendPointLoader.load -> (obj.getBends).append;
+                                       //'arrowattr'->current.tag.equalNCS then
+                                          'headsize'->current.lookupReal->obj.arrowHeadSize;
+                                          'currentcyckle'->current.lookupInt->obj.currentSize;
+                                       //'seg-conn'->current.tag.equalNCS then
+                                          (if (obj.getBends=NONE) then
+                                              'points'->current.lookupText->parsePointList->obj.setBends;
+                                          if)
+                                      if);
+                                   #);
+                                   (if obj.getAnnotation = NONE then
+                                       AnnotationLoader.createDefault;
+                                   if);
+                                   
+                                   (obj.getBends).sortBySerial;
+                                   (obj.getBends).scan
+                                   (# 
+                                   do current[] -> obj.addBendPoint;
+                                   #);
+                                   
+                                   obj[] -> (getPage).addArc;
+                                   &Task
+                                   (# stage:: (# do 1 -> value; #);
+                                   do elm.scanElements
+                                      (# idref: ^Text;
+                                         placeEnd: ^Place;
+                                         transEnd: ^Transition;
+                                      do (if true
+                                          //'placeend'->current.tag.equalNCS then
+                                             'idref'->current.lookupText->idref[];
+                                             (if idref[] <> NONE then
+                                                 idref[] -> lookupObject -> placeEnd[];
+                                                 (if placeEnd[] <> NONE then
+                                                     placeEnd[] -> obj.setPlaceEnd;
+                                                     obj[] -> placeEnd.addArc;
+                                                 if);
+                                             if);
+                                          //'transend'->current.tag.equalNCS then
+                                             'idref'->current.lookupText->idref[];
+                                             (if idref[] <> NONE then
+                                                 idref[] -> lookupObject -> transEnd[];
+                                                 (if transEnd[] <> NONE then
+                                                     transEnd[] -> obj.setTransEnd;
+                                                     obj[] -> transEnd.addArc;
+                                                 if);
+                                             if);
+                                         if);
+                                      #);
+                                      obj.changed;
+                                   #)[] -> scheduleTask;
+                                #);
+                           #);
+                         
+                         SSArcLoader: PageElementLoader
+                           (# Type:: SSArc;
+                              elmName:: (# do 'ssarc' -> value[]; #);
+                              load::
+                                (# getArc: (# exit obj[] #);
+                                   
+                                   BendPointLoader: @PageElementLoader
+                                     (# type:: BendPoint;
+                                        load::
+                                          (#
+                                          do 'serial'->elm.lookupInt->obj.serial;
+                                          #);
+                                     #);
+                                   
+                                   dir: ^text;
+                                   parsePointList: 
+	                             (# str: ^text;
+	                                points: ^BendPointList;
+	                                theBendPoint,previous: ^BendPoint;
+	                                x, y: @real;
+	                             enter str[]
+	                             do (if str[] <> NONE then
+	                                    str.reset; 
+	                                    &BendPointList[]->points[];
+	                                    l: 
+	                                      (if NOT str.eos then
+		                                  &BendPoint[]->theBendPoint[];
+		                                  theBendPoint.init;
+		                                  str.get;
+		                                  str.getReal->x;
+		                                  str.get;
+		                                  str.getReal->y;
+		                                  str.get;
+		                                  (x->scale, -y->scale)->theBendPoint.XY;
+		                                  theBendPoint[]
+		                                    -> points.prepend;
+		                                  restart l;
+	                                      if);
+	                                if);
+	                             exit points[]
+                                     #);
+                                do (obj.id[],obj[]) -> registerObject;
+                                   'order' -> elm.lookupInt -> obj.setOrder;
+                                   'number' -> elm.lookupInt -> obj.number;
+                                   TtoP->obj.setOrientation;
+                                   &BendPointList[] -> obj.setBends;
+                                   
+                                   elm.scanElements
+                                   (# aPageElement: ^PageElement;
+                                      (*                pref: ^PageElementReferenceTable.Reference;*)
+                                      idref: ^text;
+                                   do (if true
+                                       //'annot'->current.tag.equalNCS then
+                                       //'bendpoint'->current.tag.equalNCS then
+                                          current[] -> BendPointLoader.load -> (obj.getBends).append;
+                                       //'arrowattr'->current.tag.equalNCS then
+                                          'headsize'->current.lookupReal->obj.arrowHeadSize;
+                                          'currentcyckle'->current.lookupInt->obj.currentSize;
+                                       //'seg-conn'->current.tag.equalNCS then
+                                          (if (obj.getBends=NONE) then
+                                              'points'->current.lookupText->parsePointList->obj.setBends;
+                                          if)
+                                       //'descriptor'->current.tag.equalNCS then
+                                          &Text[] -> obj.descriptor[];
+                                          current.scanElements
+                                          (# 
+                                          do (if true
+                                              //'text'->current.tag.equalNCS then
+                                                 current.getData->obj.descriptor.putText;
+                                             if);
+                                          #);
+                                          
+                                          'x' -> current.lookupReal->scale->obj.delta.x;
+                                          'y' -> current.lookupReal->scale->obj.delta.y;
+                                          'visible' -> current.lookupBool->obj.visible;
+                                      if);
+                                   #);
+                                   (if obj.getAnnotation = NONE then
+                                       obj.setAnnotation;
+                                   if);
+                                   
+                                   (obj.getBends).sortBySerial;
+                                   (obj.getBends).scan
+                                   (# 
+                                   do current[] -> obj.addBendPoint;
+                                   #);
+                                   COMPILED -> obj.status;
+                                   
+				   'dead' -> elm.lookupBool -> obj.deadInfo;
+                                   obj[] -> (getPage).addSSArc;
+                                   &Task
+                                   (# stage:: (# do 1 -> value; #);
+                                   do elm.scanElements
+                                      (# idref: ^Text;
+                                         placeEnd: ^Node;
+                                         transEnd: ^Node;
+                                      do (if true
+                                          //'destination'->current.tag.equalNCS then
+                                             'idref'->current.lookupText->idref[];
+                                             (if idref[] <> NONE then
+                                                 idref[] -> lookupObject -> placeEnd[];
+                                                 (if placeEnd[] <> NONE then
+                                                     placeEnd[] -> obj.setPlaceEnd;
+                                                     obj[] -> placeEnd.addArc;
+                                                 if);
+                                             if);
+                                          //'source'->current.tag.equalNCS then
+                                             'idref'->current.lookupText->idref[];
+                                             (if idref[] <> NONE then
+                                                 idref[] -> lookupObject -> transEnd[];
+                                                 (if transEnd[] <> NONE then
+                                                     transEnd[] -> obj.setTransEnd;
+                                                     obj[] -> transEnd.addArc;
+                                                 if);
+                                             if);
+                                         if);
+                                      #);
+                                      obj.changed;
+                                   #)[] -> scheduleTask;
+                                #);
+                           #);
+                         
+                         AuxLoader: PageElementLoader
+                           (# Type:: Aux;
+                              elmName:: (# do 'Aux' -> value[]; #);
+                              load::
+                                (#
+                                do (obj.id[],obj[]) -> registerObject;
+                                   elm.scanElements
+                                   (# theEllipseShape: ^obj.EllipseShape;
+                                      theBoxShape: ^obj.BoxShape;
+                                      theLineShape: ^obj.lineShape;
+(*                                      thePNGShape: ^obj.PNGShape;*)
+                                      relpath: ^text;
+                                      str: ^Text;
+                                      x,y: @real;
+                                   do (if true
+                                       //'aux-std'->current.tag.equal then
+                                          'Aux: ....... aux-std reached... panik..'->debugLoad;
+                                       //'aux-endp'->current.tag.equal then
+                                          'Aux: ....... aux-endp reached... panik..'->debugLoad;
+                                       //'aux-conn'->current.tag.equal then
+                                          'Aux: ....... aux-conn reached... panik..'->debugLoad;
+                                       //'line'->current.tag.equalNCS then
+                                          &obj.LineShape[]->theLineShape[];
+                                          'points'->current.lookupText->str[];
+                                          (if str[] <> NONE then
+                                              str.reset;
+                                              &PointList[]->theLineShape.points[];
+                                              l: (if NOT str.eos then
+                                                     str.get; (* get '(' *)
+                                                     str.getReal->x;
+                                                     str.get; (* get ',' *)
+                                                     str.getReal->y;
+                                                     str.get; (* get ')' *)
+                                                     (x->scale, -y->scale)->MakePoint->theLineShape.points.append;
+                                                     restart l;
+                                                 if);
+                                          if);
+                                          theLineShape[]->obj.theShape[];
+                                       //'box'->current.tag.equalNCS then
+                                          &obj.BoxShape[]->theBoxShape[];
+                                          'w'->current.lookupReal->scale->theBoxShape.width;
+                                          'h'->current.lookupReal->scale->theBoxShape.height;
+                                          theBoxShape[]->obj.theShape[];
+                                       //'ellipse'->current.tag.equalNCS then
+                                          &obj.EllipseShape[]->theEllipseShape[];
+                                          'w'->current.lookupReal->scale->theEllipseShape.width;
+                                          'h'->current.lookupReal->scale->theEllipseShape.height;
+                                          theEllipseShape[]->obj.theShape[];
+(*                                       //'png'->current.tag.equalNCS then
+                                          &obj.PNGShape[]->thePNGShape[];
+                                          'w'->current.lookupReal->scale->thePNGShape.width;
+                                          'h'->current.lookupReal->scale->thePNGShape.height;
+                                          'path'->current.lookupText->thePNGShape.thePath[];
+                                          thepngshape.thePath.copy->thepngshape.openname[];
+                                          thePNGShape[]->obj.theShape[];*)
+                                       //'label'->current.tag.equalNCS then
+                                          &obj.LabelShape[]->obj.theShape[];
+                                       //'text'->current.tag.equalNCS then
+                                          &Text[]->obj.setText;
+                                          (# theText: ^Text;
+                                          do obj.getText->theText[];
+                                             (if theText[] <> NONE then
+                                                 current.getData->theText.putText;
+                                                 (if (theText.trim).empty then
+                                                     'Text' -> theText.putText;
+                                                 if);
+                                             if);
+                                          #);
+                                      if); 
+                                   #);
+                                   obj[] -> (getPage).addAux;
+                                #);
+                           #);
+                         
+                         init::
+                           (# 
+                           do &PlaceLoader[] -> register;
+                              &TransitionLoader[] -> register;
+                              &SSNodeLoader[] -> register;
+                              &ArcLoader[] -> register;
+                              &SSArcLoader[] -> register;
+                              &AuxLoader[] -> register;
+                           #);
+                         
+                         createLoader::
+                           (#
+                              error::
+                                (#
+                                do true -> continue;
+                                #);
+                           #);
+                      #);
+                    
+                    GuidelineLoader: PageElementLoader
+                      (# Type::< Guideline;
+                         load::<
+                           (#
+                           do INNER;
+                              elm.scanElements
+                              (# element: ^GuidelineSnapable;
+                              do (if 'guideline_elm' -> current.tag.equalNCS then
+                                     'idref' -> current.lookupText -> lookupObject -> element[];
+                                     (if element[] <> NONE then
+                                         element[] -> obj.addGuideElement;
+                                     if);
+                                 if);
+                              #);
+                              obj[] -> (getPage).addGuideline;
+                           #);
+                      #);
+                    
+                    VerticalGuidelineLoader: @GuidelineLoader
+                      (# Type:: VerticalGuideline;
+                         load::
+                           (# 
+                           do 'x'        -> elm.lookupReal -> obj.x;
+                           #);
+                      #);
+                    
+                    HorizontalGuidelineLoader: @GuidelineLoader
+                      (# Type:: HorizontalGuideline;
+                         load::
+                           (# 
+                           do 'y'        -> elm.lookupReal -> obj.y;
+                           #);
+                      #);
+                    
+                    LocalGroupLoader: @GroupLoader
+                      (#
+                         load::
+                           (#
+                           do obj[] -> (getPage).addGroup;
+                           #);
+                      #);
+                    
+                    
+                 do PageElementLoaderFactory.init;
+                    (obj.id[],obj[]) -> registerObject;
+                    getNet -> obj.init;
+                    getNet -> obj.net[];
+                    elm.scanElements
+                    (# theLoader: ^Loader;
+                    do (if true
+                        // 'pageattr' -> current.tag.equalNCS then
+                           'name' -> current.lookupText->obj.name;
+                           (if ((obj.name).trim).empty then
+                               'New page' -> obj.name;
+                           if);
+                        else
+                           current[] -> PageElementLoaderFactory.createLoader -> theLoader[];
+                           (if theLoader[] <> NONE then
+                               current[] -> theLoader.load;
+                           if);
+                       if);
+                    #);
+                    elm.scanElements
+                    (# 
+                    do (if true
+                        //'Group'->current.tag.equalNCS then
+                           current[] -> LocalGroupLoader.load;
+                        //'vguideline'->current.tag.equalNCS then
+                           current[] -> VerticalGuidelineLoader.load;
+                        //'hguideline'->current.tag.equalNCS then
+                           current[] -> HorizontalGuidelineLoader.load;
+                       if);
+                    #);
+                    obj[] -> (getNet).addCPNPage;
+                    &Task
+                    (# stage:: (# do 2 -> value; #);
+                    do obj.scanTransitions (# do 1+obj.nofnodes->obj.nofnodes; #);
+                       obj.scanPlaces (# do 1+obj.nofnodes->obj.nofnodes; #);
+                       (# tempguides: ^GuideLineList;
+                       do &GuideLineList[] -> tempguides[];
+                          obj.scanGuideLines (# do current[] -> tempguides.prepend; #);
+                       #);
+                       obj.all[]->obj.setSelectedGroup;
+                    #)[] -> scheduleTask;
+                 #);
+            #);
+          
+          
+          FusionSetLoader: @CPNetEntityLoader
+            (# Type:: FusionSet;
+               load::
+                 (#
+                 do (# thePlaceList: ^PlaceList;
+                       name: ^Text;
+                    do obj.init;
+                       getNet -> obj.net[];
+                       &PlaceList[]->thePlaceList[];
+                       thePlaceList.init;
+                       'name'->elm.lookupText->name[]->obj.setName;
+                       (if (name[]->(getNet).fusionSets.lookup) = NONE then
+                           elm.scanElements
+                           (# ref: ^PageElementReferenceTable.Reference;
+                              idref: ^text;
+                              thePlace: ^Place;
+                           do (if 'fusion_elm'->current.tag.equalNCS then
+                                  'idref' -> current.lookupText -> idref[];
+                                  (if idref[] <> none then
+                                      idref[] -> lookupObject -> thePlace[];
+                                   else
+                                  if);
+                                  (if thePlace[] <> none then
+                                      thePlace[] -> thePlaceList.append;
+                                      obj[] -> thePlace.setFusionSet;
+                                   else
+                                      'Fusion set refers to nonexisting place. Ignoring.' -> debugSave;
+                                  if);
+                              if);
+                           #);
+                           thePlaceList[]->obj.init;
+                           obj[]->(getNet).addFusionSet;
+                           (name[],obj[])->(getNet).fusionSets.associate;
+                        else
+                           'duplicate fusionset was found, ignoring'->debugSave;
+                       if);
+                    #);
+                 #);
+            #);
+          
+          PageInstanceLoader: @NotifierLoader
+            (# Type:: PageInstance;
+               load::
+                 (# theSuperPageInstance: ^PageInstance;
+                 enter theSuperPageInstance[]
+                 do (# theSubTransId: ^Text;
+                       thePageId: ^Text;
+                       thePage: ^CPNPage;
+                       theSubTrans: ^Transition;
+                    do (obj.id[],obj[]) -> registerObject;
+                       'page' -> elm.lookupText -> thePageId[];
+                       (if thePageId[] <> NONE then
+                           thePageId[] -> lookupObject -> thePage[];
+                        else
+                           'trans' -> elm.lookupText -> theSubTransId[];
+                           theSubTransId[] -> lookupObject -> theSubTrans[];
+                           theSubTrans.getSubpage -> thePage[];
+                           theSubTrans[] -> obj.theTransition[];
+                       if);
+                       thePage[] -> obj.thePage[];
+                       obj[] -> thePage.attach;
+                       theSuperPageInstance[] -> obj.init;
+                       (if (theSuperPageInstance[] = NONE) and (thePage.nofnodes > 0) then
+                           obj[] -> thePage.prime[];
+                       if);
+                       (if (thePage.nofsuper = 0) and (thePage.nofnodes = 0) then
+                           true -> obj.notMLInstance;
+                       if);
+                       elm.scanElements
+                       (#
+                       do (if 'instance' -> current.tag.equalNCS then
+                              (current[],obj[]) -> load -> obj.addSubpageInstance;
+                          if);
+                       #);
+                    #);
+                 #);
+            #);
+          
+          
+          CpnBinderLoader: @FolderLoader
+            (# Type::< CpnBinder;
+               load::
+                 (# 
+                 do 'height' -> elm.lookupInt -> obj.height;
+                    'width' -> elm.lookupInt -> obj.width;
+
+                    &CpnSheetLoader[] -> SheetFactory.register;
+                    &TextSheetLoader[] -> SheetFactory.register;
+                    getNet -> obj.theNet[];
+                    obj[] -> (CpnSheet## -> folderManager.getFolderLayer).add;
+                 #);
+            #);
+          
+          MonitorLoader: @Loader
+            (# Type:: Monitor;
+               NodeInstanceLoader: @Loader
+                 (# Type:: NodeInstance;
+                    load:: 
+                      (# thePageInstance: ^PageInstance;
+                      do 'pageinstanceidref' -> elm.lookupText -> (getNet).lookupPageInstance -> thePageInstance[];
+                         (if thePageInstance[]<>none then
+                             'idref' -> elm.lookupText -> thePageInstance.lookupNodeInstance -> obj[];
+                          else
+                             none -> obj[];
+                         if);
+                      #);
+                 #);
+               DeclarationLoader: @Loader
+                 (# Type:: Text;
+                    load::
+                      (# theDecl: ^Declaration;
+                      do 'name' -> elm.lookupText -> obj[];
+                         &Declaration[] -> theDecl[];
+                         theDecl.init;
+                         getNet -> theDecl.setCPNet;
+                         elm.scanElements
+                         (# theMLDecl: ^Decl;                            
+                         do &MLDecl[] -> theMLDecl[];
+                            'id' -> current.lookupText -> theMLDecl.id[];
+                            themlDecl.init;                            
+                            current.getData->themlDecl.data[];
+                            current.scanElements
+                            (# 
+                            do (if true
+                                //'layout'->current.tag.equalNCS then
+                                   current.getData->themlDecl.rawLayout[];
+                               if);
+                            #);
+                            themlDecl[] -> theDecl.changeDecl;
+                         #);
+                         theDecl.mldecl.id[] -> (getNet).theGlobals.disassociateIDandDecl;                         
+                      exit theDecl[]
+                      #);
+                 #);
+               OptionLoader: @Loader
+                 (# load::
+                      (# name: ^Text;
+                         theMonitor: ^Monitor;
+                      enter theMonitor[]
+                      do 'name' -> elm.lookupText -> name[];
+                         theMonitor.scanOptions
+                         (# theValue: ^BooleanObject;
+                         do (if current.dname -> name.equal then
+                                (if true
+                                 // current## <= TextOption## then
+                                    'value' -> elm.lookupText -> current.theValue[];
+                                 // current## <= BooleanOption## then
+                                    &BooleanObject[] -> theValue[];
+                                    (if 'true' -> ('value' -> elm.lookupText).equal then
+                                        true -> theValue;
+                                     else
+                                        false -> theValue;
+                                    if);
+                                    theValue[] -> current.theValue[];
+                                if);
+                            if);
+                         #);
+                      #);
+                 #);
+               load::
+                 (# father: ^MonitorBlock;
+                    theMonitor: ^Monitor; 
+                    monitorType, monitorDisabled, monitorName: ^Text;
+                    theType: @integer;
+                 enter father[]
+                 do &Monitor[] -> theMonitor[];
+                    'id' -> elm.lookupText -> theMonitor.id[];
+                    'name' -> elm.lookupText -> monitorName[];
+                    (if (monitorName.trim).empty then
+                        'New monitor' -> monitorName[];
+                    if);
+                    'type' -> elm.lookupText -> monitorType[];
+                    testType:
+                      (# 
+                      do (if ('0' -> monitorType.equal) or
+                             ('Marking size' -> monitorType.equal) then
+                             MarkingSizeType -> theType;
+                             leave testType;
+                         if);
+                         (if ('1' -> monitorType.equal) or
+                             ('Breakpoint' -> monitorType.equal) then
+                             BreakpointType -> theType;
+                             leave testType;
+                         if);
+                         (if ('2' -> monitorType.equal) or
+                             ('User defined' -> monitorType.equal) then
+                             UserDefinedType -> theType;
+                             leave testType;
+                         if);
+                         (if ('3' -> monitorType.equal) or
+                             ('Data collection' -> monitorType.equal) then
+                             DataCollectionType -> theType;
+                             leave testType;
+                         if);  
+                         (if ('4' -> monitorType.equal) or
+                             ('Write in file' -> monitorType.equal) then
+                             WriteInFileType -> theType;
+                             leave testType;
+                         if);  
+                         (if ('5' -> monitorType.equal) or
+                             ('List length data collection' -> monitorType.equal) then
+                             ListLengthDataCollectionType -> theType;
+                             leave testType;
+                         if);  
+                         (if ('6' -> monitorType.equal) or
+                             ('Count  transition occurrence data collection' -> monitorType.equal) then
+                             CountTransitionOccurrenceDataCollectionType -> theType;
+                             leave testType;
+                         if);  
+                         (if ('7' -> monitorType.equal) or
+                             ('Place content break point' -> monitorType.equal) then
+                             PlaceContentBreakpointType -> theType;
+                             leave testType;
+                         if);  
+                         (if ('8' -> monitorType.equal) or
+                             ('Transition enabled break point' -> monitorType.equal) then
+                             TransitionEnabledBreakpointType -> theType;
+                             leave testType;
+                         if);                           
+                      #);                    
+                    (getNet, monitorName[], theType) -> theMonitor.init;
+                    'disabled' -> elm.lookupText -> monitorDisabled[];
+                    (if (monitorDisabled[] <> none) and ('true' -> monitorDisabled.equal) then
+                        true -> theMonitor.disabled;
+                     else
+                        false -> theMonitor.disabled;
+                    if);
+                    (# stopDecl: ^Declaration;
+                       locateStopDeclIfDataColl:
+                         (# theDecl: ^Declaration;
+                         do (if theMonitor.type = DataCollectionType then
+                                findStopFunction:theMonitor.scanDeclarations
+                                  (# 
+                                  do (if (MonitorStop -> getGlobalNames) 
+                                           ->description.equal then
+                                         current[] -> theDecl[];
+                                         leave findStopFunction;
+                                     if);
+                                  #);                                
+                            if);
+                         exit theDecl[]
+                         #);
+                    do none -> stopDecl[];
+                       locateStopDeclIfDataColl -> stopDecl[];
+                       theMonitor.clearDeclarations;
+                       elm.scanElements
+                       (# theNodeInstance: ^NodeInstance;
+                       do (if true 
+                           // 'node' -> current.tag.equalNCS then
+                              current[] -> NodeInstanceLoader.load -> theNodeInstance[];
+                              (if theNodeInstance[]<>none then (*Bug #2302*)
+                                  theNodeInstance[] -> theMonitor.addNodeInstance;
+                              if);
+                           // 'declaration' -> current.tag.equalNCS then
+                           current[] -> DeclarationLoader.load -> theMonitor.addDeclaration;
+                           // 'option' -> current.tag.equalNCS then
+                              (current[], theMonitor[]) -> OptionLoader.load;
+                          if);
+                       #);
+                       (if ((locateStopDeclIfDataColl)=none) and (stopDecl[]<>none) then
+                           ((MonitorStop -> getGlobalNames),stopDecl[]) 
+                             -> theMonitor.addDeclaration;
+                           'fun stop x = NONE' -> stopDecl.parse;
+                       if);
+                       (if theMonitor.canChangeDeclarations or ((theMonitor.getSingleNode)<>none) then
+                           theMonitor[] -> father.addMonitorLast;
+                       if);
+                    #);
+                 #);
+            #);
+          
+          MonitorBlockLoader: @Loader
+            (# Type:: MonitorBlock;
+               load::
+                 (# father, theMonitorBlock: ^MonitorBlock;
+                    blockName: ^Text;
+                 enter father[]
+                 do (if father[] = none then
+                        (getNet).theGlobalMonitor[] -> father[] -> theMonitorBlock[];
+                     else
+                        &MonitorBlock[] -> theMonitorBlock[];
+                        (getNet, 'name' -> elm.lookupText) -> theMonitorBlock.init;
+                        (if (theMonitorBlock.name.trim).empty then
+                            'New block' -> theMonitorBlock.name[];
+                        if);
+                        theMonitorBlock[] -> father.addMonitorLast;
+                    if);
+                    
+                    elm.scanElements
+                    (# 
+                    do (if true
+                        // 'monitorblock' -> current.tag.equalNCS then
+                           (current[], theMonitorBlock[]) -> MonitorBlockLoader.load;
+                        // 'monitor' -> current.tag.equalNCS then
+                           (current[], theMonitorBlock[]) -> MonitorLoader.load;
+                       if);
+                    #);
+                    father.changed;
+                 #);
+            #);
+          
+          SheetLoader: NotifierLoader
+            (# Type::< Sheet;
+               load::<
+                 (#
+                 do obj.init;
+                    INNER;
+                    (# panx,pany: @Real;
+                    do 'panx' -> elm.lookupReal -> panx;
+                       'pany' -> elm.lookupReal -> pany;
+                       (panx,pany) -> obj.pan;
+                       'zoom' -> elm.lookupreal -> obj.zoom;
+                    #);
+                    elm.scanElements
+                    (#
+                    do (if 'zorder' -> current.tag.equalNCS then
+                           obj.zorder.clear;
+                           current.scanElements
+                           (# 
+                           do (if 'position' -> current.tag.equalNCS then
+                                  'value' -> current.lookupInt -> obj.getTabAtPosition -> obj.zorder.append;
+                              if);
+                           #);
+                       if);
+                    #);
+                    obj.updateZOrder;
+                 #);
+            #);
+          
+          CpnSheetLoader: SheetLoader
+            (# Type:: CpnSheet;
+               elmName:: (# do 'cpnsheet' -> value[]; #);
+               load::
+                 (#
+                 do 'instance' -> elm.lookupText -> lookupObject -> obj.setContent;
+                    obj.content.thepage.showallerrormsg;
+                    &Task
+                    (#
+                       stage:: (# do 4 -> value; #);
+                    do obj.raised.getGroup -> obj.content.thepage.setSelectedGroup;
+                       obj.content.thepage[] -> (obj.content.thepage.getSelectedGroup).onselect;
+                       obj.contentChanged;
+                    #)[] -> scheduleTask;
+                 #);
+            #);
+          
+          TextSheetLoader: SheetLoader
+            (# Type:: TextSheet;
+               elmName:: (# do 'textsheet' -> value[]; #);
+               load::
+                 (# theDeclId, secondary: ^Text;
+                    theDecl: ^Decl;
+                 do 'decl' -> elm.lookupText -> theDeclId[];
+                    theDeclId[] -> (getNet).theGlobals.lookupDecl -> theDecl[];
+                    (if (theDecl[] = none) and
+                        ((getNet).theGlobalMonitor[] <> none) then
+                        scan: (getNet).theGlobalMonitor.scanMonitorTree
+                          (# 
+                          do current.name.copy -> secondary[];
+                             current.scanDeclarations
+                             (# 
+                             do (if theDeclId[] -> current.mldecl.id.equal then
+                                    current.mldecl[] -> theDecl[];
+                                    leave scan;
+                                if);
+                             #);
+                          #);
+                        '<' -> secondary.prepend;
+                        '>' -> secondary.append;
+                    if);
+                    theDecl.theDeclaration[] -> obj.setContent;
+                    secondary[] -> obj.secondary[];
+                    theDecl[] -> obj.contentChanged;
+                 #);
+            #);   
+          
+          createPageInstances:
+            (# 
+            do obj.scanCPNPages
+               (#
+               do (if (current.nofnodes > 0) and (current.nofsuper = 0) then
+                      (if debugging then 'creating Pageinstance nofnodes=%i nofsuper=%i.'->debugLoad(# do current.nofnodes->i; current.nofsuper->i; #); if);
+                      (none,none) -> current.createPageInstance->current.prime[];
+                   else
+                      (if current.nofsuper = 0 then
+                          (if debugging then 'creating notMLInstance Pageinstance nofnodes=%i nofsuper=%i.'->debugLoad(# do current.nofnodes->i; current.nofsuper->i; #); if);
+                          current.createPageInstance->current.prime[];
+                          true->current.prime.notMLInstance;
+                      if);
+                  if);
+               #);
+            #);
+       enter obj[]
+       do tryLoad:
+            (# checkError:
+                 (# 
+                 do (if errorDuringLoad then
+                        leave tryLoad;
+                    if);
+                 #);
+            do obj.init;
+               
+               elm.scanElements
+               (#
+               do (if true 
+                   //'globbox'->current.tag.equalNCS then
+                      (# theGlobalsLoader: @GlobalsLoader;
+                         theGlobals: ^Globals;
+                      do &Globals[] -> theGlobals[];
+                         theGlobals.init;
+                         theGlobals[] -> obj.setGlobalBox;
+                         (current[],theGlobals[])->theGlobalsLoader.load;
+                      #);
+                  if);
+               #);
+               
+               checkError;
+               
+               elm.scanElements
+               (# 
+               do (if 'page'->current.tag.equalNCS then
+                      current[] -> CPNPageLoader.load;
+                  if);
+               #);
+               
+               checkError;
+               
+               elm.scanElements
+               (# fusion: ^FusionSet;
+               do (if true
+                   //'fusion'->current.tag.equalNCS then
+                      current[] -> FusionSetLoader.load;
+                  if);
+               #);
+               
+               checkError;
+               
+               elm.scanElements
+               (#
+               do (if true
+                   // 'Group' -> current.tag.equalNCS then
+                      current[] -> GlobalGroupLoader.load -> obj.addGlobalGroup;
+                  if);
+               #);
+               
+               checkError;
+               
+               1 -> processStage;
+               2 -> processStage;
+               3 -> processStage;
+               
+               (# instancesFound: @Boolean;
+               do elm.scanElements
+                  (#
+                  do (if 'instances' -> current.tag.equalNCS then
+                         true -> instancesFound;
+                         current.scanElements
+                         (#
+                         do (if 'instance' -> current.tag.equalNCS then
+                                (current[],none)  -> PageInstanceLoader.load;
+                            if);
+                         #);
+                     if);
+                  #);
+                  (if not instancesFound then
+                      (* In case of a net saved in an older version of CPN Tools, there is no instance information.
+                       *)
+                      createPageInstances;
+                  if);
+               #);
+               
+               checkError;
+               
+               elm.scanElements
+               (# 
+               do (if 'monitorblock' -> current.tag.equalNCS then
+                      (current[], none) -> MonitorBlockLoader.load;
+                  if);
+               #);
+               
+               checkError;
+               
+               elm.scanElements
+               (#
+               do (if 'options' -> current.tag.equalNCS then
+                      (current[],obj.options[]) -> OptionsLoader;
+                  if);
+               #);
+               
+               checkError;
+               
+               elm.scanElements
+               (#
+               do (if 'binders' -> current.tag.equalNCS then
+                      current.scanElements
+                      (#
+                      do (if 'cpnbinder' -> current.tag.equalNCS then
+                             current[] -> CpnBinderLoader.load;
+                         if);
+                      #);
+                  if);
+               #);
+               
+               checkError;
+               
+               4 -> processStage;
+               
+               (# theCPNWorkspace: ^CPNWorkspace;
+               do THIS(Workspace)[] -> theCPNWorkspace[];
+                  obj[] -> theCPNWorkspace.theIndex.setContent;
+                  elm.scanElements
+                  (#
+                  do (if 'indexNode' -> current.tag.equalNCS then
+                         (current[], obj[] -> theCPNWorkspace.theIndex.getNetNode) -> LoadIndexNode;
+                     if);
+                  #);
+               #);
+            #);
+          (* Start the syntax-checker loop. *)
+          (if errorDuringLoad then
+              none -> obj[];
+              this(Workspace)[] -> theCpnWorkspace[];
+              &Text[] -> errorMessage[];
+              NonUniqueIds -> getGlobalNames -> errorMessage.putFormat
+              (# 
+              do nonUniqueId[] -> s;
+              #);
+              errorMessage[] -> theCpnWorkspace.status.error;
+           else
+              (if obj.ML.Initialized then
+                  obj.MLcheckerThread.resume;
+              if);
+          if);
+       #);
+  #);
+
+GlobalsLoader: Loader
+  (# Type:: Globals;
+     
+     load::
+       (# 
+          DeclarationLoader: @Loader
+            (# Type:: Declaration;
+               load::
+                 (# getDeclaration: (# exit obj[] #);
+                    DeclLoaderFactory: @LoaderFactory
+                      (#
+                         DeclLoader: NotifierLoader
+                           (# Type::< Decl;
+                              load::<
+                                (#
+                                do obj.init;
+                                   INNER;
+                                   elm.scanElements
+                                   (# 
+                                   do (if true
+                                       //'layout'->current.tag.equalNCS then
+                                          (# raw: ^Text;
+                                             tmp: ^Text;
+                                          do current.getData -> raw[];
+                                             raw.trim -> raw[];
+                                             (1,5) -> raw.sub -> tmp[];
+                                             (if 'color' -> tmp.equalNCS then
+                                                 (1,5) -> raw.delete;
+                                                 'colset' -> raw.prepend;
+                                             if);
+                                             raw[] -> obj.rawLayout[];
+                                          #);
+                                      if);
+                                   #);
+                                   (if (getDeclaration).mldecl[] = NONE then
+                                       obj[] -> (getDeclaration).changeDecl;
+                                   if);
+                                #);
+                           #);
+                         
+                         BlockDeclLoader: DeclLoader
+                           (# Type:: BlockDecl;
+                              elmName:: (# do 'block' -> value[]; #);
+                              load::
+                                (# 
+                                do elm.scanElements
+                                   (# theChild: ^Declaration;
+                                   do (if true
+                                       //'id' -> current.tag.equalNCS then
+                                          current.getData -> obj.data[];
+                                       else 
+                                          (current[],getDeclaration) -> THIS(DeclarationLoader).load;
+                                      if);
+                                   #);
+                                #);
+                           #);
+                         
+                         ColorSetDeclLoader: DeclLoader
+                           (# Type:: ColorSetDecl;
+                              elmName:: (# do 'color' -> value[]; #);
+                              load::
+                                (# getColorSetDecl: (# exit obj[] #);
+                                   InternalDeclLoader: NotifierLoader
+                                     (# Type::< InternalDecl;
+                                        load::<
+                                          (#
+                                          do obj.init;
+                                             INNER;
+                                             obj[] -> (getColorSetDecl).add;
+                                          #);
+                                     #);
+                                   
+                                   InternalDeclFactory: @LoaderFactory
+                                     (#
+                                        UnitColorSetDeclLoader: InternalDeclLoader
+                                          (# Type:: obj.UnitColorSetDecl;
+                                             elmName:: (# do 'unit' -> value[]; #);
+                                             load::
+                                               (#
+                                               do elm.scanElements
+                                                  (#
+                                                  do (if 'with'->current.tag.equal then
+                                                         current.scanElements
+                                                         (# 
+                                                         do (if 'id'->current.tag.equal then
+                                                                current.getData->obj.theid[];
+                                                            if);
+                                                         #);
+                                                     if);
+                                                  #);
+                                               #);
+                                          #);
+                                        
+                                        BoolColorSetDeclLoader: InternalDeclLoader
+                                          (# Type:: obj.BoolColorSetDecl;
+                                             elmName:: (# do 'bool' -> value[]; #);
+                                             load::
+                                               (#
+                                               do elm.scanElements
+                                                  (# 
+                                                  do (if 'with'->current.tag.equal then
+                                                         current.scanElements
+                                                         (# 
+                                                         do (if 'id'->current.tag.equal then
+                                                                (if obj.id1[] = NONE then
+                                                                    current.getData->obj.id1[];
+                                                                 else
+                                                                    current.getData->obj.id2[];
+                                                                if);
+                                                            if);
+                                                         #);
+                                                     if);
+                                                  #);
+                                               #);
+                                          #);
+                                        
+                                        IntColorSetDeclLoader: InternalDeclLoader
+                                          (# Type:: obj.IntColorSetDecl;
+                                             elmName:: (# do 'int' -> value[]; #);
+                                             load::
+                                               (#
+                                               do elm.scanElements
+                                                  (# 
+                                                  do (if 'with'->current.tag.equal then
+                                                         current.scanElements
+                                                         (# 
+                                                         do (if 'ml'->current.tag.equal then
+                                                                (if obj.low[] = NONE then
+                                                                    current.getData->obj.low[];
+                                                                 else
+                                                                    current.getData->obj.high[];
+                                                                if);
+                                                            if);
+                                                         #);
+                                                     if);         
+                                                  #);
+                                               #);
+                                          #);
+                                        
+                                        RealColorSetDeclLoader: InternalDeclLoader
+                                          (# Type:: obj.RealColorsetDecl;
+                                             elmName:: (# do 'real' -> value[]; #);
+                                             load::
+                                               (#
+                                               do elm.scanElements
+                                                  (# 
+                                                  do (if 'with'->current.tag.equal then
+                                                         current.scanElements
+                                                         (# 
+                                                         do (if 'ml'->current.tag.equal then
+                                                                (if obj.low[] = NONE then
+                                                                    current.getData->obj.low[];
+                                                                 else
+                                                                    current.getData->obj.high[];
+                                                                if);
+                                                            if);
+                                                         #);
+                                                     if);
+                                                  #);
+                                               #);
+                                          #);
+                                        
+                                        StringColorSetDeclLoader: InternalDeclLoader
+                                          (# Type:: obj.StringColorSetDecl;
+                                             elmName:: (# do 'string' -> value[]; #);
+                                             load::
+                                               (#
+                                               do elm.scanElements
+                                                  (# 
+                                                  do (if 'with'->current.tag.equal then
+                                                         current.scanElements
+                                                         (# 
+                                                         do (if true
+                                                             //'ml'->current.tag.equal then
+                                                                (if obj.low[] = NONE then
+                                                                    current.getData->obj.low[];
+                                                                 else
+                                                                    current.getData->obj.high[];
+                                                                if);
+                                                             //'and'->current.tag.equal then
+                                                                current.scanElements
+                                                                (# 
+                                                                do (if 'ml'->current.tag.equal then
+                                                                       (if obj.lenLow[] = NONE then
+                                                                           current.getData->obj.lenLow[];
+                                                                        else
+                                                                           current.getData->obj.lenHigh[];
+                                                                       if);
+                                                                   if);
+                                                                #);
+                                                            if);
+                                                         #);
+                                                     if);
+                                                  #);
+                                               #);
+                                          #);
+                                        
+                                        EnumColorSetDeclLoader: InternalDeclLoader
+                                          (# Type:: obj.EnumColorSetDecl;
+                                             elmName:: (# do 'enum' -> value[]; #);
+                                             load::
+                                               (#
+                                               do elm.scanElements
+                                                  (# 
+                                                  do (if 'id'->current.tag.equal then
+                                                         current.getData->obj.idlist.append;
+                                                     if);
+                                                  #);
+                                               #);
+                                          #);
+                                        
+                                        IndexColorSetDeclLoader: InternalDeclLoader
+                                          (# Type:: obj.IndexColorSetDecl;
+                                             elmName:: (# do 'index' -> value[]; #);
+                                             load::
+                                               (#
+                                               do elm.scanElements
+                                                  (# 
+                                                  do (if true
+                                                      //'ml'->current.tag.equal then
+                                                         (if obj.low[] = NONE then
+                                                             current.getData->obj.low[];
+                                                          else
+                                                             current.getData->obj.high[];
+                                                         if);
+                                                      //'id'->current.tag.equal then
+                                                         current.getData->obj.theid[];
+                                                     if);
+                                                  #);
+                                               #);
+                                          #);
+                                        
+                                        ProductColorSetDeclLoader: InternalDeclLoader
+                                          (# Type:: obj.ProductColorSetDecl;
+                                             elmName:: (# do 'product' -> value[]; #);
+                                             load::
+                                               (#
+                                               do elm.scanElements
+                                                  (# 
+                                                  do (if 'id'->current.tag.equal then
+                                                         current.getData->obj.idlist.append;
+                                                     if);
+                                                  #);
+                                               #);
+                                          #);
+                                        
+                                        RecordColorSetDeclLoader: InternalDeclLoader
+                                          (# Type:: obj.RecordColorSetDecl;
+                                             elmName:: (# do 'record' -> value[]; #);
+                                             load::
+                                               (#
+                                               do elm.scanElements
+                                                  (# theRecField: ^obj.recField;
+                                                  do (if 'recordfield'->current.tag.equal then
+                                                         &obj.recField[]->theRecField[];
+                                                         current.scanElements
+                                                         (# 
+                                                         do (if 'id'->current.tag.equal then
+                                                                (if theRecField.left[] = NONE then
+                                                                    current.getData->theRecField.left[];
+                                                                 else
+                                                                    current.getData->theRecField.right[];
+                                                                if);
+                                                            if);
+                                                         #);
+                                                         theRecField[]->obj.recFieldList.append;
+                                                     if);
+                                                  #);
+                                               #);
+                                          #);
+                                        
+                                        ListColorSetDeclLoader: InternalDeclLoader
+                                          (# Type:: obj.ListColorSetDecl;
+                                             elmName:: (# do 'list' -> value[]; #);
+                                             load::
+                                               (#
+                                               do elm.scanElements
+                                                  (# 
+                                                  do (if true
+                                                      //'with'->current.tag.equal then
+                                                         current.scanElements
+                                                         (# 
+                                                         do (if 'ml'->current.tag.equal then
+                                                                (if obj.low[] = NONE then
+                                                                    current.getData->obj.low[];
+                                                                 else
+                                                                    current.getData->obj.high[];
+                                                                if);
+                                                            if)
+                                                         #);
+                                                      //'id'->current.tag.equal then
+                                                         current.getData->obj.theid[];
+                                                     if);
+                                                  #);
+                                               #);
+                                          #);
+                                        
+                                        UnionColorSetDeclLoader: InternalDeclLoader
+                                          (# Type:: obj.UnionColorSetDecl;
+                                             elmName:: (# do 'union' -> value[]; #);
+                                             load::
+                                               (#
+                                               do elm.scanElements
+                                                  (# theUnionField: ^obj.UnionField;
+                                                  do (if 'unionfield'->current.tag.equal then
+                                                         &obj.unionField[]->theUnionField[];
+                                                         current.scanElements
+                                                         (# 
+                                                         do (if true
+                                                             //'id'->current.tag.equal then
+                                                                current.getData->theUnionField.id[];
+                                                             //'type'->current.tag.equal then
+                                                                current.scanElements
+                                                                (# 
+                                                                do (if 'id'->current.tag.equal then
+                                                                       current.getData->theUnionField.type[];
+                                                                   if);
+                                                                #);
+                                                            if);
+                                                         #);
+                                                         theUnionField[]->obj.unionFieldList.append;
+                                                     if);
+                                                  #);
+                                               #);
+                                          #);
+                                        
+                                        AliasColorSetDeclLoader: InternalDeclLoader
+                                          (# Type:: obj.AliasColorSetDecl;
+                                             elmName:: (# do 'alias' -> value[]; #);
+                                             load::
+                                               (#
+                                               do elm.scanElements
+                                                  (# 
+                                                  do (if 'id'->current.tag.equal then
+                                                         current.getData->obj.theid[];
+                                                     if);
+                                                  #);
+                                               #);
+                                          #);
+                                        
+                                        SubSetColorSetDeclLoader: InternalDeclLoader
+                                          (# Type:: obj.SubSetColorSetDecl;
+                                             elmName:: (# do 'subset' -> value[]; #);
+                                             load::
+                                               (#
+                                               do elm.scanElements
+                                                  (# 
+                                                  do (if true
+                                                      //'with'->current.tag.equal then
+                                                         true->obj.listsubset;
+                                                         current.scanElements
+                                                         (# 
+                                                         do (if 'ml'->current.tag.equal then
+                                                                current.getData->obj.subset[];
+                                                            if);
+                                                         #);
+                                                      //'by'->current.tag.equal then
+                                                         false->obj.listsubset; (* function subset *)
+                                                         current.scanElements
+                                                         (# 
+                                                         do (if 'ml'->current.tag.equal then
+                                                                (if obj.subset[] = NONE then
+                                                                    current.getData->obj.subset[];
+                                                                 else
+                                                                    current.getData->obj.subset.append;
+                                                                if);
+                                                            if);
+                                                         #);
+                                                      //'id'->current.tag.equal then
+                                                         current.getData->obj.mlid[];
+                                                     if);
+                                                  #);
+                                               #);
+                                          #);
+                                        
+                                        init::
+                                          (#
+                                          do &UnitColorSetDeclLoader[] -> register;
+                                             &BoolColorSetDeclLoader[] -> register;
+                                             &IntColorSetDeclLoader[] -> register;
+                                             &RealColorSetDeclLoader[] -> register;
+                                             &StringColorSetDeclLoader[] -> register;
+                                             &EnumColorSetDeclLoader[] -> register;
+                                             &ProductColorSetDeclLoader[] -> register;
+                                             &ListColorSetDeclLoader[] -> register;
+                                             &IndexColorSetDeclLoader[] -> register;
+                                             &RecordColorSetDeclLoader[] -> register;
+                                             &UnionColorSetDeclLoader[] -> register;
+                                             &AliasColorSetDeclLoader[] -> register;
+                                             &SubsetColorSetDeclLoader[] -> register;
+                                             
+                                          #);
+                                        createLoader::
+                                          (#
+                                             error::
+                                               (#
+                                               do true -> continue;
+                                               #);
+                                          #);
+                                     #);
+                                do InternalDeclFactory.init;
+                                   elm.scanElements
+                                   (# internal: ^InternalDecl;
+                                   do (if true
+                                       //'id'->current.tag.equal then
+                                          current.getData->obj.mlid[];
+                                       //'declare'->current.tag.equal then
+                                          &obj.textList[]->obj.declareList[];
+                                          current.scanElements
+                                          (# 
+                                          do (if 'id'->current.tag.equal then
+                                                 current.getData->obj.declareList.append;
+                                             if);
+                                          #);
+                                       //'timed'->current.tag.equal then
+                                          true->obj.istimed;
+                                       else
+                                          (# theLoader: ^Loader;
+                                          do current[] -> InternalDeclFactory.createLoader -> theLoader[];
+                                             (if theLoader[] <> NONE then
+                                                 current[] -> theLoader.load;
+                                             if);
+                                          #);
+                                      if);
+                                   #);
+                                #);
+                           #);
+                         
+                         VarDeclLoader: DeclLoader
+                           (# Type::< VarDecl;
+                              elmName::< (# do 'var' -> value[]; inner; #);
+                              load::<
+                                (#
+                                do elm.scanElements
+                                   (# 
+                                   do (if true
+                                       //'type'->current.tag.equalNCS then
+                                          current.scanElements
+                                          (# 
+                                          do (if 'id'->current.tag.equalNCS then
+                                                 current.getData->obj.type[];
+                                             if);
+                                          #);
+                                       //'id'->current.tag.equalNCS then
+                                          current.getData->obj.idlist.append;
+                                      if);
+                                   #);
+                                #);
+                           #);
+                         
+                         MSVarDeclLoader: VarDeclLoader
+                           (# Type:: MSVarDecl;
+                              elmName:: (# do 'msvar' -> value[]; #);
+                           #);
+                         
+                         GlobRefDeclLoader: DeclLoader
+                           (# Type:: GlobRefDecl;
+                              elmName:: (# do 'globref' -> value[]; #);
+                              load::
+                                (#
+                                do elm.scanElements
+                                   (# 
+                                   do (if true
+                                       //'id'->current.tag.equal then
+                                          current.getData->obj.mlid[];
+                                       //'ml'->current.tag.equal then
+                                          current.getData->obj.mlexp[];
+                                      if);
+                                   #);
+                                #);
+                           #);
+                         
+                         UseDeclLoader: DeclLoader
+                           (# Type:: UseDecl;
+                              elmName:: (# do 'use' -> value[]; #);
+                              load::
+                                (#
+                                do elm.scanElements
+                                   (# 
+                                   do (if true
+                                       //'ml'->current.tag.equal then
+                                          current.getData->obj.mlexp[];
+                                      if);
+                                   #);
+                                #);
+                           #);
+                         
+                         MLDeclLoader: DeclLoader
+                           (# Type:: MLDecl;
+                              elmName:: (# do 'ml' -> value[]; #);
+                              load::
+                                (#
+                                do elm.getData->obj.data[];
+                                #);
+                           #);
+                         
+                         InvariantDeclLoader: DeclLoader
+                           (# Type:: InvariantDecl;
+                              elmName:: (# do 'invariant' -> value[]; #);
+                              load::
+                                (#
+                                do obj.id.clear;
+                                   elm.scanElements
+                                   (# 
+                                   do (if true
+                                       //'type'->current.tag.equalNCS then
+                                          current.scanElements
+                                          (# 
+                                          do (if 'id'->current.tag.equalNCS then
+                                                 current.scanData
+                                                 (# 
+                                                 do current.data[]->obj.type[];
+                                                 #);
+                                             if);
+                                          #);
+                                       //'name'->current.tag.equalNCS then
+                                          current.scanData
+                                          (# 
+                                          do current.data[]->obj.name.puttext;
+                                          #);
+                                       //'weights'->current.tag.equalNCS then
+                                          current.scanElements
+                                          (# value: ^text;
+                                             decl: ^Declaration;
+                                             key: ^text;
+                                          do (if 'weight'->current.tag.equalNCS then
+                                                 ''->value[];
+                                                 current.scanData
+                                                 (# 
+                                                 do current.data[]->value.append;
+                                                 #);
+                                                 'id'->current.lookupText->key[];
+                                                 &Declaration[]->decl[];
+                                                 decl.init;
+                                                 value[]->decl.parse;
+                                                 (key[], decl[])->obj.weights.associate;
+                                             if);
+                                          #);
+                                      if);
+                                   #);
+                                #);
+                           #);
+                         
+                         ChannelDeclLoader: DeclLoader
+                           (# Type:: ChannelDecl;
+                              elmName:: (# do 'channel' -> value[]; #);
+                              load::<
+                                (#
+                                do elm.scanElements
+                                   (# 
+                                   do (if true
+                                       //'id'->current.tag.equalNCS then
+                                          current.scanData
+                                          (# 
+                                          do current.data[]->obj.type[];
+                                          #);
+                                       //'name'->current.tag.equalNCS then
+                                          current.scanData
+                                          (# 
+                                          do current.data[]->obj.name.puttext;
+                                          #);
+                                      if);
+                                   #);
+                                #);
+                           #);
+                         
+                         ErrorDeclLoader: DeclLoader
+                           (# Type:: ErrorDecl;
+                              elmName:: (# do 'errordecl' -> value[]; #);
+                              load::
+                                (#
+                                do (# t: ^Text;
+                                   do elm.getData->obj.data[];
+                                      &Text[]->t[];
+                                      t[]->obj.print;
+                                      t[]->(getDeclaration).parse;
+                                   #);
+                                #);
+                           #);
+                         
+                         init::
+                           (#
+                           do &BlockDeclLoader[] -> register;
+                              &ColorSetDeclLoader[] -> register;
+                              &VarDeclLoader[] -> register;
+                              &MSVarDeclLoader[] -> register;
+                              &GlobRefDeclLoader[] -> register;
+                              &UseDeclLoader[] -> register;
+                              &MLDeclLoader[] -> register;
+                              &InvariantDeclLoader[] -> register;
+                              &ChannelDeclLoader[] -> register;
+                              &ErrorDeclLoader[] -> register;
+                           #);
+                         
+                         createLoader::
+                           (#
+                              error:: (# 
+                                      do true -> continue; 
+                                      #);
+                           #);
+                      #);
+                    fatherDeclaration: ^Declaration;
+                 enter fatherDeclaration[]
+                 do (# theLoader: ^Loader;
+                    do DeclLoaderFactory.init;
+                       &Declaration[] -> obj[];
+                       obj.init;
+                       obj[] -> fatherDeclaration.addDeclaration;
+                       elm[] -> DeclLoaderFactory.createLoader -> theLoader[];
+                       (if theLoader[] <> NONE then
+                           elm[] -> theLoader.load;
+                       if);
+                    #);
+                 #);
+            #);
+          
+       enter obj[]
+       do (if obj[] = NONE then
+              &Globals[] -> obj[];
+              obj.init;
+          if);
+          obj.getCPNet -> (obj.getTopDeclaration).setCPNet;
+          elm.scanElements
+          (# theDeclaration: ^Declaration;
+          do (current[],obj.getTopDeclaration) -> DeclarationLoader.load;
+          #);
+       #);
+  #);
+
+LoadIndexNode:
+  (# theNode: ^IndexNode;
+     elm: ^theXML.Element;
+  enter (elm[], theNode[])
+  do (# theElementList: @List(# element:: theXML.Element; #);
+     do ('elm[] <> NONE', elm[] <> NONE) -> assert(# #);
+        ('theNode[] <> NONE', theNode[] <> NONE) -> assert(# #);
+        'expanded' -> elm.lookupBool -> theNode.expanded;
+        theNode.expanderChanged;
+        elm.scanElements
+        (#
+        do (if 'indexNode' -> current.tag.equalNCS then
+               current[] -> theElementList.append;
+           if);
+        #);
+        theNode.scanIndexNodes
+        (#
+        do (if theElementList.size > 0 then
+               (if theNode[] <> NONE then
+                   ((theElementList.head).elm[], current[]) -> LoadIndexNode;
+                   theElementList.head -> theElementList.delete;
+               if);
+           if);
+        #);
+     #);
+     
+  #);
+Saver:
+  (# Type:< Object;
+     obj: ^Type;
+     elm: ^theXML.Element;
+     elmName:<
+       (# value: ^Text;
+       do INNER;
+       exit value[]
+       #);
+     
+  enter obj[]
+  do elmName -> theXML.createElement -> elm[];
+     INNER;
+  exit elm[]
+  #);
+
+NotifierSaver: Saver
+  (# Type::< Notifier;
+  do ('id',obj.id[]) -> elm.createTextAttribute;
+     INNER;
+  #);
+
+FolderLoader: NotifierLoader
+  (# Type::< Folder;
+     load::<
+       (#
+          SheetFactory: @LoaderFactory
+            (# Type::< Sheet;
+               createLoader::
+                 (# error::
+                      (#
+                      do true -> continue;
+                      #);
+                 #);
+            #);
+       do 0 -> obj.init;
+          SheetFactory.init;
+          'x' -> elm.lookupInt -> obj.x;
+          'y' ->elm.lookupInt -> obj.y;
+          INNER;
+          elm.scanElements
+          (# theLoader: ^Loader;
+          do (if 'sheets' -> current.tag.equalNCS then
+                 current.scanElements
+                 (#
+                 do current[] -> sheetFactory.createLoader -> theLoader[];
+                    (if theLoader[] <> NONE then
+                        current[] -> theLoader.load -> obj.add;
+                    if);
+                 #);
+             if);
+          #);
+          elm.scanElements
+          (#
+          do (if 'zorder' -> current.tag.equalNCS then
+                 obj.zorder.clear;
+                 current.scanElements
+                 (#
+                 do (if 'position' -> current.tag.equalNCS then
+                        'value' -> current.lookupInt -> obj.sheets.getElementAt -> obj.zorder.append;
+                    if);
+                 #);
+             if);
+          #);
+          obj.arrangeSheets;
+       #);
+  #);
+
+ToolBinderLoader: FolderLoader
+  (# Type:: CpnBinder;
+     elmName:: (# do 'cpnbinder' -> value[]; #);
+     load::
+       (#
+       do &ToolSheetLoader[] -> sheetFactory.register;
+          false -> obj.forceSize;
+          false -> obj.statusbar;
+       #);
+  #);
+
+FolderSaver: NotifierSaver
+  (# Type::< Folder;
+     elmName::< (# do 'binder' -> value[]; INNER; #);
+     sheetsElm,zorderElm: ^theXML.Element;
+  do ('x',obj.x) -> elm.createIntAttribute;
+     ('y',obj.y) -> elm.createIntAttribute;
+     ('width',obj.width) -> elm.createIntAttribute;
+     ('height',obj.height) -> elm.createIntAttribute;
+     'sheets' -> theXML.createElement -> sheetsElm[] -> elm.addElement;
+     INNER;
+     'zorder' -> theXML.createElement -> zorderElm[] -> elm.addElement;
+     obj.zorder.scan
+     (# posElm: ^theXML.Element;
+     do 'position' -> theXML.createElement -> posElm[] -> zorderElm.addElement;
+        ('value',current[] -> obj.sheets.getIndexOf) -> posElm.createIntAttribute;
+     #);
+  #);
+
+SheetSaver: NotifierSaver
+  (# Type::< Sheet;
+  do (# panx,pany: @real;
+        zorderElm: ^theXML.Element;
+     do obj.pan -> (panx,pany);
+        ('panx',panx) -> elm.createRealAttribute;
+        ('pany',pany) -> elm.createRealAttribute;
+        ('zoom',obj.zoom) -> elm.createRealAttribute;
+        INNER SheetSaver;
+        'zorder' -> theXML.createElement -> zorderElm[] -> elm.addElement;
+        obj.zorder.scan
+        (# posElm: ^theXML.Element;
+        do 'position' -> theXML.createElement -> posElm[] -> zorderElm.addElement;
+           ('value',current[] -> obj.getPositionOfTab) -> posElm.createIntAttribute;
+        #);
+     #);
+  #);
+
+ToolSheetLoader: Loader
+  (# Type:: ToolSheet;
+     elmName:: (# do 'toolsheet' -> value[]; #);
+     load::
+       (# theType: ^Text;
+          theCPNWorkspace: ^CPNWorkspace;
+          theCollection: ^ToolCollection;
+       do &ToolSheet[] -> obj[];
+          obj.init;
+          this(Workspace)[] -> theCPNWorkspace[];
+          
+          'collection' -> elm.lookupText -> theCPNWorkspace.theToolCollectionList.lookup -> theCollection[];
+          theCollection.onChanged;
+          theCollection[] -> obj.setContent;
+          obj.toptab.label[] -> theCPNWorkspace.theIndex.getShortName -> obj.toptab.label[];
+          obj.toptab.changed;
+       #);
+  #);
+
+ToolSheetSaver: NotifierSaver
+  (# Type:: ToolSheet;
+     elmName:: (# do 'toolsheet' -> value[]; #);
+  do (# theCPNWorkspace: ^CPNWorkspace;
+     do this(Workspace)[] -> theCPNWorkspace[];
+        theCPNWorkspace.theToolCollectionList.scanAssociations
+        (#
+        do (if e[] = obj.content[] then
+               ('collection',k[]) -> elm.createTextAttribute;
+           if);
+        #);
+     #);
+  #);
+
+CpnSheetSaver: SheetSaver
+  (# Type:: CpnSheet;
+     elmName:: (# do 'cpnsheet' -> value[] #);
+  do ('instance',obj.content.id[]) -> elm.createTextAttribute;
+  #);
+
+TextSheetSaver: SheetSaver
+  (# Type:: TextSheet;
+     elmName:: (# do 'textsheet' -> value[]; #);
+  do ('decl',obj.content.mldecl.id[]) -> elm.createTextAttribute;
+  #);
+
+CpnBinderSaver: FolderSaver
+  (# Type::< CpnBinder;
+     elmName:: (# do 'cpnbinder' -> value[]; #);
+  do obj.sheets.scan
+     (#
+     do (if true
+         // current## <= CpnSheet## then
+            current[] -> CpnSheetSaver -> sheetsElm.addElement;
+         // current## <= TextSheet## then
+            current[] -> TextSheetSaver -> sheetsElm.addElement;
+         // current## <= ToolSheet## then
+            current[] -> ToolSheetSaver -> sheetsElm.addElement;
+        if);
+     #);
+  #);
+
+IndexNodeSaver: Saver
+  (# Type:: IndexNode;
+     elmName:: (# do 'IndexNode' -> value[]; #);
+  do (# theCPNWorkspace: ^CPNWorkspace;
+     do this(Workspace)[] -> theCPNWorkspace[];
+        ('expanded', obj.expanded) -> elm.createBoolAttribute;
+        obj.scanIndexNodes
+        (#
+        do (* Don't save command nodes *)
+           (if not (current## <= theCPNWorkspace.theIndex.CommandNode##) then
+               current[] -> IndexNodeSaver -> elm.addElement;
+           if);
+        #);
+     #);
+  #);
+
+DefaultsLoader: SimpleLoader
+  (# Type:: TextHashMap;
+     elmName:: (# do 'defaults' -> value[]; #);
+  do elm.scanElements
+     (# id: ^Text;
+        value: ^Object;
+     do (if 'default' -> current.tag.equalNCS then
+            'id' -> current.lookupText -> id[];
+            current.scanElements
+            (#
+            do (if 'value' -> current.tag.equalNCS then
+                   current[] -> valueLoader -> value[];
+               if);
+            #);
+            (if (id[] <> NONE) AND (value[] <> NONE) then
+                (id[], value[]) -> putDefaultValue;
+            if);
+        if);
+     #);
+  #);
+
+OptionsLoader: SimpleLoader
+  (# Type:: OptionList;
+     elmName:: (# do 'options' -> value[]; #);
+  enter obj[]
+  do (if obj[] = NONE then
+         &OptionList[] -> obj[];
+         obj.init;
+     if);
+     elm.scanElements
+     (# name: ^Text;
+        value: ^Object;
+     do (if 'option' -> current.tag.equalNCS then
+            'name' -> current.lookupText -> name[];
+            current.scanElements
+            (#
+            do (if 'value' -> current.tag.equalNCS then
+                   current[] -> ValueLoader -> value[];
+               if);
+            #);
+            (if (name[] <> NONE) AND (value[] <> NONE) then
+                (name[],value[]) -> obj.setOptionRecursively;
+            if);
+        if);
+     #)
+  #);
+
+OptionsSaver: Saver
+  (# Type:: OptionList;
+     elmName:: (# do 'options' -> value[]; #);
+  do obj.scanOptionsRecursively
+     (# optionTag: ^theXML.Element;
+     do 'option' -> theXML.createElement -> optionTag[];
+        (if current.showme and (current.value <> NONE) then
+            ('name',current.name) -> optionTag.createTextAttribute;
+            current.value -> ValueSaver -> optionTag.addElement;
+            optionTag[] -> elm.addElement;
+        if);
+     #);
+  #);
+
+ValueLoader: SimpleLoader
+  (# elmName:: (# do 'value' -> value[]; #);
+  do elm.scanElements
+     (# data: ^Text;
+     do current.getData -> data[];
+        (if true
+         // 'boolean' -> current.tag.equalNCS then
+            (# b: ^BooleanObject;
+            do &BooleanObject[] -> b[];
+               'true' -> data.equalNCS -> b;
+               b[] -> obj[];
+            #);
+         // 'integer' -> current.tag.equalNCS then
+            (# i: ^IntegerObject;
+            do &IntegerObject[] -> i[];
+               data.getInt -> i;
+               i[] -> obj[];
+            #);
+         // 'real' -> current.tag.equalNCS then
+            (# r: ^RealObject;
+            do &RealObject[] -> r[];
+               data.getReal -> r;
+               r[] -> obj[];
+            #);
+         // 'text' -> current.tag.equalNCS then
+            data[] -> obj[];
+        if);
+     #);
+  #);
+
+ValueSaver: Saver
+  (# elmName:: (# do 'value' -> value[]; #);
+  do (# tag: ^theXML.Element;
+        data: ^Text;
+     do &Text[] -> data[];
+        (if true
+         // obj## <= BooleanObject## then
+            'boolean' -> theXML.createElement -> tag[];
+            obj[] -> QUA(# as:: BooleanObject;
+                        do (if thisObj then
+                               'true' -> data.putText;
+                            else
+                               'false' -> data.putText;
+                           if);
+                        #);
+         // obj## <= IntegerObject## then
+            'integer' -> theXML.createElement -> tag[];
+            obj[] -> QUA(# as:: IntegerObject; 
+                        do thisObj -> data.putInt;
+                        #);
+         // obj## <= RealObject## then
+            'real' -> theXML.createElement -> tag[];
+            obj[] -> QUA(# as:: RealObject;
+                        do thisObj -> data.putReal;
+                        #);
+         // obj## <= Text## then
+            'text' -> theXML.createElement -> tag[];
+            obj[] -> QUA(# as:: Text;
+                        do thisObj[] -> data.putText;
+                        #);
+         // obj## <= XYPos## then
+            (# xElm, yElm: ^theXML.Element;
+               xData, yData: ^Text;
+            do 'position' -> theXML.createElement -> tag[];
+               'x' -> theXML.createElement -> xElm[];
+               'y' -> theXML.createElement -> yElm[];
+               &Text[] -> xData[];
+               &Text[] -> yData[];
+               obj[] -> QUA
+               (# as:: XYPos;
+               do thisObj.x -> xData.putInt;
+                  thisObj.y -> yData.putInt;
+               #);
+               xData[] -> theXML.createDataElement -> xElm.addElement;
+               yData[] -> theXML.createDataElement -> yElm.addElement;
+               xElm[] -> tag.addElement;
+               yElm[] -> tag.addelement;
+            #);
+        if);
+        (if tag[] <> NONE then
+            data[] -> theXML.createDataElement -> tag.addElement;
+            tag[] -> elm.addElement;
+        if);
+     #);
+     
+  #);
+
+WorkspaceLoader: SimpleLoader
+  (# Type:: CPNWorkspace;
+     elmName:: (# do 'workspace' -> value[]; #);
+  enter obj[]
+  do (# theToolBinderLoader: @ToolBinderLoader;
+     do theToolBinderLoader.init;
+        elm.scanElements
+        (# theFolder: ^Folder;
+        do (if true
+            // 'options' -> current.tag.equalNCS then
+               (current[],obj.getGlobalOptions) -> OptionsLoader;
+            // 'instruments' -> current.tag.equalNCS then
+               (current[],obj.theInstrumentList[]) -> InstrumentListLoader;
+            // 'window' -> current.tag.equalNCS then
+               (# width,height:@integer;
+                  x,y:@integer;
+               do 'width' -> current.lookupInt -> width;
+                  'height' -> current.lookupInt -> height;
+                  (if width < 300 then 300 -> width; if);
+                  (if height < 200 then 200 -> height; if);
+                  (width, height) -> obj.widget.size;
+
+
+                  'x' -> current.lookupInt -> x;
+                  'y' -> current.lookupInt -> y;
+                  (if x < 0 then 0 -> x; if);
+                  (if y < 19 then 19 -> y; if); (* magical values meaning window is maximized on XP *)
+                  (x, y) -> obj.widget.position;
+               #);   
+            // 'binders' -> current.tag.equalNCS then
+               current.scanElements
+               (#
+               do (if 'cpnbinder' -> current.tag.equalNCS then
+                      current[] -> theToolBinderLoader.load -> theFolder[];
+                      theFolder[] -> (ToolSheet## -> folderManager.getFolderLayer).add;
+                      theFolder.sheets.scan
+                      (#
+                      do current[] -> QUA(# as:: ToolSheet; do thisObj.turnPalette; #);
+                      #);
+                  if);
+               #);            
+           if);
+        #);
+     #);
+  #);
+
+WorkspaceSaver: Saver
+  (# Type:: CPNWorkspace;
+     elmName:: (# do 'workspace' -> value[]; #);
+  do (# binderElm: ^theXML.Element;
+        windowElm: ^theXML.Element;
+        windowWidth,windowHeight:@integer;
+        x,y:@integer;
+     do obj.getGlobalOptions -> OptionsSaver -> elm.addElement;
+        obj.theInstrumentList[] -> InstrumentListSaver -> elm.addElement;
+         'window' -> theXML.createElement -> windowElm[] -> elm.addElement;
+        obj.widget.size -> (windowWidth,windowHeight);
+        ('width',windowWidth) -> windowElm.createIntAttribute;
+        ('height',windowHeight) -> windowElm.createIntAttribute;
+        obj.widget.position -> (x, y);
+        ('x',x) -> windowElm.createIntAttribute;
+        ('y',y) -> windowElm.createIntAttribute;        
+        'binders' -> theXML.createElement -> binderElm[] -> elm.addElement;
+        folderManager.theToolLayer.folders.scan
+        (#
+        do current[] -> CpnBinderSaver -> binderElm.addElement;
+        #);
+       
+     #);
+  #);
+
+InstrumentListLoader: SimpleLoader
+  (# Type:: InstrumentList;
+     elmName:: (# do 'instruments' -> value[]; #);
+  enter obj[]
+  do elm.scanElements
+     (# instrumentName: ^Text;
+        theInstrument: ^Instrument;
+     do (if 'instrument' -> current.tag.equalNCS then
+            'type' -> current.lookupText -> instrumentName[];
+            (if instrumentName[] <> NONE then
+                instrumentName[] -> obj.lookup -> theInstrument[];
+                (if theInstrument[] <> NONE then
+                    (if theInstrument## <= CPNGenericInstrument## then
+                        theInstrument[] -> QUA
+                        (# as:: CPNGenericInstrument;
+                        do current.scanElements
+                           (# 
+                           do (if 'options' -> current.tag.equalNCS then
+                                  (current[],thisObj.options[]) -> OptionsLoader;
+                              if);
+                           #);
+                        #);
+                    if);
+                if);
+            if);
+        if);
+     #);
+  #);
+
+InstrumentListSaver: Saver
+  (# Type:: InstrumentList;
+     elmName:: (# do 'instruments' -> value[]; #);
+  do obj.scanAssociations
+     (# instrumentElm: ^theXML.Element;
+     do 'instrument' -> theXML.createElement -> instrumentElm[];
+        ('type',k[]) -> instrumentElm.createTextAttribute;
+        (if e## <= CPNGenericInstrument## then
+            e[] -> QUA
+            (# as:: CPNGenericInstrument;
+            do thisObj.options[] -> OptionsSaver -> instrumentElm.addElement;
+            #);
+            instrumentElm[] -> elm.addElement;
+        if);
+     #);
+  #);

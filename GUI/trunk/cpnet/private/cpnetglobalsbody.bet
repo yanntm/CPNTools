@@ -1,0 +1,210 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../cpnet';
+INCLUDE '../decl';
+
+--GlobalsPrivate:Descriptor--
+(# content: @Declaration;
+   theNet: ^CPNet;
+   declDictionary: @HMDictionary(# Element:: Decl; #);
+   nameToDecl: @IDDictionary;
+   usedBy: @DeclIDDictionary;
+   usedByNodes: @NodeIDDictionary;
+   deletionDictionary: @DeclIDDictionary;
+   init:
+     (# 
+     do content.init;
+        declDictionary.init;
+        nameToDecl.init;
+        usedBy.init;
+        usedByNodes.init;
+        deletionDictionary.init;
+     #);
+#)
+
+--GlobalsInit:doPart--
+do private.init;   
+   getMLReserved -> reserved[];
+   true -> private.content.isBlock;
+   private.theNet[] -> private.content.setCPNet;
+   THIS(Globals)[] -> private.content.attach;
+   
+-- GlobalsAddUsedBy:DoPart --
+do (theDecl.id[], theDecl[]) -> private.usedBy.associate;
+   
+-- GlobalsRemoveUsedBy:DoPart --
+do theDecl.id[] -> private.usedBy.disassociate;
+   
+-- GlobalsHasUsedBy:DoPart --
+do private.usedBy.size > 0 -> value;
+   
+-- GlobalsAddUsedByNode:DoPart --
+do (theNode.id[], theNode[]) -> private.usedByNodes.associate;   
+   
+-- GlobalsScanDeclTree:DoPart --
+do (getTopDeclaration).scanDeclarationTree
+   (# 
+   do (if (current.mlDecl[] <> none) and 
+          ((current.mlDecl.id[] -> private.deletionDictionary.lookup) = none) then
+          current.mlDecl[] -> this(scanDeclTree).current[];
+          inner scanDeclTree;
+      if);
+   #);
+   
+--GlobalsGetCPNet:doPart--
+do private.theNet[] -> net[];
+   
+--GlobalsSetCPNet:doPart--
+do net[] -> private.theNet[] -> private.content.setCPNet;
+   
+--GlobalsGetTopDeclaration:doPart--
+do private.content[] -> d[];
+   
+--GlobalsGetCurrentHighlight:doPart--
+do private.content.getCurrentHighlight -> currentHighlight[];
+   
+--GlobalsAssociateIDandDecl:doPart--
+do (ID[], theDecl[]) -> private.declDictionary.associate;
+   
+--GlobalsDisassociateIDandDecl:doPart--
+do ID[] -> private.declDictionary.disassociate; 
+   
+--GlobalsLookupDecl:doPart--
+do ID[] -> private.declDictionary.lookup -> theDecl[];
+   
+--GlobalsCheckID:doPart--
+do (if true 
+    // ID[] -> IDs.defined then
+(*        &Text[] -> error[]; *)
+(*        '"' -> error.put; *)
+(*        ID[] -> error.puttext; *)
+(*        '" is already defined' -> error.puttext; *)
+(*        (# theDecl: ^Decl; *)
+(*        do id[] -> private.nameToDecl.lookup -> theDecl[]; *)
+(*           theDecl[] -> mldecl.overwrites.append; *)
+(*           mldecl[] -> theDecl.overwrittenBy.append; *)
+(*        #); *)
+    // ID[] -> reserved.lookup then
+       &Text[] -> error[];
+       '"' -> error.put;
+       ID[] -> error.puttext;
+       '" is reserved by ML' -> error.puttext;
+    // ID[] -> CPN_ding then
+       &Text[] -> error[];
+       '"' -> error.put;
+       'CPN\'' -> error.puttext;
+       '" is illegal prefix' -> error.puttext;
+    else
+       ID[] -> IDs.append;
+       (ID[], mldecl[]) -> private.nameToDecl.associate;
+   if);
+   (if error[] <> NONE then
+       error[] -> mldecl.onSyntaxError;
+   if);
+   
+-- GlobalsOnSemanticChanged:DoPart --
+do (if getCPNet <> NONE then
+       (if NOT stopCycling then
+           true -> stopCycling;
+           private.usedBy.scan
+           (# 
+           do source[] -> current.onSemanticChanged;
+           #);
+           private.usedBy.clear;
+           private.usedByNodes.scan
+           (# 
+           do source[] -> current.onSemanticChanged;
+           #);
+           private.usedByNodes.clear;
+           source[] -> (getCPNet).onSemanticChanged;
+           false -> stopCycling;
+       if);   
+   if);
+   
+-- GlobalsGetColorNames:doPart --
+do (# collect: 
+        (# theColorSetDecl: ^ColorSetDecl;
+        enter theColorSetDecl[]
+        do theColorSetDecl.mlid[] -> colorNames.append;
+        #);
+   do &TextList[] -> colorNames[];
+      false -> UncheckedDecls;
+      (getTopDeclaration).scanDeclarationTree
+      (#
+      do (if current.mldecl[] <> NONE then
+             (if not ((current.mldecl.status = checked) or (current.mldecl.status = compiled) or (current.mldecl.status = incorrect)) then
+                 (if debugging then
+                     'found an unchecked decl, setting flag' -> debugCPNet;
+                 if);
+                 true -> UncheckedDecls;
+             if);
+             (if current.mldecl## <= ColorSetDecl## then
+                 current.mldecl[] -> collect;
+             if);
+         if);
+      #);
+   #);
+   
+-- GlobalsDefineColor:doPart --
+do ID[] -> colorNames.append;
+   false -> isColorNamesSorted;
+   
+-- GlobalsReset:DoPart --
+do &SortedTextSequence[] -> colorNames[];
+   &SortedTextSequence[] -> IDs[];
+   private.nameToDecl.clear;
+   
+-- GlobalsMarkForDeletion:DoPart --
+do (theDecl.id[], theDecl[]) -> private.deletionDictionary.associate;
+   
+-- GlobalsScanColorNamesAlphabetically:doPart --
+do (if not isColorNamesSorted then
+       colorNames.sortText;
+       true -> isColorNamesSorted;
+   if);
+   
+   colorNames.scan
+   (# 
+   do current[] -> this(scanColorNamesAlphabetically).current[];
+      inner scanColorNamesAlphabetically;
+   #);
+   
+-- GlobalsScanDeletionList:DoPart --
+do private.deletionDictionary.scan
+   (# 
+   do current[] -> this(scanDeletionList).current[];
+      inner scanDeletionList;
+   #);
+   
+-- GlobalsClearDeletionList:DoPart --
+do private.deletionDictionary.clear;
+   
+-- GlobalsHasDeletionDecls:DoPart --
+do private.deletionDictionary.size > 0 -> value;
+   
+-- GlobalsLookupDeletionDecl:DoPart --
+do id[] -> private.deletionDictionary.lookup -> result[];
+   

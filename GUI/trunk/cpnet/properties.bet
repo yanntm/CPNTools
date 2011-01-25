@@ -1,6 +1,6 @@
 (************************************************************************)
 (* CPN Tools                                                            *)
-(* Copyright 2010-##LAST## AIS Group, Eindhoven University of Technology    *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
 (*                                                                      *)
 (* CPN Tools is originally developed by the CPN Group at Aarhus         *)
 (* University from 2000 to 2010. The main architects behind the tool    *)
@@ -23,3 +23,67 @@
 (* You should have received a copy of the GNU General Public License    *)
 (* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
 (************************************************************************)
+ORIGIN '~beta/postwimp/workspace';
+-- WorkspaceLib: attributes --
+Properties:
+  (# operation:
+       (#
+       do (if theProperties[] = NONE then
+              &TextHashMap[] -> theProperties[];
+          if);
+          INNER;
+       #);
+     get: operation
+       (# name: ^Text;
+          value: ^Object;
+       enter name[]
+       do name[] -> theProperties.lookup -> value[];
+       exit value[]
+       #);
+     put: operation
+       (# name: ^Text;
+          value: ^Object;
+       enter (name[],value[])
+       do (name[],value[]) -> theProperties.associate;
+       #);
+     putPrimitive: operation
+       (# name: ^Text;
+          ValueType:< Object;
+          value: ^ValueType;
+       enter name[]
+       do &valueType[] -> value[];
+          INNER;
+          (name[],value[]) -> put;
+       #);
+     putBoolean: putPrimitive
+       (# b: @boolean;
+          ValueType:: BooleanObject;
+       enter b
+       do b -> value;
+       #);
+     putReal: putPrimitive
+       (# r: @real;name: ^Text;
+          ValueType:: RealObject;
+       enter r
+       do r -> value;
+       #);
+     applyFilter: operation
+       (# filter: ^PropertiesFilter;
+          newProperties: ^TextHashMap;
+       enter filter[]
+       do &TextHashMap[] -> newProperties[];
+          theProperties.scanAssociations
+          (#
+          do filter.scan
+             (# 
+             do (if k[] -> current.equal then
+                    (k[],e[]) -> newProperties.associate;
+                if);
+             #);
+             newProperties[] -> theProperties[];
+          #);
+       #);
+     theProperties: ^TextHashMap;
+  #);
+
+PropertiesFilter: List(# Element:: Text; #);

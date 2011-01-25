@@ -1,6 +1,6 @@
 (************************************************************************)
 (* CPN Tools                                                            *)
-(* Copyright 2010-##LAST## AIS Group, Eindhoven University of Technology    *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
 (*                                                                      *)
 (* CPN Tools is originally developed by the CPN Group at Aarhus         *)
 (* University from 2000 to 2010. The main architects behind the tool    *)
@@ -23,3 +23,54 @@
 (* You should have received a copy of the GNU General Public License    *)
 (* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
 (************************************************************************)
+ORIGIN 'cpnet';
+
+INCLUDE '~beta/basiclib/pcre';
+
+BODY 'private/runtimeerrorbody';
+
+-- Workspacelib: Attributes --
+
+addArcRuntimeError:
+  (# theError: ^Text;
+     theCPNet: ^CPNet;
+     thePageInstance: ^PageInstance; (* if none the error is put on all instances *)
+     handled: @boolean;
+  enter (theError[], theCPNet[], thePageInstance[])
+  <<SLOT AddArcRuntimeError:DoPart>>
+  exit handled
+  #);
+
+addRuntimeError:
+  (# theError: ^Text;
+     theID: ^Text;
+     theCPNet: ^CPNet;
+     theObject: ^Object;
+     theTarget: ^Highlightable;
+     handled: @boolean;
+  enter (theError[], theObject[], theCPNet[])
+  do (* Needed for runtime errors, see bug #578 *)
+     false -> handled;
+     (if theID[] <> NONE then
+         (*theID[] -> theCPNet.elements.lookup -> theObject[];*)
+         (if theObject[] <> NONE then
+             (if theObject## <= Highlightable## then
+                 theObject[] -> theTarget[];
+                 true -> handled;
+                 (theTarget[],theError[]) -> theTarget.addError;
+                 theTarget[] -> theCPNet.runtimeErrorElements.append;
+             if);
+         if);
+     if);
+     exit handled
+  #);
+
+addNetRuntimeError:
+  (# theError: ^Text;
+     theCPNet: ^CPNet;
+  enter (theError[], theCPNet[])
+  do (* Needed for runtime errors, see bug #578 *)
+     (theCPNet[],theError[]) -> theCPNet.addError;
+     theCPNet[] -> theCPNet.runtimeErrorElements.append;
+  #);
+

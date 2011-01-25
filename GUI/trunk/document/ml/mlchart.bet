@@ -1,6 +1,6 @@
 (************************************************************************)
 (* CPN Tools                                                            *)
-(* Copyright 2010-##LAST## AIS Group, Eindhoven University of Technology    *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
 (*                                                                      *)
 (* CPN Tools is originally developed by the CPN Group at Aarhus         *)
 (* University from 2000 to 2010. The main architects behind the tool    *)
@@ -23,3 +23,67 @@
 (* You should have received a copy of the GNU General Public License    *)
 (* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
 (************************************************************************)
+ORIGIN '~beta/postwimp/workspace';
+INCLUDE 'mldispatcher';
+INCLUDE '../../editor/chart';
+
+---FrameworkLib: Attributes ---
+
+MLCreateChart: MLDispatch (* subOpcode = 1 *)
+  (# chart_name: ^text;
+     barnames: [0]^text;
+     partnames: [0]^text;
+  do bis.reset;
+     bis.getString -> chart_name[];
+     bis.getInt;
+     bis.getInt -> barnames.new;
+     (for x: barnames.range repeat
+          bis.getString -> barnames[x][];
+     for);
+     bis.getInt -> partnames.new;
+     (for xx: partnames.range repeat
+          bis.getString -> partnames[xx][];
+     for);
+     (excelViewer[], chart_name[], barnames, partnames) -> CreateChart -> (excelChart[], excelViewer[]);
+     true -> reply.putBool;
+     '' -> reply.putString;
+  #);
+
+MLUpdateChart: MLDispatch (* subOpcode = 2 *)
+  (# update_values: [0]@integer;
+     x: @integer;
+     y: @integer;
+     s: ^Text;
+  do bis.reset;
+     bis.getInt;
+     bis.getInt -> x;
+     bis.getInt -> y;
+     x * y -> update_values.new;
+     bis.getString;
+     (for i: x repeat
+          (for j: y repeat
+               bis.getString -> s[];
+               s.asInt -> update_values[i + (j - 1) * x];
+          for);
+     for);
+     (if excelChart[] <> NONE then
+         update_values -> excelChart.update;
+     if);
+     true -> reply.putBool;
+     '' -> reply.putString;
+  #);
+
+MLParseXML: MLDispatch (* subOpcode = 3 *)
+  (# ml_xml: ^Text;
+     ml_cmd: ^XML;
+     cmds: @integer;
+  do bis.reset;
+     bis.getInt;
+     bis.getInt -> cmds;
+     (for i: cmds repeat 
+          bis.getString -> ml_xml[];
+          ml_xml[] -> parse -> ml_cmd[];
+         (* Do fancy stuff with the ml_cmd... *)
+     for);
+     true -> reply.putBool;
+  #);

@@ -1,6 +1,6 @@
 (************************************************************************)
 (* CPN Tools                                                            *)
-(* Copyright 2010-##LAST## AIS Group, Eindhoven University of Technology    *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
 (*                                                                      *)
 (* CPN Tools is originally developed by the CPN Group at Aarhus         *)
 (* University from 2000 to 2010. The main architects behind the tool    *)
@@ -23,3 +23,15 @@
 (* You should have received a copy of the GNU General Public License    *)
 (* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
 (************************************************************************)
+ORIGIN '~beta/basiclib/systemenv';
+INCLUDE '../mlparse';
+
+--- Program:Descriptor ---
+SystemEnv 
+(# output: ^Text;
+   error: @Boolean;
+do 'color INT = int with 100..199;\n'
+   'color FOO = INT;\n'
+   'msvar \nj, k, f: INT;'->MLParse->(output[], error);
+   output[]->Screen.PutLine;
+#)
