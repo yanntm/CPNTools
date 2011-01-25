@@ -1,0 +1,830 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '~beta/postwimp/workspace';
+
+INCLUDE 'figure'
+
+-- workspacelib: attributes --
+MoveFigure: Figure
+  (# 
+     is_right: @boolean;
+     
+     init::
+       (# 
+          shape: @GLItem
+            (#
+               displayOpaque::
+                 (# 
+                 do (if is_right then
+                        (0.8, -0.8, 0.8) -> glScaled;
+                     else
+                        (-0.8, -0.8, 0.8) -> glScaled;
+                    if);
+                    glPushMatrix;
+                    (-6.0, -34.0, 0.0) -> glTranslated;
+                    (* Draw jacket *)
+                    black[] -> glcolor; (* black *)
+                    GL_POLYGON -> glBegin;
+                    (2, 2) -> glVertex2i;
+                    (2, 6) -> glVertex2i;
+                    (20, 6) -> glVertex2i;
+                    (20, 2) -> glVertex2i;
+                    glEnd;
+                    (* Draw sleeve *)
+                    gray9[] -> glcolor; (* lightgrey *)
+                    GL_POLYGON -> glBegin;
+                    (3, 6) -> glVertex2i;
+                    (3, 8) -> glVertex2i;
+                    (18, 8) -> glVertex2i;
+                    (18, 6) -> glVertex2i;
+                    glEnd;
+                    black[] -> glcolor; (* black *)
+                    GL_LINE_STRIP -> glBegin;
+                    (3, 6) -> glVertex2i;
+                    (3, 8) -> glVertex2i;
+                    (18, 8) -> glVertex2i;
+                    (18, 6) -> glVertex2i;
+                    (3, 6) -> glVertex2i;
+                    glEnd;
+                    (* Draw hand *)
+                    gray9[] -> glcolor; (* lightgrey *)
+                    (** Inside of hand *)
+                    (*** Base of hand *)
+                    GL_POLYGON -> glBegin;
+                    (4, 8) -> glVertex2i;
+                    (4, 12) -> glVertex2i;
+                    (18, 12) -> glVertex2i;
+                    (18,8) -> glVertex2i;
+                    glEnd;
+                    (*** Thumb *)
+                    GL_POLYGON -> glBegin;
+                    (4, 12) -> glVertex2i;
+                    (0, 16) -> glVertex2i;
+                    (0, 24) -> glVertex2i;
+                    (1, 25) -> glVertex2i;
+                    (3, 25) -> glVertex2i;
+                    (4, 24) -> glVertex2i;
+                    glEnd;
+                    (*** Index finger *)
+                    GL_POLYGON -> glBegin;
+                    (4, 12) -> glVertex2i;
+                    (4, 33) -> glVertex2i;
+                    (5, 34) -> glVertex2i;
+                    (7, 34) -> glVertex2i;
+                    (8, 33) -> glVertex2i;
+                    (8, 12) -> glVertex2i;
+                    glEnd;
+                    (*** Middle finger *)
+                    GL_POLYGON -> glBegin;
+                    (8, 12) -> glVertex2i;
+                    (8, 27) -> glVertex2i;
+                    (9, 28) -> glVertex2i;
+                    (11, 28) -> glVertex2i;
+                    (12, 27) -> glVertex2i;
+                    (12, 12) -> glVertex2i;
+                    glEnd;
+                    (*** Ring finger *)
+                    GL_POLYGON -> glBegin;
+                    (12, 12) -> glVertex2i;
+                    (12, 26) -> glVertex2i;
+                    (13, 27) -> glVertex2i;
+                    (15, 27) -> glVertex2i;
+                    (16, 26) -> glVertex2i;
+                    (16, 12) -> glVertex2i;
+                    glEnd;
+                    (*** Little finger *)
+                    GL_POLYGON -> glBegin;
+                    (16, 12) -> glVertex2i;
+                    (16, 25) -> glVertex2i;
+                    (17, 26) -> glVertex2i;
+                    (19, 26) -> glVertex2i;
+                    (20, 25) -> glVertex2i;
+                    (20, 16) -> glVertex2i;
+                    (18, 12) -> glVertex2i;
+                    glEnd;
+                    black[] -> glcolor;
+                    (** Outline of hand *)
+                    GL_LINE_STRIP -> glBegin;
+                    (4, 8) -> glVertex2i;
+                    (4, 12) -> glVertex2i;
+                    (0, 16) -> glVertex2i;
+                    (0, 24) -> glVertex2i;
+                    (1, 25) -> glVertex2i;
+                    (3, 25) -> glVertex2i;
+                    (4, 24) -> glVertex2i;
+                    (4, 19) -> glVertex2i;
+                    (4, 33) -> glVertex2i;
+                    (5, 34) -> glVertex2i;
+                    (7, 34) -> glVertex2i;
+                    (8, 33) -> glVertex2i;
+                    (8, 21) -> glVertex2i;
+                    (8, 27) -> glVertex2i;
+                    (9, 28) -> glVertex2i;
+                    (11, 28) -> glVertex2i;
+                    (12, 27) -> glVertex2i;
+                    (12, 21) -> glVertex2i;
+                    (12, 26) -> glVertex2i;
+                    (13, 27) -> glVertex2i;
+                    (15, 27) -> glVertex2i;
+                    (16, 26) -> glVertex2i;
+                    (16, 19) -> glVertex2i;
+                    (16, 24) -> glVertex2i;
+                    (17, 25) -> glVertex2i;
+                    (19, 25) -> glVertex2i;
+                    (20, 24) -> glVertex2i;
+                    (20, 16) -> glVertex2i;
+                    (18, 12) -> glVertex2i;
+                    (18, 8) -> glVertex2i;
+                    (4, 8) -> glVertex2i;
+                    glEnd;
+                    glPopMatrix;
+                 #);
+            #);
+          do shape.init;
+          shape[] -> add;
+       #);
+  #);
+
+ArrowFigure: Figure
+  (# 
+     point: ^Point2d;
+     arrowHead: @Line;
+     arrowShaft: @Line;
+
+     Init:: 
+       (# 
+          arrowStyle: ^CompositeStyle;
+          arrowStrokeStyle: ^StrokeStyle;
+          arrowFillStyle: ^FillStyle;
+       do 
+          &CompositeStyle[]->arrowStyle[]->arrowHead.theStyle[]
+            -> arrowShaft.theStyle[];
+          &StrokeStyle[]->arrowStrokeStyle[]->arrowStyle.add;
+          &FillStyle[]->arrowFillStyle[]->arrowStyle.add;
+          black[]->arrowStrokeStyle.stroke[];
+          greenish[]->arrowFillStyle.fill[];
+          &PointList[]->arrowHead.points[];
+          (for 5 repeat &Point2d[]->point[]->arrowHead.points.append for);
+          &PointList[]->arrowShaft.points[];
+          (for 4 repeat &Point2d[]->point[]->arrowShaft.points.append for);
+          arrowHead[]->add;
+          arrowShaft[]->add;
+          layout;
+       #);
+     
+    layout: 
+       (# 
+       width,height: @real;   
+       do 
+          (12,12)->(width,height);
+          
+          1->arrowHead.points.get->point[];
+          (6.0*width/9,2*height/9)->point;
+          2->arrowHead.points.get->point[];
+          (9.0*width/9,0)->point;
+          3->arrowHead.points.get->point[];
+          (0, 0)->point;
+          4->arrowHead.points.get->point[];
+          (0,9*height/9)->point;
+          5->arrowHead.points.get->point[];
+          (2*width/9,6*height/9)->point;
+          
+          1->arrowShaft.points.get->point[];
+          (2*width/9,6*height/9)->point;
+          2->arrowShaft.points.get->point[];
+          (4*width/9,9*height/9)->point;
+          3->arrowShaft.points.get->point[];
+          (9*width/9,4*height/9)->point;
+          4->arrowShaft.points.get->point[];
+          (6*width/9,2*height/9)->point;
+       #);
+  #);
+
+FromTopLeftArrowFigure: Figure
+  (# 
+     point: ^Point2d;
+     arrowHead: @Line;
+     arrowShaft: @Line;
+
+     Init:: 
+       (# 
+          arrowStyle: ^CompositeStyle;
+          arrowStrokeStyle: ^StrokeStyle;
+          arrowFillStyle: ^FillStyle;
+       do 
+          &CompositeStyle[]->arrowStyle[]->arrowHead.theStyle[]
+            -> arrowShaft.theStyle[];
+          &StrokeStyle[]->arrowStrokeStyle[]->arrowStyle.add;
+          &FillStyle[]->arrowFillStyle[]->arrowStyle.add;
+          black[]->arrowStrokeStyle.stroke[];
+          greenish[]->arrowFillStyle.fill[];
+          &PointList[]->arrowHead.points[];
+          (for 5 repeat &Point2d[]->point[]->arrowHead.points.append for);
+          &PointList[]->arrowShaft.points[];
+          (for 4 repeat &Point2d[]->point[]->arrowShaft.points.append for);
+          arrowHead[]->add;
+          arrowShaft[]->add;
+          layout;
+       #);
+     
+    layout: 
+       (# 
+       width,height: @real;   
+       do 
+          (12,12)->(width,height);
+          
+          1->arrowHead.points.get->point[];
+          (2*width/9,7*height/9)->point;
+          2->arrowHead.points.get->point[];
+          (0,height)->point;
+          3->arrowHead.points.get->point[];
+          (width, height)->point;
+          4->arrowHead.points.get->point[];
+          (width,0)->point;
+          5->arrowHead.points.get->point[];
+          (7*width/9,2*height/9)->point;
+          
+          1->arrowShaft.points.get->point[];
+          (7*width/9,2*height/9)->point;
+          2->arrowShaft.points.get->point[];
+          (5*width/9,0)->point;
+          3->arrowShaft.points.get->point[];
+          (0,5*height/9)->point;
+          4->arrowShaft.points.get->point[];
+          (2*width/9,7*height/9)->point;
+          
+       #);
+  #);
+
+ToggleFigure: Figure
+  (# 
+     theToggleFigure: ^Composite;
+     theTopArrowHead: ^Line;
+     theBottomArrowHead: ^Line;
+     theLeftArrowShaft: ^Line;
+     theRightArrowShaft: ^Line;
+     theMiddleArrowShaft: ^Line;
+     theBasicStyle: ^BasicStyle;
+     point: ^Point2d;
+
+     Init:: 
+       (# 
+       do 
+          &Composite[]->theToggleFigure[];
+          &Line[]->theTopArrowHead[];
+          &Line[]->theBottomArrowHead[];
+          &Line[]->theLeftArrowShaft[];
+          &Line[]->theRightArrowShaft[];
+          &Line[]->theMiddleArrowShaft[];
+          
+          &PointList[]->theTopArrowHead.points[];
+          &PointList[]->theBottomArrowHead.points[];
+          &PointList[]->theLeftArrowShaft.points[];
+          &PointList[]->theRightArrowShaft.points[];
+          &PointList[]->theMiddleArrowShaft.points[];
+          
+          (for 5 repeat &Point2d[]->point[]->theTopArrowHead.points.append for);
+          (for 5 repeat &Point2d[]->point[]->theBottomArrowHead.points.append for);
+          (for 2 repeat &Point2d[]->point[]->theLeftArrowShaft.points.append for);
+          (for 2 repeat &Point2d[]->point[]->theRightArrowShaft.points.append for);
+          (for 4 repeat &Point2d[]->point[]->theMiddleArrowShaft.points.append for);
+          
+          &BasicStyle[]->theBasicStyle[];
+          (black[],greenish[],1)->theBasicStyle;
+          theBasicStyle->theToggleFigure.theStyle[];
+          
+          &BasicStyle[]->theBasicStyle[];
+          (greenish[],greenish[],1)->theBasicStyle;
+          theBasicStyle->theMiddleArrowShaft.theStyle[];
+          
+          theTopArrowHead[]->theToggleFigure.add;
+          theBottomArrowHead[]->theToggleFigure.add;
+          theMiddleArrowShaft[]->theToggleFigure.add;
+          theLeftArrowShaft[]->theToggleFigure.add;
+          theRightArrowShaft[]->theToggleFigure.add;
+          theToggleFigure[]->add;
+          layout;
+       #);
+     
+    layout: 
+       (# 
+       width,height: @real;   
+       do 
+          (12,12)->(width,height);
+          
+          1->theTopArrowHead.points.get->point[];
+          (-3*width/12.0,-2*height/12.0)->point;
+          2->theTopArrowHead.points.get->point[];
+          (-6*width/12.0,-2*height/12.0)->point;
+          3->theTopArrowHead.points.get->point[];
+          (0*width/12.0,-7*height/12.0)->point;
+          4->theTopArrowHead.points.get->point[];
+          (6*width/12.0,-2*height/12.0)->point;
+          5->theTopArrowHead.points.get->point[];
+          (3*width/12.0,-2*height/12.0)->point;
+          
+          1->theBottomArrowHead.points.get->point[];
+          (-3*width/12.0,2*height/12.0)->point;
+          2->theBottomArrowHead.points.get->point[];
+          (-6*width/12.0,2*height/12.0)->point;
+          3->theBottomArrowHead.points.get->point[];
+          (0*width/12.0,7*height/12.0)->point;
+          4->theBottomArrowHead.points.get->point[];
+          (6*width/12.0,2*height/12.0)->point;
+          5->theBottomArrowHead.points.get->point[];
+          (3*width/12.0,2*height/12.0)->point;
+
+          1->theLeftArrowShaft.points.get->point[];
+          (-3*width/12.0,-2*height/12.0)->point;
+          2->theLeftArrowShaft.points.get->point[];
+          (-3*width/12.0,2*height/12.0)->point;
+          
+          1->theRightArrowShaft.points.get->point[];
+          (3*width/12.0,-2*height/12.0)->point;
+          2->theRightArrowShaft.points.get->point[];
+          (3*width/12.0,2*height/12.0)->point;
+          
+          1->theMiddleArrowShaft.points.get->point[];          
+          (-3*width/12.0,-2*height/12.0)->point;
+          2->theMiddleArrowShaft.points.get->point[];          
+          (-3*width/12.0,2*height/12.0)->point;
+          3->theMiddleArrowShaft.points.get->point[];          
+          (3*width/12.0,2*height/12.0)->point;
+          4->theMiddleArrowShaft.points.get->point[];          
+          (3*width/12.0,-2*height/12.0)->point;
+       #);
+  #);
+
+PageWithNoTabFigure: Figure
+  (#
+     thePageFigure: ^Composite;
+     thePage: ^Rect;
+     theTab: ^Rect;
+     theBasicStyle: ^BasicStyle;
+     point: ^Point2d;
+     width,height: @real;
+     
+     Init::< 
+       (# 
+       enter (width,height)   
+       do 
+          &Composite[]->thePageFigure[];
+          &Rect[]->thePage[];
+          &Rect[]->theTab[];
+          
+          &BasicStyle[]->theBasicStyle[];
+         
+          thePage[]->thePageFigure.add;
+          theTab[]->thePageFigure.add;
+          thePageFigure[]->add;
+          
+          layout;
+       #);
+     
+    layout:< 
+       (# 
+       do 
+          (width/2.0,height/2.0)->(thePage.x,thePage.y);
+          (width,height)->(thePage.width,thePage.height);
+       #);     
+  #);
+
+PageFigure: Figure
+  (# 
+     thePageFigure: ^Composite;
+     thePage: ^PageWithNoTabFigure;
+     theTab: ^Rect;
+     theBasicStyle: ^BasicStyle;
+     width,height: @real;
+     
+     init::<
+       (# 
+       enter (width,height)   
+       do
+          &Composite[]->thePageFigure[];
+          &PageWithNoTabFigure[]->thePage[];
+          &Rect[]->theTab[];
+          
+          &BasicStyle[]->theBasicStyle[];
+          (wheat[],wheat[],1)->theBasicStyle;
+          theBasicStyle->thePageFigure.theStyle[];
+          
+          thePage[]->thePageFigure.add;
+          theTab[]->thePageFigure.add;
+          thePageFigure[]->add;
+          
+          Layout;
+       #);
+     
+     Layout:
+       (# 
+       do
+          (width,height)->thePage.init;
+          (width/(2.0*6),-height/(2.0*6))->(theTab.x,theTab.y);
+          (width/6.0,height/6.0)->(theTab.width,theTab.height);
+       #);
+  #);
+
+GroupFigure: Figure
+  (# 
+     theGroupFigure: ^Composite;
+     thePage: ^PageWithNoTabFigure;
+     theTab: ^Rect;
+     theBasicStyle: ^BasicStyle;
+     width,height: @real;
+     
+     init::<
+       (# 
+       enter (width,height)   
+       do
+          &Composite[]->theGroupFigure[];
+          &PageWithNoTabFigure[]->thePage[];
+          &Rect[]->theTab[];
+          
+          &BasicStyle[]->theBasicStyle[];
+          (wheat[],wheat[],1)->theBasicStyle;
+          theBasicStyle->theGroupFigure.theStyle[];
+          
+          thePage[]->theGroupFigure.add;
+          theTab[]->theGroupFigure.add;
+          theGroupFigure[]->add;
+          
+          Layout;
+       #);
+     
+     Layout:
+       (# 
+       do
+          (width,height)->thePage.init;
+          (width/(2.0*6),height+height/(2.0*6))->(theTab.x,theTab.y);
+          (width/6.0,height/6.0)->(theTab.width,theTab.height);
+       #);
+  #);
+
+EmptyNetFigure: Figure
+  (#
+     theEmptyNetFigure: ^Composite;
+     theTopPage: ^PageFigure;
+     theBottomPage: ^PageFigure;
+     thePageColor: ^Color;
+     theBasicStyle: ^BasicStyle;
+     width,height: @real;
+     
+     Init::< 
+       (# 
+       enter (width,height)   
+       do 
+          &Composite[]->theEmptyNetFigure[];
+          &PageFigure[]->theTopPage[];
+          &PageFigure[]->theBottomPage[];
+          
+          theBottomPage[]->theEmptyNetFigure.add;
+          theTopPage[]->theEmptyNetFigure.add;
+          theEmptyNetFigure[]->add;
+          
+          Layout;
+       #);
+     
+    layout: 
+       (# 
+       do 
+          (width,height)->theTopPage.init;
+          (width,height)->theBottomPage.init;
+          
+          &Color[]->thePageColor[];
+          (Wheat.red,Wheat.green,Wheat.blue)->thePageColor;
+          
+          0.7->thePageColor.darken->thePageColor[];
+          &BasicStyle[]->theBasicStyle[];
+          (thePageColor[],thePageColor[],1)->theBasicStyle->theBottomPage.thePageFigure.theStyle[];
+          
+          (theTopPage.x+4,theTopPage.y-4)->(theBottomPage.x,theBottomPage.y);
+       #);     
+  #);
+
+FillFigure: Figure
+  (# 
+     theFillFigure: ^Composite;
+     theTransition: ^Rect;
+     thePlace: ^Ellipse;
+     theTtoPArrow: ^Line;
+     thePtoTArrow: ^Line;
+     theBasicStyle: ^BasicStyle;     
+     theCompleteStyle: ^CompleteStyle;
+     width,height: @real;
+     point: ^Point2d; 
+     
+     Init::< 
+       (# 
+       enter (width,height)
+       do 
+          &Composite[]->theFillFigure[];
+          &Rect[]->theTransition[];
+          &Ellipse[]->thePlace[];
+          &Line[]->theTtoPArrow[];
+          &Line[]->thePtoTArrow[];
+          
+          &PointList[]->theTtoPArrow.points[];
+          &PointList[]->thePtoTArrow.points[];
+          (for 3 repeat 
+               &Point2d[]->point[]->theTtoPArrow.points.append;
+               &Point2d[]->point[]->thePtoTArrow.points.append;
+          for);
+          
+          &BasicStyle[]->theBasicStyle[];
+          (black[],white[],1)->theBasicStyle->theTransition.theStyle[];
+          &BasicStyle[]->theBasicStyle[];
+          (black[],white[],1)->theBasicStyle->thePlace.theStyle[];
+          
+          &Completestyle[]->theCompletestyle[];
+          0.4->theCompletestyle.Arrowheadsize;
+          (black[],NONE,1,ARROW_END)->theCompletestyle->theTtoPArrow.theStyle[];
+          &Completestyle[]->theCompletestyle[];
+          0.4->theCompletestyle.Arrowheadsize;
+          (black[],NONE,1,ARROW_END)->theCompletestyle->thePtoTArrow.theStyle[];
+          
+          theTtoPArrow[]->theFillFigure.add;
+          thePtoTArrow[]->theFillFigure.add;
+          theTransition[]->theFillFigure.add;
+          thePlace[]->theFillFigure.add;
+          theFillFigure[]->add;
+          
+          Layout;
+       #);
+     
+    layout: 
+       (# 
+       do 
+          1->theTtoPArrow.points.get->point[];
+          (10.0*width/24,5.0*height/16)->point;
+          2->theTtoPArrow.points.get->point[];
+          (18.0*width/24,5.0*height/16)->point;
+          3->theTtoPArrow.points.get->point[];
+          (18.0*width/24,8.5*height/16)->point;
+          
+          1->thePtoTArrow.points.get->point[];
+          (14.0*width/24,11.0*height/16)->point;
+          2->thePtoTArrow.points.get->point[];
+          (6.0*width/24,11.0*height/16)->point;
+          3->thePtoTArrow.points.get->point[];
+          (6.0*width/24,8.0*height/16)->point;
+          
+          (6.0*width/24,5.0*height/16)->(theTransition.x,theTransition.y);
+          (8.0*width/24,5.0*height/16)->(theTransition.width,theTransition.height);
+          (18.0*width/24,11.0*height/16)->(thePlace.x,thePlace.y);
+          (8.0*width/24,5.0*height/16)->(thePlace.width,thePlace.height);
+       #);              
+     
+  #);
+
+FilledGroupFigure: Figure
+  (# 
+     theFilledGroupFigure: ^Composite;
+     theGroupFigure: ^GroupFigure;
+     theFillFigure: ^FillFigure;
+     width,height: @real;
+     theAlphaStyle: ^AlphaStyle;
+     
+     init::<
+       (#
+       enter (width,height)
+       do 
+          &Composite[]->theFilledGroupFigure[];
+          &GroupFigure[]->theGroupFigure[];
+          &FillFigure[]->theFillFigure[];
+          
+          (width,height)->theFillFigure.init;
+          (width,height)->theGroupFigure.init;
+          
+          (0,0)->(theGroupFigure.x,theGroupFigure.y);
+          (0,0)->(theFillFigure.x,theFillFigure.y);
+          
+          &AlphaStyle[]->theAlphaStyle[];
+          0.4->theAlphaStyle->theFillFigure.thePlace.theStyle[];
+         
+          theGroupFigure[]->theFilledGroupFigure.add;
+          theFillFigure[]->theFilledGroupFigure.add;
+          theFilledGroupFigure[]->add;
+       #);          
+     
+  #);
+
+FilledNetFigure: Figure
+  (# 
+     theFilledNetFigure: ^Composite;
+     theNetFigure: ^EmptyNetFigure;
+     theFillFigure: ^FillFigure;
+     theBasicStyle: ^BasicStyle;     
+     width,height: @real;
+     point: ^Point2d;
+     
+     Init::< 
+       (# 
+       enter (width,height)
+       do 
+          &Composite[]->theFilledNetFigure[];
+          &EmptyNetFigure[]->theNetFigure[];
+          &FillFigure[]->theFillFigure[];
+          
+          theNetFigure[]->theFilledNetFigure.add;
+          theFillFigure[]->theFilledNetFigure.add;
+          theFilledNetFigure[]->add;
+          
+          Layout;
+       #);
+     
+    layout: 
+       (# 
+       do (width,height)->theNetFigure.init;
+          (width,height)->theFillFigure.init;
+       #);         
+  #);
+
+QuestionMarkFigure: Figure
+  (# 
+     theCompleteStyle: ^CompleteStyle;
+     
+     init::
+       (# 
+          theQuestionMarkFigure: ^Composite;
+          theMark: ^Line;
+          theDot: ^Line;
+          theStyle: ^CompositeStyle;        
+          point,lastpoint: ^Point2d;
+       do &Composite[] -> theQuestionMarkFigure[];
+          
+          &Line[] -> theDot[];
+          &PointList[]->theDot.points[];
+          (for 4 repeat &Point2d[]->theDot.points.append; for);
+          
+          &Line[] -> theMark[];
+          &PointList[]->theMark.points[];
+          (for 10 repeat &Point2d[]->theMark.points.append; for);
+          
+          &CompositeStyle[]->theStyle[];
+          &Completestyle[]->theCompletestyle[];
+          (blue[],NONE,1, ARROW_NONE)->theCompletestyle;
+          5->theCompletestyle.curvature;
+          theCompletestyle[]->theStyle.add;
+          theStyle[]->theQuestionMarkFigure.theStyle[];
+          
+          theDot[] -> theQuestionMarkFigure.add;
+          theMark[] -> theQuestionMarkFigure.add;
+          theQuestionMarkFigure[] -> add;
+          
+          1->theDot.points.get->point[]->lastpoint[];
+          (6,-4)->point;
+          2->theDot.points.get->point[];
+          (10,-4)->point;
+          3->theDot.points.get->point[];
+          (10,0)->point;
+          4->theDot.points.get->point[];
+          (6,0)->point;
+          lastpoint[] -> theDot.points.append;
+          
+          1->theMark.points.get->point[]->lastpoint[];
+          (0,-18)->point;
+          2->theMark.points.get->point[];
+          (8,-26)->point;
+          3->theMark.points.get->point[];
+          (16,-18)->point;
+          4->theMark.points.get->point[];
+          (10,-10)->point;          
+          5->theMark.points.get->point[];
+          (10,-6)->point;          
+          6->theMark.points.get->point[];
+          (6,-6)->point;          
+          7->theMark.points.get->point[];
+          (6,-10)->point;          
+          8->theMark.points.get->point[];
+          (12,-18)->point;          
+          9->theMark.points.get->point[];
+          (7,-22)->point;          
+          10->theMark.points.get->point[];
+          (3,-16)->point;
+          lastpoint[] -> theMark.points.append;
+      #);
+  #);
+
+TransitionWithArcsFigure: Figure
+  (# theTransitionWithArcsFigure: ^Composite;
+     theTransition: ^Rect;
+     arc1: ^Line;
+     arc2: ^Line;
+        
+     width,height: @real;
+     point: ^Point2d; 
+     theCompletestyle: ^Completestyle;
+     
+     Init::< 
+       (# 
+       enter (width, height)
+       do &Composite[]->theTransitionWithArcsFigure[];
+          &Rect[]->theTransition[];
+          &Line[]->arc1[];
+          &Line[]->arc2[];
+          
+          &PointList[]->arc1.points[];
+          &PointList[]->arc2.points[];
+          (for 2 repeat 
+               &Point2d[]->point[]->arc1.points.append;
+               &Point2d[]->point[]->arc2.points.append;
+          for);
+          
+          &Completestyle[]->theCompletestyle[];
+          (black[],white[],1, ARROW_NONE)->theCompletestyle->theTransition.theStyle[];
+          &Completestyle[]->theCompletestyle[];
+          0.6->theCompletestyle.Arrowheadsize;
+          (black[],NONE,1, ARROW_END)->theCompletestyle->arc1.theStyle[];
+          &Completestyle[]->theCompletestyle[];
+          0.6->theCompletestyle.Arrowheadsize;
+          (black[],NONE,1, ARROW_END)->theCompletestyle->arc2.theStyle[];
+          
+          arc1[]->theTransitionWithArcsFigure.add;
+          arc2[]->theTransitionWithArcsFigure.add;
+          theTransition[]->theTransitionWithArcsFigure.add;
+          theTransitionWithArcsFigure[]->add;
+          
+          Layout;
+       #);
+     
+    layout: 
+       (# 
+       do 
+          1->arc1.points.get->point[];
+          (-width,0)->point;
+          2->arc1.points.get->point[];
+          (-3*width/10,0)->point;
+          
+          1->arc2.points.get->point[];
+          (0,-2*height/10)->point;
+          2->arc2.points.get->point[];
+          (0,-height)->point;
+          
+          (0,0)->(theTransition.x,theTransition.y);
+          (6*width/10,height/2)->(theTransition.width,theTransition.height);
+       #);              
+     
+  #);
+
+AssignFigure: Figure
+  (# theAssignFigure: ^Composite;
+     line1, line2: ^Line;
+     width, height: @real;
+     
+     init::
+       (# point: ^Point2d;
+       enter (width, height)
+       do &Composite[] -> theAssignFigure[];
+          &Line[] -> line1[];
+          line1[] -> theAssignFigure.add;
+          &PointList[] -> line1.points[];
+          (for 2 repeat &Point2d[]->point[]->line1.points.append; for);     
+          &Line[] -> line2[];
+          line2[] -> theAssignFigure.add;
+          &PointList[] -> line2.points[];
+          (for 2 repeat &Point2d[]->point[]->line2.points.append; for);     
+          theAssignFigure[] -> add;
+          
+          Layout;
+       #);
+     
+     Layout:
+       (# point: ^Point2d;
+       do 1->line1.points.get->point[];
+          (-7*width/10,-8*height/10)->point;          
+          2->line1.points.get->point[];
+          (-3*width/10,-4*height/10)->point; 
+          
+          1->line2.points.get->point[];
+          (-4*width/10,-10*height/10)->point;          
+          2->line2.points.get->point[];
+          (0,-6*height/10)->point; 
+          
+       #);
+  #);
+
+	  

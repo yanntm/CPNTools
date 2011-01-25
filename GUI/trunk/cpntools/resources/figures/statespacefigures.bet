@@ -1,0 +1,514 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '~beta/postwimp/workspace';
+
+INCLUDE 'standardfigures';
+INCLUDE 'figure'
+
+-- workspacelib: attributes --
+SSEnterFigure: Figure
+  (# useDefaultHotspot::(# do true -> value; #);
+     theSSEnterFigure: ^TextItem;
+     point: ^Point2d;
+     
+     init::
+       (# 
+       do &TextItem[] -> theSSEnterFigure[];
+          
+          'Enter\n   SS' -> theSSEnterFigure.content[];
+
+          theSSEnterFigure[] -> add;
+       #);
+  #);
+
+SSCalcSSFigure: Figure
+  (# useDefaultHotspot::(# do true -> value; #);
+     ellipse1, ellipse2, ellipse3, ellipse4: @Ellipse;
+     arc1, arc2, arc3, arc4, arc5: @Line;
+     theCompletestyle: ^Completestyle;
+     
+     init::<
+       (# point: ^Point2d;
+ 
+       do ellipse1[] -> add;
+          ellipse2[] -> add;
+          ellipse3[] -> add;
+          ellipse4[] -> add;
+          
+          arc1[] -> add;
+          &PointList[]->arc1.points[];
+          (for 3 repeat &Point2d[]->point[]->arc1.points.append; for);  
+          &Completestyle[]->theCompletestyle[];
+          0.4->theCompletestyle.arrowHeadSize;
+          (Black[],NONE,1,ARROW_END)->theCompletestyle;
+          theCompletestyle[]->arc1.theStyle[];
+          
+          arc2[] -> add;
+          &PointList[]->arc2.points[];
+          (for 3 repeat &Point2d[]->point[]->arc2.points.append; for);  
+          &Completestyle[]->theCompletestyle[];
+          0.4->theCompletestyle.arrowHeadSize;
+          (Black[],NONE,1,ARROW_END)->theCompletestyle;
+          theCompletestyle[]->arc2.theStyle[];
+          
+          arc3[] -> add;
+          &PointList[]->arc3.points[];
+          (for 2 repeat &Point2d[]->point[]->arc3.points.append; for);  
+          &Completestyle[]->theCompletestyle[];
+          0.4->theCompletestyle.arrowHeadSize;
+          (Black[],NONE,1,ARROW_END)->theCompletestyle;
+          theCompletestyle[]->arc3.theStyle[];
+          
+          arc4[] -> add;
+          &PointList[]->arc4.points[];
+          (for 2 repeat &Point2d[]->point[]->arc4.points.append; for);  
+          &Completestyle[]->theCompletestyle[];
+          0.4->theCompletestyle.arrowHeadSize;
+          (Black[],NONE,1,ARROW_END)->theCompletestyle;
+          theCompletestyle[]->arc4.theStyle[];
+          
+          arc5[] -> add;
+          &PointList[]->arc5.points[];
+          (for 2 repeat &Point2d[]->point[]->arc5.points.append; for);  
+          &Completestyle[]->theCompletestyle[];
+          0.4->theCompletestyle.arrowHeadSize;
+          (Black[],NONE,1,ARROW_END)->theCompletestyle;
+          theCompletestyle[]->arc5.theStyle[];
+          
+	  INNER;
+	  
+          Layout;
+       #);
+     
+     Layout:
+       (# point: ^Point2d;
+       do (4,4) -> (ellipse1.width, ellipse1.height);
+          (0,-7) -> (ellipse1.x, ellipse1.y);
+          (4,4) -> (ellipse2.width, ellipse2.height);
+          (-7,-14) -> (ellipse2.x, ellipse2.y);
+          (4,4) -> (ellipse3.width, ellipse3.height);
+          (-7,0) -> (ellipse3.x, ellipse3.y);
+          (4,4) -> (ellipse4.width, ellipse4.height);
+          (-14,-7) -> (ellipse4.x, ellipse4.y);
+          
+          1->arc1.points.get->point[];
+          (-8,0)->point;          
+          2->arc1.points.get->point[];
+          (-12,-1)->point;        
+          3->arc1.points.get->point[];
+          (-14,-6)->point; 
+          
+          1->arc2.points.get->point[];
+          (-12,-7)->point;          
+          2->arc2.points.get->point[];
+          (-9,-6)->point;      
+          3->arc2.points.get->point[];
+          (-7,-1)->point; 
+          
+          1->arc3.points.get->point[];
+          (-14,-8)->point;          
+          2->arc3.points.get->point[];
+          (-8,-14)->point; 
+          
+          1->arc4.points.get->point[];
+          (-6,-14)->point;          
+          2->arc4.points.get->point[];
+          (0,-8)->point; 
+          
+          1->arc5.points.get->point[];
+          (0,-6)->point;          
+          2->arc5.points.get->point[];
+          (-6,0)->point; 
+       #);
+  #);
+
+SSCalcSCCFigure: Figure
+  (# useDefaultHotspot::(# do true -> value; #);
+     ellipse1, ellipse2, ellipse3: @Ellipse;
+     circle1a, circle1b, circle1c, circle2a, circle2b, circle3a, circle3b: @Ellipse;
+     arcA, arcB, arc1a, arc1b, arc1c, arc2a, arc2b, arc3a, arc3b: @Line;
+     theCompletestyle: ^Completestyle; 
+     
+     init::
+       (# point: ^Point2d;
+       do ellipse1[] -> add;
+          ellipse2[] -> add;
+          ellipse3[] -> add;
+          
+          arcA[] -> add;
+          &PointList[]->arcA.points[];
+          (for 2 repeat &Point2d[]->point[]->arcA.points.append; for);  
+          &Completestyle[]->theCompletestyle[];
+          0.4->theCompletestyle.arrowHeadSize;
+          (green[],NONE,1,ARROW_END)->theCompletestyle;
+          theCompletestyle[]->arcA.theStyle[];
+          
+          arcB[] -> add;
+          &PointList[]->arcB.points[];
+          (for 2 repeat &Point2d[]->point[]->arcB.points.append; for);  
+          &Completestyle[]->theCompletestyle[];
+          0.4->theCompletestyle.arrowHeadSize;
+          (green[],NONE,1,ARROW_END)->theCompletestyle;
+          theCompletestyle[]->arcB.theStyle[];
+          
+          
+          Layout;
+       #);
+     
+     Layout:
+       (# point: ^Point2d;
+       do (10,6) -> (ellipse1.width, ellipse1.height);
+          (0,-12) -> (ellipse1.x, ellipse1.y);
+          (10,6) -> (ellipse2.width, ellipse2.height);
+          (-12,4) -> (ellipse2.x, ellipse2.y);
+          (10,6) -> (ellipse3.width, ellipse3.height);
+          (12,4) -> (ellipse3.x, ellipse3.y);
+          
+          1->arcA.points.get->point[];
+          (-6,-6)->point;          
+          2->arcA.points.get->point[];
+          (-8,-2)->point; 
+          
+          1->arcB.points.get->point[];
+          (6,-6)->point;          
+          2->arcB.points.get->point[];
+          (8,-2)->point; 
+          
+       #);
+  #);
+
+SStoSimFigure: Figure
+  (# useDefaultHotspot::(# do true -> value; #);
+     SSFigure: ^TextItem;
+     SimFigure: ^TextItem;
+     theArrowFigure: ^ArrowFigure;
+     
+     init::
+       (# 
+       do &TextItem[] -> SSFigure[];
+          &TextItem[] -> SimFigure[];
+          &ArrowFigure[] -> theArrowFigure[];
+          theArrowFigure.init;
+          
+          'SS' -> SSFigure.content[];
+          'Sim' -> SimFigure.content[];
+
+          SSFigure[] -> add;
+          SimFigure[] -> add;
+          theArrowFigure[] -> add;
+          layout;
+       #);
+     
+     layout:
+       (# 
+       do (-25,-25) -> (SimFigure.x, SimFigure.y);
+          (-10,-20)->(theArrowFigure.x,theArrowFigure.y);
+          (0,0) -> (SSFigure.x, SSFigure.y);
+       #);
+  #);
+
+SimtoSSFigure: Figure
+  (# useDefaultHotspot::(# do true -> value; #);
+     SSFigure: ^TextItem;
+     SimFigure: ^TextItem;
+     theArrowFigure: ^ArrowFigure;
+     
+     init::
+       (# 
+       do &TextItem[] -> SSFigure[];
+          &TextItem[] -> SimFigure[];
+          &ArrowFigure[] -> theArrowFigure[];
+          theArrowFigure.init;
+          
+          'SS' -> SSFigure.content[];
+          'Sim' -> SimFigure.content[];
+
+          SSFigure[] -> add;
+          SimFigure[] -> add;
+          theArrowFigure[] -> add;
+          layout;
+       #);
+     
+     layout:
+       (# 
+       do (-20,-25) -> (SSFigure.x, SSFigure.y);
+          (-10,-20)->(theArrowFigure.x,theArrowFigure.y);
+          (-3,0) -> (SimFigure.x, SimFigure.y);
+       #);
+  #);
+
+SSSaveReportFigure: Figure
+  (# useDefaultHotspot::(# do true -> value; #);
+     frontPage, backPage: @Rect;
+     textLine1, textLine2, textLine3: @Line;
+     
+     init::
+       (# theStyle: ^CompositeStyle;
+          theCompletestyle: ^Completestyle; 
+          point: ^Point2d;
+       do &CompositeStyle[] -> theStyle[] -> backPage.theStyle[];
+          gray7[] -> StrokeStyle -> theStyle.add;
+          white[] -> FillStyle -> theStyle.add;
+          backPage[] -> add;
+          
+          &CompositeStyle[] -> theStyle[] -> frontPage.theStyle[];
+          black[] -> StrokeStyle -> theStyle.add;
+          white[] -> FillStyle -> theStyle.add;
+          1 -> strokeWidthStyle -> theStyle.add;
+          frontPage[] -> add;
+          
+          textLine1[] -> add;
+          &PointList[]->textLine1.points[];
+          (for 7 repeat &Point2d[]->point[]->textLine1.points.append; for);  
+          &Completestyle[]->theCompletestyle[];
+          (gray8[],NONE,1,ARROW_NONE)->theCompletestyle;
+          theCompletestyle[]->textLine1.theStyle[];
+          
+          textLine2[] -> add;
+          &PointList[]->textLine2.points[];
+          (for 7 repeat &Point2d[]->point[]->textLine2.points.append; for);  
+          &Completestyle[]->theCompletestyle[];
+          (gray8[],NONE,1,ARROW_NONE)->theCompletestyle;
+          theCompletestyle[]->textLine2.theStyle[];
+          
+          textLine3[] -> add;
+          &PointList[]->textLine3.points[];
+          (for 7 repeat &Point2d[]->point[]->textLine3.points.append; for);  
+          &Completestyle[]->theCompletestyle[];
+          (gray8[],NONE,1,ARROW_NONE)->theCompletestyle;
+          theCompletestyle[]->textLine3.theStyle[];
+          
+          Layout;
+       #);
+     
+     Layout:
+       (# point: ^Point2d;
+       do (10,12) -> (frontPage.width, frontPage.height);
+          (-4,-6) -> (frontPage.x, frontPage.y);
+          (10,12) -> (backPage.width, backPage.height);
+          (-2,-8) -> (backPage.x, backPage.y);
+          
+          1->textLine1.points.get->point[];
+          (-7,-2)->point;        
+          2->textLine1.points.get->point[];
+          (-6,-3)->point;         
+          3->textLine1.points.get->point[];
+          (-5,-2)->point;        
+          4->textLine1.points.get->point[];
+          (-4,-3)->point;        
+          5->textLine1.points.get->point[];
+          (-3,-2)->point;        
+          6->textLine1.points.get->point[];
+          (-2,-3)->point;        
+          7->textLine1.points.get->point[];
+          (-1,-2)->point; 
+                  
+          1->textLine2.points.get->point[];
+          (-7,-6)->point;      
+          2->textLine2.points.get->point[];
+          (-6,-5)->point;      
+          3->textLine2.points.get->point[];
+          (-5,-6)->point;     
+          4->textLine2.points.get->point[];
+          (-4,-5)->point;     
+          5->textLine2.points.get->point[];
+          (-3,-6)->point;     
+          6->textLine2.points.get->point[];
+          (-2,-5)->point;     
+          7->textLine2.points.get->point[];
+          (-1,-6)->point;  
+                  
+          1->textLine3.points.get->point[];
+          (-7,-8)->point;    
+          2->textLine3.points.get->point[];
+          (-6,-9)->point;      
+          3->textLine3.points.get->point[];
+          (-5,-8)->point;    
+          4->textLine3.points.get->point[];
+          (-4,-9)->point;    
+          5->textLine3.points.get->point[];
+          (-3,-8)->point;    
+          6->textLine3.points.get->point[];
+          (-2,-9)->point;  
+          7->textLine3.points.get->point[];
+          (-1,-8)->point;  
+          
+          
+       #);
+  #);
+
+
+DisplayBorderingNodesFigure: Figure
+  (# useDefaultHotspot::(# do true -> value; #);
+     arc1, arc2, arc3: @Line;
+     fromEllipse, ellipse1, ellipse2, ellipse3: @Ellipse;
+ 
+     init::<
+       (#
+	  point: ^Point2d;
+	  theCompletestyle: ^Completestyle;
+	  theCompositeStyle: ^CompositeStyle;
+	  theStrokeStyle: ^StrokeStyle;
+       do ellipse1[] -> add;
+          ellipse2[] -> add;
+          ellipse3[] -> add;
+	  
+	  fromEllipse[] -> add;
+	  &CompositeStyle[]->theCompositeStyle[]->fromEllipse.theStyle[];
+	  &StrokeStyle[]->theStrokeStyle[]->theCompositeStyle.add;
+	  Gray[]->theStrokeStyle.stroke[];
+          
+          arc1[] -> add;
+          &PointList[]->arc1.points[];
+          (for 2 repeat &Point2d[]->point[]->arc1.points.append; for);  
+          &Completestyle[]->theCompletestyle[];
+          0.4->theCompletestyle.arrowHeadSize;
+          (Gray[],NONE,1,ARROW_END)->theCompletestyle;
+          theCompletestyle[]->arc1.theStyle[];
+          
+          arc2[] -> add;
+          &PointList[]->arc2.points[];
+          (for 2 repeat &Point2d[]->point[]->arc2.points.append; for);  
+          &Completestyle[]->theCompletestyle[];
+          0.4->theCompletestyle.arrowHeadSize;
+          (Gray[],NONE,1,ARROW_END)->theCompletestyle;
+          theCompletestyle[]->arc2.theStyle[];
+          
+          arc3[] -> add;
+          &PointList[]->arc3.points[];
+          (for 2 repeat &Point2d[]->point[]->arc3.points.append; for);  
+          &Completestyle[]->theCompletestyle[];
+          0.4->theCompletestyle.arrowHeadSize;
+          (Gray[],NONE,1,ARROW_END)->theCompletestyle;
+          theCompletestyle[]->arc3.theStyle[];
+
+	  Layout;
+       #);
+     
+     Layout:<
+       (# point: ^Point2d;
+       do INNER
+          
+       #);
+  #);
+
+DisplaySuccessorsFigure: DisplayBorderingNodesFigure
+  (#
+     Layout::
+     (#
+	do
+	   (4,6) -> (fromEllipse.width, fromEllipse.height);
+	  (-6,0) -> (fromEllipse.x, fromEllipse.y);
+	  
+	  (4,6) -> (ellipse1.width, ellipse1.height);
+          (6,7) -> (ellipse1.x, ellipse1.y);
+	  
+          (4,6) -> (ellipse2.width, ellipse2.height);
+          (6,0) -> (ellipse2.x, ellipse2.y);
+	  
+          (4,6) -> (ellipse3.width, ellipse3.height);
+          (6,-7) -> (ellipse3.x, ellipse3.y);
+          
+          1->arc1.points.get->point[];
+          (-4,1)->point;          
+          2->arc1.points.get->point[];
+          (3,7)->point;        
+          
+          1->arc2.points.get->point[];
+          (-3,0)->point;          
+          2->arc2.points.get->point[];
+          (3,0)->point;      
+          
+          1->arc3.points.get->point[];
+          (-4,-1)->point;          
+          2->arc3.points.get->point[];
+          (3,-7)->point; 
+     #);
+  #);
+
+DisplayPredecessorsFigure: DisplayBorderingNodesFigure
+  (#
+     Layout::
+     (#
+	do
+	  (4,6) -> (fromEllipse.width, fromEllipse.height);
+	  (6,0) -> (fromEllipse.x, fromEllipse.y);
+	  
+	  (4,6) -> (ellipse1.width, ellipse1.height);
+          (-6,7) -> (ellipse1.x, ellipse1.y);
+	  
+          (4,6) -> (ellipse2.width, ellipse2.height);
+          (-6,0) -> (ellipse2.x, ellipse2.y);
+	  
+          (4,6) -> (ellipse3.width, ellipse3.height);
+          (-6,-7) -> (ellipse3.x, ellipse3.y);
+          
+          1->arc1.points.get->point[];
+          (-3,7)->point;          
+          2->arc1.points.get->point[];
+          (4,1)->point;        
+          
+          1->arc2.points.get->point[];
+          (-3,0)->point;          
+          2->arc2.points.get->point[];
+          (3,0)->point;      
+          
+          1->arc3.points.get->point[];
+          (-3,-7)->point;          
+          2->arc3.points.get->point[];
+          (4,-1)->point; 
+     #)
+  #);
+
+DisplayPartialSSGraphFigure: SSCalcSSFigure
+  (#
+     init::
+       (#
+	  theCompositeStyle: ^CompositeStyle;
+	  theStrokeStyle: ^StrokeStyle;
+	  do
+   	     &Completestyle[]->theCompletestyle[];
+   	     0.4->theCompletestyle.arrowHeadSize;
+   	     (Gray[],NONE,1,ARROW_END)->theCompletestyle;
+   	     theCompletestyle[]->arc1.theStyle[];
+
+	     &Completestyle[]->theCompletestyle[];
+   	     0.4->theCompletestyle.arrowHeadSize;
+   	     (Gray[],NONE,1,ARROW_END)->theCompletestyle;
+   	     theCompletestyle[]->arc2.theStyle[];
+
+	     &Completestyle[]->theCompletestyle[];
+   	     0.4->theCompletestyle.arrowHeadSize;
+   	     (Gray[],NONE,1,ARROW_END)->theCompletestyle;
+   	     theCompletestyle[]->arc3.theStyle[];
+
+	     &CompositeStyle[]->theCompositeStyle[]->ellipse4.theStyle[];
+   	     &StrokeStyle[]->theStrokeStyle[]->theCompositeStyle.add;
+   	     Gray[]->theStrokeStyle.stroke[];
+       #);
+  #);
+
+	

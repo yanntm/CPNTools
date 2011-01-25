@@ -1,0 +1,335 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN 'helpbody';
+INCLUDE '~beta/comlib/comlib';
+INCLUDE '~beta/comlib/ExDisp';
+INCLUDE '~beta/comlib/OCIdl';
+INCLUDE '~beta/win32lib/winerror';
+INCLUDE '~beta/comlib/ExDispid';
+INCLUDE '~beta/comlib/OCIdl';
+INCLUDE '~beta/win32lib/winerror';
+INCLUDE '~beta/comlib/ExDisp';
+INCLUDE '../../../cpntools/debug';
+
+--LIB: Attributes--
+
+theater_mode: (# exit false #);
+
+--ShowHelpBody: Descriptor--
+(# pIWebBrowser2: ^IWebBrowser2;
+   pCP: ^IConnectionPoint;
+   
+   CLSID_IE: ^CLSID;
+   clsstr: @BSTR;
+   str: @BSTR;
+   mydata: @COM
+     (# empty, url: @VARIANT (* specialization of DATA *);
+     #);
+   hr: @HRESULT;
+   dh: @IDispatchHolder;
+   ih: @int16Holder;
+   pICPC: ^IConnectionPointContainer;
+   ppCP: @IConnectionPointHolder;
+   cookieHolder: @int32uHolder;
+   
+   IID_IConnectionPointContainer: @IID;
+   IID_Web: @IID;
+   IID_DWebBrowserEvents2: @IID;
+   IID_IUnknown: @IID;
+   IID_IDispatch: @IID;
+   
+   myDWebBrowserEvents2: @DWebBrowserEvents2
+     (# 
+        QueryInterface::
+          (# iid: @guid;
+          do (if debugging then
+                 'DWebBrowserEvents2.QueryInterface called by Internet Explorer' -> debugCom;
+             if);
+             riid[] -> iid.binary[];
+             (if true 
+              // iid[] -> IID_IUnknown.equal
+              // iid[] -> IID_DWebBrowserEvents2.equal
+              // iid[] -> IID_IDispatch.equal then
+                 myDWebBrowserEvents2[] -> ppvObject;
+                 (* addref missing *)
+              else
+                 NONE -> ppvObject;
+                 E_NOINTERFACE -> result;
+             if);
+          #);
+        AddRef::
+          (# 
+          do (if debugging then
+                 'DWebBrowserEvents2.AddRef called by Internet Explorer' -> debugCom;
+             if);
+          #); 
+        Release::
+          (# 
+          do (if debugging then
+                 'DWebBrowserEvents2.Release called by Internet Explorer' -> debugCom;
+             if)
+          #);
+        Invoke::
+          (# 
+          do (if debugging then
+                 'DWebBrowserEvents2.Invoke called by Internet Explorer' -> debugCom;
+             if);
+             (if dispIdMember
+              // DISPID_QUIT 
+              // DISPID_ONQUIT then
+                 (if debugging then
+                     'Internet Explorer Window Closed' -> debugCom;
+                 if);(* Some release business missing *)
+                 NONE -> pIWebBrowser2[];
+                 NONE -> pCP[];
+             if);
+          #);
+     #);
+   
+   ie_progid: (# exit 'InternetExplorer.Application.1' #);
+   
+   Retries: @Integer;
+   maxRetries: (# exit 100 #);
+   
+do (if pIWebBrowser2[]=NONE then
+       0->CoInitialize;
+       (if debugging then
+           'Create component and get interface IWebBrowser2'->debugCom;
+       if);
+       ie_progid -> clsstr.setText;
+       clsstr[] -> CLSIDFromProgID -> CLSID_IE[];
+       IWebBrowser2_IID -> IID_Web; 
+       Iunknown_IID -> IID_IUnknown; 
+       Idispatch_IID -> IID_IDispatch; 
+       (CLSID_IE[], NONE, CLSCTX_LOCAL_SERVER, IID_Web[])
+         -> CoCreateInstance->pIWebBrowser2[];
+       (if pIWebBrowser2[]<>NONE then
+           (if debugging then
+               'CoCreateInstance done'->debugCom;
+               'Succeeded creating component.'->debugCom;
+           if);
+           (if theater_mode then
+               (* http://msdn.microsoft.com/workshop/browser/webbrowser/reference/Properties/TheaterMode.asp *)
+               (if debugging then
+                   'Setting Theatermode' -> debugCom;
+               if);
+               1 -> pIWebBrowser2.putTheatermode -> hr;
+               (if true
+                // hr.succeeded then
+                   (if debugging then
+                       'Theatermode on' -> debugCom;
+                   if);
+                // debugging then
+                   'Cannot turn browser into theatermode' -> debugCom;
+               if);
+            else
+               (* Set size *)
+               (if debugging then
+                   'Setting width' -> debugCom;
+               if);
+               1000 -> pIWebBrowser2.putWidth -> hr;
+               (if true
+                // hr.succeeded then
+                   (if debugging then
+                       'Width set' -> debugCom;
+                   if);
+                // debugging then
+                   'Cannot set browser width' -> debugCom;
+               if);
+               (if debugging then
+                   'Setting height' -> debugCom;
+               if);
+               700 -> pIWebBrowser2.putHeight -> hr;
+               (if true 
+                // hr.succeeded then
+                   (if debugging then
+                       'height set' -> debugCom;
+                   if);
+                // debugging then
+                   'Cannot set browser height' -> debugCom;
+               if);
+               
+               (* Hide stuff manually *)
+               (if debugging then
+                   'Removing StatusBar' -> debugCom;
+               if);
+               0 -> pIWebBrowser2.putStatusBar -> hr;
+               (if true 
+                // hr.succeeded then
+                   (if debugging then
+                       'Statusbar Off' -> debugCom;
+                   if);
+                // debugging then
+                   'Cannot turn off browser StatusBar' -> debugCom;
+               if);
+               (if debugging then
+                   'Removing mMenuBar' -> debugCom;
+               if);
+               0 -> pIWebBrowser2.putMenuBar -> hr;
+               (if true 
+                // hr.succeeded then
+                   (if debugging then
+                       'MenuBar Off' -> debugCom;
+                   if);
+                // debugging then
+                   'Cannot turn off browser StatusBar' -> debugCom;
+               if);
+               (if debugging then
+                   'Removing AddressBar' -> debugCom;
+               if);
+               0 -> pIWebBrowser2.putAddressBar -> hr;
+               (if true 
+                // hr.succeeded then
+                   (if debugging then
+                       'AddressBar Off' -> debugCom;
+                   if);
+                // debugging then
+                   'Cannot turn off browser AddressBar' -> debugCom;
+               if);
+           if);
+       if)
+    else
+       (if debugging then
+           'Reusing existing IWebBrowser2'->debugCom;
+       if);
+   if);
+   
+   (if pIWebBrowser2[]<>NONE then
+       (if pCP[]=NONE then
+           (if debugging then
+               'Getting Connection Point Interface Container' -> debugCom;
+           if);
+           IConnectionPointContainer_IID -> IID_IConnectionPointContainer;
+           (pIWebBrowser2[], IID_IConnectionPointContainer[]) -> Query -> pICPC[];
+           (if pICPC[]=NONE then 
+               (if debugging then
+                   'failed to get pICPC' -> debugCom;
+               if);
+            else
+               (if debugging then
+                   'Got IConnectionPointContainer' -> debugCom;
+               if);
+           if);
+           (if debugging then
+               'Getting ConnectionPoint' -> debugCom;
+           if);
+           DWebBrowserEvents2_IID -> IID_DWebBrowserEvents2;
+           (IID_DWebBrowserEvents2.binary[], ppCP[]) -> pICPC.FindConnectionPoint -> hr;
+           (if hr.succeeded then
+               ppCP.ref[] -> pCP[];
+               (if debugging then
+                   'Got ConnectionPoint' -> debugCom;
+                   'Calling Advise' -> debugCom;
+               if);
+               (myDWebBrowserEvents2[], cookieHolder[]) -> pCP.Advise -> hr;
+               (if hr.succeeded then
+                   (if debugging then
+                       'Advise OK' -> debugCom;
+                   if);
+                else
+                   (if debugging then
+                       (# d:@char
+                       do 'Calling ComErrorMessage' -> debugCom;
+                          ('Advise failed', hr.value) -> ComErrorMessage;
+                       #)
+                   if);
+               if);
+            else
+               (if debugging then
+                   'Failed to get DWebBrowserEvents2' -> debugCom;
+               if);
+           if);
+           (if debugging then
+               'Releasing pICPC' -> debugCom;
+           if);
+           pICPC.Release;
+           (if debugging then
+               'Released pICPC' -> debugCom;
+           if);
+       if);
+       
+       (if debugging then
+           'Initializing BSTR' -> debugCom;
+       if);
+       location[] -> str.setText;
+       (if debugging then
+           'Initializing URL VARIANT' -> debugCom;
+       if);
+       mydata.url[]->VARIANT_init
+       (# 
+       do VT_BSTR -> vt;
+          str -> bstrVal;
+       #);
+       (if debugging then
+           'Initializing empty VARIANT' -> debugCom;
+       if);
+       mydata.empty[]->VARIANT_init
+       (# 
+       do VT_EMPTY -> vt;
+       #);
+       (if debugging then
+           'Calling pIWebBrowser2.putVisible' -> debugCom;
+       if);
+       1 -> pIWebBrowser2.putvisible;
+       (if debugging then
+           'Calling pIWebBrowser2.Navigate2' -> debugCom;
+       if);
+       (mydata.url[], mydata.empty[], mydata.empty[], mydata.empty[], mydata.empty[])
+         ->pIWebBrowser2.Navigate2;
+       (if true then
+           (if debugging then
+               'Keeping IWebBrowser2' -> debugCom;
+           if);
+        else
+           (if debugging then
+               'Releasing interfaces' -> DebugCom;
+           if);
+           (if pIWebBrowser2[]<>NONE then 
+               pIWebBrowser2.Release; 
+               (if debugging then
+                   'Succeeded releasing interface IWebBrowser2'->debugCom;
+               if);
+           if);
+       if);
+    else
+       (if debugging then
+           'Could not create component'->debugCom;
+       if);
+   if); 
+   (if true then
+       (if debugging then
+           'No CoUninitializing' -> debugCom;
+       if);
+    else
+       (if debugging then
+           'CoUninitialize'->debugCom;
+       if);
+       CoUninitialize;
+       (if debugging then
+           'CoUninitialize done'->debugCom;
+       if);
+   if);
+#)

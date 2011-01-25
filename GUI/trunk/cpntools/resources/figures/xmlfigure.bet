@@ -1,0 +1,100 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../../cpnworkspace';
+INCLUDE '../../debug';
+INCLUDE 'figure';
+INCLUDE 'createfigures';
+INCLUDE '../../instruments/cpnoption';
+
+-- CPNWorkspacelib: attributes --
+
+XMLFigure: Figure
+  (# initialFigure: ^Figure;
+     thePhase: @integer;
+     finish:
+       (# product: ^Notifier;
+          aPlace: ^Place;
+          aTrans: ^Transition;
+          asArc: ^Arc;
+          theAnnotation: ^Annotation;
+       enter product[]
+       do (if product##
+           //Arc## then
+              product[] -> asArc[];
+              none -> asArc.setBends;
+              
+              &Place[] -> aPlace[];
+              'Template_Arc_place' -> aPlace.id[];
+              aPlace.init;
+              (30,30) -> aPlace.position;
+              compiled -> aPlace.status;
+              aPlace[] -> asArc.setPlaceEnd;
+              
+              &Transition[] -> aTrans[];
+              'Template_Arc_trans' -> aTrans.id[];
+              aTrans.init;
+              (0,0) -> aTrans.position;
+              compiled -> aTrans.status;
+              aTrans[] -> asArc.setTransEnd;
+              
+              asArc.getAnnotation -> theAnnotation[];
+              (if theAnnotation[] <> none then
+                  (0,0) -> theAnnotation.position;
+                  0.5 -> theAnnotation.t;
+                  7 -> theAnnotation.dist;
+                  true -> theAnnotation.attached;
+                  theAnnotation.computePosition;
+              if);
+          if);
+       #);
+     
+     update::
+       (* When this figure is used in the clone tool's first
+        * phase, the clone figure should be shown
+        *)
+       (# 
+       do (if (thePhase=0) and (('recipe' -> options.lookupOption) = none) then
+              initialFigure[] -> remove;
+              initialFigure[] -> add;
+          if);
+       #);
+     
+     onChanged::
+       (# xmlElm: ^theXML.Element;
+          product: ^Entity;
+          tmp: ^Text;
+          presentation: ^Composite;
+          phasekey: ^Text;
+       do 
+       #);
+     
+     init::
+       (# 
+       do &CloneFigure[] -> initialFigure[];
+          initialFigure.init;
+          initialFigure[] -> add;
+       #);
+  #);

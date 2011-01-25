@@ -1,0 +1,519 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '~beta/postwimp/workspace';
+
+INCLUDE 'figure';
+INCLUDE '../default-values';
+
+-- workspacelib: attributes --
+
+LeftFacingTriangleFigure: Figure
+  (# useDefaultHotspot::(# do true -> value; #);
+     theTriangleFigure: ^Composite;
+     theTriangle: ^Line;
+     point: ^Point2d;
+     
+     init::
+       (# 
+       do 
+          &Composite[]->theTriangleFigure[];
+          &Line[]->theTriangle[];
+          
+          &PointList[]->theTriangle.points[];
+          (for 3 repeat &Point2d[]->point[]->theTriangle.points.append; for);
+
+          theTriangle[]->theTriangleFigure.add;
+          theTriangleFigure[]->add;     
+          
+          Layout;
+       #);
+     
+     Layout:(# 
+            do
+               1->theTriangle.points.get->point[];
+               (0,0)->point;
+               2->theTriangle.points.get->point[];
+               (0,16)->point;
+               3->theTriangle.points.get->point[];
+               (-8,8)->point;            
+            #);
+     
+  #);
+
+RightFacingTriangleFigure: Figure
+  (# useDefaultHotspot::(# do true -> value; #);
+     theTriangleFigure: ^Composite;
+     theTriangle: ^Line;
+     point: ^Point2d;
+     
+     init::
+       (# 
+       do &Composite[]->theTriangleFigure[];
+          &Line[]->theTriangle[];
+          
+          &PointList[]->theTriangle.points[];
+          (for 3 repeat &Point2d[]->point[]->theTriangle.points.append; for);
+
+          theTriangle[]->theTriangleFigure.add;
+          theTriangleFigure[]->add;     
+          
+          Layout;
+       #);
+     
+     Layout:
+       (# 
+       do 1->theTriangle.points.get->point[];
+          (0,0)->point;
+          2->theTriangle.points.get->point[];
+          (0,16)->point;
+          3->theTriangle.points.get->point[];
+          (8,8)->point;
+       #);
+     
+  #);
+
+RewindFigure: Figure
+  (# useDefaultHotspot::(# do true -> value; #);
+     theRewindFigure: ^Composite;
+     theLeftTriangle: ^LeftFacingTriangleFigure;
+     theRightTriangle: ^LeftFacingTriangleFigure;
+     theStyle: ^CompositeStyle;
+     theBasicStyle: ^BasicStyle;
+     point: ^Point2d;
+     
+     init::<
+       (# 
+        do &Composite[]->theRewindFigure[];
+          &LeftFacingTriangleFigure[]->theLeftTriangle[];
+          &LeftFacingTriangleFigure[]->theRightTriangle[];
+          
+          &CompositeStyle[]->theStyle[];
+          &BasicStyle[]->theBasicStyle[];
+          
+          theBasicStyle[]->theStyle.add;
+          theStyle[]->theRewindFigure.theStyle[];
+          
+          (black[],black[],1)->theBasicStyle;
+          
+          theLeftTriangle[]->theRewindFigure.add;
+          theRightTriangle[]->theRewindFigure.add;
+          theRewindFigure[]->add;
+          
+          Layout;         
+       #);
+     
+     Layout:
+       (# 
+       do theLeftTriangle.init;
+          theRightTriangle.init;
+          (-8,0)->(theRightTriangle.x,theRightTriangle.y);
+       #);
+  #);
+
+StopFigure: Figure
+  (# useDefaultHotspot::(# do true -> value; #);
+     theStopFigure: ^Composite;
+     theBox: ^Rect;
+     theBasicStyle: ^BasicStyle;
+     
+     init::(# 
+           do
+              &Composite[]->theStopFigure[];
+              &Rect[]->theBox[];
+              
+              &BasicStyle[]->theBasicStyle[];
+              (redish[],redish[],1)->theBasicStyle;
+              theBasicStyle[]->theStopFigure.theStyle[];
+              
+              theBox[]->theStopFigure.add;
+              theStopFigure[]->add;
+              
+              Layout;
+           #);
+     
+     Layout:(# 
+            do
+               (0,0)->(theBox.x,theBox.y);
+               (16,16)->(theBox.width,theBox.height);
+            #);
+     
+  #);
+
+PlayFigure: Figure
+  (# useDefaultHotspot::(# do true -> value; #);
+     thePlayFigure: ^Composite;
+     theTriangle: ^RightFacingTriangleFigure;
+     theBasicStyle: ^BasicStyle;
+          
+     init::(# 
+           do
+              &Composite[]->thePlayFigure[];
+              &RightFacingTriangleFigure[]->theTriangle[];
+              
+              &BasicStyle[]->theBasicStyle[];
+              (black[],black[],1)->theBasicStyle;
+              theBasicStyle[]->thePlayFigure.theStyle[];
+              
+              theTriangle[]->thePlayFigure.add;
+              thePlayFigure[]->add;
+              
+              TheTriangle.init;
+              
+              Layout;
+           #);
+     
+     Layout:
+       (# 
+       do TheTriangle.layout; 
+       #);
+     
+  #);
+
+OneStepFigure: Figure
+  (# useDefaultHotspot::(# do true -> value; #);
+     theOneStepFigure: ^Composite;
+     theTriangle: ^RightFacingTriangleFigure;
+     theLine: ^Line;
+     theBasicStyle: ^BasicStyle;
+     point: ^Point2d;
+     
+     init::(# 
+           do
+              &Composite[]->theOneStepFigure[];
+              &RightFacingTriangleFigure[]->theTriangle[];
+              &Line[]->theLine[];
+              
+              &PointList[]->theLine.points[];
+              (for 4 repeat &Point2d[]->point[]->theLine.points.append for);
+              
+              &BasicStyle[]->theBasicStyle[];
+              (black[],black[],1)->theBasicStyle;
+              theBasicStyle[]->theTriangle.theStyle[];
+              
+              &BasicStyle[]->theBasicStyle[];
+              (black[],black[],1)->theBasicStyle;
+              theBasicStyle[]->theLine.theStyle[];
+              
+              theTriangle[]->theOneStepFigure.add;
+              theLine[]->theOneStepFigure.add;
+              theOneStepFigure[]->add;
+              
+              Layout;
+           #);
+     
+     Layout:(# 
+            do
+               TheTriangle.init;
+               1->theLine.points.get->point[];
+               (8,0)->point;
+               2->theLine.points.get->point[];
+               (8,16)->point;
+               3->theLine.points.get->point[];
+               (9,16)->point;
+               4->theLine.points.get->point[];
+               (9,0)->point;
+            #);
+  #);
+
+FastForwardFigure: Figure
+  (# useDefaultHotspot::(# do true -> value; #);
+     theFastForwardFigure: ^Composite;
+     theLeftTriangle: ^RightFacingTriangleFigure;
+     theRightTriangle: ^RightFacingTriangleFigure;
+     theStyle: ^CompositeStyle;
+     theBasicStyle: ^BasicStyle;
+     point: ^Point2d;
+     
+     init::<
+       (# 
+        do &Composite[]->theFastForwardFigure[];
+          &RightFacingTriangleFigure[]->theLeftTriangle[];
+          &RightFacingTriangleFigure[]->theRightTriangle[];
+          
+          &CompositeStyle[]->theStyle[];
+          &BasicStyle[]->theBasicStyle[];
+          
+          theBasicStyle[]->theStyle.add;
+          theStyle[]->theFastForwardFigure.theStyle[];
+          
+          (black[],black[],1)->theBasicStyle;
+          
+          theLeftTriangle[]->theFastForwardFigure.add;
+          theRightTriangle[]->theFastForwardFigure.add;
+          theFastForwardFigure[]->add;
+          
+          Layout;         
+       #);
+     
+     Layout:
+       (# 
+       do theLeftTriangle.init;
+          theRightTriangle.init;
+          (8,0)->(theRightTriangle.x,theRightTriangle.y);
+       #);
+  #);
+
+BindManuallyFigure: Figure
+  (# useDefaultHotspot::(# do true -> value; #);
+     theBindManuallyFigure: ^Composite;
+     theTriangle: ^RightFacingTriangleFigure;
+     theGreenCircle: ^Ellipse;
+     theStyle: ^CompositeStyle;
+     theCircleStyle: ^BasicStyle;
+     theBasicStyle: ^BasicStyle;
+     point: ^Point2d;
+     
+     init::<
+       (# 
+       do &Composite[]->theBindManuallyFigure[];
+          &RightFacingTriangleFigure[]->theTriangle[];
+          &Ellipse[]->theGreenCircle[];
+          (10,10)->(theGreenCircle.height,theGreenCircle.width);
+          
+          &CompositeStyle[]->theStyle[];
+          &BasicStyle[]->theBasicStyle[];
+          &BasicStyle[] -> theCircleStyle[];
+          
+          theBasicStyle[]->theStyle.add;
+          theStyle[]->theBindManuallyFigure.theStyle[];
+          theCircleStyle[] -> theGreenCircle.theStyle[];
+          
+          (black[],token_color,1)->theCircleStyle;
+          (black[],black[],1)->theBasicStyle;
+          
+          theGreenCircle[]->theBindManuallyFigure.add;
+          theTriangle[]->theBindManuallyFigure.add;
+          theBindManuallyFigure[]->add;
+          
+          Layout;         
+       #);
+     
+     Layout:
+       (# 
+       do theBindManuallyFigure.init;
+          theTriangle.init;
+          theGreenCircle.init;
+          (17,9)->(theGreenCircle.x,theGreenCircle.y);
+       #);
+  #);
+
+MLEvaluateFigure: Figure
+  (# useDefaultHotspot::(# do true -> value; #);
+     theMLEvaluateFigure: ^Composite;
+     theM: ^Composite;
+     theL: ^Composite;
+     theYellSign: ^Composite;
+     theMLeftPart: ^Line;
+     theMMiddlePart: ^Line;
+     theMTopLeftPart: ^Line;
+     theMTopRightPart: ^Line;
+     theMRightPart: ^Line;
+     theLLeftPart: ^Line;
+     theLBottomPart: ^Line;
+     theYellSignDot: ^Line;
+     theYellSignLine: ^Line;
+     theStyle: ^CompositeStyle;
+     theBasicStyle: ^BasicStyle;
+     theColor: ^Color;
+     point: ^Point2d;
+     
+     init::< 
+       (# 
+       do &Composite[]->theMLEvaluateFigure[];
+          &Composite[]->theM[];
+          &Composite[]->theL[];
+          &Composite[]->theYellSign[];
+          
+          &Line[]->theMLeftPart[];
+          &Line[]->theMMiddlePart[];
+          &Line[]->theMTopLeftPart[];
+          &Line[]->theMTopRightPart[];
+          &Line[]->theMRightPart[];
+          
+          &Line[]->theLLeftPart[];
+          &Line[]->theLBottomPart[];
+          
+          &Line[]->theYellSignDot[];
+          &Line[]->theYellSignLine[];
+          
+          &PointList[]->theMLeftPart.points[];
+          (for 5 repeat &Point2d[]->point[]->theMLeftPart.points.append; for);
+          &PointList[]->theMMiddlePart.points[];
+          (for 6 repeat &Point2d[]->point[]->theMMiddlePart.points.append; for);
+          &PointList[]->theMTopLeftPart.points[];
+          (for 4 repeat &Point2d[]->point[]->theMTopLeftPart.points.append; for);
+          &PointList[]->theMTopRightPart.points[];
+          (for 4 repeat &Point2d[]->point[]->theMTopRightPart.points.append; for);
+          &PointList[]->theMRightPart.points[];
+          (for 5 repeat &Point2d[]->point[]->theMRightPart.points.append; for);
+          
+          
+          &PointList[]->theLLeftPart.points[];
+          (for 5 repeat &Point2d[]->point[]->theLLeftPart.points.append; for);
+          &PointList[]->theLBottomPart.points[];
+          (for 5 repeat &Point2d[]->point[]->theLBottomPart.points.append; for);
+          
+          &PointList[]->theYellSignDot.points[];
+          (for 5 repeat &Point2d[]->point[]->theYellSignDot.points.append; for);       
+          &PointList[]->theYellSignLine.points[];
+          (for 5 repeat &Point2d[]->point[]->theYellSignLine.points.append; for);       
+          
+          &CompositeStyle[]->theStyle[];
+          &BasicStyle[]->theBasicStyle[];
+          
+          theBasicStyle[]->theStyle.add;
+          theStyle[]->theM.theStyle[];
+          theStyle[]->theL.theStyle[];
+          theStyle[]->theYellSign.theStyle[];
+          
+          (Navy[],Navy[],1)->theBasicStyle;
+          
+          theMLeftPart[]->theM.add;
+          theMMiddlePart[]->theM.add;
+          theMTopLeftPart[]->theM.add;
+          theMTopRightPart[]->theM.add;
+          theMRightPart[]->theM.add;
+          
+          theLLeftPart[]->theL.add;
+          theLBottomPart[]->theL.add;
+          
+          theYellSignDot[]->theYellSign.add;
+          theYellSignLine[]->theYellSign.add;
+          
+          theM[]->theMLEvaluateFigure.add;
+          theL[]->theMLEvaluateFigure.add;
+          theYellSign[]->theMLEvaluateFigure.add;
+          theMLEvaluateFigure[]->add;
+          
+          Layout;
+       #);     
+     
+     Layout: 
+       (# (* The line is drawn relative to the toolcell - 
+           * the other icons are drawn in global coords.
+           * Why is that? 
+           *)
+       do 
+          1->theMLeftPart.points.get->point[];
+          (0,18)->point;
+          2->theMLeftPart.points.get->point[];
+          (0,0)->point;
+          3->theMLeftPart.points.get->point[];
+          (6,0)->point;
+          4->theMLeftPart.points.get->point[];
+          (6,18)->point;
+          5->theMLeftPart.points.get->point[];
+          (0,18)->point;
+            
+          1->theMMiddlePart.points.get->point[];
+          (6,2)->point;
+          2->theMMiddlePart.points.get->point[];
+          (10,2)->point;
+          3->theMMiddlePart.points.get->point[];
+          (10,6)->point;
+          4->theMMiddlePart.points.get->point[];
+          (8,8)->point;
+          5->theMMiddlePart.points.get->point[];
+          (6,6)->point;
+          6->theMMiddlePart.points.get->point[];
+          (6,2)->point;
+          
+          1->theMTopLeftPart.points.get->point[];
+          (6,2)->point;
+          2->theMTopLeftPart.points.get->point[];
+          (6,0)->point;
+          3->theMTopLeftPart.points.get->point[];
+          (8,2)->point;
+          4->theMTopleftPart.points.get->point[];
+          (6,2)->point;
+          
+          1->theMTopRightPart.points.get->point[];
+          (8,2)->point;
+          2->theMTopRightPart.points.get->point[];
+          (10,0)->point;
+          3->theMTopRightPart.points.get->point[];
+          (10,2)->point;
+          4->theMTopRightPart.points.get->point[];
+          (8,2)->point;
+          
+          1->theMRightPart.points.get->point[];
+          (10,18)->point;
+          2->theMRightPart.points.get->point[];
+          (10,0)->point;
+          3->theMRightPart.points.get->point[];
+          (16,0)->point;
+          4->theMRightPart.points.get->point[];
+          (16,18)->point;
+          5->theMRightPart.points.get->point[];
+          (10,18)->point;
+          
+          1->theLLeftPart.points.get->point[];
+          (18,18)->point;
+          2->theLLeftPart.points.get->point[];
+          (18,0)->point;
+          3->theLLeftPart.points.get->point[];
+          (24,0)->point;
+          4->theLLeftPart.points.get->point[];            
+          (24,18)->point;
+          5->theLLeftPart.points.get->point[];            
+          (18,18)->point;
+          
+          1->theLBottomPart.points.get->point[];
+          (24,18)->point;
+          2->theLBottomPart.points.get->point[];
+          (24,12)->point;
+          3->theLBottomPart.points.get->point[];
+          (30,12)->point;
+          4->theLBottomPart.points.get->point[];
+          (30,18)->point;
+          5->theLBottomPart.points.get->point[];
+          (24,18)->point;
+          
+          1->theYellSignDot.points.get->point[];
+          (32,18)->point;
+          2->theYellSignDot.points.get->point[];
+          (32,12)->point;
+          3->theYellSignDot.points.get->point[];
+          (38,12)->point;
+          4->theYellSignDot.points.get->point[];
+          (38,18)->point;
+          5->theYellSignDot.points.get->point[];
+          (32,18)->point;
+          
+          
+          1->theYellSignLine.points.get->point[];
+          (34,10)->point;
+          2->theYellSignLine.points.get->point[];
+          (32,0)->point;
+          3->theYellSignLine.points.get->point[];
+          (38,0)->point;
+          4->theYellSignLine.points.get->point[];
+          (36,10)->point;
+          5->theYellSignLine.points.get->point[];
+          (34,10)->point;
+       #);
+     
+  #);
