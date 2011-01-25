@@ -1,0 +1,335 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '~beta/postwimp/workspace';
+
+INCLUDE 'private/bindingdialogdatastructures';
+INCLUDE '~beta/basiclib/random';
+INCLUDE '../resources/default-values';
+INCLUDE '../resources/texts/texts';
+
+BODY 'private/bindingindexbody';
+
+-- workspacelib: attributes --
+
+BindingIndex: abstractwsIndex
+  (#
+     bindingGroups: ^BindingGroupSequence;
+     possibleMarkings: ^IntObjListSequence;
+          
+     (*Exits a list of the bindings chosen. If a value hasn't been chosen for a variable,
+      *then this pattern will choose one.*)
+     getChosenBindings:
+       (# bindings: ^IntObjList;
+       <<SLOT bindingindexGetChosenBindings:doPart>>
+       exit bindings[]          
+       #);
+     fired: @boolean;
+     isBindingDone:
+       (# bindingDone: @boolean;
+       <<SLOT bindingindexIsBindingDone:doPart>>
+       exit bindingDone
+       #);
+
+     bindingColor: backgroundColor
+       (#
+       do lightblueish[] -> c[];
+          c.lighten -> c[];
+       #);
+     firedColor: backgroundColor
+       (# 
+       do yellow[] -> c[];
+          (for i:18 repeat
+               c.lighten -> c[];
+          for);
+       #);
+     getBackgroundColor::
+       (# 
+       do (if fired then
+              firedColor -> c[];
+           else
+              bindingColor -> c[];
+          if);
+       #);
+     
+     maxBackgroundHeight::<
+       (# 
+       do THIS(World).height/2 -> maxHeight;
+       #);
+     
+     doLayout::<
+       (# hideFrameworkScrollbars: (# do 0 -> maxscroll; #);
+       do 
+       #);    
+     
+     
+     
+     (*Init stuff*)
+     init::<
+       (# infCont: ^IntObjSequence;
+          cont: ^TextSequence;
+          errorMessageNode: ^AbstractWorkspaceNode;
+       enter (infCont[], cont[])
+       do false -> fired;          
+                    
+          &BindingGroupSequence[] -> bindingGroups[];
+          bindingGroups.init;
+          &IntObjListSequence[] -> possibleMarkings[];
+          possibleMarkings.init;
+          
+          (infCont[],cont[])->initNodes;
+          
+          (if theIndexNodes.size=0 then
+              &AbstractWorkspaceNode[] -> errorMessageNode[];
+              errorMessageNode.init;
+              NoVariablesToBind -> getGlobalNames -> errorMessageNode.setTextContent;
+              errorMessageNode[] -> addIndexNode;
+          if);
+          
+          doLayout;
+       #);
+ 
+     (*Inits all members of the index*)
+     initNodes:
+       (# 
+          infoOnContent: ^IntObjSequence; (*Of the form "#groups,#vars-group1
+                                           * ,#bindings-group1,..."*)
+          content: ^TextSequence; (*Of the form "var1,...vari,val11,...,
+                                   * val1i,...,val1n,...valin,vari+1,..."*)
+          noOfBindingGroups: ^IntegerObject;
+          i: @integer;
+          currentPoint, thisGroupsEndPoint: @integer;
+          varsInThisGroup, noOfBindingsInThisGroup: ^IntegerObject;
+          indexForNoOfVars: @integer;
+          groupContent: ^TextSequence;
+       enter (infoOnContent[], content[])
+       <<SLOT bindingindexInitNodes:doPart>>
+       #);
+     
+     (*Inits the collection with lists of nodes in a binding group.
+      *Creates new empty lists for each binding group and adds them
+      * to the collection. Also creates empty list for the collection
+      * of markings *)
+     initBindingGroupAndMarkingCollections:
+       (# 
+          noOfGroups: @integer;
+          nodeCollection: ^BindingNodeList;
+          markingCollection: ^IntObjList;
+       enter noOfGroups
+       do
+          (for i: noOfGroups repeat
+               &BindingNodeList[] -> nodeCollection[];
+               nodeCollection[] -> bindingGroups.append;
+               &IntObjList[] -> markingCollection[];
+               markingCollection[] -> possibleMarkings.append;
+          for);
+       #);
+     
+     
+     (*Inits all members of a binding group*)
+     initBindingGroup:
+       (# 
+          bgNo: @integer;
+          noOfMembers: @integer;
+          content: ^TextSequence;(*Of the form
+                                  * "var1,...vari,val11,...,val1i,...,val1n,...valin"*)
+          memberNodes: ^BindingNodeList;
+          markings: ^IntObjList;
+          i,j,k,l,noOfMarkings: @integer;
+          childToCheck: ^Text;
+          varNode: ^BindingNode;
+          valNode: ^BindingValueNode;
+          childrenToAdd: ^TextSequence;
+          childrenAltNo: ^IntObjListSequence;
+          altNoObj: ^IntegerObject;
+          altNo: ^IntObjList;(*The list is sorted with lowest value first*)
+       enter (bgNo, noOfMembers, content[])
+       <<SLOT bindingindexInitBindingGroup:doPart>>
+       #);
+     
+     (*Updates all necessary nodes when a binding is chosen for one
+      * member of the binding group. Is called by the node that a
+      * binding has been chosen for.*)
+     updateBindingGroup:
+       (# 
+          boundNode: ^BindingNode;
+          bindingAlt: ^IntObjList;
+          bindingGroup: ^BindingNodeList;
+          markingsLeft: ^IntObjList;
+          newMarkingsLeft: ^IntObjList;
+       enter
+          (boundNode[],bindingAlt[])
+       do
+          &IntObjList[] -> newMarkingsLeft[];
+          newMarkingsLeft.init;
+          boundNode.getBindingGroup -> bindingGroups.get -> bindingGroup[];
+          boundNode.getBindingGroup -> possibleMarkings.get -> markingsLeft[];
+                   
+          addPossibleBindingsToPossibleBindingsLeft: bindingAlt.scan
+            (# 
+            do
+               (if (current[] -> markingsLeft.has) then
+                   current[] -> newMarkingsLeft.append;
+               if);                        
+            #);
+          (boundNode.getBindingGroup,newMarkingsLeft[]) -> possibleMarkings.put;
+          filterChildrensChildren: bindingGroup.scan
+            (# 
+            do 
+               newMarkingsLeft[] -> current.filterChildren;
+            #);
+       #);
+      
+     (*-------------Nodes------------*)
+     (*Var name node*)
+     BindingNode: AbstractVariableNode
+       (# 
+          dragable:: falseObject;
+          editable:: falseObject;
+          
+          bindingGroup: @integer;
+          
+          init::
+            (# bg: @integer;
+            enter bg        
+            do bg -> bindingGroup;
+            #);
+                    
+          (*Sets a binding of this var and removes all children*)
+          setBinding:
+            (# b: ^text;
+            enter b[]
+            do b[] -> chosenContent[];
+               clearIndexNodes;
+            #);
+          
+          getBindingGroup:
+            (# 
+            exit bindingGroup
+            #);
+          
+          (*Removes the children that don't match alternative number(s).
+           *Called when a binding is chosen for another member of 
+           *this var's binding group *)
+          filterChildren:
+            (# 
+               alt: ^IntObjList;
+            enter alt[]
+            do
+               filterTheChildren: scanIndexNodes
+                 (# 
+                    type:: BindingValueNode;
+                    keepChild: @boolean;
+                    currentNode: ^BindingValueNode;
+                 do 
+                    current[] -> currentNode[];
+                    false -> keepChild;
+                    search: alt.scan
+                      (# 
+                      do (if (current->currentNode.isAltNumber) then
+                             true -> keepChild;
+                             leave search;
+                         if);
+                      #);
+                    (if not keepChild then
+                        current[] -> removeIndexNode;
+                    if);
+                 #);
+               checkForSingleChild;
+            #);
+       #);
+     
+     (*Val node*)
+     BindingValueNode: AbstractPickableNode
+       (# 
+          dragable:: falseObject;
+          editable:: falseObject;
+                   
+          fatherType:: BindingNode;
+                    
+          altNo: ^IntObjList;(*The alternative number(s) this val matches. Content mathces 
+                              *simulator index. That is it starts at 0 and not at 1.*)
+          init::
+            (# 
+               aN: @IntObjList;
+            enter aN               
+            do
+               &IntObjList[] -> altNo[];
+               altNo.init;
+               aN.scan
+               (# 
+               do current[] -> altNo.append;
+               #);
+             #);
+          
+          (*Binds this node's value to the father node. Removes all nodes 
+           * from the father and calls updateBindingGroup*)
+          chooseThisValue::
+            (# tmp: ^BindingNode;
+            do 
+               father[] -> tmp[];
+               val[] -> father.setBinding;
+               (tmp[],altNo[]) -> updateBindingGroup;
+               THIS(BindingIndex).changed;
+            #);
+          
+          (*Checks if this binding matches a given alternative number*)
+          isAltNumber:
+            (# 
+               alt: @integer;
+               isAltNo: @boolean;
+            enter alt
+            do
+               false -> isAltNo;
+               search: altNo.scan
+                 (# 
+                 do (if current = alt then
+                        true -> isAltNo;
+                        leave search;
+                    if);
+                 #);
+            exit isAltNo
+            #);
+       #);
+     
+     (*----------Datastructures--------------*)
+     (*List used since all elements need to be scanned anyway*)
+     BindingNodeList: List
+       (# 
+          element:: BindingNode;
+       #);
+     BindingNodeSequence: Sequence
+       (# 
+          element:: BindingNode;
+       #);
+     (*Sequence used to support both type check and random access*)
+     BindingGroupSequence: Sequence
+       (# 
+          element:: BindingNodeList;
+       #);
+          
+  #);
+
+

@@ -1,0 +1,137 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '~beta/postwimp/workspace';
+INCLUDE '../resources/figures/indexfigures';
+BODY 'private/statusbubblebody';
+
+-- Workspacelib: attributes --
+StatusBubble: Entity
+  (# theMessage: ^Text;
+     
+     onClick:<
+       (# 
+       do nomessages;
+          theSpeachbubble.hide;
+       #);
+     
+     theSpeachbubble: @SpeachBubble;
+     
+     init:<
+       (# 
+       do theSpeachbubble.init;
+          theSpeachbubble[] -> theIndex.attach;
+          this(StatusBubble)[] -> theSpeachbubble.owner[];
+          theIndex.backgroundStyle.fill[] -> theSpeachbubble.setColor;
+          nomessages;
+          theSpeachbubble.hide;
+          INNER;
+       #);
+     
+     onChanged::
+       (# 
+       do (if source[] = theSpeachbubble[] then
+              nomessages;
+          if);
+       #);
+     
+     update::
+       (# 
+       do theSpeachbubble[] -> presentation.add;
+       #);
+     
+     tooltip::
+       (# 
+       do (if theMessage[] <> none then
+              theMessage.copy -> theTip[];
+          if);
+       #);
+     
+     monolog:
+       (# itemType:< Item;
+          theColor: ^Color;
+          shouldNotBeRemovedAutomatic: @boolean;
+       enter theMessage[]
+       do INNER;
+          (if theColor[] <> none then
+              theColor[] -> theSpeachbubble.setColor;
+          if);
+          &itemType[] -> theSpeachbubble.piktogram;
+          theSpeachbubble.show;
+          (if shouldNotBeRemovedAutomatic then
+              theSpeachbubble.BubbleHider.stop; 
+          if);
+       #);
+     
+     nomessages: monolog
+       (# 
+       do none -> theMessage[];
+       #);
+     
+     error: monolog
+       (# 
+       do true -> shouldNotBeRemovedAutomatic;
+          Red[] -> theColor[];
+       #);
+     
+     warning: monolog
+       (# 
+       do yellow[] -> theColor[];
+       #);
+     
+     message: monolog
+       (#
+       do Green[] -> theColor[];
+       #);
+     
+  #);
+
+(* This type of bubble appears on the screen when start is called,
+ * and disappears on stop. It is created to make it possible to 
+ * give feedback while the system is working in the background, 
+ * e.g. during a long fast forward or when entering state space.
+ * See bugs #421 and #598.
+ *)
+FixedStatusBubble: StatusBubble
+  (# 
+     monolog:
+       (# itemType:< Item;
+          theColor: ^Color;
+       enter theMessage[]
+       do INNER;
+          (if theColor[] <> none then
+              theColor[] -> theSpeachbubble.setColor;
+          if);
+          &itemType[] -> theSpeachbubble.piktogram;
+       #);
+     
+     running: monolog
+       (# 
+       do lightblueish[] -> theColor[];
+       #);
+     
+     start: (# <<SLOT FixedStatusBubbleStart:doPart>> #);
+     stop: (# do theSpeachbubble.hide #);
+  #);
