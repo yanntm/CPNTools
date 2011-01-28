@@ -227,6 +227,15 @@ fun HomeSpace' CPN'NodeList
                               false,
                 1, fn _ => (), true, fn _=> false);
 
+fun HomePredicate CPN'Predicate
+ =
+let
+   fun CPN'ContainsNoSatisfying CPN'scc = not (List.null (PredNodes(SccToNodes CPN'scc, fn CPN'scc => not (CPN'Predicate CPN'scc), 1)))
+in
+   List.null (PredSccs (PredAllSccs SccTerminal, CPN'ContainsNoSatisfying, 1))
+end
+
+
 (*ii*)
 fun MinimalHomeSpace () = 
     let 
