@@ -1,0 +1,2058 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../cpnworkspace';
+INCLUDE '../../cpnet/cpnet';
+INCLUDE '../cursors/stdcursors';
+INCLUDE '../resources/texts/texts';
+INCLUDE '../resources/figures/createfigures';
+INCLUDE '../resources/figures/standardfigures';
+INCLUDE '../instruments/creationinstruments';
+INCLUDE 'geometryrecords';
+BODY 'private/moveinstrumentsbody';
+
+-- CPNWorkSpaceLib: Attributes --
+
+TextEditOnMove: (# exit false #);
+
+ToggleMarkingCommand: Command
+  (# TargetType:: Token;
+     getName:: (# do 'Hide/show Marking' -> name[]; #);
+     apply:: (# do redo; #);
+     redo:: (# do target.onClicked; #);
+     undo:: (# do target.onClicked; #);
+  #);
+
+ToggleMarking:
+  (# target: ^Token;
+     com: ^ToggleMarkingCommand;
+  enter target[]
+  do &ToggleMarkingCommand[] -> com[];
+     target[] -> com.prepare;
+     com.apply;
+     (target.thePlace.getCPNet,com[]) -> registerCommand;
+  #); 
+MoveVerticalGuideCommand: MoveGuideCommand
+  (# TargetType:: VerticalGuideline;
+     before, after: @real;
+     prepare:: 
+       (# 
+       enter (before, after)
+       #);
+     undo::
+       (#
+       do (target[], before - after) -> set_x_VerticalGuideline;
+       #);
+     redo::
+       (#
+       do (target[], after - before) -> set_x_VerticalGuideline;
+       #);
+     getName::
+       (#        
+       do 'Move Vertical Guideline' -> name[];
+       #);
+  #);
+MoveVerticalGuide:
+  (# target: ^VerticalGuideline;
+     before, after: @real;
+     com: ^MoveVerticalGuideCommand;
+     mergeCom: ^MoveAndMergeGuideLines;
+  enter (target[], before, after)
+  do &MoveVerticalGuideCommand[] -> com[];
+     (target[], before, after) -> com.prepare;
+     search: (target.getCPNPage).scanVerticalGuidelines
+     (#  (* We may have to merge guidelines *)
+     do (if target[] <> current[] then
+            (if (current.x - target.x -> fabs) < 10 then
+                &MoveAndMergeGuideLines[] -> mergeCom[];
+                (target[], com[], current[], before, after) -> mergeCom.prepare;
+                leave search;
+            if);
+        if);
+     #);
+     (if mergeCom[] <> NONE then
+         mergeCom.apply;
+         (target.getCPNet,mergeCom[]) -> registerCommand;
+      else
+         com.apply;
+         (target.getCPNet,com[]) -> registerCommand;
+     if);
+  #);
+
+set_x_VerticalGuideline:
+  (# target: ^VerticalGuideline;
+     dx: @real;
+  enter (target[], dx)
+  do target.x + dx -> target.x;
+     target.update;
+     target.scanGuideElements
+     (# pelm: ^PageElement;
+     do (if (current## <= PageElement##)  and not (current##<=Arc##) then
+            current[] -> pelm[];
+            target.x -> pelm.x;
+            pelm.changed;
+        if);
+        (if current## <= Node## then
+            current[] -> QUA
+            (# as::Node;
+            do thisObj.scanArcs
+               (#
+               do (if (current.placeEnd[] -> target.has) and
+                      (current.transEnd[] -> target.has) and 
+                      (thisObj## <= Transition##) then
+                      current.scanBendPoints
+                        (# gl: ^Guideline;
+                        do current.getGuideLine -> gl[];
+                           (if (gl[] = NONE) or 
+                               (not (gl## <= VerticalGuideline##)) then
+                             current.x + dx  -> current.x;
+                             current.changed;
+                         if);
+                      #);
+                  if);
+               #);
+            #);
+        if);
+     #);
+  #);
+
+MoveVerticalGuideInstrument: MoveInstrument
+  (# TargetType:: VerticalGuideline;
+     targetOrig: @Point2d;
+     targetNew: @Point2d;
+     initialhand: @Point2d;
+     last: @real;
+
+     apply::
+       (# 
+       do widget.cursors.move[] -> theHand.setTemporaryCursor;
+          target.x -> targetOrig.x;
+          target.x -> last;
+          theHand.anchor -> initialhand;
+       #);
+     onMouseMove::
+       (# new: @real;
+       do targetOrig.x+((theHand.x-initialhand.x) -> view_zoom_one) -> new;
+          (target[], new-last) -> set_x_VerticalGuideline;
+          new -> last;
+       #);
+
+     onMouseUp::
+       (# 
+       do NONE -> theHand.setTemporaryCursor;
+          target.x -> targetNew.x;
+          (target[], targetOrig.x, targetNew.x) -> MoveVerticalGuide;
+          finish;
+       #);
+  #);
+MoveHorizontalGuideCommand: MoveGuideCommand
+  (# TargetType:: HorizontalGuideline;
+     before, after: @real;
+     prepare::
+       (# 
+       enter (before, after)
+       #);
+     undo::
+       (# 
+       do (target[], before - after) -> set_y_HorizontalGuideline;
+       #);
+     redo:: 
+       (# 
+       do (target[], after - before) -> set_y_HorizontalGuideline;
+       #);
+     getName::
+       (#
+       do 'Move Horizontal Guideline' -> name[];
+       #);
+  #);
+
+MoveGuideCommand: Command
+  (# TargetType::< Guideline;
+     MoveRecord:
+       (# thePageElement: ^PageElement;
+          dx, dy: @real;
+          init:
+            (# 
+            enter (thePageElement[], dx, dy)
+            #);
+       #);
+     MoveRecordList: List
+       (# Element:: MoveRecord;
+       #);
+     records: ^MoveRecordList;
+     
+     prepare::<
+       (#
+       do (# thePage: ^CPNPage;
+             snapPageElement:
+               (# thePageElement: ^PageElement;
+                  theMoveRecord: ^MoveRecord;
+                  dx, dy: @real;
+               enter thePageElement[]
+               do (if NOT (thePageElement[] -> target.has) then
+                      (if thePageElement[] -> target.isObjectClose then
+                          (***
+                           * The true below means that bendpoints are excluded
+                           * from the snap
+                           ***)
+                          true -> thePageElement.snap -> (dx, dy);
+                          (if thePageElement[] -> target.isObjectOnGuide then
+                              thePageElement[] -> target.addGuideElement;
+                          if);
+                          (if (dx <> 0) or (dy <> 0) then
+                              thePageElement.changed;
+                              &MoveRecord[] -> theMoveRecord[];
+                              (thePageElement[], dx, dy) -> theMoveRecord.init;
+                              theMoveRecord[] -> records.append;
+                          if);
+                          
+                      if);
+                  if);
+               #);
+          do &MoveRecordList[] -> records[];
+             target.getCPNPage -> thePage[];
+             thePage.scanPageElements
+              (# theArc: ^Arc;            
+              do (if current## <= Arc## then
+                     current[] -> theArc[];
+                     (theArc.getBends).scan
+                     (# 
+                     do current[] -> snapPageElement;
+                     #);
+                  else
+                     current[] -> snapPageElement;
+                 if);
+              #);
+             thePage[] -> Loliteallguides;
+          #);
+          INNER;
+       #);
+     undo::<
+       (#
+       do records.scan
+          (#
+          do current.thePageElement[] -> target.removeGuideElement;
+             current.thePageElement.x - current.dx -> current.thePageElement.x;
+             current.thePageElement.y - current.dy -> current.thePageElement.y;
+             current.thePageElement.changed;
+          #);
+          INNER;
+       #);
+     redo::<
+       (#
+       do records.scan
+          (#
+          do current.thePageElement[] -> target.addGuideElement;
+             current.thePageElement.x + current.dx -> current.thePageElement.x;
+             current.thePageElement.y + current.dy -> current.thePageElement.y;
+             current.thePageElement.changed;
+          #);
+          INNER;
+       #);
+  #);
+
+MoveAndMergeGuideLines: Command
+  (# TargetType:: Guideline;
+     stationaryGuideline: ^GuideLine;
+     before, after: @real;
+     theMoveCommand: ^Command;
+     
+     
+     
+     prepare::
+       (#
+       enter (theMoveCommand[],stationaryGuideline[], before, after)
+       do 
+       #);
+     insert:
+       (#
+       do stationaryGuideline.scanGuideElements
+          (#
+          do current[] -> target.removeGuideElement;
+          #);
+          stationaryGuideline[] -> (target.getCPNPage).addGuideLine;
+          stationaryGuideline.apply;
+       #);
+     remove:
+       (#
+       do stationaryGuideline.scanGuideElements
+          (#
+          do current[] -> target.addGuideElement;
+          #);
+          stationaryGuideline[] -> (stationaryGuideline.getCPNPage).removeGuideline;
+       #);
+     undo::
+       (#
+       do insert;
+          theMoveCommand.undo;
+       #);
+     redo::
+       (#
+       do remove;
+          theMoveCommand.redo;
+       #);
+     apply:: (# do remove; theMoveCommand.undo; theMoveCommand.redo; #);
+     getName:: (# do 'Merge guidelines ' -> name[]; #);
+  #);
+MoveHorizontalGuide:
+  (# target: ^HorizontalGuideline;
+     before, after: @real;
+     com: ^MoveHorizontalGuideCommand;
+     mergeCom: ^MoveAndMergeGuideLines;
+  enter (target[], before, after)
+  do &MoveHorizontalGuideCommand[] -> com[];
+     (target[], before, after) -> com.prepare;
+     search: (target.getCPNPage).scanHorizontalGuidelines
+     (# (* We may have to merge guidelines *)
+     do (if target[] <> current[] then
+            (if (current.y-target.y -> fabs) < 10 then
+                &MoveAndMergeGuideLines[] -> mergeCom[];
+                (target[], com[], current[], before, after) -> mergeCom.prepare;
+                leave search; (* hopefully only one *)
+            if);
+        if);
+     #);
+     (if mergeCom[] <> NONE then 
+         mergeCom.apply;
+         (target.getCPNet,mergeCom[]) -> registerCommand;
+      else
+         com.apply;
+         (target.getCPNet,com[]) -> registerCommand;
+     if);
+  #);
+set_y_HorizontalGuideline:
+  (# target: ^HorizontalGuideline;
+     dy: @real;
+  enter (target[], dy)
+  do target.y + dy -> target.y;
+     target.update;
+     target.scanGuideElements
+     (# pelm: ^PageElement;
+     do (if (current## <= PageElement##)  and not (current##<=Arc##) then
+            current[] -> pelm[];
+            target.y -> pelm.y;
+            pelm.changed;
+        if);
+        (if current## <= Node## then
+            current[] -> QUA
+            (# as::Node;
+            do thisObj.scanArcs
+               (#
+               do (if (current.placeEnd[] -> target.has) and
+                      (current.transEnd[] -> target.has) and 
+                      (thisObj## <= Transition##) then
+                      current.scanBendPoints
+                      (# gl: ^GuideLine;
+                      do current.getGuideline -> gl[];
+                         (if (gl[] = NONE) or 
+                             (not (gl## <= HorizontalGuideline##)) then
+                             current.y + dy  -> current.y;
+                             current.changed;
+                         if);
+                      #);
+                  if);
+               #);
+            #);
+        if);
+     #);
+  #);
+
+MoveToolCellIndexInstrument: MoveInstrument
+  (# TargetType:: ToolCellIndex;
+     targetOrig: @point2d;
+     initialhand: @point2d;
+     targetPresentaion: ^Composite;
+     moving: @boolean;
+     apply::
+       (#
+       do widget.cursors.move[] -> theHand.setTemporaryCursor;
+          theHand.anchor -> initialhand;
+          target.present -> targetPresentaion[];
+          (targetPresentaion.x,targetPresentaion.y) -> targetOrig;
+          false -> moving;
+       #);
+     onMouseMove::
+       (# 
+       do (if theHand.distance > 2 then
+              (theHand.x-initialhand.x,theHand.y-initialhand.y)
+                -> targetPresentaion.move;
+              (theHand.x,theHand.y)->(initialhand.x,initialhand.y);
+              target.changed;
+              true -> moving;
+          if);
+       #);
+     onMouseUp::
+       (# 
+       do NONE -> theHand.setTemporaryCursor;
+          finish;
+       #);
+  #);
+
+MoveHorizontalGuideInstrument: MoveInstrument
+  (# TargetType:: HorizontalGuideline;
+     targetOrig: @Point2d;
+     targetNew: @Point2d;
+     initialhand: @Point2d;
+     last: @real;
+
+     apply::
+       (# 
+       do widget.cursors.move[] -> theHand.setTemporaryCursor;
+          target.y -> targetOrig.y;
+          target.y -> last;
+          theHand.anchor -> initialhand;
+       #);
+     onMouseMove::
+       (# new: @real;
+       do targetOrig.y+((theHand.y-initialhand.y) -> view_zoom_one) -> new;
+          (target[], new - last) -> set_y_HorizontalGuideline;
+          new -> last;
+       #);
+
+     onMouseUp::
+       (#
+       do NONE -> theHand.setTemporaryCursor;
+          target.y -> targetNew.y;
+          (target[], targetOrig.y, targetNew.y) -> MoveHorizontalGuide;
+          finish;
+       #);
+  #);
+
+ChangeArcCommand: GeometryCommand
+  (#
+     init::
+       (# before,after: ^BasicArcGeometryRecord;
+          beforelist, afterlist: ^BasicGeometryRecordList;
+       enter (before[],after[])
+       do &BasicGeometryRecordList[] -> beforelist[];
+          &BasicGeometryRecordList[] -> afterlist[];
+          &CommandGeometryRecord[] -> geo[];
+          before[] -> beforelist.append;
+          after[] -> afterlist.append;
+          geo[] -> QUA(# as:: CommandGeometryRecord;
+                      do (NONE,beforelist[],afterlist[]) -> thisObj.init;
+                      #);
+       #);
+  #);
+
+MoveArcCommand: ChangeArcCommand
+  (#
+     getName::
+       (#
+       do 'Move arc' -> name[];
+       #);
+  #);
+
+DeleteBendPointCommand: ChangeArcCommand
+  (#
+     getName::
+       (#
+       do 'Delete BendPoint' -> name[];
+       #);
+  #);
+
+MoveArcInstrument: MoveInstrument
+  (# TargetType:: Highlightable;
+     
+     bendPointAdded: @boolean;
+     theBendPoint: ^BendPoint;
+     bendPointIndex: @integer;
+     theArc: ^Arc;
+     
+     getBendFromPartCode:
+       (# findBend:
+            (#
+               bend: ^BendPoint;
+               inx: @integer;
+               bends: ^BendPointList;
+            enter inx
+            do theArc.getBends -> bends[];
+               (if (inx > 0) AND (inx <= bends.size) then
+                   inx -> bends.get -> bend[];
+               if);
+            exit bend[]
+            #);
+          
+          thePartCode: ^PartCode;
+          theBendPoint: ^BendPoint;
+       enter thePartCode[]
+       do (if ((thePartCode.part MOD 2) = 0) then
+              thePartCode.part div 2 -> FindBend -> theBendPoint[];
+          if);
+       exit theBendPoint[]
+       #);
+     
+     addBend:
+       (# x,y: @real;
+       enter (x,y)
+       do (# theClipping: ^BendPointClipping;
+             theGuideList: ^GuideLineList;
+          do (theArc.getCPNPage, x, y) -> MakeGuideList -> (theGuideList[], x, y);
+             &BendPointClipping[] -> theClipping[];
+             (theBendPoint[],bendPointIndex,theGuideList[]) -> theClipping.init;
+             theArc[] -> theClipping.insert;
+          #);
+          true -> bendPointAdded;
+       #);
+     
+     removeBend:
+       (# x,y: @real;
+       enter (x,y)
+       do (# theClipping: ^BendPointClipping;
+             theGuideList: ^GuideLineList;
+          do (theArc.getCPNPage, x, y) -> MakeGuideList -> (theGuideList[], x, y);
+             &BendPointClipping[] -> theClipping[];
+             (theBendPoint[],bendPointIndex,theGuideList[]) -> theClipping.init;
+             theArc[] -> theClipping.remove;
+          #);
+          false -> bendPointAdded;
+       #);
+     
+     relevant:: (# <<SLOT MoveArcInstrumentRelevant:doPart>> #);
+     before: ^BasicArcGeometryRecord;
+     finish::
+       (#
+       do false -> theArc.moving;
+       #);
+     apply::
+       (# thePartCode: ^PartCode;
+       do (if true
+           // target## <= Arc## then target[] -> theArc[];
+           // target## <= ArcInstance## then 
+              target[] -> QUA
+              (# as:: ArcInstance;
+              do thisObj.theArc[] -> theArc[];
+              #);
+          if);
+          
+          true -> theArc.moving;
+          &BasicArcGeometryRecord[] -> before[];
+          theArc[] -> before.init;
+          
+          widget.cursors.move[] -> theHand.setTemporaryCursor;
+          
+          theHand.getPartCode -> thePartCode[];
+          (if thePartCode[] <> NONE then
+              thePartCode[] -> getBendFromPartCode -> theBendPoint[];
+              (if theBendPoint[] = NONE then
+                  &BendPoint[] -> theBendPoint[];
+                  theBendPoint.init;
+                  false -> bendPointAdded;
+                  (thePartCode.part + 1) div 2 -> bendPointIndex;
+               else
+                  true -> bendPointAdded;
+                  thePartCode.part div 2 -> bendPointIndex;
+              if);
+           else
+              'The PartCode was not found (Bug #725).' -> FIXME;
+              'This happens because the arrow is hit-detected as part of the arc, but' -> FIXME;
+              'theHand.graphics does not agree. Which one is right?' -> FIXME;
+              finish;
+          if);
+       #);
+     
+     onMouseMove::
+       (# readdBendPoint:
+            (#
+            do (x, y) -> globalToLocal -> theBendPoint.XY;
+               theBendPoint.XY -> addBend;
+               theBendPoint.snap;
+               theBendPoint.changed;
+            #);
+       do (if bendPointAdded then
+              removeBend;
+          if);
+          (if (theArc.getBends).empty  then
+              (# mousePos: @Point2d;
+              do (x,y) -> globalToLocal -> mousePos.XY;
+                 theArc.normalizeOrder;
+                 loop:
+                   (# distanceToArc: @real;
+                      arcLine: @GeomLine;
+                   do theArc.changed;
+                      theArc.transIncidentPoint -> arcLine.a;
+                      theArc.placeincidentPoint -> arcLine.b;
+                      mousePos[] -> arcLine.distanceTo -> distanceToArc;
+                      
+                      (if true 
+                       // distanceToArc < -(ArcDistance/2) then
+                          (if theArc.getOrder = 1 then
+                              readdBendPoint;
+                              leave loop;
+                           else
+                              theArc.decreaseOrder;
+                          if);
+                       // distanceToArc > (ArcDistance/2) then
+                          (if theArc.getOrder = theArc.countSiblings then
+                              readdBendPoint;
+                              leave loop;
+                           else 
+                              theArc.increaseOrder;
+                          if);
+                       else
+                          leave loop;
+                      if);
+                   #);
+              #);
+           else
+              readdBendPoint;
+          if);
+          theArc.changed;
+       #);
+     
+     onMouseUp::
+       (# deltax, deltay: @real;
+          thePageElementList: ^PageElementList;
+       do theArc.straighten;
+          (if theBendPoint[] -> (theArc.getBends).has then
+              (theArc.getCPNPage).scanGuidelines
+              (# vgl: ^VerticalGuideline;
+                 hgl: ^HorizontalGuideline;
+              do (if true
+                  // (current## <= HorizontalGuideline##) then
+                     current[] -> hgl[];
+                     (if (theBendPoint.y -> hgl.isOnGuide) then
+                         theBendPoint[] -> hgl.AddGuideElement;
+                         hgl.Lolite;
+                     if);
+                  // (current## <= VerticalGuideline##) then
+                     current[] -> vgl[];
+                     (if (theBendPoint.x -> vgl.isOnGuide) then
+                         theBendPoint[] -> vgl.AddGuideElement;
+                         vgl.Lolite;
+                     if);
+                 if);
+              #);
+          if);
+          
+          (# after: ^BasicArcGeometryRecord;
+             com: ^MoveArcCommand;
+          do &BasicArcGeometryRecord[] -> after[];
+             theArc[] -> after.init;
+             &MoveArcCommand[] -> com[];
+             (before[],after[]) -> com.init;
+	     ((theArc.getCPNPage).net[], com[]) -> registerCommand;
+          #);
+          (if TextEditOnMove then
+              
+              theArc.startTextEditor;
+           else
+              (if theHand.distance < 4 then
+                  (if theArc## <= SSArc## then
+                      (# theSSArc: ^SSArc;
+                      do theArc[] -> theSSArc[];
+                         theSSArc.toggle;
+                      #);
+                   else
+                      theArc.startTextEditor;
+                  if);
+              if);
+          if);
+          
+          finish;
+       #);
+  #);
+
+DeleteBendPointInstrument: Instrument
+  (# TargetType:: Arc;
+     findBend:
+       (# theArc: ^Arc;
+          bend: ^BendPoint;
+          inx: @integer;
+          bends: ^BendPointList;
+       enter (theArc[],inx)
+       do theArc.getBends -> bends[];
+          (if (inx > 0) AND (inx <= bends.size) then
+              inx -> bends.get -> bend[];
+          if);
+       exit bend[]
+       #);
+     getBendFromHand:
+       (# target: ^Arc;
+          theHand: ^Hand;
+          thePartCode: ^PartCode;
+          theBendPoint: ^BendPoint;       
+       enter (target[],theHand[])
+       do search: theHand.graphics.scan
+            (#
+            do current.scan
+               (#
+               do (if current## <= PartCode## then
+                      current[] -> thePartCode[];
+                      leave search;
+                  if);
+               #);
+            #);
+          (if thePartCode[] <> NONE then
+              NONE -> theBendPoint[];
+              (if ((thePartCode.part MOD 2) = 0) then
+                  (target[],thePartCode.part div 2) -> FindBend -> theBendPoint[];
+              if);
+          if);
+       exit theBendPoint[]
+       #);
+     relevant:: 
+       (# theBendPoint: ^BendPoint;
+       do (target[],theHand[]) -> getBendFromHand -> theBendPoint[];
+          theBendPoint[] <> NONE -> value;
+       #);
+     apply::
+       (# theBendPoint: ^BendPoint;
+       do (target[],theHand[]) -> getBendFromHand -> theBendPoint[];
+          (if theBendPoint[] <> NONE then
+              (# before,after: ^BasicArcGeometryRecord;
+                 com: ^DeleteBendPointCommand;
+              do &BasicArcGeometryRecord[] -> before[];
+                 &BasicArcGeometryRecord[] -> after[];
+                 &DeleteBendPointCommand[] -> com[];
+                 target[] -> before.init;
+                 theBendPoint.delete;
+                 target[] -> after.init;
+                 (before[],after[]) -> com.init;
+                 (target.getCPNet,com[]) -> registerCommand;
+              #);
+          if);
+       #);
+  #);
+
+collectGuidelines:
+  (# target: ^PageElement;
+     theGuideLines: ^GuideLineList;
+  enter target[]
+  do &GuideLineList[] -> theGuideLines[];
+     (target.getCPNPage).scanGuidelines
+     (#
+     do (if target[] -> current.has then
+            current[] -> theGuideLines.append;
+        if);
+     #);
+  exit theGuideLines[]
+  #);
+snapOffGuides:
+  (# target: ^PageElement;
+     guides: ^GuideLineList;
+  enter target[]
+  do (if target## <= GuideLineSnapable## then
+         target[] -> collectGuidelines -> guides[];
+         guides.scan
+         (#
+         do target[] -> current.removeGuideElement;
+         #);
+     if);
+  #);
+
+
+BasicGeometryRecord:
+  (# TargetType:< PageElement;
+     target: ^TargetType;
+     
+     init:<
+       (#
+       enter target[]
+       do INNER;
+       #);
+     move:<
+       (# dx, dy: @integer;
+       enter (dx, dy)
+       do INNER;
+       #);
+     apply:<
+       (#
+       do INNER;
+       #);
+  #);
+
+
+BasicNodeGeometryRecord: BasicGeometryRecord
+  (# x, y: @integer;
+     anchorHorizontal: @integer;
+     anchorVertical: @integer;
+     snap_id: @integer;
+     guides: ^GuideLineList;
+     
+     init::
+       (#
+       do target.x -> x;
+          target.y -> y;
+          target.anchorHorizontal -> anchorHorizontal;
+          target.anchorVertical -> anchorVertical;
+          target.snap_id -> snap_id;
+          (if target## <= GuideLineSnapable## then
+              target[] -> collectGuidelines -> guides[];
+          if);
+       #);
+     move::
+       (#
+       do x + dx -> target.x;
+          y + dy -> target.y;
+          target.changed;
+       #);
+     apply::
+       (# 
+       do x -> target.x;
+          y -> target.y;
+          anchorHorizontal -> target.anchorHorizontal;
+          anchorVertical -> target.anchorVertical;
+          snap_id -> target.snap_id;
+          (if target## <= GuideLineSnapable## then
+              target[] -> snapOffGuides;
+              guides.scan
+              (#
+              do target[] -> current.addGuideElement;
+              #);
+          if);
+          target.changed;
+       #);
+  #);
+BasicArcGeometryRecord: BasicGeometryRecord
+  (# TargetType:: Arc;
+     bends: ^BasicGeometryRecordList;
+     
+     init::
+       (#
+       do &BasicGeometryRecordList[] -> bends[];
+          target.scanBendpoints
+          (#
+          do current[] -> SampleGeometryOne -> bends.append;
+          #);
+       #);
+     move::
+       (#
+       do bends.scan
+          (#
+          do (dx, dy) -> current.move;
+          #);
+       #);
+     apply::
+       (# 
+       do target.scanBendpoints
+          (# 
+          do current[] -> target.removeBendPoint;
+             current[] -> snapOffGuides;
+          #);
+          &BendPointList[] -> target.setBends;
+          bends.scan
+          (#
+          do current.target[] -> (target.getBends).append;
+             current.target[] -> target.addBendPoint;
+             current.apply;
+          #);
+          target.changed;
+       #);
+  #);
+
+
+CommandGeometryRecord: GeometryRecord
+  (# before: ^BasicGeometryRecordList;
+     after: ^BasicGeometryRecordList;
+     init::
+       (#
+       enter (before[], after[])
+       do 
+       #);
+     getName::
+       (# 
+       do (after.head).elm.target[] -> getpatternname -> name[];
+          (if after.size > 1 then
+              '...' -> name.append;
+          if);
+       #);
+     forward::
+       (#
+       do after.scan
+          (#
+          do current.apply;
+          #);
+       #);
+     backward::
+       (#
+       do before.scan
+          (#
+          do current.apply;
+          #);
+       #);
+  #);
+
+BasicGeometryRecordList: List
+  (# Element:: BasicGeometryRecord;
+     
+     contains:
+       (# target: ^PageElement;
+          result: @boolean;
+       enter target[]
+       do search: scan
+            (#
+            do (if current.target[] = target[] then
+                   true -> result;
+                   leave search;
+               if);
+            #);
+       exit result
+       #);
+  #);
+SampleGeometryOne:
+  (# target: ^PageElement;
+     geo: ^BasicGeometryRecord;
+  enter target[]
+  do (if target## <= Arc## then
+         &BasicArcGeometryRecord[] -> geo[];
+      else
+         &BasicNodeGeometryRecord[] -> geo[];
+     if);
+     target[] -> geo.init;
+  exit geo[]
+  #);
+SampleGeometry:
+  (# target: ^PageElementList;
+     result: ^BasicGeometryRecordList;
+  enter target[]
+  do &BasicGeometryRecordList[] -> result[];
+     target.scan
+     (#
+     do current[] -> SampleGeometryOne -> result.append;
+     #);
+  exit result[]
+  #);
+
+BasicMovePageElementInstrument: MoveInstrument
+  (# TargetType:: PageElement;
+     targets: ^PageElementList;
+     before: ^BasicGeometryRecordList;
+     moving: @boolean;
+     startx, starty: @integer;
+     thePage: ^CPNPage;
+     apply:: (# <<SLOT BasicMovePageElementInstrumentApply:DoPart>> #);
+     onMouseMove::
+       (# x, y: @integer;
+          dx, dy: @integer;
+       do 
+          (if NOT moving then
+              (if theHand.distance >= 3 then
+                  true -> moving;
+              if);
+          if);
+          (if moving then
+              theHand.x -> x;
+              theHand.y -> y;
+              (x, y) -> globalToLocal -> (x, y);
+              x - startx -> dx;
+              y - starty -> dy;
+              (if before.size = 1 then
+                  before.scan
+                  (# ax, ay: @real;
+                  do (dx, dy) -> current.move;
+                     current.target.snap -> (ax, ay);
+                     current.target.changed;
+                     (if target## <= Inscription## then
+                         startx - ax -> startx;
+                         starty - ay -> starty;
+                     if);
+                  #);
+               else
+                  (# ax, ay: @integer;
+                  do before.scan
+                     (#
+                     do (dx + ax, dy + ay) -> current.move;
+                     #);
+                  #)
+              if);
+          if);
+       #);
+     onMouseUp::
+       (# after: ^BasicGeometryRecordList;
+          geo: ^CommandGeometryRecord;
+          com: ^MoveCommand;
+          guides: ^GuideLineList;
+          snapOnGuides:
+            (# target: ^PageElement;
+               guides: ^GuideLineList;
+               theArc: ^Arc;
+            enter target[]
+            do (if target## <= Arc## then
+                   target[] -> theArc[];
+                   theArc.scanBendpoints
+                   (#
+                   do current[] -> snapOnGuides;
+                   #);
+                else
+                   (if target## <= GuideLineSnapable## then
+                       target[] -> snapOffGuides;
+                       (thePage[], target.x, target.y) -> MakeExactGuideList -> guides[];
+                       guides.scan
+                       (#
+                       do target[] -> current.addGuideElement;
+                          current.lolite;
+                       #);
+                   if);
+               if);
+            #);
+       do target.stopMove;
+          (if not moving then
+              (if target## <= SSArc## then
+                  (# theSSArc: ^SSArc;
+                  do target[] -> theSSArc[];
+                     theSSArc.toggle;
+                  #);
+               else
+                  target.startTextEditor;
+              if);
+           else
+              targets.scan
+              (#
+              do current[] -> snapOnGuides;
+              #);
+              targets[] -> SampleGeometry -> after[];
+              (if target## <= node## then
+                  (# theNode: ^Node;
+                  do target[] -> theNode[];
+                     theNode.scanArcs
+                     (#
+                     do (if NOT (current[] -> before.contains) then
+                            current[] -> SampleGeometryOne -> before.append;
+                            current.straighten;
+                            current[] -> SampleGeometryOne -> after.append;
+                        if);
+                     #);
+                  #);
+              if);
+              &CommandGeometryRecord[] -> geo[];
+              (NONE, before[], after[]) -> geo.init;
+              &MoveCommand[] -> com[];
+              thePage[]-> com.prepare;
+              geo[] -> com.apply;
+              (target.getCPNet,com[]) -> registerCommand;
+          if);
+          
+          NONE -> theHand.setTemporaryCursor;
+          NONE -> targets[];
+          NONE -> before[];
+          false -> moving;
+          
+          finish;
+       #);
+  #);
+
+
+MakeExactGuideList:
+  (# context: ^CPNPage;
+     guides: ^GuideLineList;
+     x, y: @real;
+  enter (context[], x, y)
+  do &GuideLineList[] -> guides[];
+     context.scanGuidelines
+     (# vgl: ^VerticalGuideLine;
+        hgl: ^HorizontalGuideline;
+     do
+        (if true
+         // (current## <= HorizontalGuideline##) then
+            current[] -> hgl[];
+            (if (y -> hgl.isOnGuide) then
+                hgl[] -> guides.append;
+            if);
+         // (current## <= VerticalGuideline##) then
+            current[] -> vgl[];
+            (if (x -> vgl.isOnGuide) then
+                vgl[] -> guides.append;
+            if);
+        if);
+     #);
+  exit guides[]
+  #);
+
+GeometryCommand: Command
+  (# TargetType:: CPNPage;
+     geo: ^GeometryRecord;
+     apply::
+       (#
+       enter geo[]
+       do redo;
+       #);
+     undo::
+       (#
+       do geo.backward;
+       #);
+     redo::
+       (#
+       do geo.forward;
+       #);
+  #);
+
+MoveCommand: GeometryCommand
+  (# getName::
+       (#
+       do 'Move ' -> name[];
+          geo.getName -> name.append;
+       #);
+  #);
+     
+ElmSize: (# target: ^PageElement; width,height: @Real; #);
+
+ElmSizeList: List 
+  (# Element:: ElmSize; 
+  #);
+
+makeElmSize:
+  (# targetAux: ^Aux;
+     targetNode: ^Node;
+     target: ^PageElement;
+     theElmSize: ^ElmSize;
+  enter target[]
+  do &ElmSize[] -> theElmSize[];
+     (if target## <= Aux## then
+         target[] -> targetAux[];
+         targetAux.theShape.width -> theElmSize.width;
+         targetAux.theShape.height -> theElmSize.height;
+     if);
+     (if target## <= Node## then
+         target[] -> targetNode[];
+         targetNode.width -> theElmSize.width;
+         targetNode.height -> theElmSize.height;
+     if);
+     target[] -> theElmSize.target[];
+  exit theElmSize[]
+  #);
+
+ResizeElementInstrument: MoveInstrument
+  (# TargetType:: PageElement;
+     theTargetList: ^ElmSizeList;
+     startX, startY: @Real;
+     startWidth, startHeight: @Real;
+     beforeWidth, beforeHeight: @Real;
+     directionOfResize: @integer;
+     thePage: ^CPNPage;
+     
+     onMouseFloat::
+       (# done: @boolean;
+          
+       do false -> done;
+          (if theHand[] <> NONE then
+              (if theHand.over[] <> NONE then
+                  theHand[] -> checkResize -> done;
+              if);
+          if);
+          (if NOT done then
+              (*** NONE -> theHand.setTemporaryCursor; ***)
+          if);
+       #);
+     checkResize:
+       (# selection: ^ObjectSelection;
+          target: ^PageElement;
+          view: ^Sheet;
+          theHand: ^Hand;
+          done: @boolean;
+       enter theHand[]
+       do theHand.over[] -> selection[];
+          false -> done;
+          checking:
+            (#
+            do selection.scan
+               (#
+               do current.scan
+                  (# 
+                  do 
+                     (if current## <= PageElement## then
+                         current[] -> target[];
+                     if);
+                     (if current## <= Sheet## then
+                         current[] -> view[];
+                         leave checking;
+                     if);
+                  #);
+               #);
+            #);
+          (# x, y: @real;
+             vedge, hedge: @integer;
+          do (if target[] <> NONE then
+                 
+                 (if target[] -> resizable then
+                     (if view[] <> NONE then
+                         (theHand.x, theHand.y) -> view.globalToLocal -> (x, y);
+                         (target[], x, y) -> computeEdge -> (hedge, vedge);
+                         (theHand[], hedge, vedge) -> chooseCursor;
+                         true -> done;
+                     if);
+                 if);
+             if);
+          #);
+       exit done
+       #);
+     
+     
+     resizable:
+       (# targetAux: ^Aux;
+          targetNode: ^Node;
+          target: ^PageElement;
+          value: @Boolean;
+       enter target[]
+       do (if target## <= Aux## then
+              target[] -> targetAux[];
+              targetAux.resizable -> value;
+          if);
+          (if target## <= Node## then
+              target[] -> targetNode[];
+              (NOT(targetNode## <= BendPoint##)) -> value;
+          if);
+       exit value
+       #);
+     
+     getwidth:
+       (# targetAux: ^Aux;
+          targetNode: ^Node;
+          target: ^PageElement;
+          width: @Real;
+       enter target[]
+       do (if target## <= Aux## then
+              target[] -> targetAux[];
+              targetAux.theShape.width -> width;
+          if);
+          (if target## <= Node## then
+              target[] -> targetNode[];
+              targetNode.width -> width;
+          if);
+       exit width
+       #);
+          
+     getheight:
+       (# targetAux: ^Aux;
+          targetNode: ^Node;
+          target: ^PageElement;
+          height: @Real;
+       enter target[]
+       do (if target## <= Aux## then
+              target[] -> targetAux[];
+              targetAux.theShape.height -> height;
+          if);
+          (if target## <= Node## then
+              target[] -> targetNode[];
+              targetNode.height -> height;
+          if);
+       exit height
+       #);
+     
+     setwidth:
+       (# targetAux: ^Aux;
+          targetNode: ^Node;
+          target: ^PageElement;
+          width: @Real;
+          changeInWidth: @Real;
+       enter (target[], width)
+       do (if target## <= Aux## then
+              target[] -> targetAux[];
+              width -> targetAux.theShape.width;
+          if);
+          (if target## <= Node## then
+              target[] -> targetNode[];
+              width -> targetNode.width;
+              (width-beforeWidth)/2 -> changeInWidth;
+              (targetNode.getInscriptions).scan
+              (# 
+              do (if current.dx<0 then
+                     current.dx-changeInWidth -> current.dx;
+                  else
+                     current.dx+changeInWidth -> current.dx;
+                 if);
+              #);
+              width -> beforeWidth;
+          if);
+       #);
+          
+     setheight:
+       (# targetAux: ^Aux;
+          targetNode: ^Node;
+          target: ^PageElement;
+          height: @Real;
+          changeInHeight: @Real;
+       enter (target[], height)
+       do (if target## <= Aux## then
+              target[] -> targetAux[];
+              height -> targetAux.theShape.height;
+          if);
+          (if target## <= Node## then
+              target[] -> targetNode[];
+              height -> targetNode.height;
+              (height-beforeHeight)/2 -> changeInHeight;
+              (targetNode.getInscriptions).scan
+              (# 
+              do (if current.dy<0 then
+                     current.dy-changeInHeight -> current.dy;
+                  else
+                     current.dy+changeInHeight -> current.dy;
+                 if);
+              #);
+              height -> beforeHeight;
+          if);
+       #);
+     
+     
+     CENTER: (# exit 0 #);
+     LEFT: (# exit 1 #);
+     RIGHT: (# exit 2 #);
+     TOP: (# exit 3 #);
+     BOTTOM: (# exit 4 #);
+     vedge,hedge: @integer;
+     
+     NOTKNOWN: (# exit 0 #);
+     WIDTHORHEIGHT: (# exit 1 #);
+     BOTH: (# exit 2 #);
+     
+     computeEdge:
+       (# target: ^PageElement;
+          x, y: @real;
+          hedge, vedge: @integer;
+          setResize: @boolean;
+       enter (target[], x, y)
+       do (# w: @Real;
+             h: @Real;
+             dx, dy: @real;
+             
+          do (if directionOfResize=NOTKNOWN then
+                 true -> setResize;
+              else
+                 false -> setResize;
+             if);
+             
+             (target[] -> getwidth) /  2 -> w;
+             (target[] -> getheight) / 2 -> h;
+             
+             w / 4 -> dx;
+             (if dx > 6 then
+                 6 -> dx;
+             if);
+             (if dx < 1 then
+                 1 -> dx;
+             if);
+             
+             h / 4 -> dy;
+             (if dy > 6 then
+                 6 -> dy;
+             if);
+             (if dy < 1 then
+                 1 -> dy;
+             if);
+             
+             
+             
+             CENTER -> vedge;
+             
+             
+             (if ((target.x + w+2) > x) AND (x > (target.x + w - dx)) then
+                 RIGHT -> vedge;
+              else
+                 (if ((target.x - w-2) < x) AND (x < (target.x - w + dx)) then
+                     LEFT -> vedge;
+                 if);
+             if);
+             (if setResize and not (vedge=CENTER) then
+                 WIDTHORHEIGHT -> directionOfResize;
+             if);
+             CENTER -> hedge;
+             (if ((target.y + h+2) >= y) AND (y > (target.y + h - dy)) then
+                 BOTTOM -> hedge;
+              else
+                 (if ((target.y - h-2) <= y) AND (y < (target.y - h + dy)) then
+                     TOP -> hedge;
+                 if);
+             if);
+             (if setResize and not (hedge=CENTER) then
+                 (if directionOfResize=NOTKNOWN then
+                     WIDTHORHEIGHT -> directionOfResize;
+                  else
+                     BOTH -> directionOfResize;
+                 if);
+             if);
+          #);
+       exit (hedge, vedge)
+       #);
+     
+     computeCornerEdge:
+       (# hedge, vedge: @integer;  
+          target: ^PageElement;
+          x, y: @real;
+          halfWidth,halfHeight: @real;
+          targetX,targetY: @real;
+       enter (target[],x,y)
+       do target.x -> targetX;
+          target.y -> targetY;
+          (if x<targetX then
+              LEFT -> vedge;
+           else
+              RIGHT -> vedge;
+          if);
+          (if y<targetY then
+              TOP -> hedge;
+           else
+              BOTTOM -> hedge;
+          if);
+       exit (hedge,vedge)
+       #);
+     
+     relevant::
+       (# localX, localY: @Real;
+          w: @Real;
+          h: @Real;
+       do 
+          false -> value;
+          (if (target[] -> resizable) then
+              search: theHand.selection.scan
+                (#
+                do current.scan
+                   (#
+                   do (if current## <= Sheet## then
+                          current[] -> view[];
+                          leave search;
+                      if);
+                   #);
+                #);
+              theHand.anchor -> globalToLocal -> (localX, localY);
+              (target[], localX, localY) -> computeEdge -> (hedge, vedge);
+              (if (vedge <> CENTER) OR (hedge <> CENTER) then
+                  true -> value;
+              if);
+          if);
+       #);
+     
+     chooseCursor:
+       (# hedge, vedge: @integer;
+          theHand: ^Hand;
+       enter (theHand[], hedge, vedge)
+       do (if (hedge = CENTER) AND (vedge = CENTER) then
+              (*** NONE -> theHand.setTemporaryCursor; ***)
+           else
+              (if vedge
+               // CENTER then
+                  widget.cursors.resizeNorthSouth[] -> theHand.setTemporaryCursor;
+               // RIGHT then
+                  (if hedge
+                   // BOTTOM then
+                      widget.cursors.resizeNorthWest[] -> theHand.setTemporaryCursor;
+                   // TOP then
+                      widget.cursors.resizeSouthWest[] -> theHand.setTemporaryCursor;
+                   // CENTER then
+                      widget.cursors.resizeWestEast[] -> theHand.setTemporaryCursor;
+                  if);
+               // LEFT then
+                  (if hedge
+                   // BOTTOM then
+                      widget.cursors.resizeSouthWest[] -> theHand.setTemporaryCursor;
+                   // TOP then
+                      widget.cursors.resizeNorthWest[] -> theHand.setTemporaryCursor;
+                   // CENTER then
+                      widget.cursors.resizeWestEast[] -> theHand.setTemporaryCursor;
+                  if);
+              if);
+          if);
+       #);
+     apply:: (# <<SLOT ResizeElementInstrumentApply:DoPart>> #);     
+     calcSize:
+       (# x,y: @Real;
+          width, height: @Real;
+       enter (x,y)
+       do (# deltaX, deltaY: @Real;
+             localX, localY: @Real;
+          do (x, y) -> globalToLocal -> (localX, localY);
+             2*(localX - startX) -> deltaX;
+             2*(localY - startY) -> deltaY;
+             (if vedge
+              //LEFT then
+                 startWidth - deltaX -> width;
+              //RIGHT then
+                 startWidth + deltaX -> width;
+             if);
+             (if hedge
+              //TOP then
+                 startHeight - deltaY -> height;
+              //BOTTOM then
+                 startHeight + deltaY -> height;
+             if);
+	     (if width < 0 then
+                 0 - width -> width;
+	     if);
+	     (if height < 0 then
+                 0 - height -> height;
+	     if);
+          #);
+       exit (height,width)
+       #);
+          
+     finish:: (# do NONE -> theHand.setTemporaryCursor; #);
+     
+     onMouseMove::
+       (# width, height: @Real;
+       do (x,y) -> calcSize -> (height,width);
+          theTargetList.scan
+          (# 
+          do (if vedge <> CENTER then
+                 (current.target[], width) -> setwidth;
+             if);
+             (if hedge <> CENTER then
+                 (current.target[], height) -> setheight;
+             if);
+             current.target.changed;
+          #);
+          (# target: ^PageElement;
+             view: ^Sheet;
+             x, y: @real;
+             vedge, hedge: @integer;
+          do (if not (directionOfResize=WIDTHORHEIGHT) then
+                 checking:
+                   (#
+                   do theHand.over.scan
+                      (#
+                      do current.scan
+                         (# 
+                         do 
+                            (if current## <= PageElement## then
+                                current[] -> target[];
+                            if);
+                            (if current## <= Sheet## then
+                                current[] -> view[];
+                                leave checking;
+                            if);
+                         #);
+                      #);
+                   #);
+                 (if target[] <> NONE then                 
+                     (if target[] -> resizable then
+                         (if view[] <> NONE then
+                             (theHand.x, theHand.y) -> view.globalToLocal -> (x, y);
+                             (if directionOfResize 
+                              // NOTKNOWN then
+                                 (target[], x, y) -> computeEdge -> (hedge, vedge);
+                              // BOTH then
+                                 (target[], x, y) -> computeCornerEdge -> (hedge, vedge);
+                             if);     
+                             (theHand[], hedge, vedge) -> chooseCursor;
+                         if);
+                     if);
+                 if);
+             if);
+          #);
+       #);
+     
+     onMouseUp::
+       (# width, height: @Real;
+          theList: ^PageElementList;
+       do (x,y) -> calcSize -> (height,width);
+          &PageElementList[] -> theList[];
+          theTargetList.scan
+          (# 
+          do (current.target[], current.width) -> setwidth;
+             (current.target[], current.height) -> setheight;
+             current.target[] -> theList.append;
+          #);
+          (thePage[], width, height, theList[]) -> ResizeElements;
+          
+          (if TextEditOnMove then
+              target.startTextEditor;
+           else
+              (if theHand.distance < 4 then
+                  target.startTextEditor;
+              if);
+          if);
+          finish;
+       #);
+  #);
+
+ResizeElements:
+  (# context: ^CPNPage;
+     elements: ^PageElementList;
+     width, height: @Real;
+  enter (context[], width, height, elements[])
+  do (# thePageGeometryRecord: ^PageGeometryRecord;
+        com: ^ResizeCommand;
+     do &PageGeometryRecord[] -> thePageGeometryRecord[];
+        context[] -> thePageGeometryRecord.init;
+        elements.scan
+        (# theNodeGeometryRecord: ^NodeGeometryRecord;
+           theNode: ^Node;
+           theAuxGeometryRecord: ^AuxGeometryRecord;
+           theAux: ^Aux;
+           tempWidth, tempHeight: @Real;
+        do (if current## <= Node## then
+               &NodeGeometryRecord[] -> theNodeGeometryRecord[];
+               current[] -> theNode[];
+               (if width <> 0 then
+                   width -> tempWidth;
+                else
+                   theNode.width -> tempWidth;
+               if);
+               (if height <> 0 then
+                   height -> tempHeight;
+                else
+                   theNode.height -> tempHeight;
+               if);
+               (theNode[], tempWidth, tempHeight) -> theNodeGeometryRecord.init;
+               theNodeGeometryRecord[] -> thePageGeometryRecord.add;
+           if);
+           (if current## <= Aux## then
+               &AuxGeometryRecord[] -> theAuxGeometryRecord[];
+               current[] -> theAux[];
+               (if width <> 0 then
+                   width -> tempWidth;
+                else
+                   theAux.theShape.width -> tempWidth;
+               if);
+               (if height <> 0 then
+                   height -> tempHeight;
+                else
+                   theAux.theShape.height -> tempHeight;
+               if);
+               (theAux[], tempWidth, tempHeight) -> theAuxGeometryRecord.init;
+               theAuxGeometryRecord[] -> thePageGeometryRecord.add;
+           if);
+        #);
+        &ResizeCommand[] -> com[];
+        context[] -> com.prepare;
+        thePageGeometryRecord[] -> com.apply;
+        (context.net[],com[]) -> registerCommand;
+     #);
+  #);
+     
+ResizeCommand: GeometryCommand
+  (# getname::
+       (#
+       do 'Resize ' -> name[];
+          geo.getName -> name.puttext;
+       #);
+  #);
+
+MoveInstrument: Instrument
+  (# view: ^Sheet;
+
+     localToGlobal:
+       (# x, y: @real;
+       enter (x, y)
+       do (if view[] <> NONE then
+              (x, y) -> view.localToGlobal -> (x, y);
+          if);
+       exit (x, y)
+       #);
+     
+     globalToLocal:
+       (# x, y: @real;
+       enter (x, y)
+       do (if view[] <> NONE then
+              (x, y) -> view.globalToLocal -> (x, y);
+          if);
+       exit (x, y)
+       #);
+     view_zoom:
+       (# x, y: @real;
+       enter (x, y)
+       do (if view[] <> NONE then
+              x/view.zoom -> x;
+              y/view.zoom -> y;
+          if);
+       exit (x, y)
+       #);
+     view_zoom_one:
+       (# x: @real;
+       enter x
+       do (if view[] <> NONE then
+              x/view.zoom -> x;
+          if);
+       exit x
+       #);
+     view_unzoom:
+       (# x, y: @real;
+       enter (x, y)
+       do (if view[] <> NONE then
+              x*view.zoom -> x;
+              y*view.zoom -> y;
+          if);
+       exit (x, y)
+       #);
+
+     locateView:
+       (# theHand: ^Hand;
+       enter theHand[]
+       do search: theHand.selection.scan
+            (#
+            do current.scan
+               (#
+               do (if current## <= Sheet## then
+                      current[] -> view[];
+                      leave search;
+                  if);
+               #);
+            #);
+       #);
+     
+     apply::<
+       (#
+       do (** Find The Sheet by scanning the selection -(HML) **)
+          theHand[] -> locateView;
+
+          INNER;
+       #);
+     
+     onMouseMove::<
+       (# 
+       do (if (target[]<>NONE) and (view[]<>NONE) and 
+              (target[] -> view.mainlayer.content.has) AND (theHand.distance>1) then
+              target[] -> view.mainlayer.bringToFront;
+              (if target##<=PageElement## then
+                  target[] -> QUA
+                  (# as:: PageElement;
+                  do (thisObj.getHierarchyInfos).scan
+                     (# 
+                     do (if current[] -> view.mainlayer.content.has then
+                            current[] -> view.mainlayer.bringToFront;
+                        if);
+                     #);
+                  #);
+              if);
+          if);
+          INNER;
+       #);
+     
+     onMouseUp::<
+       (# 
+       do
+          INNER;
+       #);
+     
+     finish::<
+       (#
+       do
+          INNER;
+          NONE -> view[];
+       #);
+
+     cancel::<
+       (#
+       do
+          INNER;
+       #);
+
+     init::<
+       (#
+       do INNER;
+       #);
+  #);
+     
+MoveMessage: MoveInstrument
+  (# TargetType:: MessageBubble;
+     relevant::
+       (#
+       do NOT target.fading -> value;
+       #);
+     initialhand: @Point2d;
+     targetOrig: @Point2d;
+     targetNew: @Point2d;
+     moving: @boolean;
+
+     apply::
+       (#
+       do widget.cursors.move[] -> theHand.setTemporaryCursor;
+          theHand.anchor -> initialhand;
+          target.delta -> view_unzoom -> targetOrig;
+          false -> moving;
+       #);
+     onMouseMove::
+       (# 
+       do (if theHand.distance > 2 then
+              (targetOrig.x+(theHand.x-initialhand.x),targetOrig.y-(theHand.y-initialhand.y)) 
+              -> view_zoom 
+              -> target.delta;
+              true -> moving;
+          if);
+       #);
+     onMouseUp::
+       (# 
+       do (if NOT moving then
+              target.onClicked; 
+          if);
+          (if target.target[] <> NONE then
+              target.target.changed;
+          if);
+          finish;
+       #);
+  #);
+MakeMoveBindingDialogUndoableCommand: Command
+  (# TargetType:: AbstractTransitionInstanceDialog;
+     before, after: @Point2d;
+     prepare::
+       (# 
+       enter (before, after)
+       do 
+       #);
+     undo::
+       (#
+       do before -> target.delta;
+       #);
+     redo::
+       (#
+       do after -> target.delta;
+       #);
+     getName::
+       (# 
+       do (if target[] <> NONE then
+              'Move ' -> name[];
+              target[] -> getPatternName -> name.puttext;
+          if);
+       #);
+  #);
+RegisterMoveBindingDialog:
+  (# target: ^AbstractTransitionInstanceDialog;
+     before: @Point2d;
+     after: @Point2d;
+     com: ^MakeMoveBindingDialogUndoableCommand;
+     theNet: ^CPNet;
+  enter (target[], before, after)
+  do &MakeMoveBindingDialogUndoableCommand[] -> com[];
+     (target[], before, after) -> com.prepare;
+     (target.getCPNet) -> theNet[];
+     (theNet[],com[]) -> registerCommand;
+  #);
+MoveBindingDialogInstrument: MoveInstrument
+  (# TargetType:: AbstractTransitionInstanceDialog;
+     
+     initialhand: @Point2d;
+     targetOrig: @Point2d;
+     targetNew: @Point2d;
+     moving: @boolean;
+
+     apply::
+       (#
+       do widget.cursors.move[] -> theHand.setTemporaryCursor;
+          theHand.anchor -> initialhand;
+          target.delta 
+            -> view_unzoom -> targetOrig;
+          false -> moving;
+       #);
+     onMouseMove::
+       (# 
+       do (if theHand.distance > 2 then
+              (targetOrig.x+(theHand.x-initialhand.x),targetOrig.y+(theHand.y-initialhand.y)) 
+                -> view_zoom 
+                -> targetNew
+                -> target.delta;
+              target.changed;
+              true -> moving;
+          if);
+       #);
+     onMouseUp::
+       (# 
+       do (if not moving then
+              target.onClicked;
+           else
+              (target[], targetOrig->view_zoom, targetNew) -> RegisterMoveBindingDialog;
+          if);          
+          target.update;
+          finish;
+       #);
+  #);
+
+MoveSimulationCommand: Command
+  (# TargetType:: SimulationItem;
+     before, after: @Point2d;
+     prepare::
+       (# 
+       enter (before, after)
+       do (*** nothing to do ***)
+       #);
+     undo::
+       (#
+       do before -> target.delta;
+          target.instance.thePlace.changed;
+       #);
+     redo::
+       (#
+       do after -> target.delta;
+          target.instance.thePlace.changed;
+       #);
+     getName::
+       (# 
+       do (if target[] <> NONE then
+              'Move ' -> name[];
+              target[] -> getPatternName -> name.puttext;
+          if);
+       #);
+  #);
+MoveSimulation:
+  (# target: ^SimulationItem;
+     before: @Point2d;
+     after: @Point2d;
+     com: ^MoveSimulationCommand;
+     thePlace: ^Place;
+     theNet: ^CPNet;
+  enter (target[], before, after)
+  do &MoveSimulationCommand[] -> com[];
+     (target[], before, after) -> com.prepare;
+     (target.instance.thePlace[]).getCPNet -> theNet[];
+     (theNet[],com[]) -> registerCommand;
+  #);
+
+MoveSimulationInstrument: MoveInstrument
+  (# TargetType:: SimulationItem;
+     initialhand: @Point2d;
+     targetOrig: @Point2d;
+     targetNew: @Point2d;
+     moving: @boolean;
+
+     apply::
+       (#
+       do widget.cursors.move[] -> theHand.setTemporaryCursor;
+          theHand.anchor -> initialhand;
+          target.delta -> view_unzoom -> targetOrig;
+          false -> moving;
+          true -> target.instance.allwaysShowMarking;
+          target.instance.thePlace.changed;
+       #);
+     
+     onMouseMove::
+       (# dx, dy: @real;
+       do (if theHand.distance > 2 then
+              true -> moving;
+              0 -> target.snap_id;
+              (if normal_delta then
+                  (targetOrig.x+(theHand.x-initialhand.x),targetOrig.y+(theHand.y-initialhand.y)) 
+                    -> view_zoom 
+                    -> target.delta;
+               else
+                  (targetOrig.x+(theHand.x-initialhand.x),targetOrig.y-(theHand.y-initialhand.y)) 
+                    -> view_zoom 
+                    -> target.delta;
+              if);
+              target.snap -> (dx, dy);
+              initialhand.x - dx -> initialhand.x;
+              initialhand.y - dy -> initialhand.y;
+              target.instance.thePlace.changed;
+          if);
+       #);
+     onMouseUp::
+       (# theTextEditor: ^TextEditor;
+          pm: ^PlaceMarking;
+       do false -> target.instance.allwaysShowMarking;
+          (if moving then
+              target.delta -> targetNew;
+              (target[], targetOrig->view_zoom, targetNew) -> MoveSimulation;
+           else
+              (if target## <= Token## then
+                  target[] -> ToggleMarking;
+              if);
+              (if target## <= PlaceMarking## then
+                  target[] -> pm[];
+                  target[] -> makeTextEditor;
+              if);
+          if);
+          (if (target.instance.numTokens=0) then
+              true -> target.instance.allwaysShowMarking;
+              &TextEditor[] -> theTextEditor[];
+              target.instance.thePlaceMarking[] -> makeTextEditor -> theTextEditor[];
+          if);
+          target.instance.thePlace.changed;
+          NONE -> theHand.setTemporaryCursor;
+          finish;
+       #);
+  #);
+ResizeMarkingInstrument: MoveInstrument
+  (# TargetType:: PlaceMarking;
+     CENTER: (# exit 0 #);
+     LEFT: (# exit 1 #);
+     RIGHT: (# exit 2 #);
+     TOP: (# exit 3 #);
+     BOTTOM: (# exit 4 #);
+     computeEdge:
+       (# target: ^PlaceMarking;
+          x, y: @real;
+          hedge, vedge: @integer;
+       enter (target[], x, y)
+       do 
+          (# w: @Real;
+             h: @Real;
+             dx, dy: @real;
+
+          do (target[] -> getwidth) /  2 -> w;
+             (target[] -> getheight) / 2 -> h;
+
+             w / 4 -> dx;
+             (if dx > 6 then
+                 6 -> dx;
+             if);
+             (if dx < 1 then
+                 1 -> dx;
+             if);
+
+             h / 4 -> dy;
+             (if dy > 6 then
+                 6 -> dy;
+             if);
+             (if dy < 1 then
+                 1 -> dy;
+             if);
+
+
+
+             CENTER -> vedge;
+
+
+             (if ((target.x + w+2) > x) AND (x > (target.x + w - dx)) then
+                 RIGHT -> vedge;
+              else
+                 (if ((target.x - w-2) < x) AND (x < (target.x - w + dx)) then
+                     LEFT -> vedge;
+                 if);
+             if);
+             CENTER -> hedge;
+             (if ((target.y + h+2) >= y) AND (y > (target.y + h - dy)) then
+                 BOTTOM -> hedge;
+              else
+                 (if ((target.y - h-2) <= y) AND (y < (target.y - h + dy)) then
+                     TOP -> hedge;
+                 if);
+             if);
+          #);
+     exit (hedge, vedge)
+     #);
+
+   getWidth:
+     (# target: ^PlaceMarking;
+        width: @integer;
+     enter target[]
+     do target.box.width -> width;
+     exit width
+     #);
+   getHeight:
+     (# target: ^PlaceMarking;
+        height: @integer;
+     enter target[]
+     do target.box.height -> height;
+     exit height
+     #);
+   relevant::
+     (# hedge, vedge: @integer;
+        x, y: @integer;
+     do theHand[] -> locateView;
+        (theHand.x, theHand.y) -> globalToLocal -> (x, y);
+        false -> value;
+        (target[], x, y) -> computeEdge -> (hedge, vedge);
+     #);
+   apply::
+     (#
+     do finish;
+     #); 
+  #);

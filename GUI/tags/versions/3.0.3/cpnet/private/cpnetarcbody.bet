@@ -1,0 +1,838 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../cpnet';
+
+-- ArcPrivate:Descriptor --
+(# theCPNPage: ^CPNPage;
+   theAnnotation: ^Annotation;
+   theOrientation: @integer;
+   bends: ^BendPointList;
+   mark: ^Point2d;
+   placeAttachmentPoint,
+   transAttachmentPoint: ^Point2d;
+   order: @integer;
+#)
+
+-- ArcSetCPNPage:doPart --
+do theCPNPage[] -> private.theCPNPage[] -> private.theAnnotation.setCPNPage;
+   scanBendPoints
+   (#
+   do theCPNPage[] -> current.setCPNPage;
+   #);
+   
+-- ArcGetBends: doPart --
+do private.bends[] -> theBends[];
+   
+-- arcSetBends: doPart --
+do theBends[] -> private.bends[];
+
+-- ArcScanBendPoints:doPart --
+do private.bends.scan
+   (# 
+   do current[] -> this(scanBendPoints).current[];
+      inner scanBendPoints;
+   #);
+   
+-- ArcScanInstances:DoPart --
+do private.theCPNPage.scanInstances
+   (# 
+   do id[] -> current.lookupArcInstance -> this(scanInstances).current[];
+      inner scanInstances;
+   #);
+   
+-- ArcSetOrder: doPart --
+do order -> private.order;
+   
+-- ArcGetOrder: doPart --
+do private.order -> order;
+   
+-- ArcScanParallelArcs: doPart --
+do (if (transEnd[] <> NONE) and (placeEnd[] <> NONE) then
+       transEnd.scanArcs
+       (#
+       do (if current.placeEnd[] = placeEnd[] then
+              current[] -> this(scanParallelArcs).current[];
+              INNER scanParallelArcs;
+          if);
+       #);
+   if);
+   
+-- ArcIsParallelWith: doPart --
+do (transEnd[] = other.transEnd[]) and (placeEnd[] = other.placeEnd[]) -> result;
+   
+-- ArcScanSiblings: doPart --
+do (if private.bends.empty then
+       scanParallelArcs
+       (#
+       do (if current.private.bends.empty then
+              current[] -> THIS(scanSiblings).current[];
+              INNER scanSiblings;
+          if);
+       #);
+   if);
+   
+-- ArcCountParallelArcs: doPart --
+do 0 -> count;
+   scanParallelArcs(# do 1 + count -> count; #);
+   
+-- ArcCountSiblings: doPart--
+do 0 -> count;
+   scanSiblings(# do count + 1 -> count; #);
+   
+-- ArcDecreaseOrder: doPart --
+do search: scanSiblings
+     (#
+     do (if current.getOrder = getOrder - 1 then
+            getOrder -> current.setOrder;
+            getOrder - 1 -> setOrder;
+            leave search;
+        if);
+     #);
+   scanSiblings
+   (#
+   do current.changed;
+   #);
+   
+-- ArcIncreaseOrder: doPart --
+do search: scanSiblings
+     (#
+     do (if current.getOrder = getOrder + 1 then
+            getOrder -> current.setOrder;
+            getOrder + 1 -> setOrder;
+            leave search;
+        if);
+     #);
+   scanSiblings
+   (#
+   do current.changed;
+   #);
+   
+-- ArcNormalizeOrder: doPart --
+do (# arcContainer: @ArrayContainer
+        (# Element:: Arc;
+           less:: (# do left.getOrder < right.getOrder -> value; #);
+           append:
+             (# elm: ^Element;
+             enter elm[]
+             do (if size = capacity then
+                    capacityExtend;
+                if);
+                (elm[],size+1) -> put;
+             #);
+        #);
+   do arcContainer.init;
+      scanSiblings
+      (#
+      do current[] -> arcContainer.append;
+      #);
+      arcContainer.size -> arcContainer.quickSort;
+      (for i : arcContainer.size repeat
+           i -> (i -> arcContainer.get).setOrder;
+      for);
+   #);
+   
+-- ArcApplyDefaultOrder: doPart --
+do (# currentOrder: @integer;
+   do (if (transEnd[] <> NONE) and (placeEnd[] <> NONE) then
+          1 -> currentOrder;
+          scanSiblings
+          (#
+          do (if current.getOrientation = PtoT then
+                 currentOrder -> current.setOrder;
+                 currentOrder + 1 -> currentOrder;
+             if);
+          #);
+          scanSiblings
+          (#
+          do (if current.getOrientation = BothDir then
+                 currentOrder -> current.setOrder;
+                 currentOrder + 1 -> currentOrder;
+             if);
+          #);
+          scanSiblings
+          (#
+          do (if current.getOrientation = TtoP then
+                 currentOrder -> current.setOrder;
+                 currentOrder + 1 -> currentOrder;
+             if);
+          #);
+      if);
+   #);
+   
+-- ArcSetOrientation:DoPart --
+do (if private.theOrientation <> newOrientation then
+       newOrientation -> private.theOrientation;
+       (if (transEnd[] <> none) then
+           (if transEnd## <= Transition## then
+               (if (getTransEnd).isSubstituationTransition then
+                   transEnd.scanArcs
+                   (# 
+                   do (current.getPlaceEnd).portPlaceHasChangedType;
+                   #);
+               if);
+           if);
+       if);
+   if);
+   
+-- ArcGetOrientation:DoPart --
+do private.theOrientation -> value;
+   
+-- ArcStartTextEditor:doPart --
+do (# theAnnotation: ^Annotation;
+   do getAnnotation -> theAnnotation[];          
+      (if theAnnotation.isDefaultInscription then
+	  createAttachedAnnotation -> theAnnotation[];
+      if);
+      theAnnotation[] -> target[];
+   #);
+   
+-- ArcAddBendPoint:doPart --
+do THIS(Arc)[] -> theBendPoint.attach;
+   theBendPoint[] -> added;
+   THIS(Arc)[] -> theBendPoint.setArc;
+   getCPNPage -> theBendPoint.setCPNPage;
+
+-- ArcRemoveBendPoint:doPart --
+do THIS(Arc)[] -> theBendPoint.detach;
+   theBendPoint[] -> removed;
+
+-- ArcSetColor:doPart --
+do getAnnotation -> elm[];
+   (if elm[] <> NONE then
+       newColor[] -> elm.SetColor;
+   if);
+   INNER;
+   
+-- ArcDeleteFromPage:DoPart --
+do this(Arc)[] -> (getCPNPage).removeArc;
+   
+-- ArcDelete:doPart --
+do (# theBendPoint: ^BendPoint;
+   do 
+      removeError;
+      loop: 
+	(# 
+	do (if not private.bends.empty then
+               private.bends.first -> theBendPoint[];
+               theBendPoint.delete;
+               restart loop;
+           if);
+	#);
+      THIS(Arc)[]->placeEnd.removeArc;
+      THIS(Arc)[]->placeEnd.detach;
+      THIS(Arc)[]->transEnd.removeArc;
+      THIS(Arc)[]->transEnd.detach;
+   #);
+
+-- ArcSetPlaceEnd:doPart --
+do (if newPlaceEnd[] <> placeEnd[] then
+       newPlaceEnd[] -> placeEnd[];
+   if);
+   
+-- ArcSetTransEnd:doPart --
+do (if newTransEnd[] <> transEnd[] then
+       newTransEnd[] -> transEnd[];
+   if);
+
+-- ArcGetAnnotation:doPart --
+do private.theAnnotation[] -> theAnnotation[];
+   
+-- ArcSetAnnotation:doPart --
+do (if (theAnnotation[] = NONE) and
+       (private.theAnnotation[] <> none)  then
+       private.theAnnotation[] -> removeMessageBubble;
+   if);
+   (if private.theAnnotation[] <> NONE then (* the first time *)
+       this(Arc)[] -> private.theAnnotation.detach;
+       NONE -> private.theAnnotation.setArc;
+   if);
+   (if theAnnotation[] = NONE then
+       &Annotation[] -> private.theAnnotation[];
+       private.theAnnotation.init;
+       this(Arc)[] -> private.theAnnotation.setArc;
+       'expr' -> private.theAnnotation.setInscription;
+       private.theAnnotation[] -> computeInitialAttachPoint;
+       private.theAnnotation.computePosition;
+       NONE -> private.theAnnotation.setInscription;       
+    else
+       theAnnotation[] -> private.theAnnotation[];
+   if);
+   this(Arc)[] -> private.theAnnotation.attach;
+   this(Arc)[] -> private.theAnnotation.setArc;
+   getCPNPage -> private.theAnnotation.setCPNPage;
+   
+-- ArcCreateAttachedAnnotation:doPart --
+do getAnnotation -> theAnnotation[];
+   cpnml[] -> theAnnotation.setInscription;
+   theAnnotation[] -> computeInitialAttachPoint;
+   theAnnotation.computePosition;
+   
+-- ArcComputePoints:doPart --
+do (# present_point:
+        (# handle: ^Ellipse;
+           bs: ^BasicStyle;
+           mark: ^Point2d;
+        enter mark[]
+        do &Ellipse[] -> handle[];
+           handle.init;
+           &BasicStyle[] -> bs[] -> handle.theStyle[];
+           greenish[] -> bs.fill[];
+           6 -> handle.width;
+           6 -> handle.height;
+           mark.x - presentation.x -> handle.x;
+           mark.y - presentation.y -> handle.y;
+           handle[] -> presentation.add;
+        #);
+   do &PointList[] -> points[];
+      
+      (if (transend[] <> none) and (placeend[] <> none) then
+         'ArcMakeShape: Place: (%d, %d), Trans: (%d,%d)' -> debugAttachmentPoints
+          (#
+          do placeEnd.x -> d;
+             placeEnd.y -> d;
+             transEnd.x -> d;
+             transEnd.y -> d;
+          #);
+          (if transIncidentPoint[] <> NONE then
+              (# outside: ^Point2d;
+                 line: ^GeomLine;
+                 intersect: ^Point2d;
+              do (if private.bends.empty then
+                     placeIncidentPoint[] -> outside[];
+                  else
+                     ((private.bends.first).getPoint2d) -> outside[];
+                 if);
+                 (outside[], transIncidentPoint[]) -> createFiniteLine -> line[];
+                 line[] -> transEnd.getIntersect -> intersect[];
+                 (if intersect[] <> NONE then
+                     intersect[] -> points.append;
+                  else
+                     transIncidentPoint[] -> points.append;
+                 if);
+              #);
+              'transIncidentPoint: (%d,%d)' -> debugAttachmentPoints
+              (#
+              do transIncidentPoint.x -> d;
+                 transIncidentPoint.y -> d;
+              #);
+           else
+              'transIncidentPoint[] was NONE' -> debugAttachmentPoints;
+              (# other: ^Point2d;
+                 intersect: ^Point2d;
+              do (if private.bends.empty then
+                     &Point2d[] -> other[];
+                     placeEnd.position -> other;
+                  else
+                     ((private.bends.first).getPoint2d) -> other[];
+                 if);
+                 other.XY -> transEnd.intersect -> intersect[];
+                 intersect[] -> points.append;
+              #);
+          if);
+          private.bends.scan
+          (# 
+          do current.getPoint2d -> points.append;
+          #);
+          (# theLine: @GeomLine;
+             intersect1: ^Point2d;
+          do (if placeIncidentPoint[] <> NONE then
+                 (if private.bends.empty and (transIncidentPoint[] <> NONE) then
+                     transIncidentPoint -> theLine.a;
+                 if);
+                 (if not private.bends.empty then
+                     ((private.bends.last).getPoint2d).XY -> theLine.a;
+                 if);
+                 placeIncidentPoint -> theLine.b;
+                 FINITE -> theLine.type;
+                 theLine[] -> placeEnd.getIntersect -> intersect1[];
+                 
+                 (if intersect1[] <> NONE then
+                     intersect1[] -> points.append;
+                  else
+                     placeIncidentPoint[] -> points.append;
+                 if);
+                 'placeIncidentPoint: (%d,%d)' -> debugAttachmentPoints
+                  (#
+                  do placeIncidentPoint.x -> d;
+                  placeIncidentPoint.y -> d;
+                  #);
+              else
+                 'placeIncidentPoint[] was NONE' -> debugAttachmentPoints;
+                 (# other: ^Point2d;
+                    intersect: ^Point2d;
+                 do (if private.bends.empty then
+                        &Point2d[] -> other[];
+                        transEnd.position -> other;
+                     else
+                        ((private.bends.last).getPoint2d) -> other[];
+                    if);
+                    other.XY -> placeEnd.intersect -> intersect[];
+                    intersect[] -> points.append;
+                 #);
+             if);
+          #);
+      if);
+      'END ArcMakeShape' -> debugAttachmentPoints;
+   #);
+   
+   
+-- ArcComputeInitialAttachPoint:doPart --
+do (# first, last: ^Point2d;
+      NorthDirection: (# exit 1 #);
+      SouthDirection: (# exit 2 #);
+      WestDirection: (# exit 3 #);
+      EastDirection: (# exit 4 #);
+      computeDirection:
+        (# v: ^Point2d;
+           direction: @integer;
+        enter v[]
+        do (if v.x > 0 then
+               (if v.y > 0 then
+                   (if v.x > v.y then
+                       EastDirection -> direction;
+                    else
+                       NorthDirection -> direction;
+                   if);
+                else
+                   (if v.x > (-v.y) then
+                       EastDirection -> direction;
+                    else
+                       SouthDirection -> direction;
+                   if);
+               if);
+            else
+               (if v.y > 0 then
+                   (if (-v.x) > v.y then
+                       WestDirection -> direction;
+                    else
+                       NorthDirection -> direction;
+                   if);
+                else
+                   (if (-v.x) > (-v.y) then
+                       WestDirection -> direction;
+                    else
+                       SouthDirection -> direction;
+                   if);
+               if);
+           if);
+        exit direction
+        #);
+      direction: @integer;
+   do (if points[] <> NONE then
+          (if points.size > 1 then
+              points.first -> first[];
+              points.last -> last[];
+              first[] -> last.sub -> computeDirection -> direction;
+              (if direction
+               //NorthDirection then
+                  -4 -> theAnnotation.dist;
+               //SouthDirection then
+                  4 -> theAnnotation.dist;
+               //WestDirection then
+                  4 -> theAnnotation.dist;
+               //EastDirection then
+                  -4 -> theAnnotation.dist;
+              if);
+          if);
+       else
+          -7 -> theAnnotation.dist;
+      if);
+      0.5 -> theAnnotation.t;
+      true -> theAnnotation.attached;
+   #);
+
+-- ArcStraighten:doPart --
+do (# theAnnotation: ^Annotation;
+   do getAnnotation -> theAnnotation[];
+      (if theAnnotation[] <> NONE then
+          (*** false -> theAnnotation.attached; ***)
+      if);
+      private.bends.scan
+      (# 
+      do (if (current.isStraight)and ((current.getNextBendPoint <> NONE) 
+             or (current.getPreviousBendPoint <> NONE)) then
+             current.delete;
+         if);
+      #);
+   #);
+
+-- ArconSemanticChanged:doPart --
+do (# theAnnotation: ^Annotation;
+   do removeError;
+      (if transEnd[] <> none then
+          source[] -> transEnd.semanticChanged;
+      if);
+      getAnnotation -> theAnnotation[];
+      NONE -> theAnnotation.setAST;
+   #);
+
+-- ArcBounds:doPart --
+do (# x, y: @real;
+   do (if placeEnd.x < transEnd.x then
+          placeEnd.x -> xmin;
+          transEnd.x -> xmax;
+       else
+          placeEnd.x -> xmax;
+          transEnd.x -> xmin;
+      if);
+      (if placeEnd.y < transEnd.y then
+          placeEnd.y -> ymin;
+          transEnd.y -> ymax;
+       else
+          placeEnd.y -> ymax;
+          transEnd.y -> ymin;
+      if);
+      private.bends.scan
+      (# 
+      do (if current.x < xmin then
+             current.x -> xmin;
+         if);
+         (if current.x > xmax then
+             current.x -> xmax;
+         if);
+         (if current.y < ymin then
+             current.y -> ymin;
+         if);
+         (if current.y > ymax then
+             current.y -> ymax;
+         if);
+      #);
+   #);
+
+-- ArcGetCurrentHighlight:doPart --
+do (if currentHighlight[] = NONE then
+       status -> statusToColor -> currentHighlight[];
+   if);
+   (if qerror[] <> NONE then (* for runtime errors *)
+       error_color -> currentHighlight[];
+   if);
+
+-- ArcGetInscriptions:doPart --
+do private.theAnnotation[] -> theList.append;
+
+-- ArcPresentHalo:doPart --
+do (# showHalo:
+        (# theColor: ^Color;
+           halo: ^Line;
+           theStyle: ^CompositeStyle;
+        enter theColor[]
+        do (if theColor[] <> NONE then
+               (if THIS(Arc).points[] <> NONE then
+                   &Line[] -> halo[];
+                   &CompositeStyle[] -> theStyle[];
+                   halo.init;
+                   theStyle[] -> halo.theStyle[];
+                   THIS(Arc).points[] -> halo.points[];
+                   (halo_width+strokeWidth-1,theColor[]) -> &HaloStyle -> theStyle.add;
+                   15 -> &CurvatureStyle -> theStyle.add;
+                   (if presentation[]<>NONE then
+                       halo[] -> presentation.add;
+                   if);
+               if);
+           if);
+        #);
+   do getCurrentHighlight -> showHalo;
+   #);
+
+-- ArcToString:doPart --
+do &Text[] -> str[];
+   'Arc between the place %s and transition %s with id %s'
+     -> str.putFormat 
+   (# 
+   do (if placeend[] <> none then
+          placeend.thename.copy -> s;
+       else
+          '' -> s;
+      if);
+      (if transEnd[] <> none then
+          transend.thename.copy -> s;
+       else
+          '' -> s;
+      if);
+      id.copy -> s;
+   #);
+   
+-- ArcmakeShape: doPart --
+do (# present_point:
+        (# handle: ^Ellipse;
+           bs: ^BasicStyle;
+           mark: ^Point2d;
+        enter mark[]
+        do &Ellipse[] -> handle[];
+           handle.init;
+           &BasicStyle[] -> bs[] -> handle.theStyle[];
+           greenish[] -> bs.fill[];
+           6 -> handle.width;
+           6 -> handle.height;
+           mark.x - presentation.x -> handle.x;
+           mark.y - presentation.y -> handle.y;
+           handle[] -> presentation.add;
+        #);
+   do (if theStyle.stroke[] = NONE then
+          (if debugging then 'Cpnet: the arc has no stroke style\n' -> debugCPNet if);
+      if);
+      (if private.theOrientation
+       //BothDir then
+          ARROW_BOTH -> theStyle.arrow;
+       //PtoT then
+          ARROW_START -> theStyle.arrow;
+       //TtoP then
+          ARROW_END -> theStyle.arrow;
+      if);
+      arrowHeadSize -> theStyle.arrowHeadSize;
+      
+      computePoints;
+      points[] -> theItem.points[];
+      15 -> theStyle.curvature;
+      'END ArcMakeShape' -> debugAttachmentPoints;
+   #);
+   
+-- ArcOnChanged:doPart --
+do (if (placeEnd[] <> NONE) AND (transEnd[] <> NONE) then
+       placeEnd.position -> MakePoint -> placeIncidentPoint[];
+       transEnd.position -> MakePoint -> transIncidentPoint[];
+       (# 
+          siblings: @integer;
+       do countSiblings -> siblings;
+          (if siblings > 1 then
+              (# distance: (# exit ArcDistance #);
+                 space: @real;
+                 p: ^Point2d;
+                 q: ^Point2d;
+                 v: ^Point2d;
+                arcContainer: @ArrayContainer
+                   (# Element:: Arc;
+                      less:: (# do left.getOrder > right.getOrder -> value; #);
+                      append:
+                        (# elm: ^Element;
+                        enter elm[]
+                        do (if size = capacity then
+                               capacityExtend;
+                           if);
+                           (elm[],size+1) -> put;
+                        #);
+                   #);
+   
+              do arcContainer.init;
+                 scanSiblings
+                 (#
+                 do current[] -> arcContainer.append;
+                 #);
+                 arcContainer.size -> arcContainer.quickSort;
+                 (siblings - 1) * distance -> space;
+                 placeIncidentPoint.copy -> p[];
+                 transIncidentPoint.copy -> q[];
+                 q[] -> p.sub -> v[];
+                 v.normalize -> v[];
+                 v.perp -> v[];
+                 
+                 (space / 2) -> v.scale -> p.sub -> p[];
+                 (space / 2) -> v.scale -> q.sub -> q[];
+                 
+                 distance -> v.scale -> v[];
+                 arcContainer.scan
+                 (#
+                 do 
+                    p[] -> current.placeIncidentPoint[];
+                    q[] -> current.transIncidentPoint[];
+                    v[] -> p.add -> p[];
+                    v[] -> q.add -> q[];
+                 #);
+              #);
+           else
+              (if not private.bends.empty then
+                  (# p: ^Point2d;
+                     x, y: @real;
+                     w, h: @integer;
+                     l, r, t, b: @real;
+                  do ((private.bends.first).getPoint2d) -> p[];
+                     transEnd.position -> (x, y);
+                     transEnd.width -> w;
+                     transEnd.height -> h;
+                     x - w / 2 -> l;
+                     x + w / 2 -> r;
+                     y - h / 2 -> t;
+                     y + h / 2 -> b;
+                     
+                     (if (p.x < l) OR (p.x > r) then
+                         (if (p.y > t) AND (p.y < b) then
+                             p.y -> transIncidentPoint.y;
+                         if);
+                     if);
+                     
+                     (if (p.y < b) OR (p.y > t) then
+                         (if (p.x > l) AND (p.x < r) then
+                             p.x -> transIncidentPoint.x;
+                         if);
+                     if);
+                  #);
+                  (# p: ^Point2d;
+                     x, y: @real;
+                     w, h: @integer;
+                     l, r, t, b: @real;
+                  do ((private.bends.last).getPoint2d) -> p[];
+                     placeEnd.position -> (x, y);
+                     placeEnd.width -> w;
+                     placeEnd.height -> h;
+                      x - w / 2 -> l;
+                     x + w / 2 -> r;
+                     y - h / 2 -> t;
+                     y + h / 2 -> b;
+                     
+                     (if (p.x < l) OR (p.x > r) then
+                         (if (p.y > t) AND (p.y < b) then
+                             p.y -> placeIncidentPoint.y;
+                         if);
+                     if);
+                     
+                     (if (p.y < b) OR (p.y > t) then
+                         (if (p.x > l) AND (p.x < r) then
+                             p.x -> placeIncidentPoint.x;
+                         if);
+                     if);
+                  #);
+              if);
+          if);
+          
+       #);
+       computePoints;
+       
+       getAnnotation -> theAnnotation[];
+       
+       
+       (if theAnnotation.presentation[] <> NONE then
+           (if theAnnotation.attached then
+               theAnnotation.computePosition;
+            else
+               theAnnotation.computeAttachment;
+           if);
+       if);
+   if);
+   INNER;
+
+-- ArcUpdate:doPart --
+do (# present_mark:
+        (# handle: ^Ellipse;
+           bs: ^BasicStyle;
+        do (if private.mark[] <> NONE then
+               &Ellipse[] -> handle[];
+               handle.init;
+               &BasicStyle[] -> bs[] -> handle.theStyle[];
+               greenish[] -> bs.fill[];
+               6 -> handle.width;
+               6 -> handle.height;
+               private.mark.x - presentation.x -> handle.x;
+               private.mark.y - presentation.y -> handle.y;
+               handle[] -> presentation.add;
+           if);
+        #);
+   do makeshape -> presentation.add;
+      presenthalo;
+      updateError;
+      (if false then
+          present_mark;
+      if);
+   #);
+   INNER;
+   
+-- Arcprint: doPart --
+do (#  makeLine:
+	(# pts: ^PointList;
+	   theLine: ^Line;
+	enter pts[]
+	do &Line[] -> theLine[];
+	   theLine.init;
+	   pts[] -> theLine.points[];
+	exit theLine[]
+	#);
+      start, end: ^Point2d;
+      path: ^PointList;
+      points: ^PointList;
+      attach: ^Point2d;
+   do THIS(Arc).points.copy -> points[];
+      points[] -> makeLine -> theItem.add;
+      (if private.theOrientation//BothDir//TtoP then
+	  points.size -> points.get -> end[];
+	  points.size - 1 -> points.get -> start[];
+	  (start.copy, end.copy) -> calcArrow -> (path[], attach[]);
+	  path[] -> makeLine -> theItem.add;
+      if);
+      (if private.theOrientation//BothDir//PtoT then
+	  1 -> points.get -> end[];
+	  2 -> points.get -> start[];
+	  (start.copy, end.copy) -> calcArrow -> (path[], attach[]);
+	  path[] -> makeLine -> theItem.add;
+      if);
+   #);
+   
+-- ArcClone: doPart --
+do (# annot: ^Annotation;
+   do (* &ElementDeque[] -> new.children[]; *)
+      lineColor[] -> new.lineColor[];
+      strokewidth -> new.strokewidth;
+      linetype[] -> new.linetype[];
+      arrowHeadSize -> new.arrowHeadSize;
+            
+      private.theOrientation -> new.setOrientation;
+      getOrder -> new.setOrder;
+      (getAnnotation).clone -> annot[];
+      annot[] -> new.setAnnotation;
+      new[] -> annot.setArc;
+
+      compiled -> new.status;
+   #);
+   
+-- ArcInit:doPart --
+do 1.0 -> arrowHeadSize;
+   2 -> currentSize;
+   &BendPointList[] -> private.bends[];
+   private.bends.init;
+
+-- ArcSetMark: doPart --
+do p[] -> private.mark[];
+   
+-- ArcGetStyle: doPart --
+do ('color',getColor) -> style.put;
+   ('arrowHeadSize',arrowHeadSize) -> style.putReal;
+   ('lineWidth',strokewidth) -> style.putReal;
+   
+-- ArcSetStyle: doPart --
+do (# newColor: ^Color;
+      newArrowHeadSize,newLineWidth: ^RealObject;
+   do 'color' -> style.get -> newColor[];
+      (if newColor[] <> NONE then
+          newColor[] -> setColor;
+      if);
+      'arrowHeadSize' -> style.get -> newArrowHeadSize[];
+      (if newArrowHeadSize[] <> NONE then
+          newArrowheadSize -> arrowHeadSize;
+      if);
+      'lineWidth' -> style.get -> newLineWidth[];
+      (if newLineWidth[] <> NONE then
+          newLineWidth -> strokewidth;
+      if);
+      changed;
+   #);

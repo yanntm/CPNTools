@@ -1,0 +1,272 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '~beta/process/basicsocket';
+BODY 'private/mlsocketbody';
+
+--- SystemLib:Attributes ---
+
+MLMessage: 
+  (# Print:< (# do INNER; #); 
+  #);
+
+MLData: MLMessage
+  (# Opcode: @Integer;
+     
+     Clear:
+       (# <<SLOT MLDataClear:DoPart>> #);
+     
+     Reset:
+       (# <<SLOT MLDataReset:DoPart>> #);
+     
+     Get:
+       (# onError:< Exception;
+          value: @Char;
+       <<SLOT MLDataGet:DoPart>> 
+       exit value   
+       #);
+     
+     GetInt:
+       (# onError:< Exception;
+          value: @Integer;
+       <<SLOT MLDataGetInt:DoPart>> 
+       exit value
+       #);
+     
+     GetTextNull:
+       (# onError:< Exception;
+          value: ^Text;
+       <<SLOT MLDataGetTextNull:DoPart>>
+       exit value[]
+       #);
+     
+     GetTextLength:
+       (# onError:< Exception;
+          value: ^Text;
+       <<SLOT MLDataGetTextLength:DoPart>>
+       exit value[]
+       #);
+     
+     Put:
+       (# value: @Char;
+       enter value
+       <<SLOT MLDataPut:DoPart>>
+       #);
+     
+     PutInt:
+       (# value: @Integer;
+       enter value
+       <<SLOT MLDataPutInt:DoPart>> 
+       #);
+     
+     PutText:
+       (# value: ^Text;
+       enter value[]
+       <<SLOT MLDataPutText:DoPart>>
+       #);
+     
+     PutTextNull:
+       (# value: ^Text;
+       enter value[]
+       <<SLOT MLDataPutTextNull:DoPart>>   
+       #);
+     
+     PutTextLength:
+       (# value: ^Text;
+       enter value[]
+       <<SLOT MLDataPutTextLength:DoPart>>   
+       #);
+    (* 
+     Print::<
+       (# <<SLOT MLDataPrint:DoPart>> #);
+     *)
+     Private: @<<SLOT MLDataPrivate:Descriptor>>;
+  #);
+
+MLBIS: MLMessage
+  (# Reset:
+       (# <<SLOT MLBISReset:DoPart>> #);
+     
+     Clear:
+       (# <<SLOT MLBISClear:DoPart>> #);
+     
+     Bools:
+       (# value: @Integer;
+       <<SLOT MLBISBools:DoPart>>
+       exit value
+       #);
+     
+     Ints:
+       (# value: @Integer;
+       <<SLOT MLBISInts:DoPart>>
+       exit value
+       #);
+     
+     Strings:
+       (# value: @Integer;
+       <<SLOT MLBISStrings:DoPart>>
+       exit value
+       #);
+     
+     GetBool:
+       (# value: @Boolean;
+       <<SLOT MLBISGetBool:DoPart>>
+       exit value
+       #);
+     
+     GetInt:
+       (# value: @Integer;
+       <<SLOT MLBISGetInt:DoPart>>
+       exit value
+       #);
+     
+     GetString: 
+       (# value: ^Text;
+       <<SLOT MLBISGetString:DoPart>>
+       exit value[]
+       #);
+       
+     PutBool:
+       (# value: @Boolean;
+       enter value
+       <<SLOT MLBISPutBool:DoPart>> 
+       #);
+     
+     PutInt:
+       (# value: @Integer;
+       enter value
+       <<SLOT MLBISPutInt:DoPart>>
+       #);
+     
+     PutString:
+       (# value: ^Text;
+       enter value[]
+       <<SLOT MLBISPutString:DoPart>>   
+       #);
+     
+     (* Opcode is set on receive. *)
+     Opcode: @Integer;
+     
+     Private: @<<SLOT MLBISPrivate:Descriptor>>;
+  #);
+
+MLSocket: BasicSocket
+  (# onError:< Exception;
+     
+     Shake:
+       (# host: ^Text;
+          port: @Integer;
+          success: @Boolean;
+       enter (host[], port)
+       <<SLOT MLSocketShake:DoPart>>
+       exit success
+       #);
+     
+     Get: withIdle
+       (# onError:< LocalException;
+          
+          onDataPattern: 
+            (# data: ^MLData;
+            enter data[]
+            <<SLOT MLSocketOnDataPattern:DoPart>>
+            #);
+          
+          onData:< onDataPattern;
+          
+          onBISPattern:
+            (# bis: ^MLBIS;
+            enter bis[]
+            <<SLOT MLSocketOnBISPattern:DoPart>>
+            #);
+          
+          onBIS:< onBISPattern;
+          
+          message: ^MLMessage;
+       <<SLOT MLSocketGet:DoPart>>
+       exit message[]
+       #);
+     SimpleGet: WithIdle
+       (# onError:< LocalException;
+          onData:<
+            (# data: ^MLData;
+            enter data[]
+            do INNER;
+            #);
+          onBis:<
+            (# bis: ^MLBis;
+            enter bis[]
+            do INNER;
+            #);
+          message: ^MLMessage;
+       <<SLOT MLSocketSimpleGet: doPart>>
+       exit message[]
+       #);
+     
+     GetText: withIdle
+       (# onError:< LocalException;
+          onMLException:< Exception 
+            (# exceptionNumber: @Char;
+               message: ^Text;
+            enter (message[], exceptionNumber)
+            do true -> continue;
+               INNER;
+            #);
+          message: ^Text;
+       <<SLOT MLSocketGetText:DoPart>>
+       exit message[]
+       #);
+     
+     SimplePut: WithIdle
+       (# onError:< LocalException;
+          data: ^MLData;
+       enter data[]
+       <<SLOT MLSocketSimplePut: doPart>>
+       #);
+     
+     Put: withIdle
+       (# onError:< LocalException;
+          message: ^MLMessage;
+       enter message[]
+       <<SLOT MLSocketPut:DoPart>>
+       #);
+     
+     PutText: withIdle
+       (# onError:< LocalException; 
+       #);
+     
+     Error::<
+       (# <<SLOT MLSocketError:DoPart>> #);
+     
+     LocalException:
+       (# continue: @Boolean;
+          msg: @Text;
+          termCode: @Integer;
+       <<SLOT MLSocketLocalException:DoPart>>
+       #);
+     
+     MLPrivate: @<<SLOT MLSocketPrivate:Descriptor>>;
+  #);
+
+

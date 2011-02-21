@@ -1,0 +1,824 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../cpnworkspace';
+INCLUDE '~beta/basiclib/directory';
+INCLUDE '~beta/basiclib/regexp';
+INCLUDE '../pscontext';
+INCLUDE '../resources/figures/netfigures';
+INCLUDE '../resources/figures/createfigures';
+INCLUDE '../resources/texts/texts';
+INCLUDE 'cpninstrument';
+INCLUDE 'binderinstruments';
+INCLUDE 'simulationinstruments';
+INCLUDE '../wselements/index';
+INCLUDE '../../cpnet/descriptordialog';
+
+BODY 'private/netinstrumentsbody'
+
+-- CPNWorkspaceLib: Attributes --
+
+(*
+ * Global methods
+ *)
+
+(* 
+ * promptSaveOrDiscard checks whether the net has been modified, and if
+ * this is the case, the user is presented with a dialog that asks whether the 
+ * user wants to save the net, discard the changes or cancel the operation.
+ *)
+promptSaveOrDiscard:
+  (# cancelled: @boolean;
+     theNet: ^CPNet;
+     path: ^Text;
+     entry: @DiskEntry;
+     question: @Text;
+  enter  theNet[]
+  do (if theNet.modifiedSinceSave then
+         '"' -> question.append;
+         thenet.name -> question.append;
+         '" has been modified. Save changes?' -> question.append;
+          (if ('Unsaved net', question[]) -> widget.promptUser
+           //widget.UserYes then
+              (if theNet.path[] <> NONE THEN
+                  theNet[] -> SaveNet;
+                  false -> cancelled;
+               else
+                  OpenSaveAsDialog -> path[];
+                  (if path[] <> NONE then
+                      path[] -> entry.path;
+                      entry.path.name -> theNet.name;
+                      entry.path.head -> theNet.path[];
+                  if);
+                  (if theNet.path[] <> NONE then
+                      theNet[] -> SaveNet;
+                      false -> cancelled;
+                   else
+                      true -> cancelled;
+                  if);
+              if);
+           // widget.UserNo then
+              theNet[] -> DeleteAutosave;
+              false -> cancelled;
+           // widget.UserCancel then
+              true -> cancelled;
+          if);
+      if);
+  exit cancelled
+  #);
+
+CloseNet: WithCommandManager
+  (# theNet: ^CPNet;
+     theClipping: ^NetClipping;
+     theCommand: ^CloseNetCommand;
+  enter theNet[]
+  do &NetClipping[] -> theClipping[];
+     theNet[] -> theClipping.init;
+     
+     &CloseNetCommand[] -> theCommand[];
+     theCommand.init;
+     theClipping[] -> theCommand.clip[];
+     theCommand.apply;
+     
+     manager.clear;
+  #);
+
+OpenSaveAsDialog:
+  (# path,suffix: ^Text;
+     entry: @DiskEntry;
+     saveDialog: @widget.FileCreationDialog
+       (# 
+       do &text[]->fileName[];
+          NamesFileDialogFilter  -> getGlobalNames -> filter[];
+          NamesSaveInstrument -> getGlobalNames -> title[];
+       #);
+     
+  do (if NOT modalDialog then
+         true -> modalDialog;
+         saveDialog -> path[];          
+         false -> modalDialog;
+     if);
+     (if path[] <> none then
+         path[] -> entry.path;
+         (if not ('.cpn' -> (entry.path.name.suffix).equal) then
+             '.cpn' -> path.append;
+             path[] -> entry.path;
+         if);
+     if);
+  exit path[]
+  #);
+
+(*
+ * Instruments
+ *)
+
+SaveNetWithDialog:
+  (# net: ^CPNet;
+     status: ^StatusBubble;
+     entry: @DiskEntry;
+     path: ^Text;
+  enter net[]
+  do trySave:
+       (#
+       do ObjectPool.get(# Type::StatusBubble; #) -> status[];
+          (if net.path[] = NONE then
+              OpenSaveAsDialog -> path[];
+              (if path[] <> NONE then
+                  (if not (path[] -> getNetName).isAsciiOne then
+                      ExtendedASCIISave -> getGlobalNames -> status.error;
+                      leave trySave;
+                  if);
+                  path[] -> entry.path;
+                  entry.path.name -> net.name;
+                  entry.path.head -> net.path[];
+                  net.changed;
+              if);
+          if);
+          (if net.path[] <> NONE then
+              net[] -> 
+              SaveNet
+              (#
+                 myError:: (# 
+                           do msg[] -> status.error;
+                              leave trySave;
+                           #);
+              #);
+              net[] -> DeleteAutosave;
+          if);
+       #);
+  #);
+
+
+
+SaveNetInstrument: FigureTInstrument
+  (# TargetType:: theIndex.NetNode;
+     FigureT:: SaveFigure;     
+     apply::
+       (# 
+       do target.net[] -> saveNetWithDialog;
+          finish;
+       #);
+     init:: 
+       (# 
+       do 'save_net' -> helpname[];
+       #);
+     ToolTip::
+       (# 
+       do NamesSaveNet -> getGlobalNames -> theTip[]; 
+       #);
+  #);
+
+SaveAllNetsInstrument: CPNInstrument
+  (# CommandType:: SaveAllNetsCommand; 
+     FigureT:: LoadFigure;
+     ToolTip::
+       (# 
+       do NamesSaveAllNets -> getGlobalNames -> theTip[];
+       #);
+  #);
+     
+SaveNetAsInstrument: FigureTInstrument
+  (# TargetType:: theIndex.NetNode;
+     FigureT:: SaveAsFigure;
+     apply::
+       (# path: ^Text;
+          suffix: ^Text;
+          entry: @diskentry;
+          saveDialog: @widget.FileCreationDialog
+            (# 
+            do &text[]->fileName[];
+               NamesFileDialogFilter  -> getGlobalNames -> filter[];
+               NamesSaveInstrument -> getGlobalNames -> title[];
+            #);
+       do OpenSaveAsDialog -> path[];
+          (if path[] <> none then
+              trySave:
+                (# status: ^StatusBubble;
+                do ObjectPool.get(# Type:: StatusBubble; #) -> status[];
+                   (if not (path[] -> getNetName).isAsciiOne then
+                       ExtendedASCIISave -> getGlobalNames -> status.error;
+                       leave trySave;
+                   if);
+                   target.net[] -> 
+                   SaveNet
+                   (#
+                      diskPath::
+                        (#
+                        do path.copy -> value[];
+                        #);
+                      myError::
+                        (#
+                        do msg[] -> status.error;
+                           leave trySave;
+                        #);
+                   #);
+                   target.net[] -> DeleteAutosave;
+                   path[] -> entry.path;
+                   entry.path.name -> target.net.name;
+                   entry.path.head -> target.net.path[];
+                   target.net.changed;
+                #);
+          if);
+          finish;
+       #);
+     init:: 
+       (# 
+       do 'save_net_as' -> helpname[]; 
+       #);     
+     ToolTip:: 
+       (# 
+       do NamesSaveNetNew -> getGlobalNames -> theTip[]; 
+       #);
+  #);
+
+CreateNetInstrument: CPNInstrument
+  (# CommandType:: LoadNewNetCommand;   
+     FigureT:: NewNetFigure;
+     init:: (# <<SLOT CreateNetInstrumentInit:DoPart>> #);
+     ToolTip:: 
+       (# 
+       do NamesCreateNet -> getGlobalNames -> theTip[];
+       #);     
+  #);
+
+LoadNetInstrument: CPNInstrument
+  (# CommandType:: LoadNetCommand; 
+     FigureT:: LoadFigure;
+     ToolTip::
+       (# 
+       do NamesLoadNet -> getGlobalNames -> theTip[];
+       #);
+     init:: (# <<SLOT LoadNetCommandInit:DoPart>> #);
+  #);
+
+LoadNewNetCommand: LoadNetCommand
+  (# newNet:: TrueObject; #);
+
+getNetName: 
+  (# idx: @integer;
+     pos: @integer;
+     absoluteFilename: ^Text;
+     netName: ^Text;
+  enter absoluteFilename[]
+  do &Text[] -> netName[];
+     1 -> idx;
+     absoluteFilename.scanAll 
+     (# 
+     do (if (ch = '/') or (ch = '\\') then idx + 1 -> pos if);
+        idx + 1 -> idx;
+     #);  
+     (pos, absoluteFilename.length) -> absoluteFilename.sub -> netName[];
+  exit netName[]
+  #);             
+
+LoadNetCommand: CPNCommand
+  (# newNet:< BooleanObject;
+     netLoaded: @boolean;
+     getName::
+       (#
+       do 'Load ' -> name[];
+          '"' -> name.put;
+          (theNetNode.net.name).copy -> name.puttext;
+          '"' -> name.put;
+       #);
+     HiddenCommand::
+       (# 
+       do true -> value;
+       #);
+     init::
+       (#        
+       do false -> netLoaded
+       #);
+     apply:: (# <<SLOT LoadNetCommandApply:DoPart>> #);
+     theNetNode: ^theIndex.NetNode;
+     undo::
+       (# 
+       do theNetNode[] -> theIndex.removeIndexNode;
+       #);
+     redo::
+       (# 
+       do theNetNode[] -> theIndex.addIndexNode;
+       #);
+  #);
+
+SaveAllNetsCommand: CPNCommand
+  (# TargetType:: CPNWorkSpace;
+     apply::
+       (#
+       do
+	 (# 
+	 do target.theIndex.scanIndexNodes
+	   (# Type:: target.theIndex.NetNode;
+	   do current.net[] -> saveNetWithDialog;
+	   #);
+         #);
+       #);
+     relevant:: 
+       (#
+	  do checkNetsOpen: (#
+	  do
+	    target.theIndex.scanIndexNodes
+	      (# Type:: target.theIndex.NetNode;
+		 do
+	         true -> value;
+	         leave checkNetsOpen;
+	      #);
+	    false -> value;
+	  #);
+       #);
+   #);
+
+CloseNetInstrument: FigureTInstrument
+  (# TargetType:: theIndex.NetNode;
+     FigureT:: CloseNetFigure;
+     apply::
+       (# 
+       do attemptClose:
+            (#
+            do (if target.net.modifiedSinceSave then
+                   (if target.net[] -> PromptSaveOrDiscard then
+                       leave attemptClose;
+                   if);
+               if);
+               setBusyCursor; (*** LOCK-INTERACTION ***)
+               target.net[] -> CloseNet;
+               UnsetBusyCursor; (*** UNLOCK-INTERACTION ***)
+            #);
+          finish;
+       #);
+     init::
+       (# 
+       do 'close_net' -> helpname[];
+       #);
+     ToolTip::
+       (# 
+       do NamesCloseNet -> getGlobalNames -> theTip[];
+       #);     
+  #);
+
+CloseAllNetsInstrument: CPNInstrument
+  (# CommandType:: CloseAllNetsCommand; 
+     FigureT:: LoadFigure;
+     ToolTip::
+       (# 
+       do NamesSaveAllNets -> getGlobalNames -> theTip[];
+       #);
+  #);
+
+CloseAllNetsCommand: CPNCommand
+  (# TargetType:: CPNWorkSpace;
+     apply::
+       (#
+	 do target.theIndex.scanIndexNodes
+	   (# Type:: target.theIndex.NetNode;
+	      do attemptClose:
+                  (#
+	          do (if current.net.modifiedSinceSave then
+		      (if current.net[] -> PromptSaveOrDiscard then
+                        leave attemptClose;
+                      if);
+                    if);
+                    setBusyCursor; (*** LOCK-INTERACTION ***)
+		    current.net[] -> CloseNet;
+                    UnsetBusyCursor; (*** UNLOCK-INTERACTION ***)
+                  #);
+	   #);
+       #);
+     relevant:: 
+       (#
+	  do checkNetsOpen: (#
+	  do
+	    target.theIndex.scanIndexNodes
+	      (# Type:: target.theIndex.NetNode;
+		 do
+	         true -> value;
+	         leave checkNetsOpen;
+	      #);
+	    false -> value;
+	  #);
+       #);
+  #);
+
+ExportEntity:
+  (# theEntity: ^Entity;
+     saveName: ^Text;
+     options: ^OptionList;
+  enter (theEntity[], saveName[], options[])
+  <<SLOT ExportEntity:DoPart>>
+  #);
+ExportInstanceNodesAndDeclarations:
+  (# theInstanceNodes: ^InstanceNodeList;
+     declarations: ^DeclarationList;
+     path: ^Text;
+     options: ^OptionList;
+     overWriteAll, exportHierachy, exportNetHierachy: @boolean;     
+  enter (theInstanceNodes[], declarations[], path[], options[], overWriteAll, exportHierachy, exportNetHierachy)
+  <<SLOT ExportInstanceNodesAndDeclarations:DoPart>>
+  #);
+ExportCPNSheetInstrument: Instrument
+  (# TargetType:: CPNSheet;
+     options: ^OptionList;
+     init:: (# enter options[] #);
+     apply:: (# <<SLOT ExportCPNSheetInstrumentApply:DoPart>> #);
+  #);
+ExportGlobalBoxNodeInstrument: Instrument
+  (# TargetType:: theIndex.GlobalBoxNode;
+     options: ^OptionList;
+     init:: (# enter options[] #);
+     apply:: (# <<SLOT ExportGlobalBoxNodeInstrumentApply:DoPart>> #);
+  #);
+ExportBinderInstrument: Instrument
+  (# TargetType:: CPNBinder;
+     relevant:: (# do (value and (target.notIsToolBinder)) -> value; #);
+     options: ^OptionList;
+     init:: (# enter options[] #);
+     apply:: (# <<SLOT ExportBinderInstrumentApply:DoPart>> #);
+  #);
+ExportDeclarationNodeInstrument: Instrument
+  (# TargetType:: theIndex.AbstractDeclNode;
+     options: ^OptionList;
+     init:: (# enter options[] #);
+     apply:: (# <<SLOT ExportDeclarationNodeInstrumentApply:DoPart>> #);
+  #);
+ExportTextSheetInstrument: Instrument
+  (# TargetType:: TextSheet;
+     options: ^OptionList;
+     init:: (# enter options[] #);
+     apply:: (# <<SLOT ExportTextSheetInstrumentApply:DoPart>> #);
+  #);
+ExportInstanceNodeInstrument: Instrument
+  (# TargetType:: theIndex.InstanceNode;
+     options: ^OptionList;
+     init:: (# enter options[] #);
+     apply:: (# <<SLOT ExportInstanceNodeInstrumentApply:DoPart>> #);
+  #);
+ExportNetNodeInstrument: Instrument
+  (# TargetType:: theIndex.NetNode;
+     options: ^OptionList;
+     init:: (# enter options[] #);
+     apply:: (# <<SLOT ExportNetNodeInstrumentApply:DoPart>> #);
+  #);
+PrintInstrument: CPNGenericInstrument
+  (# FigureT:: ExportFigure;
+     blackAndWhite, currentMarking: @BooleanObject;
+     theExportCPNSheetInstrument: @ExportCPNSheetInstrument;
+     theExportGlobalBoxNodeInstrument: @ExportGlobalBoxNodeInstrument;
+     theExportDeclarationNodeInstrument: @ExportDeclarationNodeInstrument;
+     theExportInstanceNodeInstrument: @ExportInstanceNodeInstrument;
+     theExportNetNodeInstrument: @ExportNetNodeInstrument;
+     theExportBinderInstrument: @ExportBinderInstrument;
+     theExportTextSheetInstrument: @ExportTextSheetInstrument;
+     init:: (# <<SLOT ExportInstrumentInit:DoPart>> #);
+     ToolTip:: (# <<SLOT ExportInstrumentToolTip:DoPart>> #);       
+  #);
+
+SaveNetAndSimulatorInstrument: FigureTInstrument
+  (# TargetType:: theIndex.NetNode;
+     theFigure: ^FigureT;
+     FigureT:: PageElementFigure;
+     apply:: (# <<SLOT SaveNetAndSimulatorInstrument:DoPart>> #);       
+     ToolTip:: (# do NamesSaveNetAndSimulator -> getGlobalNames -> theTip.putFormat; #);
+     init::
+       (# theAux: ^Aux;
+       do &Aux[] -> theAux[];
+          &theAux.labelShape[] -> theAux.theShape[];
+          
+          60 -> theAux.theShape.width;
+          60 -> theAux.theShape.height;
+          
+          'black' -> colorTable.lookup -> theAux.lineColor[];
+          'white' -> colorTable.lookup -> theAux.fillColor[];
+          1 -> theAux.strokeWidth;
+          'black' -> colorTable.lookup -> theAux.textColor[];
+          false -> theAux.filled;
+          'Solid' -> theAux.linetype[];
+          '' -> theAux.fillpattern[];
+          'Net +\nsim' -> theAux.setText;
+          
+          theAux.update;
+          
+          tmpFigure[] -> theFigure[];
+          theAux[] -> theFigure.thePageElement[];
+          
+          theFigure.update;
+       #);     
+  #);
+
+AbstractPrintCommand: CPNCommand
+  (#
+     hiddencommand:: 
+       (# 
+       do true -> value;
+       #);
+     
+     init:: (# enter theFile[] #);
+     
+     theFile: ^fileObject;
+     ctx: @PSContext;
+
+     bw,cm: @boolean;
+     
+     apply::<
+     (# boundX1,boundY1,boundX2,boundY2: @Real;
+
+        calculateBounds:<
+	  (# addBound:
+	       (# tmpx1, tmpx2, tmpy1, tmpy2: @real;
+	       enter (tmpx1, tmpx2, tmpy1, tmpy2)
+               do (boundX1,tmpX1)->min->boundX1;
+                  (boundY1,-tmpY2)->min->boundY1;
+                  (boundX2,tmpX2)->max->boundX2;
+                  (boundY2,-tmpY1)->max->boundY2;
+               #);
+          do MAXINT->boundX1->boundY1;
+             MININT->boundX2->boundY2;
+             INNER;
+             boundX1-5->boundX1;
+             boundX2+5->boundX2;
+             boundY1-5->boundY1;
+             boundY2+5->boundY2;   
+	  #);
+        
+        getDefaultName:<
+	  (# t: ^text;
+	  do INNER;
+	  exit t[]
+	  #);
+     do 'currentmarking' -> options.lookupboolean -> cm;
+        'blackwhite' -> options.lookupboolean -> bw;
+        calculateBounds;
+        arial[] -> ctx.setFont;
+        (theFile[],0,0,boundX2-boundX1,boundY2-boundY1)->ctx.start;
+        bw->ctx.bw;
+        (-boundX1,boundY1)->ctx.translate;
+        INNER;
+        ctx.stop;
+        
+     #);
+  #);
+DeclarationExtractText:
+  (# target: ^Declaration;
+     output: ^Stream;
+  enter (target[], output[])
+  <<SLOT DeclarationExtractText:DoPart>>   
+  #);
+ExportDeclarationCommand: CPNCommand
+  (# TargetType:: Declaration;
+     apply:: (# <<SLOT ExportDeclarationCommandApply:DoPart>> #);
+     output: ^FileObject;
+     init:: (# enter output[] #);     
+  #);
+ExportGlobalBoxNodeCommand: CPNCommand
+  (# TargetType:: theIndex.GlobalBoxNode;
+     apply:: (# <<SLOT ExportGlobalBoxNodeCommandApply:DoPart>> #);
+     output: ^FileObject;
+     init:: (# enter output[] #);
+  #);
+PrintIndexHierachyCommand: AbstractPrintCommand 
+  (# TargetType:: theIndex.Node;
+   
+     apply::
+       (# getDefaultName:: 
+            (# 
+            do 'Name' -> t[];
+            #);
+
+	    calculateBounds::
+	    (#   calculateFor:
+	         (# t: ^theIndex.Node;
+                 enter t[]
+                 do t.presentation.bounds -> addBound;
+                    (if t.expanded then
+                        t.scanIndexNodes
+                        (#
+                        do current[] -> calculateFor;
+                        #);
+                    if);
+                 #);
+            do target[] -> calculateFor;  
+	    #);
+
+	 printNode:
+	 (# t: ^theIndex.Node;
+	 enter t[]
+         do ctx[] -> t.presentation.displayOpaque;
+            (if t.expanded then
+                t.scanIndexNodes
+                (#
+                do  current[] -> printNode;
+                #);
+            if);
+	 #);
+       do target[] -> printNode;   
+       #); 
+  #);
+
+PrintCPNSheetCommand: AbstractPrintCommand 
+  (# TargetType:: CPNSheet;   
+     printPageElement: 
+       (# element: ^PageElement; 
+       enter element[]
+       <<SLOT PrintCPNSheetCommandPrintPageElement:DoPart>>
+       #);    
+     printSimulationFeedBack:
+       (# elementToDecorate: ^PageElement;
+       enter elementToDecorate[]
+       <<SLOT PrintCPNSheetCommandPrintSimulationFeedBack:doPart>>
+       #);
+     apply:: 
+       (# useGroup: @boolean;
+          theGroup: ^Group;
+          getDefaultName:: 
+            (# 
+            do target.content.thePage.name -> t[]; 
+            #);
+          calculateBounds:: 
+            (# theBoundsCalculation:
+                 (# theElement: ^PageElement;
+                    pi:^PlaceInstance;
+                    ti: ^TransitionInstance;
+                 enter theElement[]
+                 do theElement.recursiveBounds -> addBound;
+                    
+                    (if theElement##<=SSNode## then
+                        (# theSSNode: ^SSNode;
+                           dialog: ^DescriptorDialog;
+                        do theElement[] -> theSSNode[];
+                           theSSNode.dialog[] -> dialog[];
+                           (if dialog.visible then
+                               theElement.presentation.bounds -> addBound;
+                           if);
+                        #);
+                    if);
+                    (if theElement##<=SSArc## then
+                        (# theSSArc: ^SSArc;
+                           dialog: ^DescriptorDialog;
+                        do theElement[] -> theSSArc[];
+                           theSSArc.dialog[] -> dialog[];
+                           (if dialog.visible then
+                               theElement.presentation.bounds -> addBound;
+                           if);
+                        #);
+                    if);
+                    
+                    
+                    (if cm AND (theElement##<=Place##) then
+                        theElement.id[] -> target.content.lookupPlaceInstance -> pi[];
+                        (* The presentation contains Composites, which sits have
+                         * bounds (0,0,0,0), which are not visible. Therefore no scan 
+                         * of children of presentation as in Composite.bounds.
+                         * pi.presentation.bounds->addBounds;
+                         *)
+                        (if pi.numtokens > 0 then
+                            (if false then
+                                pi.bounds -> addBound;
+                             else
+                                (pi.theToken.present).bounds -> addBound;
+                                (pi.thePlaceMarking.present).bounds -> addBound;
+                            if);
+                        if);
+                    if);
+                    (if cm and (theElement##<=Transition##) then
+                        theElement.id[] -> target.content.lookupTransitionInstance -> ti[];
+                        (ti.present).bounds -> addBound;
+                    if);
+                 #);
+            do (if ((target.content.thepage.getSelectedGroup)<>NONE)
+                   and (not (target.content.thepage.getSelectedGroup).all) 
+                   and (not (target.content.thePage.getSelectedGroup).isGlobal) then
+                   true -> useGroup;
+                   target.content.thepage.getSelectedGroup -> theGroup[];
+                   theGroup.scanElements
+                   (# 
+                   do current[] -> theBoundsCalculation;
+                   #);
+                else
+                   false -> useGroup;
+                   target.mainlayer.content.scan
+                   (# 
+                   do (if current##<=PageElement## then
+                          current[] -> theBoundsCalculation;
+                      if);
+                   #);
+               if);
+            #);
+       <<SLOT PrintCPNSheetCommandApply:DoPart>>
+       #);  
+  #);
+
+(*
+ * Commands
+ *)
+
+CloseNetCommand: Command
+  (# clip: ^NetClipping;
+     
+     notUndoable:: (# do true -> value; #);
+     
+     getName::
+       (#
+       do 'Close ' -> name[];
+          '"' -> name.put;
+          clip.getName -> name.puttext;
+          '"' -> name.put;
+       #);
+     apply::
+       (# 
+       enter clip[]
+       do redo;
+       #);
+     undo::
+       (# 
+       do clip.insert;
+       #);
+     redo::
+       (# 
+       do clip.remove;
+       #);
+  #);
+
+(*
+ * Clippings
+ *)
+
+NetClipping: Clipping
+  (# Element:: CPNet;
+     
+     theCommands: @List (# Element:: Command #);
+     
+     getName:
+       (# name: ^Text;
+       do (elm.name).copy -> name[];
+       exit name[]
+       #);
+     
+     init::
+       (# removedTabs: @integer;
+       do folderManager.theStandardLayer.folders.scan
+          (# theBinder: ^Folder;
+          do current[] -> theBinder[];
+             theBinder.sheets.scan
+             (# theCPNSheet: ^CPNSheet;
+                theTextSheet: ^TextSheet;
+             do none -> theCPNSheet[]; 
+                none -> theTextSheet[];
+                (if current## <= CPNSheet## then
+                    current[] -> theCPNSheet[];
+                if);
+                (if current## <= TextSheet## then
+                    current[] -> theTextSheet[];
+                if);
+                (if ((theCPNSheet[] <> none) and (elm[] = theCPNSheet.content.thePage.net[])) or
+                    ((theTextSheet[] <> none) and (elm[] = theTextSheet.content.getCPNet)) then
+                    (current[], theBinder[]) -> buildCloseTabCommand -> theCommands.append;
+                if);                
+             #);
+          #);
+       #);
+     redoCommands:
+       (# 
+       do theCommands.scan
+          (# 
+          do current.redo;
+          #);
+       #);
+     undoCommands:
+       (# 
+       do theCommands.scan
+          (# 
+          do current.undo;
+          #);
+       #);
+     insert::
+       (# 
+       do false -> elm.deleted;
+          undoCommands;
+       #);
+     remove::
+       (#
+       do redoCommands;
+          elm.removed;
+       #);
+  #);  

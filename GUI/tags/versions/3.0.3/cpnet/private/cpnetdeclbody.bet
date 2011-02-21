@@ -1,0 +1,761 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../decl';
+
+-- DeclPlaceAndTransitionVisitorVisitDecl:DoPart --
+do (if (theDecl.id[] -> decls.lookup) = none then
+       (theDecl.id[], theDecl[]) -> decls.associate;
+       (any_status, unchecked) -> theDecl.changeStatus;
+       inner visitDecl;
+       theDecl.scanUsedBy
+       (#
+       do current[] -> visitDecl;
+       #);
+       theDecl.scanUsedByNodes
+       (#
+       do (if (current.id[] -> nodes.lookup) = none then
+              (current.id[], current[]) -> nodes.associate;
+              (if current## <= Place## then
+                   current[] -> visitPlace;
+                else
+                   current[] -> visitTransition;
+               if);
+          if);
+       #);
+       theDecl.overwrites.scan
+       (#
+       do current[] -> visitDecl;
+       #);             
+   if);
+   
+-- DeclPlaceAndTransitionVisitorVisitPlace:DoPart --
+do thePlace.scanAllReachablePlaces
+   (# 
+   do (current.id[], current[]) -> nodes.associate;
+      current[] -> this(visitPlace).thePlace[];
+      inner visitPlace;
+   #);
+   
+-- DeclPlaceAndTransitionVisitorInit:DoPart --
+do decls.init;
+   nodes.init;   
+   
+-- DeclPlaceAndTransitionVisitor:DoPart --
+do startDecl[] -> visitDecl;
+
+-- DeclPrivate:Descriptor --
+(# usedBy: @DeclIDDictionary;
+   usedByNodes: @NodeIDDictionary;
+   usedByMonitors, overWritesMonitor, overWrittenBy: @MonitorIDDictionary;
+   init:
+     (# 
+     do usedBy.init;
+        usedByNodes.init;
+        usedByMonitors.init;
+        overWritesMonitor.init;
+        overWrittenBy.init;
+     #);
+#)
+
+-- DeclToString:DoPart --
+do '' -> str[];
+   str[] -> print;
+
+-- DeclAddUsedBy:DoPart --
+do (theDecl.id[], theDecl[]) -> private.usedBy.associate;
+   
+-- DeclRemoveUsedBy:DoPart --
+do theDecl.id[] -> private.usedBy.disassociate;
+   
+-- DeclLookupUsedBy:DoPart --
+do id[] -> private.usedBy.lookup -> result[];
+   
+-- DeclScanUsedBy:DoPart --
+do private.usedBy.scan
+   (# 
+   do current[] -> this(scanUsedBy).current[];
+      inner scanUsedBy;
+   #);
+   
+-- DeclClearUsedBy:DoPart --
+do private.usedBy.clear;
+   
+-- DeclAddUsedByNode:DoPart --
+do (theNode.id[], theNode[]) -> private.usedByNodes.associate;
+   
+-- DeclRemoveUsedByNode:DoPart --
+do theNode.id[] -> private.usedByNodes.disassociate;
+   
+-- DeclScanUsedByNodes:DoPart --
+do private.usedByNodes.scan
+   (# 
+   do current[] -> this(scanUsedByNodes).current[];
+      inner scanUsedByNodes;
+   #);
+   
+-- DeclClearUsedByNodes:DoPart --
+do private.usedByNodes.clear;
+   
+-- DeclAddUsedByMonitor:DoPart --
+do (theMonitor.id[], theMonitor[]) -> private.usedByMonitors.associate;
+   
+-- DeclRemoveUsedByMonitor:DoPart --
+do theMonitor.id[] -> private.usedByMonitors.disassociate;
+   
+-- DeclScanUsedByMonitors:DoPart --
+do private.usedByMonitors.scan
+   (# 
+   do current[] -> this(scanUsedByMonitors).current[];
+      inner scanUsedByMonitors;
+   #);
+   
+-- DeclClearUsedByMonitors:DoPart --
+do private.usedByMonitors.clear;
+   
+-- DeclAddOverwritesMonitor:DoPart --
+do (theMonitor.id[], theMonitor[]) -> private.usedByMonitors.associate;
+   
+-- DeclRemoveOverwritesMonitor:DoPart --
+do theMonitor.id[] -> private.usedByMonitors.disassociate;
+   
+-- DeclScanOverwritesMonitors:DoPart --
+do private.usedByMonitors.scan
+   (# 
+   do current[] -> this(scanOverwritesMonitors).current[];
+      inner scanOverwritesMonitors;
+   #);
+   
+-- DeclClearOverwritesMonitors:DoPart --
+do private.usedByMonitors.clear;
+   
+-- DeclAddOverwrittenByMonitor:DoPart --
+do (theMonitor.id[], theMonitor[]) -> private.usedByMonitors.associate;
+   
+-- DeclRemoveOverwrittenByMonitor:DoPart --
+do theMonitor.id[] -> private.usedByMonitors.disassociate;
+   
+-- DeclScanOverwrittenByMonitors:DoPart --
+do private.usedByMonitors.scan
+   (# 
+   do current[] -> this(scanOverwrittenByMonitors).current[];
+      inner scanOverwrittenByMonitors;
+   #);
+   
+-- DeclClearOverwrittenByMonitors:DoPart --
+do private.usedByMonitors.clear;
+
+-- DeclInit:doPart --
+do &ElementDeque[] -> children[];
+   private.init;
+   INNER;
+   
+-- DeclShortName:doPart --
+do INNER;
+   (if name[] = NONE then
+       inner;
+       this(Decl)[] -> getPatternName -> name[];
+   if);
+
+-- DeclOnSemanticChanged:DoPart --
+do (# Visitor: @DeclPlaceAndTransitionVisitor
+        (# visitDecl::
+             (# 
+             do (any_status, unchecked) -> theDecl.changeStatus;
+             #);
+           visitPlace::
+             (# 
+             do thePlace.semanticChangedOnPlaceAndSubstitutionTransitions;
+             #);
+           visitTransition::
+             (# 
+             do theTransition.semanticChanged;
+             #);           
+        #);
+   do this(Decl)[] -> Visitor;
+      private.usedByMonitors.scan
+      (# 
+      do current.semanticChanged;
+      #);
+      (if theDeclaration[] <> none then
+          theDeclaration.semanticChanged;
+      if);
+   #);
+   
+-- EmptyDeclPrint:DoPart --
+do description -> output.puttext;
+   
+-- EmptyDeclShortName:DoPart --
+do description -> name[];
+   
+-- ErrorDeclPrint:DoPart --
+do data[] -> output.puttext;
+   
+-- ErrorDeclShortName:DoPart --
+do (# theDecl: @MLDecl;
+   do data[] -> theDecl.data[];
+      theDecl.shortName -> name[];
+   #);
+   
+-- MLDeclPrint:doPart --
+do (if rawLayout[] <> NONE then
+       rawLayout[] -> output.puttext;
+    else
+       data[] -> output.PutText;
+   if);
+   
+-- MLDeclShortName:doPart --
+do (# pre: @Pcre;
+      ok: @Boolean;
+      type, identifier: ^Text;
+      index: @integer;
+      getWord:
+        (# before: @boolean;
+           index, indexFrom, indexTo: @integer;
+           word: ^Text;
+        enter indexFrom
+        do true -> before;
+           0 -> index;
+           scan: name.scanAll
+             (#
+             do (if index >= indexFrom then
+                    (if (ch -> ascii.isWhiteSpace) or
+                        (ch = '(') or (ch = ')') or (ch = '=') then
+                        (if not before then
+                            index -> indexTo;
+                            leave scan;
+                        if);
+                     else
+                        (if before then
+                            false -> before;
+                            index + 1 -> indexFrom;
+                        if);
+                    if);
+                if);
+                index + 1 -> index;
+             #);
+           (indexFrom, indexTo) -> name.sub -> word[];
+        exit (word[], indexTo)
+        #);
+      makeShortName:
+        (# 
+        do '' -> name[];
+          type[] -> name.append;
+          ' ' -> name.append;
+          identifier[] -> name.append;
+        #);
+   do data.reset;  
+      data[] -> name[];
+      0 -> getWord -> (type[], index);
+      index -> getWord -> (identifier[], index);
+      (if true
+       // 'val' -> type.equal then
+          (if 'rec' -> identifier.equal then
+              ' ' -> type.append;
+              identifier[] -> type.append;
+              index -> getWord -> (identifier[], index);           
+          if);
+          makeShortName;
+       // 'fun' -> type.equal 
+       // 'functor' -> type.equal
+       // 'structure' -> type.equal then
+          makeShortName;
+       else
+          data.reset; 
+          data.getLine -> name[];
+          '[(][*].*?[*][)]' -> pre;
+          (name[], '') -> pre.replace -> (ok, name[]);
+      if);
+   #);
+   
+   -- GlobRefDeclPrint: doPart --
+do (if rawLayout[] <> NONE then
+       rawLayout[] -> output.putText;
+    else
+       'globref ' -> output.puttext;
+       mlid[] -> output.puttext;
+       ' = ' -> output.puttext;
+       mlexp[] -> output.puttext;
+       ';' -> output.puttext;
+   if);
+   
+-- UseDeclPutOnBIS:DoPart --
+do 17 -> bis.putInt;
+   id[] -> bis.putString;
+   mlexp[] -> bis.putString;
+   
+-- UseDeclShortName:DoPart --
+do 'use ' -> name[];
+   mlexp[] -> name.puttext;
+   
+-- InternalDeclPrint:DoPart --
+do (if output[] = NONE then
+       screen[] -> output[];
+   if);
+   INNER; 
+   
+-- mlIntColorPrint:doPart --
+do 'int' -> output.puttext;
+   (if low[] <> NONE then
+       ' with '-> output.puttext;
+       low[] -> output.PutText;
+       '..' -> output.PutText;
+       high[] -> output.PutText;
+   if);
+      
+-- mlIntColorPutOnBIS:doPart --
+do 3 -> bis.putInt;
+   low[] -> bis.putString;
+   high[] -> bis.putString;
+   
+-- mlStringColorPrint:doPart --
+do 'string' -> output.PutText;
+   (if low[] <> NONE then
+       ' with ' -> output.PutText;
+       low[] -> output.PutText;
+       '..' -> output.PutText;
+       high[] -> output.PutText;
+   if);
+   (if lenLow[] <> NONE then
+       ' and ' -> output.PutText;
+       lenLow[] -> output.PutText;
+       '..' -> output.PutText;
+       lenHigh[] -> output.PutText;
+   if);
+   
+
+-- mlStringColorPutOnBIS:doPart --
+do 5 -> bis.putInt;
+   low[] -> bis.putString;
+   high[] -> bis.putString;
+   lenLow[] -> bis.putString;
+   lenHigh[] -> bis.putString;
+   
+-- mlProductColorPrint:doPart --
+do (# i: @integer;
+      length: @integer;
+   do 8 -> length;
+      'product ' -> output.putText;
+      idlist.scan
+      (#
+      do (if i <> 0 then
+             ' * '-> output.PutText;
+             length + 3 -> length;
+         if);
+         i+1->i;
+         (if length > index_width_magic then
+             '\n' -> output.puttext;
+             0 -> length;
+         if);
+         current[] -> output.PutText;
+         length + current.length -> length;
+      #);
+   #);
+   
+-- mlProductColorPutOnBIS:doPart --
+do 9 -> bis.putInt;
+   idlist.size -> bis.putInt;
+   idlist.scan (# do current[] -> bis.putString; #);
+   
+-- mlEnumColorPrint:doPart --
+do (# i: @integer;
+      length: @integer;
+   do 5 -> length;
+      'with ' -> output.putText;
+      idlist.scan
+      (# 
+      do (if i <> 0 then
+             ' | ' -> output.puttext;
+             length + 3 -> length;
+         if);
+         i+1 -> i;
+         (if length > index_width_magic then
+             '\n' -> output.puttext;
+             0 -> length;
+         if);
+         current[] -> output.PutText;
+         length + current.length -> length;
+      #);
+   #);
+   
+-- mlEnumColorPutOnBIS:doPart --
+do 6 -> bis.putInt;
+   idList.size -> bis.putInt;
+   idList.scan (# do current[] -> bis.putString; #);
+   
+--mlSubsetColorPrint:doPart--
+do 'subset ' -> output.puttext;
+   mlid[] -> output.puttext;
+   (if subset[] <> NONE then
+       (if listsubset then
+           ' with '-> output.puttext;
+        else
+           ' by ' -> output.puttext;
+       if);
+       subset[] -> output.puttext;
+   if);
+   
+--mlSubsetColorPutOnBIS:doPart--
+do mlid[] -> bis.putString;
+   (if listsubset then
+       13 -> bis.putInt;
+       subsetelms.clear;
+       (if subset[] <> NONE then
+           subset.reset;
+           subset.get; (* get '[' *)
+           (if  (not subset.eos) and (subset.peek <> ']') then
+               parseL:
+                 (# 
+                 do &Text[] -> theText[];
+                    nameL:
+                      (# 
+                      do (if  subset.eos or (subset.peek = ']') then
+                             theText[] -> subsetelms.append;
+                             leave parseL;
+                         if);
+                         (if subset.peek = ',' then
+                             subset.get;   (* get ',' *)
+                             theText[] -> subsetelms.append;
+                             restart parseL;
+                         if);
+                         subset.get -> theText.put;
+                         restart nameL;
+                      #);
+                 #);
+           if);
+       if);
+       subsetelms.size -> bis.putInt;
+       subsetelms.scan
+       (# 
+       do current[] -> bis.putString;
+       #)
+    else
+       12 -> bis.putInt;
+       subset[] -> bis.putString;
+   if);
+   
+--mlUnitColorPrint:doPart--
+do 'unit' -> output.puttext;
+   (if theid[] <> NONE then
+       ' with ' -> output.puttext;
+       theid[] -> output.puttext;
+   if);
+   
+--mlUnitColorPutOnBIS:doPart--
+do 1 -> bis.putInt;
+   theid[] -> bis.putString;
+      
+--mlBoolColorPrint:doPart--
+do 'bool' -> output.puttext;
+   (if (id1[] <> NONE) and (id2[] <> NONE) then
+       ' with (' -> output.puttext;
+       id1[] -> output.puttext;
+       ',' -> output.puttext;
+       id2[] -> output.puttext;
+       ')' -> output.puttext;
+   if);
+   
+--mlBoolColorPutOnBIS:doPart--
+do 2 -> bis.putInt;
+   (if (id1[] <> NONE) and (id2[] <> NONE) then
+       id1[] -> bis.putString;
+       id2[] -> bis.putString;
+    else
+       '' -> bis.putString;
+       '' -> bis.putString;
+   if);
+           
+--mlRealColorPrint:doPart--
+do 'real' -> output.puttext;
+   (if low[] <> NONE then
+       ' with ' -> output.puttext;
+       low[] -> output.puttext;
+       '..' -> output.puttext;
+       high[] -> output.puttext;
+   if);
+           
+--mlRealColorPutOnBIS:doPart--
+do 4 -> bis.putInt;
+   (if low[] <> NONE then
+       low[] -> bis.putString;
+       high[] -> bis.putString;
+    else
+       '' -> bis.putString;
+       '' -> bis.putString;
+   if);
+           
+--mlIndexColorPrint:doPart--
+do 'index ' -> output.puttext;
+   (if theid[] <> NONE then
+       theid[] -> output.puttext;
+   if);
+   (if low[] <> NONE then
+       ' with ' -> output.puttext;
+       low[] -> output.puttext;
+       '..' -> output.puttext;
+       high[] -> output.puttext;
+   if);
+   
+--mlIndexColorPutOnBIS:doPart--
+do 7 -> bis.putInt;
+   (if theid[] <> NONE then
+       theid[] -> bis.putString;
+    else
+       '' -> bis.putString;
+   if);
+   (if low[] <> NONE then
+       low[] -> bis.putString;
+       high[] -> bis.putString;
+    else
+       '' -> bis.putString;
+       '' -> bis.putString;
+   if);
+   
+--mlListColorPrint:doPart--
+do 'list ' -> output.puttext;
+   (if theid[] <> NONE then
+       theid[] -> output.puttext;
+   if);
+   (if low[] <> NONE then
+       ' with ' -> output.puttext;
+       low[] -> output.puttext;
+       '..' -> output.puttext;
+       high[] -> output.puttext;
+   if);
+      
+--mlListColorPutOnBIS:doPart--
+do 8 -> bis.putInt;
+   (if theid[] <> NONE then
+       theid[] -> bis.putString;
+    else
+       '' -> bis.putString;
+   if);
+   (if low[] <> NONE then
+       low[] -> bis.putString;
+       high[] -> bis.putString;
+    else
+       '' -> bis.putString;
+       '' -> bis.putString;
+   if);
+   
+--mlRecordColorPrint:doPart--
+do (# i: @integer;
+      length: @integer;
+   do 7 -> length;
+      'record ' -> output.puttext;
+      recFieldList.scan
+      (# 
+      do (if i <> 0 then
+             ' * ' -> output.puttext;
+             length + 3 -> length;
+         if);
+         i+1 -> i;
+         (if length > index_width_magic then
+             '\n' -> output.puttext;
+             0 -> length;
+         if);
+         current.left[] -> output.puttext;
+         ':' -> output.puttext;
+         current.right[] -> output.puttext;
+         length + current.left.length + current.right.length + 1 -> length;
+      #);
+   #);
+   
+--mlRecordColorPutOnBIS:doPart--
+do 10 -> bis.putInt;
+   recFieldList.size -> bis.putInt;
+   recFieldList.scan
+   (# 
+   do current.left[] -> bis.putString;
+      current.right[] -> bis.putString;
+   #);
+   
+--mlUnionColorPrint:doPart--
+do (# i: @integer; 
+      length: @integer;
+   do 6 -> length;
+      'union ' -> output.puttext;
+      unionFieldList.scan
+      (# 
+      do (if i <> 0 then
+             ' + ' -> output.puttext;
+             length + 3 -> length;
+         if);
+         i+1 -> i;
+         (if length > index_width_magic then
+             '\n' -> output.puttext;
+             0 -> length;
+         if);
+         current.id[] -> output.puttext;
+         length + current.id.length -> length;
+         (if current.type[] <> NONE then
+             ':' -> output.puttext;
+             current.type[] -> output.puttext;
+             length + current.type.length + 1 -> length;
+         if);
+      #);
+   #);
+   
+   
+--mlUnionColorPutOnBIS:doPart--
+do 11 -> bis.putInt;
+   unionFieldList.size -> bis.putInt;
+   unionFieldList.scan
+   (# 
+   do current.id[] -> bis.putString;
+      (if current.type[] <> NONE then
+          current.type[] -> bis.putString;
+       else
+          '' -> bis.putString;
+      if);
+   #);
+   
+--mlAliasColorPrint:doPart--
+do (if theid[] <> NONE then
+       theid[] -> output.puttext; 
+   if);
+   
+--mlAliasColorPutOnBIS:doPart--
+do 15 -> bis.putInt;
+   theid[] -> bis.putString;
+   
+   
+--ColorSetDeclPrint:doPart--
+do (if rawLayout[] <> NONE then
+       rawLayout[] -> output.puttext;
+    else
+       'colset ' -> output.PutText;
+       mlid[] -> output.PutText;
+       ' = ' -> output.PutText;
+       children.scan
+	 (# d: ^InternalDecl;
+	 do (if current## <= InternalDecl## then
+		current[] -> d[];
+		output[] -> d.print;
+	    if);
+	 #);
+       (if declareList[] <> NONE then
+	   ' declare' -> output.puttext;
+	   (if declareList.size > 0 then
+	       ' ' -> output.puttext;
+	   if);
+	   declareList.scan
+	     (# setComma: @boolean;
+	     do (if setComma then ',' -> output.puttext; if);
+		current[] -> output.puttext;
+		true -> setComma;
+	     #);
+       if);
+       (if istimed then
+	   ' timed' -> output.puttext;
+       if);
+       ';' -> output.puttext;
+   if);
+
+--ColorSetDeclPutOnBIS:doPart--
+do id[] -> bis.putString;
+   scanInternalDecl
+     (# do bis[] -> current.putOnBIS; #);
+   mlid[] -> bis.putString;
+   0 -> bis.putInt;
+   0 -> bis.putInt;
+   0 -> bis.putInt;
+   (if declareList[] <> NONE then
+       declareList.size -> bis.putInt; (* declare opt. *)
+       declareList.scan
+	 (#
+	 do (if 'ms' -> current.equal then
+		'all' -> bis.putString;
+	     else
+		current[] -> bis.putString;
+	    if);
+	 #);
+    else
+       0 -> bis.putInt;
+   if);
+   (if istimed then
+       true -> bis.putBool;   (* timed opt. *)
+    else
+       false -> bis.putBool;
+   if);
+   
+-- ColorSetScanInternalDecl:DoPart --
+do children.scan
+   (# 
+   do (if current## <= InternalDecl## then
+          current[] -> THIS(scanInternalDecl).current[];
+          inner scanInternalDecl;
+      if);
+   #);
+   
+-- ColorSetScanInscriptions:DoPart --
+do scan
+   (# Type:: Inscription;
+   do current[] -> theInscription[];
+   #);
+   
+-- ColorSetDeclLocalCheck:DoPart --
+do (THIS(Decl)[], mlid[]) -> box.checkID;
+   (if status <> Incorrect then
+       mlid[] -> box.defineColor;
+   if);
+   scanInternalDecl
+   (# 
+   do current.localCheck;
+   #);
+   
+-- MLDeclPutOnBIS:doPart --
+do 18 -> bis.putInt;
+   id[] -> bis.putString;
+   data[] -> bis.putString;
+   
+     
+-- InvariantDeclLocalCheck:DoPart --
+do (THIS(Decl)[], type[]) -> box.checkColorName;
+   (THIS(Decl)[], name[]) -> box.checkID;
+   
+-- ChannelDeclLocalCheck:DoPart --
+do (THIS(Decl)[], type[]) -> box.checkColorName;
+   (THIS(Decl)[], name[]) -> box.checkID; 
+   
+-- VecDeclShortName:doPart --
+do (if this(Decl)## <= MSVarDecl## then
+       'msvar' -> name[];
+    else
+       'var' -> name[];
+   if);
+   idlist.scan
+   (# 
+   do ' ' -> name.put;
+      current[] -> name.puttext;
+   #);
+   INNER;
+   
+-- VarLocalCheck:DoPart --
+do (* (THIS(Decl)[], type[]) -> box.checkColorName; *)
+   idlist.scan
+   (# 
+   do (THIS(Decl)[], current[]) -> box.checkID;
+   #);

@@ -1,0 +1,325 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../highlightable';
+
+-- statusToString:doPart --
+do (if status 
+    // any_status         then 'any_status'         -> string[];
+    // incorrect          then 'incorrect'          -> string[];
+    // nameError          then 'nameError'          -> string[];   
+    // unchecked          then 'unchecked'          -> string[];
+    // checking           then 'checking'           -> string[];
+    // compiling          then 'compiling'          -> string[];
+    // checked            then 'checked'            -> string[];
+    // compiled           then 'compiled'           -> string[];
+    // hasSimulationError then 'hasSimulationError' -> string[];
+    // isEnabled          then 'isEnabled'          -> string[];
+    // isUnassigned       then 'isUnassigned'       -> string[];
+    // noRemarks          then 'noRemarks'          -> string[];
+    else
+       &Text[] -> string[];
+       '<not named status = %d>' 
+         -> string.putFormat
+       (# 
+       do status -> d;
+       #);
+   if); 
+   
+-- StatusContainerPrivate:descriptor --
+(# incorrect, unchecked: @integer;
+              nameError: @integer;
+   checking,    checked: @integer;
+   compiling,  compiled: @integer;
+   leastUpperBound: @integer;
+   init:
+     (# 
+     do 0 -> incorrect
+          -> nameError
+          -> unchecked
+          -> checking
+          -> checked
+          -> compiling
+          -> compiled;
+     #);
+ #)
+   
+-- StatusContainerInit:doPart --
+do private.init;
+   compiled -> private.leastUpperBound;
+   (* 'StatusContainerInit: %s '->debugtemp (# do this(StatusContainer).private.leastUpperBound->statustostring->s#); *)
+   
+-- StatusContainerToString:doPart --
+do &Text[] -> str[];
+   'Status:\n'
+   '  incorrect : %d\n'
+   '  nameError : %d\n'
+   '  unchecked : %d\n'
+   '  checking  : %d\n'
+   '  checked   : %d\n'
+   '  compiling : %d\n'
+   '  compiled  : %d ' 
+     -> str.putFormat 
+   (# 
+   do this(StatusContainer).private.incorrect -> d;
+      this(StatusContainer).private.nameError -> d;
+      this(StatusContainer).private.unchecked -> d;
+      this(StatusContainer).private.checking  -> d; 
+      this(StatusContainer).private.checked   -> d;
+      this(StatusContainer).private.compiling -> d; 
+      this(StatusContainer).private.compiled  -> d;
+   #);
+   
+-- StatusContainerDecrement:doPart --
+do (if status
+    // incorrect then 
+       private.incorrect - 1 -> private.incorrect;
+    // nameError then 
+       private.nameError - 1 -> private.nameError;       
+    // unchecked then 
+       private.unchecked - 1 -> private.unchecked;       
+    // checking then
+       private.checking - 1 -> private.checking;
+    // checked then
+       private.checked - 1 -> private.checked;
+    // compiling then
+       private.compiling - 1 -> private.compiling;
+    // compiled then
+       private.compiled - 1 -> private.compiled;
+       (* (if private.compiled < 0 then *)
+(*            1/0 -> putint; *)
+(*        if); *)
+    else
+       ('Node have unknown status', false) -> assert (# #);
+   if);
+   calculateLeastUpperBound;
+   
+-- StatusContainerIncrement:doPart --
+do (if status
+    // incorrect then 
+       private.incorrect + 1 -> private.incorrect;
+    // nameError then 
+       private.nameError + 1 -> private.nameError;       
+    // unchecked then 
+       private.unchecked + 1 -> private.unchecked;
+    // checking then
+       private.checking + 1 -> private.checking;
+    // checked then
+       private.checked + 1 -> private.checked;
+    // compiling then
+       private.compiling + 1 -> private.compiling;
+    // compiled then
+       private.compiled + 1 -> private.compiled;
+    else
+       ('Node have unknown status', false) -> assert (# #);
+   if);
+   calculateLeastUpperBound;
+   
+-- StatusContainerCalculateLeastUpperBound:doPart --
+do (* 'StatusContainerCalculateLeastUpperBound'->debugtemp; *)
+   (if true
+    // private.incorrect > 0 then
+       incorrect -> private.leastUpperBound;
+    // private.nameError > 0 then
+       nameError -> private.leastUpperBound;
+    // private.unchecked > 0 then
+       unchecked -> private.leastUpperBound;
+    // private.checking  > 0 then
+       checking -> private.leastUpperBound;
+    // private.checked   > 0 then
+       checked -> private.leastUpperBound;
+    // private.compiling > 0 then
+       compiling -> private.leastUpperBound;
+    else
+(*        'isCompiled' -> debugtemp; *)
+       compiled -> private.leastUpperBound;
+   if);
+   
+-- StatusContainerLeastUpperBound:doPart --
+do private.leastUpperBound -> status;
+   
+-- InstanceStatusContainerPrivate:descriptor --
+(# hasSimulationError, isUnassigned: @integer;
+   isEnabled,             noRemarks: @integer;
+   leastUpperBound: @integer;
+   init:
+     (# 
+     do 0 -> hasSimulationError        
+          -> isUnassigned
+          -> isEnabled
+          -> noRemarks
+     #);
+ #)
+   
+-- InstanceStatusContainerInit:doPart --
+do private.init;
+   noRemarks -> private.leastUpperBound;
+   (* 'InstanceStatusContainerInit: %s '->debugtemp (# do this(InstanceStatusContainer).private.leastUpperBound->statustostring->s#); *)
+   
+-- InstanceStatusContainerToString:doPart --
+do &Text[] -> str[];
+   'InstanceStatus:\n'
+   '  hasSimulationError : %d\n'
+   '  isUnassigned       : %d\n'
+   '  isEnabled          : %d\n'
+   '  noRemarks          : %d '
+     -> str.putFormat 
+   (# 
+   do this(InstanceStatusContainer).private.hasSimulationError -> d;
+      this(InstanceStatusContainer).private.isUnassigned       -> d;
+      this(InstanceStatusContainer).private.isEnabled          -> d;
+      this(InstanceStatusContainer).private.noRemarks          -> d;
+   #);
+   
+-- InstanceStatusContainerDecrement:doPart --
+do (if status
+    // hasSimulationError then 
+       private.hasSimulationError - 1 -> private.hasSimulationError;
+    // isUnassigned then 
+       private.isUnassigned - 1 -> private.isUnassigned;       
+    // isEnabled then
+       private.isEnabled - 1 -> private.isEnabled;
+    // noRemarks then
+       private.noRemarks - 1 -> private.noRemarks;
+    else
+       ('Node have unknown status', false) -> assert (# #);
+   if);
+   calculateLeastUpperBound;
+   
+-- InstanceStatusContainerIncrement:doPart --
+do (if status
+    // hasSimulationError then 
+       private.hasSimulationError + 1 -> private.hasSimulationError;
+    // isUnassigned then 
+       private.isUnassigned + 1 -> private.isUnassigned;       
+    // isEnabled then
+       private.isEnabled + 1 -> private.isEnabled;
+    // noRemarks then
+       private.noRemarks + 1 -> private.noRemarks;
+    else
+       ('Node have unknown status', false) -> assert (# #);
+   if);
+   calculateLeastUpperBound;
+   
+-- InstanceStatusContainerCalculateLeastUpperBound:doPart --
+do (if true
+    // private.hasSimulationError > 0 then
+       hasSimulationError -> private.leastUpperBound;
+    // private.isUnassigned > 0 then
+       isUnassigned -> private.leastUpperBound;
+    // private.isEnabled  > 0 then
+       isEnabled -> private.leastUpperBound;
+    else
+       noRemarks -> private.leastUpperBound;
+   if);
+   
+-- InstanceStatusContainerLeastUpperBound:doPart --
+do private.leastUpperBound -> status;
+   
+-- InstanceStatusContainerNumberOfIsEnabled:DoPart --
+do private.isEnabled -> value;
+   
+-- InstanceStatusContainerNumberOfIsUnassigned:DoPart --
+do private.isUnassigned -> value;
+   
+-- GetHighlight:DoPart --
+do (* add highlights if needed *)
+   (if status
+    // incorrect then
+       error_color -> highlight[];
+    // isUnassigned then
+       (* unassignedport_color -> highlight[]; *)
+       error_color -> highlight[]   
+    // nameError then
+       nameerror_color -> highlight[];
+    // unchecked
+    // checking then
+       check_color -> highlight[];
+    // checked 
+    // compiling then
+       compile_color -> highlight[];
+    // isEnabled then
+       (* '%s hasEnabledTransitions'->debugtemp(# do thepage.tostring->s#);; *)
+       enabled_color -> highlight[];
+    // hasSimulationError then
+       error_color -> highlight[];       
+   if);
+   
+-- HighlightablePrivate:Descriptor --
+(# halo: ^Color;
+   init:
+     (# 
+     do 
+     #);     
+#)
+
+-- HighlightableAddError:DoPart --
+do (if qerror[]<>NONE then
+       NONE -> qerror[];
+       THIS(Highlightable).changed;
+   if);
+   &MessageBubble(# onClicked::(# do (if false then fade; if); #); #)[]->qerror[];
+   THIS(Highlightable)[]->qerror.owner[]; 
+   (if errorElement[] = NONE then
+       THIS(Highlightable)[]->qerror.target[];
+    else
+       errorElement[]->qerror.target[]; 
+   if);
+   qerror.init;
+   qerror.present;
+   qerrorMsg[]->qerror.message;
+   qerror[]->qerror.target.attach;
+   qerror.computePosition;
+   THIS(Highlightable).changed;
+   
+-- HighlightableRemoveError:DoPart --   
+do (* Bug #654
+    * This should only be remove one, but then we
+    * need stackable errors *)
+   (if qerror[] <> NONE then
+       qerror.delete;
+       NONE->qerror[];
+       none -> qerrorMsg[];
+       changed;
+   if);
+   
+-- HighlightableGetCurrentHighlight:DoPart --   
+do (if private.halo[] <> NONE then
+       private.halo[] -> currentHighlight[];
+    else
+       INNER;
+   if);
+   
+-- HighlightableSetHalo:DoPart --
+do halo[] -> private.halo[];
+   changed;
+   inner;
+   
+-- HighlightableGetHalo:DoPart --
+do private.halo[] -> halo[];
+   
+-- HighlightableInit:DoPart --
+do private.init;
+   inner;

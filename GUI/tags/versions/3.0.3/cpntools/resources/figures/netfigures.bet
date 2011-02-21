@@ -1,0 +1,565 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '~beta/postwimp/workspace';
+
+INCLUDE 'standardfigures';
+INCLUDE 'figure';
+INCLUDE '../default-values';
+
+-- workspacelib: attributes --
+
+ExportFigure: Figure
+  (# useDefaultHotspot::(# do true -> value; #);
+     thePrintFigure: ^Composite;
+     thePrinter: ^Rect;
+     theKnob: ^Rect;
+     thePaper: ^Rect;
+     theTopFigure: ^Rect;
+     theMiddleFigure: ^Ellipse;
+     theBottomFigure: ^Rect;
+     theCMToken: ^Ellipse;
+     theBasicStyle: ^BasicStyle;
+     bw,cm: @boolean; (*blackwhite, currentmarking*)
+     point: ^Point2d;
+     
+     init::<
+       (# 
+       do &Composite[]->thePrintFigure[];
+          &Rect[]->thePrinter[];
+          &Rect[]->theKnob[];
+          &Rect[]->thePaper[];
+          &Rect[]->theTopFigure[];
+          &Ellipse[]->theMiddleFigure[];
+          &Rect[]->theBottomFigure[];
+          &Ellipse[] -> theCMToken[];
+          
+          &BasicStyle[]->theBasicStyle[];
+          (gray4[],gray7[],1)->theBasicStyle->thePrinter.theStyle[];;
+          &BasicStyle[]->theBasicStyle[];
+          (gray2[],gray4[],1)->theBasicStyle->theKnob.theStyle[];;
+          &BasicStyle[]->theBasicStyle[];
+          (gray9[],white[],1)->theBasicStyle->thePaper.theStyle[];;
+          
+          thePrintFigure.init;
+          thePrinter[]->thePrintFigure.add;
+          theKnob[]->thePrintFigure.add;
+          thePaper[]->thePrintFigure.add;
+          theTopFigure[]->thePrintFigure.add;
+          theMiddleFigure[]->thePrintFigure.add;
+          theBottomFigure[]->thePrintFigure.add;
+          theCMToken[] -> thePrintFigure.add;
+          thePrintFigure[]->add;
+          
+          (12,-6)->(thePrinter.x,thePrinter.y);
+          (24,12)->(thePrinter.width,thePrinter.height);
+          (26,-6)->(theKnob.x,theKnob.y);
+          (4,6)->(theKnob.width,theKnob.height);
+          (12,-18)->(thePaper.x,thePaper.y);
+          (12,16)->(thePaper.width,thePaper.height);
+          (8,-21)->(theTopFigure.x,theTopFigure.y);
+          (5,5)->(theTopFigure.width,theTopFigure.height);
+          (15,-20)->(theMiddleFigure.x,theMiddleFigure.y);
+          (7,6)->(theMiddleFigure.width,theMiddleFigure.height);
+          (12,-17)->(theBottomFigure.x,theBottomFigure.y);
+          (4,6)->(theBottomFigure.width,theBottomFigure.height);
+          
+          (0,0) -> (theCMToken.x,theCMToken.y);
+          (15,15) -> (theCMToken.width,theCMToken.height);
+       #);
+     
+     update::
+       (# 
+       do (if bw then
+              &BasicStyle[]->theBasicStyle[];
+              (black[],black[],1)->theBasicStyle->theTopFigure.theStyle[];
+              &BasicStyle[]->theBasicStyle[];
+              (gray4[],gray4[],1)->theBasicStyle->theMiddleFigure.theStyle[];
+              &BasicStyle[]->theBasicStyle[];
+              (gray7[],gray7[],1)->theBasicStyle->theBottomFigure.theStyle[];
+           else
+              &BasicStyle[]->theBasicStyle[];
+              (red[],red[],1)->theBasicStyle->theTopFigure.theStyle[];
+              &BasicStyle[]->theBasicStyle[];
+              (Green[],Green[],1)->theBasicStyle->theMiddleFigure.theStyle[];
+              &BasicStyle[]->theBasicStyle[];
+              (blue[],blue[],1)->theBasicStyle->theBottomFigure.theStyle[];
+          if);
+          (if cm then
+              &BasicStyle[]->theBasicStyle[];
+              (token_color,token_color,1)->theBasicStyle->theCMToken.theStyle[];
+           else
+              &BasicStyle[]->theBasicStyle[];
+              (NONE,NONE,1)->theBasicStyle->theCMToken.theStyle[];
+          if);
+       #);
+     
+     onChanged::
+       (# 
+          do 
+          'currentmarking' -> options.lookupboolean -> cm;
+          'blackwhite' -> options.lookupboolean -> bw;
+       #);    
+     
+  #);
+
+DiscFigure: Figure
+  (# 
+     diskFrame: @Line;
+     diskLabel: @Line;
+     metal: @Line;
+     hole: @Line;
+     point: ^Point2d;
+     
+     Init::< 
+       (# diskFrameStyle: ^CompositeStyle;
+          diskFrameStrokeStyle: ^StrokeStyle;
+          diskFrameFillStyle: ^FillStyle;
+          diskLabelStyle: ^CompositeStyle;
+          diskLabelStrokeStyle: ^StrokeStyle;
+          diskLabelFillStyle: ^FillStyle;
+          metalStyle: ^CompositeStyle;
+          metalStrokeStyle: ^StrokeStyle;
+          metalFillStyle: ^FillStyle;
+          holeStyle: ^CompositeStyle;
+          holeStrokeStyle: ^StrokeStyle;
+          holeFillStyle: ^FillStyle;
+       do (* diskFrame init *)
+          &CompositeStyle[]->diskFrameStyle[]->diskFrame.theStyle[];
+          &StrokeStyle[]->diskFrameStrokeStyle[]->diskFrameStyle.add;
+          &FillStyle[]->diskFrameFillStyle[]->diskFrameStyle.add;
+          black[]->diskFrameStrokeStyle.stroke[];
+          black[]->diskFrameFillStyle.fill[];
+          &PointList[]->diskFrame.points[];
+          (for 6 repeat &Point2d[]->point[]->diskFrame.points.append for);
+          diskFrame[]->add;
+          
+          (* diskLabel init *)
+          &CompositeStyle[]->diskLabelStyle[]->diskLabel.theStyle[];
+          &StrokeStyle[]->diskLabelStrokeStyle[]->diskLabelStyle.add;
+          &FillStyle[]->diskLabelFillStyle[]->diskLabelStyle.add;
+          black[]->diskLabelStrokeStyle.stroke[];
+          white[]->diskLabelFillStyle.fill[];
+          &PointList[]->diskLabel.points[];
+          (for 5 repeat &Point2d[]->point[]->diskLabel.points.append for);
+          diskLabel[]->add;
+          
+          (* metal init *)
+          &CompositeStyle[]->metalStyle[]->metal.theStyle[];
+          &StrokeStyle[]->metalStrokeStyle[]->metalStyle.add;
+          &FillStyle[]->metalFillStyle[]->metalStyle.add;
+          black[]->metalStrokeStyle.stroke[];
+          gray7[]->metalFillStyle.fill[];
+          &PointList[]->metal.points[];
+          (for 5 repeat &Point2d[]->point[]->metal.points.append for);
+          metal[]->add;
+          
+          (* hole init *)
+          &CompositeStyle[]->holeStyle[]->hole.theStyle[];
+          &StrokeStyle[]->holeStrokeStyle[]->holeStyle.add;
+          &FillStyle[]->holeFillStyle[]->holeStyle.add;
+          gray7[]->holeStrokeStyle.stroke[];
+          black[]->holeFillStyle.fill[];
+          &PointList[]->hole.points[];
+          (for 5 repeat &Point2d[]->point[]->hole.points.append for);
+          hole[]->add;
+          
+          layout;
+       #);
+     
+     Layout: 
+       (# 
+          width,height: @real;
+       do (50,50)->(width,height);
+          
+          (* diskFrame draw *)
+          1->diskFrame.points.get->point[];
+          (-3*width/16, -height/16)->point;
+          2->diskFrame.points.get->point[];
+          (3*width/16, -height/16)->point;
+          3->diskFrame.points.get->point[];
+          (3*width/16, 5*height/16)->point;
+          4->diskFrame.points.get->point[];
+          (-width/8, 5*height/16)->point;
+          5->diskFrame.points.get->point[];
+          (-3*width/16, height/4)->point;
+          6->diskFrame.points.get->point[];
+          (-3*width/16, -height/16)->point;
+          
+          (* diskLabel draw *)
+          1->diskLabel.points.get->point[];
+          (-width/8, -height/16)->point;
+          2->diskLabel.points.get->point[];
+          (width/8, -height/16)->point;
+          3->diskLabel.points.get->point[];
+          (width/8, height/8)->point;
+          4->diskLabel.points.get->point[];
+          (-width/8, height/8)->point;
+          5->diskLabel.points.get->point[];
+          (-width/8, -height/16)->point;
+          
+          (* metal draw *)
+          1->metal.points.get->point[];
+          (-width/8, 5*height/16)->point;
+          2->metal.points.get->point[];
+          (width/8, 5*height/16)->point;
+          3->metal.points.get->point[];
+          (width/8, 5*height/32)->point;
+          4->metal.points.get->point[];
+          (-width/8, 5*height/32)->point;
+          5->metal.points.get->point[];
+          (-width/8, 5*height/16)->point;
+          
+          (* hole draw *)
+          1->hole.points.get->point[];
+          (-width/16, 5*height/16 - 2)->point;
+          2->hole.points.get->point[];
+          (0, 5*height/16 - 1)->point;
+          3->hole.points.get->point[];
+          (0, 5*height/32 + 1)->point;
+          4->hole.points.get->point[];
+          (-width/16, 5*height/32 + 1)->point;
+          5->hole.points.get->point[];
+          (-width/16, 5*height/16 - 2)->point;
+       #);     
+  #);
+
+LoadFigure: Figure
+  (# useDefaultHotspot::(# do true -> value; #);
+     theLoadFigure: ^Composite;
+     theDiscFigure: ^DiscFigure;
+     theFilledNetFigure: ^FilledNetfigure;
+     theArrowFigure: ^ArrowFigure;
+     
+     init::<
+       (#
+       do 
+          &Composite[]->theLoadFigure[];
+          &DiscFigure[]->theDiscFigure[];
+          &FilledNetfigure[]->theFilledNetFigure[];
+          &ArrowFigure[]->theArrowFigure[];
+          
+          theDiscFigure.init;
+          (20,14)->theFilledNetFigure.init;
+          theArrowFigure.init;
+          
+          (12,7)->(theDiscFigure.x,theDiscFigure.y);
+          (-20,-16)->(theFilledNetFigure.x,theFilledNetFigure.y);
+          (-4,-4)->(theArrowFigure.x,theArrowFigure.y);
+          
+          theFilledNetFigure[]->theLoadFigure.add;
+          theArrowFigure[]->theLoadFigure.add;
+          theDiscFigure[]->theLoadFigure.add;
+          theLoadFigure[]->add;
+       #);
+  #);
+
+StarFigure: Figure
+  (#
+     theStarFigure: ^Composite;
+     spark1: ^Line;
+     spark2: ^Line;
+     spark3: ^Line;
+     spark4: ^Line;
+     point: ^Point2d;
+     
+     Init::< 
+       (# 
+          sparkStyle: ^CompositeStyle;
+          sparkStrokeStyle: ^StrokeStyle;
+       do 
+          &Composite[]->theStarFigure[];
+          &Line[]->spark1[];
+          &Line[]->spark2[];
+          &Line[]->spark3[];
+          &Line[]->spark4[];
+          
+          (* spark init *)
+          &CompositeStyle[]->sparkStyle[]->spark1.theStyle[]
+            -> spark2.theStyle[]->spark3.theStyle[]->spark4.theStyle[];
+          &StrokeStyle[]->sparkStrokeStyle[]->sparkStyle.add;
+          yellow[]->sparkStrokeStyle.stroke[];
+          &PointList[]->spark1.points[];
+          &PointList[]->spark2.points[];
+          &PointList[]->spark3.points[];
+          &PointList[]->spark4.points[];
+          (for 2 repeat 
+               &Point2d[]->spark1.points.append;
+               &Point2d[]->spark2.points.append;
+               &Point2d[]->spark3.points.append;
+               &Point2d[]->spark4.points.append;
+          for);
+          spark1[]->theStarFigure.add;
+          spark2[]->theStarFigure.add;
+          spark3[]->theStarFigure.add;
+          spark4[]->theStarFigure.add;
+          theStarFigure[]->add;
+          layout;
+       #);
+     
+     layout: 
+       (# 
+          width,height: @real
+       do 
+          (50,50)->(width,height);
+          (* spark draw *)
+          1->spark1.points.get->point[];
+          (-3*width/16, -height/16 + 4)->point;
+          2->spark1.points.get->point[];
+          (-3*width/16, -height/16 - 4)->point;
+          1->spark2.points.get->point[];
+          (-3*width/16 + 4, -height/16)->point;
+          2->spark2.points.get->point[];
+          (-3*width/16 - 4, -height/16)->point;
+          1->spark3.points.get->point[];
+          (-3*width/16 + 3, -height/16 + 3)->point;
+          2->spark3.points.get->point[];
+          (-3*width/16 - 3, -height/16 - 3)->point;
+          1->spark4.points.get->point[];
+          (-3*width/16 + 3, -height/16 - 3)->point;
+          2->spark4.points.get->point[];
+          (-3*width/16 - 3, -height/16 + 3)->point;
+       #);     
+  #);
+
+SaveFigure: Figure
+  (# useDefaultHotspot::(# do true -> value; #);
+     theSaveFigure: ^Composite;
+     theDiscFigure: ^DiscFigure;
+     theFilledNetFigure: ^FilledNetfigure;
+     theArrowFigure: ^ArrowFigure;
+     
+     init::<
+       (#
+       do 
+          &Composite[]->theSaveFigure[];
+          &DiscFigure[]->theDiscFigure[];
+          &FilledNetfigure[]->theFilledNetFigure[];
+          &ArrowFigure[]->theArrowFigure[];
+          
+          theDiscFigure.init;
+          (20,14)->theFilledNetFigure.init;
+          theArrowFigure.init;
+          
+          (-12,-17)->(theDiscFigure.x,theDiscFigure.y);
+          (0,8)->(theFilledNetFigure.x,theFilledNetFigure.y);
+          (-4,-4)->(theArrowFigure.x,theArrowFigure.y);
+          
+          theDiscFigure[]->theSaveFigure.add;
+          theArrowFigure[]->theSaveFigure.add;
+          theFilledNetFigure[]->theSaveFigure.add;
+          INNER;
+          theSaveFigure[]->add;
+          
+       #);
+     
+  #);
+
+SaveAsFigure: SaveFigure
+  (# 
+     theStarFigure: ^StarFigure;
+     
+     init::<
+       (# 
+       do
+          &StarFigure[]->theStarFigure[];
+          theStarFigure.init;
+          (6,-10)->(theStarFigure.x,theStarFigure.y);
+          theStarFigure[]->theSaveFigure.add;
+       #);
+  #);
+
+NewNetFigure: Figure
+  (# useDefaultHotspot::(# do true -> value; #);
+     theNewNetFigure: ^Composite;
+     theFilledNetFigure: ^FilledNetfigure;(*chose a filled net cause it was more obvious what it was*)
+     theArrowFigure: ^ArrowFigure;
+     
+     init::<
+       (#
+       do 
+          &Composite[]->theNewNetFigure[];
+          &FilledNetfigure[]->theFilledNetFigure[];
+          &ArrowFigure[]->theArrowFigure[];
+          
+          (20,14)->theFilledNetFigure.init;
+          theArrowFigure.init;
+          
+          (-20,-16)->(theFilledNetFigure.x,theFilledNetFigure.y);
+          (-4,-4)->(theArrowFigure.x,theArrowFigure.y);
+          
+          theFilledNetFigure[]->theNewNetFigure.add;
+          theArrowFigure[]->theNewNetFigure.add;
+          theNewNetFigure[]->add;
+       #);
+  #);
+
+NewPageFigure: Figure
+  (# useDefaultHotspot::(# do true -> value; #);
+     theNewPageFigure: ^Composite;
+     thePageFigure: ^Pagefigure;
+     theArrowFigure: ^ArrowFigure;
+     
+     init::<
+       (#
+       do 
+          &Composite[]->theNewPageFigure[];
+          &PageFigure[]->thePageFigure[];
+          &ArrowFigure[]->theArrowFigure[];
+          
+          (20,14)->thePageFigure.init;
+          theArrowFigure.init;
+          
+          (-20,-16)->(thePageFigure.x,thePageFigure.y);
+          (-4,-4)->(theArrowFigure.x,theArrowFigure.y);
+          
+          thePageFigure[]->theNewPageFigure.add;
+          theArrowFigure[]->theNewPageFigure.add;
+          theNewPageFigure[]->add;
+       #);
+  #);
+
+CloseNetFigure: Figure
+  (# useDefaultHotspot::(# do true -> value; #);
+     theCloseNetFigure: ^Composite;
+     theFilledNetFigure: ^FilledNetfigure;
+     theArrowFigure: ^ArrowFigure;
+     
+     init::<
+       (#
+       do 
+          &Composite[]->theCloseNetFigure[];
+          &FilledNetfigure[]->theFilledNetFigure[];
+          &ArrowFigure[]->theArrowFigure[];
+          
+          (20,14)->theFilledNetFigure.init;
+          theArrowFigure.init;
+          
+          (-18,-20)->(theArrowFigure.x,theArrowFigure.y);
+          (-14,-8)->(theFilledNetFigure.x,theFilledNetFigure.y);
+          
+          theArrowFigure[]->theCloseNetFigure.add;
+          theFilledNetFigure[]->theCloseNetFigure.add;
+          theCloseNetFigure[]->add;
+       #);
+  #);
+
+WebFigure: Figure
+  (# 
+     theWebFigure: ^Composite;
+     n_CrossingLines: (#exit 4#);
+     n_Rings: (# exit 3#);
+     theCrossingLines: [n_CrossingLines]^Line;
+     theRings: [n_Rings]^Line;
+     theBasicStyle: ^BasicStyle;
+     point: ^Point2d;
+
+     Init::< 
+       (# 
+       do 
+          &Composite[]->theWebFigure[];
+          (for i: n_CrossingLines repeat 
+               &Line[]->theCrossingLines[i][];
+               &PointList[]->theCrossingLines[i].points[];
+               (for 2 repeat 
+                    &Point2d[]->point[]->theCrossingLines[i].points.append;
+               for);
+               theCrossingLines[i][]->theWebFigure.add;
+          for);
+
+          (for i: n_Rings repeat 
+               &Line[]->theRings[i][]; 
+               &PointList[]->theRings[i].points[];
+               (for 2*n_CrossingLines+1 repeat 
+                    &Point2d[]->point[]->theRings[i].points.append;
+               for);
+               theRings[i][]->theWebFigure.add;
+          for);
+          
+          &BasicStyle[]->theBasicStyle[];
+          (black[],NONE,1)->theBasicStyle->theWebFigure.theStyle[];
+          
+          theWebFigure[]->add;
+          
+          layout;
+       #);
+     
+    layout: 
+       (# 
+          width_2,height_2: @real;
+          divisions: @real;
+          solong: [2*n_CrossingLines]@real;
+          tempx,tempy: @real;
+          x,y: [n_CrossingLines]@real;   
+       do 
+          10->divisions;
+          (25,25)->(width_2,height_2);
+          (* do this n_CrossingLines times, define it in a round the clock order*)
+          2->x[1]; 8->y[1];
+          7->x[2]; 2->y[2];
+          7->x[3]; -4->y[3];
+          3->x[4]; -7->y[4];
+          
+          (*and this 2 n_CrossingLines times*)
+          0.9->solong[1];
+          0.9->solong[2];
+          0.9->solong[3];
+          0.9->solong[4];
+          0.9->solong[5];
+          0.9->solong[6];
+          0.9->solong[7];
+          0.9->solong[8];
+
+          (for i: n_CrossingLines repeat
+               x[i]*width_2/divisions->tempx; y[i]*height_2/divisions->tempy;
+               1->theCrossingLines[i].points.get->point[];
+               (tempx,tempy)->point;
+               2->theCrossingLines[i].points.get->point[];
+               (-tempx,-tempy)->point;
+          for);
+          
+          (for i: n_CrossingLines repeat
+               (for j: n_Rings repeat
+                    1->theCrossingLines[i].points.get->point[];
+                    (point.x*solong[i]*j/n_Rings,point.y*solong[i]*j/n_Rings)->(tempx,tempy);
+                    i->theRings[j].points.get->point[];
+                    (tempx,tempy)->point;
+                    2->theCrossingLines[i].points.get->point[];
+                    (point.x*solong[i]*j/n_Rings,point.y*solong[i]*j/n_Rings)->(tempx,tempy);
+                    i+n_CrossingLines->theRings[j].points.get->point[];
+                    (tempx,tempy)->point;
+               for);
+          for);
+          (*make each ring complete*)
+          (for i: n_Rings repeat
+               1->theRings[i].points.get->point[];
+               (point.x,point.y)->(tempx,tempy);
+               2*n_CrossingLines+1->theRings[i].points.get->point[];
+               (tempx,tempy)->point;
+          for);
+          
+          
+       #);    
+  #);

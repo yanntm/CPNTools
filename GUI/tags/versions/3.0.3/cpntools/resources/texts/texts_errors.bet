@@ -1,0 +1,92 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '~beta/postwimp/workspace';
+
+-- Workspacelib: attributes --
+CurrentMarkingErrorMessage: (# exit 6001 #);
+CannotEnterStateSpace: (# exit 6002 #);
+FusionSetInNetWhenEnteringStateSpace: (# exit 6003 #);
+CPNPageFoundWithInvalidName: (# exit 6004 #);
+TransitionNamesMustBeUnique: (# exit 6005 #);
+PlaceNamesMustBeUnique: (# exit 6006 #);
+AllNodesMustHaveNames: (# exit 6007 #);
+PageNamesMustBeUnique: (# exit 6008 #);
+PagesMustBeMLIDs: (# exit 6009 #);
+NetMustContainTransitions: (# exit 6010 #);
+ErrorSettingStatespacePath: (# exit 6011 #);
+EnteringStateSpaceMessage: (# exit 6012 #);
+MLErrorEnteringStateSpace: (# exit 6013 #);
+StateSpaceEnteredMessage: (# exit 6014 #);
+NodesAreBeingCompiled: (# exit 6015 #);
+SyntaxErrorInTransAction: (# exit 6016 #);
+UnassignedPlaceInstance: (# exit 6017 #);
+
+MissingOpenGLErrorTitle: (# exit 6101 #);
+MissingOpenGLErrorMessage: (# exit 6102 #);
+
+XMLLoadError: (# exit 6201 #);
+ExtendedASCIIInFilename: (# exit 6202 #);
+NetIsAlreadyLoaded: (# exit 6203 #);
+ExtendedASCIISave: (# exit 6204 #);
+NonUniqueIds: (# exit 6205 #);
+
+CalcStateSpaceErrorStop: (# exit 6301 #);
+CalcStateSpaceErrorBranch: (# exit 6302 #);
+CalcStateSpaceErrorStopCrit: (# exit 6303 #);
+CalcStateSpaceErrorStopCritTip: (# exit 6304 #);
+CalcStateSpaceErrorCalc: (# exit 6305 #);
+CalcStateSpaceDone: (# exit 6306 #);
+CalcStateSpaceRunning: (# exit 6307 #);
+
+GroupNotValidForAMoveToSubpageOperation: (# exit 6401 #);
+FlattenErrorPortAssignedToTwoSockets: (# exit 6402 #);
+TransitionMonitored: (# exit 6403 #);
+
+CannotBindManually: (# exit 6501 #);
+NoVariablesToBind: (# exit 6502 #);
+CannotBindManuallyReason: (# exit 6503 #);
+
+PageNamesCannotContaionJustWhitespace: (# exit 6018 #);
+
+ErrorMLSetMonitorOrder: (# exit 6601 #);
+ErrorMLGenerateMonitorCode: (# exit 6602 #);
+ErrorMLSyntaxCheckAndGenerateMonitor: (# exit 6603 #);
+ErrorMLCreateMarkingSizeMonitor: (# exit 6604 #);
+ErrorMLSetModelNameDirAndOutput: (# exit 6605 #);
+ErrorMLRemoveMonitor: (# exit 6606 #);
+ErrorToggleEnablingForMonitor: (# exit 6607 #);
+ErrorMLCreateListLengthDataCollectionMonitor: (# exit 6608 #);
+ErrorMLCreateCountTransitionOccurrenceDataCollectionMonitor: (# exit 6609 #);
+ErrorMLCreatePlaceContentBreakpointMonitor: (# exit 6610 #);
+ErrorMLCreateTransitionEnabledBreakpointMonitor: (# exit 6611 #);
+ErrorMonitorMustBeMLName: (# exit 6618 #);
+
+ErrorMonitorOverwritesAnotherMonitor: (# exit 6612 #);
+ErrorMonitorIsOverwrittenByAnotherMonitor: (# exit 6613 #);
+ErrorMonitorOverwritesADeclaration: (# exit 6614 #);
+ErrorDeclarationIsOverwrittenByMonitor: (# exit 6615 #);
+ErrorMonitorHasForwardDependencies: (# exit 6616 #);
+ErrorNetNotSaved: (# exit 6617 #);

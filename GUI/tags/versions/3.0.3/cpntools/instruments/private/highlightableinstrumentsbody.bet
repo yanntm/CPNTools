@@ -1,0 +1,353 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../highlightableinstruments';
+
+-- PortSocketHighLightInstrumentOnMouseFloat:DoPart --
+do (# theTarget: ^PortType;
+      currentSockets: @PlaceInstanceList;
+      theSubpageInstance, theSuperpageInstance: ^PageInstance;          
+      theCPNSheet: ^CPNSheet;
+   do search: theHand.over.scan
+        (# 
+        do current.scan
+           (# 
+           do (if current## <= CPNSheet## then
+                  current[] -> theCPNSheet[];
+                  theCPNSheet.content[] -> theSubpageInstance[];
+                  theSubpageInstance.getSuperpageInstance -> theSuperpageInstance[];
+                  leave search;
+              if);
+           #);
+        #);
+      search: theHand.over.scan
+        (# 
+        do current.scan
+           (# 
+           do (if current## <= CPNSheet## then
+                  leave search;
+              if);
+              (if current## <= PortType## then
+                  current[] -> theTarget[];
+                  (if theTarget.getPlace <> NONE then
+                      (theTarget.getPlace).scanAssignments
+                      (# thePlace: ^PlaceInstance;
+                      do (if current.getSubTransition = theSubpageInstance.theTransition[] then
+                             (current.getSocket).id[] -> theSuperpageInstance.lookupPlaceInstance -> thePlace[];
+                             (if thePlace[] <> none then
+                                 thePlace[] -> currentSockets.append;
+                             if);
+                         if);
+                      #);
+                  if);
+              if);
+              (if theTarget[] <> none then
+                  leave search;
+              if);
+           #);
+        #);
+      (if theTarget[] <> NONE then
+          (thetarget.getPlace).id[] -> theSubpageInstance.lookupPlaceInstance -> currentSockets.append;
+      if);
+      lastSockets.scan
+      (# 
+      do current.lowLight;
+         current.changed;
+      #);
+      (if not addHighlight and (lastPageInstance[] <> none) then
+          lastPageInstance.lowLight;
+          lastPageInstance.changed;
+      if);               
+      lastSockets.clear;          
+      currentSockets.scan
+      (# 
+      do current.highlight;
+         current.changed;
+         current[] -> lastSockets.append;
+      #);     
+      currentSockets.size > 0 -> addHighlight;
+      (if addHighlight and (theSuperpageInstance[] <> none) then
+          theSuperpageInstance.highlight;
+          theSuperpageInstance.changed;    
+      if);
+      theSuperpageInstance[] -> lastPageInstance[];
+   #);
+
+-- SubpageInstanceHighlightInstrumentOnMouseFloat:doPart --
+do (# theSuperpageInstance: ^PageInstance; 
+      theTransition: ^Transition;
+   do search: theHand.over.scan
+        (# 
+        do current.scan
+           (# theCPNSheet: ^CPNSheet;
+              theSubpageInfo: ^SubpageInfo;
+           do (if (theSuperpageInstance[] = none) and 
+                  (current## <= CPNSheet##) then
+                  current[] -> theCPNSheet[];
+                  theCPNSheet.content[] -> theSuperpageInstance[];
+                  (if theTransition[] <> none then
+                      leave search;
+                  if);
+              if);
+              (if (theTransition[] = none) and
+                  (current## <= SubpageInfo##) then
+                  current[] -> theSubpageInfo[];
+                  theSubpageInfo.getTransition -> theTransition[];
+                  (if theSuperpageInstance[] <> none then
+                      leave search;
+                  if);
+              if);
+           #);
+        #); 
+      (if (theSuperpageInstance[] <> none) and
+          (theTransition[] <> none) then
+          (if not highlightAdded then
+              theTransition.id[] 
+                -> theSuperpageInstance.lookupTransitionInstance
+                -> theTransitionInstance[];
+              (if theTransitionInstance[] <> none then
+                  theTransitionInstance.theSubpageInstance[] 
+                    -> theSubpageInstance[];
+                  theTransitionInstance.highlight;
+                  theTransitionInstance.changed;
+                  theSubpageInstance.highlight;                  
+                  theSubpageInstance.changed;
+                  true -> highlightAdded;  
+               else
+                  (* theTransitionInstance and theSuperpageInstance
+                     didn't match. Do nothing. *)
+              if);
+          if);
+       else
+          (if highlightAdded then
+              false -> highlightAdded;
+              theSubpageInstance.lowlight;
+              theSubpageInstance.changed;
+              theTransitionInstance.lowlight;
+              theTransitionInstance.changed;                  
+          if);
+      if);
+   #);
+   
+-- ShowHierInfoFatherHighLightInstrumentInit:doPart --
+do highlightedPlaces.init;
+   
+-- ShowHierInfoFatherHighLightInstrumentAdding:doPart --
+do (# thePlace: ^Place;
+   do CurrentFather[] -> thePlace[];
+      thePlace.scanFusionSet
+      (#
+      do (if current[] = thePlace[] then
+             highlight_color -> current.setHalo;
+          else
+             fusion_color -> current.setHalo;
+         if);
+	   (* bugfix #1237 *)
+         fusion_color -> (current.getCPNPage).setHalo;   
+         fusion_color -> (current.getCPNPage).setHalo;
+         current[] -> highlightedPlaces.append;
+      #);
+   #);
+   
+-- ShowHierInfoFatherHighLightInstrumentRemoving:doPart --
+do (if LastFather## <= Place## then
+       highlightedPlaces.scan
+       (#
+       do NONE -> current.setHalo;
+          (* bugfix #1237  *)
+          NONE -> (current.getCPNPage).setHalo;
+          NONE -> (current.getCPNPage).setHalo;
+       #);
+       highlightedPlaces.clear;
+   if);
+   
+-- ShowHierInfoFatherHighLightInstrumentOnMouseFloat:doPart --
+do (# 
+   do search: theHand.over.scan
+        (#
+        do current.scan
+           (#
+           do (if current## <= CPNSheet## then
+                  leave search;
+               else 
+                  (if current## <= FusionInfo## then
+                      current[] -> theTarget[];
+                      current[] -> QUA
+                      (# as::FusionInfo;
+                      do thisObj.getPlace -> CurrentFather[];
+                      #);
+                      leave search;
+                  if);
+              if);
+           #);
+        #);
+   #);
+   
+-- HighlightDependsInstrumentClearDependHalo:DoPart --
+do dependHalos.scan
+   (#
+   do NONE  -> current.setHalo;
+   #);
+   dependHalos.clear;
+   cpnpages.scan
+   (# 
+   do none -> current.setSubpagesHalo;
+   #);
+   cpnpages.clear;
+   delay.stop;
+      
+-- HighlightDependsInstrumentSetOnlyDependHalo:DoPart --
+do (# highlightSubpageInfos:
+        (# thePage: ^CPNPage;
+        enter thePage[]
+        do thePage.scanInstances
+           (# 
+           do (if (current.theTransition[] <> none) and
+                  (current.theTransition.getCPNPage <> none) and
+                  (current.theTransition.getSubPageInfo <> none) and
+                  (((current.theTransition.getSubPageInfo).id[] 
+                    -> dependHalos.lookup) = none) then
+                  current.theTransition.getSubPageInfo -> highlight;
+                  current.theTransition.getCPNPage -> highlightSubpageInfos;
+                  current.theTransition.scanInstances
+                  (# 
+                  do current.update;
+                  #);
+                  current.theTransition.getCPNPage -> highlightSubpagesHalo;
+              if);
+           #);           
+        #);
+      highlight:
+        (# elm: ^Highlightable;
+        enter elm[]
+        do depend_color  -> elm.setHalo;
+           (elm.id[], elm[]) -> dependHalos.associate;
+        #);
+   do (if (target[] <> NONE) and
+          ((target.id[] -> dependHalos.lookup) = none) then
+          (target.id[], target[]) -> dependHalos.associate;
+          
+          target[] -> highlight;
+          
+          target.scanUsedByNodes
+          (#
+          do (if (current.id[] -> dependHalos.lookup) = none then
+                 (if ((current.getCPNPage).id[] -> dependHalos.lookup) = none then
+                     current.getCPNPage -> highlight;
+                     current.getCPNPage -> highlightSubpageInfos;
+                 if);
+                 current[] -> highlight;  
+             if);
+          #);
+          
+          (if target.getDeclaration <> NONE then
+              ((target.getDeclaration).getParent, (depend_color)) 
+                -> highlightDeclaration;
+          if);
+          target.scanUsedBy
+          (#
+          do (* A declaration can depend on it self.
+              * This is ignored.
+              *)
+             (if current[] <> target[] then
+                 (current.getDeclaration, depend_color) -> highlightDeclaration;
+                 current[] -> setOnlyDependHalo;
+             if);
+          #);
+          target.scanUsedByMonitors
+          (# 
+          do (current[], (depend_color)) -> highlightMonitor;
+          #);
+      if);
+   #);
+   
+-- HighlightDependsInstrumentSetDependHalo:doPart --
+do (if target[]<>none then
+       target[] -> setOnlyDependHalo;
+       target.overwrites.scan
+       (# 
+       do (* A declaration can depend on it self.
+           * This is ignored.
+           *)
+          (if (current[] <> target[]) then
+              (current.getDeclaration, unassignedport_color) 
+                -> highlightDeclaration;
+          if);
+       #);
+       target.overwrittenBy.scan
+       (# 
+       do (* A declaration can depend on it self.
+           * This is ignored.
+           *)
+          (if current[] <> target[] then
+              (current.getDeclaration, unassignedport_color)
+                -> highlightDeclaration;
+          if);
+       #);
+   if);
+   
+-- HighlightDependsInstrumentSetDependHaloFromNode:DoPart --
+do target.scanMonitors
+   (# 
+   do (current[], depend_color) -> highlightMonitor;      
+   #);
+   (if ((target.getNode).id[], target.getNode) -> dependHalos.associate then
+       (target.getNode).uses.scan
+       (# 
+       do (current.getDeclaration, depend_color) -> highlightDeclaration;
+       #);
+   if);
+   
+-- HighlightDependsInstrumentSetDependHaloFromMonitor:DoPart --
+do (# hilight: 
+        (# elm: ^Highlightable;
+        enter elm[]
+        do depend_color -> elm.setHalo;
+           (elm.id[], elm[]) -> dependHalos.associate;
+        #);
+   do target.scanNodeInstances
+      (# 
+      do current[] -> hilight;
+         current.thePageInstance[] -> hilight;
+         current.thePageInstance.thePage[] -> highlightSubpagesHalo;
+         current.thePageInstance.thePage[] -> hilight;
+      #);
+      target.scanUsedBy
+      (# 
+      do (current[], depend_color) -> highlightMonitor;
+      #);
+      target.scanOverwrites
+      (# 
+      do (current[], unassignedport_color) -> highlightMonitor;
+      #);
+      target.scanOverwrittenBy
+      (# 
+      do (current[], unassignedport_color) -> highlightMonitor;
+      #);
+      target.scanOverwritesDecl
+      (# 
+      do (current.getDeclaration, unassignedport_color) -> highlightDeclaration;
+      #);
+   #);

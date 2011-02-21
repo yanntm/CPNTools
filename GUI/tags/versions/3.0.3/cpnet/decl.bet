@@ -1,0 +1,500 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN 'cpnet';
+BODY 'private/cpnetdeclbody';
+
+-- WorkspaceLib: Attributes --
+
+
+
+EmptyDecl: Decl
+  (# description: (# exit '(* Empty declaration *)' #);
+     print:: (# <<SLOT EmptyDeclPrint:DoPart>> #);
+     shortName:: (# <<SLOT EmptyDeclShortName:DoPart>> #);
+  #);
+     
+BlockDecl: Decl
+  (# print:: 
+       (# 
+       do data[] -> output.puttext;
+       #);
+     shortName::
+       (# 
+       do (if ('' -> data.equal) then
+              'block' -> data[];
+          if);
+          data.copy -> name[];
+       #);
+     init::
+       (# 
+       do (if data[] = NONE then
+              'block' -> data[];
+          if);
+       #);
+  #);
+    
+
+ErrorDecl: Decl
+  (# print:: (# <<SLOT ErrorDeclPrint:DoPart>> #);     
+     shortName:: (# <<SLOT ErrorDeclShortName:DoPart>> #);
+     
+     getCurrentHighlight::
+       (# 
+       do incorrect -> statusToColor -> currentHighlight[];
+       #);
+     onSyntaxError::
+       (# 
+       do incorrect -> status;
+       #);
+     onNoSyntaxError::
+       (# 
+       do incorrect -> status;
+       #);
+  #);
+
+OWErrorDecl: Decl
+  (# data: ^Text;
+     originalDecl: ^Decl;
+     print:: 
+       (# 
+       do data[] -> output.puttext;
+       #);
+     shortName::< 
+       (# 
+       do '' -> name[];
+          (if originalDecl[] <> NONE then
+              originalDecl.shortName -> name.puttext;
+          if);
+          INNER;
+       #);
+  #);
+
+InvariantDecl: Decl
+  (# type: ^Text;
+     name: @text;
+
+     weights: @Dictionary
+       (# Element:: Declaration;
+          Key:: Text;
+          keyEqual::
+            (#
+            do (if (left[]<>NONE) and (right[]<>NONE) then
+                   left[] -> right.equalNCS -> value;
+               if);
+            #);
+       #);
+     
+     print::< 
+       (# 
+       do 'invariant ' -> output.puttext;
+          name[] -> output.puttext;
+          ': ' -> output.puttext;
+          type[] -> output.puttext;
+          INNER;
+          ';' -> output.puttext;
+       #);
+     putOnBIS:: 
+       (# 
+       do 26 -> bis.putInt;
+          id[] -> bis.putString;
+          type[] -> bis.putString;
+          name[] -> bis.putString;
+       #);
+     shortName::< 
+       (# 
+       do 'invariant ' -> name[];
+          name[] -> name.puttext;
+          INNER;
+       #);
+     localCheck:: (# <<SLOT InvariantDeclLocalCheck:DoPart>> #);
+  #);
+
+ChannelDecl: Decl
+  (# type: ^Text;
+     name: @text;
+
+     print::< 
+       (# 
+       do 'channel ' -> output.puttext;
+          name[] -> output.puttext;
+          ': ' -> output.puttext;
+          type[] -> output.puttext;
+          INNER;
+          ';' -> output.puttext;
+       #);
+     shortName::< 
+       (# 
+       do 'channel ' -> name[];
+          THIS(ChannelDecl).name[] -> name.puttext;
+          INNER;
+       #);
+     putOnBIS:: 
+       (# 
+       do 25 -> bis.putInt;
+          id[] -> bis.putString;
+          type[] -> bis.putString;
+          name[] -> bis.putString;
+       #);
+     localCheck:: (# <<SLOT ChannelDeclLocalCheck:DoPart>> #);
+  #);
+
+VarDecl: Decl
+  (# type: ^Text;
+     idlist: @List (# Element:: Text; #);
+
+     XMLTag:
+       (# exit 'var' #);
+     
+     print::< 
+       (# not_first: @boolean;
+       do (if rawLayout[] <> NONE then
+	      rawLayout[] -> output.puttext;
+	   else
+	      (if this(Decl)## <= MSVarDecl## then
+		  'msvar ' -> output.puttext;
+	       else
+		  'var ' -> output.puttext;
+	      if);
+	      idlist.scan 
+		(# 
+		do (if not_first then ', ' -> output.puttext; if); 
+		   current[] -> output.puttext; 
+		   true -> not_first;
+		#);
+	      ': ' -> output.puttext;
+	      type[] -> output.puttext;
+	      INNER;
+	      ';' -> output.puttext;
+          if);
+       #);
+     shortName::< (# <<SLOT VecDeclShortName:doPart>> #);
+     putOnBIS:: 
+       (# 
+       do (if this(Decl)## <= MSVarDecl## then
+              21 -> bis.putInt;
+           else
+              20 -> bis.putInt;
+          if);
+          id[] -> bis.putString;
+          type[] -> bis.putString;
+          idlist.size -> bis.putInt;
+          idlist.scan (# do current[] -> bis.putString; #);
+       #);
+     localCheck:: (# <<SLOT VarLocalCheck:DoPart>> #);
+  #);
+
+MSVarDecl: VarDecl 
+  (# 
+     XMLTag:
+       (# exit 'msvar' #);
+  #);
+
+GlobRefDecl: Decl
+  (# mlid: ^Text;
+     mlexp: ^Text;
+     
+     print:: 
+       (# 
+       <<SLOT GlobRefDeclPrint: doPart>>
+       #);
+     
+     shortName::< 
+       (# 
+       do 'globref ' -> name[];
+          mlid[] -> name.puttext;
+          INNER;
+       #);
+     
+     putOnBIS:: 
+       (# 
+       do 16 -> bis.putInt;
+          id[] -> bis.putString;
+          mlid[] -> bis.putString;
+          mlexp[] -> bis.putString;
+       #);
+  #);
+
+UseDecl: Decl
+  (# mlexp: ^Text;
+     
+     print:: 
+       (# 
+       do (if rawLayout[] <> NONE then
+	      rawLayout[] -> output.putText;
+	   else
+	      'use ' -> output.puttext;
+	      mlexp[] -> output.puttext;
+	      ';' -> output.puttext;
+          if);
+       #);     
+     putOnBIS:: (# <<SLOT UseDeclPutOnBIS:DoPart>> #);
+     shortname:: (# <<SLOT UseDeclShortName:DoPart>> #);
+  #);
+
+InternalDecl: Notifier
+  (# 
+     localCheck:< 
+       (# error: ^Text;
+       do INNER;
+       exit error[]
+       #);
+     print:< 
+       (# output: ^Stream;
+       enter output[]
+       <<SLOT InternalDeclPrint:DoPart>>
+       #); 
+     PutOnBIS:< (# bis: ^MLBIS; enter bis[] do INNER; #); 
+  #);
+
+ColorSetDecl: Decl
+  (# istimed: @boolean;
+     
+     IntColorSetDecl: InternalDecl
+       (# low: ^Text;
+          high: ^Text;
+          
+          print:: 
+            (# 
+            <<SLOT mlIntColorPrint:doPart>>  
+            #);
+          
+          putOnBIS:: 
+            (# 
+            <<SLOT mlIntColorPutOnBIS:doPart>>
+            #);
+       #);
+     
+     StringColorSetDecl: InternalDecl
+       (# low: ^Text;
+          high: ^Text;
+          lenLow: ^Text;
+          lenHigh: ^Text;
+          
+          print:: 
+            (# 
+            <<SLOT mlStringColorPrint:doPart>>  
+            #);   
+          
+          putOnBIS:: 
+            (# 
+            <<SLOT mlStringColorPutOnBIS:doPart>>
+            #);
+       #);
+     
+     ProductColorSetDecl: InternalDecl
+       (# idlist: @List (# Element:: Text; #);
+          
+          print:: 
+            (# 
+            <<SLOT mlProductColorPrint:doPart>>
+            #);
+          
+          putOnBIS:: 
+            (# 
+            <<SLOT mlProductColorPutOnBIS:doPart>>
+            #);
+       #);
+     
+     EnumColorSetDecl: InternalDecl
+       (# idList: @List (# Element:: Text; #);
+          print:: 
+            (# 
+            <<SLOT mlEnumColorPrint:doPart>>
+            #);
+          
+          putOnBis:: 
+            (# 
+            <<SLOT mlEnumColorPutOnBIS:doPart>>
+            #);
+       #);  
+     
+     SubsetColorSetDecl: InternalDecl
+       (# subsetelms: @List(# Element:: Text #);
+          listsubset: @boolean;
+          theText: ^Text;
+          subset: ^Text;
+          mlid: ^Text;
+          
+          print:: 
+            (# 
+            <<SLOT mlSubsetColorPrint:doPart>>
+            #);
+          
+          putOnBis:: 
+            (# 
+            <<SLOT mlSubsetColorPutOnBIS:doPart>>
+            #);
+       #);
+     
+     UnitColorSetDecl: InternalDecl
+       (# theid: ^Text;
+          
+          print:: 
+            (# 
+            <<SLOT mlUnitColorPrint:doPart>>
+            #);
+          
+          putOnBis:: 
+            (# 
+            <<SLOT mlUnitColorPutOnBIS:doPart>>
+            #);
+       #);
+     
+     BoolColorSetDecl: InternalDecl
+       (# id1, id2: ^Text;
+          
+          print:: 
+            (# 
+            <<SLOT mlBoolColorPrint:doPart>>
+            #);
+          
+          putOnBis:: 
+            (# 
+            <<SLOT mlBoolColorPutOnBIS:doPart>>
+            #);
+       #);
+     
+     RealColorSetDecl: InternalDecl
+       (# low, high: ^Text;
+          
+          print:: 
+            (# 
+            <<SLOT mlRealColorPrint:doPart>>
+            #);
+          
+          putOnBis:: 
+            (# 
+            <<SLOT mlRealColorPutOnBIS:doPart>>
+            #);
+       #);
+     
+     IndexColorSetDecl: InternalDecl
+       (# low, high: ^Text;
+          theid: ^Text;
+          
+          print:: 
+            (# 
+            <<SLOT mlIndexColorPrint:doPart>>
+            #);
+          
+          putOnBis:: 
+            (# 
+            <<SLOT mlIndexColorPutOnBIS:doPart>>
+            #);
+       #);
+     
+     ListColorSetDecl: InternalDecl
+       (# low, high: ^Text;
+          theid: ^Text;
+          
+          print:: 
+            (# 
+            <<SLOT mlListColorPrint:doPart>>
+            #);
+          
+          putOnBis:: 
+            (# 
+            <<SLOT mlListColorPutOnBIS:doPart>>
+            #);
+       #);
+     
+     RecordColorSetDecl: InternalDecl
+       (# recField: (# left, right: ^Text; #);
+          recFieldList: @List (# Element:: recfield #);
+          
+          print:: 
+            (# 
+            <<SLOT mlRecordColorPrint:doPart>>
+            #);
+          
+          putOnBis:: 
+            (# 
+            <<SLOT mlRecordColorPutOnBIS:doPart>>
+            #);
+       #);
+     
+     UnionColorSetDecl: InternalDecl
+       (# unionField: (# id, type: ^Text; #);
+          unionFieldList: @List (# Element:: unionfield #);
+          
+          print:: 
+            (# 
+            <<SLOT mlUnionColorPrint:doPart>>
+            #);
+          
+          putOnBis:: 
+            (# 
+            <<SLOT mlUnionColorPutOnBIS:doPart>>
+            #);
+       #); 
+     
+     AliasColorSetDecl: InternalDecl
+       (# theid: ^Text;
+          print:: 
+            (# 
+            <<SLOT mlAliasColorPrint:doPart>>
+            #);
+          
+          putOnBis:: 
+            (# 
+            <<SLOT mlAliasColorPutOnBIS:doPart>>
+            #);
+       #); 
+     
+     textList: List(# Element:: Text #);
+     declareList: ^textList;
+     mlid: ^Text;
+     
+     print:: 
+       (# 
+       <<SLOT ColorSetDeclPrint:doPart>>
+       #);
+	  
+     shortName:: 
+       (# 
+       do 'colset ' -> name[];
+          mlid[] -> name.puttext;
+       #);
+     putOnBIS:: 
+       (# d: ^InternalDecl;
+       <<SLOT ColorSetDeclPutOnBIS:doPart>>
+       #);     
+     scanInternalDecl:
+       (# current: ^InternalDecl;
+       <<SLOT ColorSetScanInternalDecl:DoPart>>
+       #);
+     scanInscriptions:
+       (# theInscription: ^Inscription;
+       <<SLOT ColorSetScanInscriptions:DoPart>>        
+       #);
+     localCheck:: (# <<SLOT ColorSetDeclLocalCheck:DoPart>> #);
+  #);
+
+MLDecl: Decl
+  (# print:: (# <<SLOT MLDeclPrint:doPart>> #);
+     shortName:: (# <<SLOT MLDeclShortName:doPart>> #);       
+     putOnBIS:: (# <<SLOT MLDeclPutOnBIS:doPart>> #);
+  #);

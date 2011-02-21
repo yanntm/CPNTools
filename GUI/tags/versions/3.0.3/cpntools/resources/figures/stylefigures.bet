@@ -1,0 +1,438 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../../cpnworkspace';
+
+INCLUDE 'figure';
+
+-- CPNWorkspacelib: attributes --
+
+ColorFigure: Figure
+  (# useDefaultHotspot::(# do true -> value; #);
+     theBasicStyle: ^BasicStyle;
+     theColor: ^Color;
+     
+     init:: 
+       (# 
+          theColorFigure: ^Composite;
+          theTriangle: ^Line;
+          theStyle: ^CompositeStyle;        
+          point: ^Point2d; 
+       do &Composite[]->theColorFigure[];
+          &Line[]->theTriangle[];
+          
+          &PointList[]->theTriangle.points[];
+          (for 3 repeat &Point2d[]->point[]->theTriangle.points.append; for);
+          
+          &CompositeStyle[]->theStyle[];
+          &BasicStyle[]->theBasicStyle[];
+          
+          theBasicStyle[]->theStyle.add;
+          theStyle[]->theColorFigure.theStyle[];
+          
+          theTriangle[]->theColorFigure.add;
+          theColorFigure[]->add;
+          
+          1->theTriangle.points.get->point[];
+          (0,0)->point;
+          2->theTriangle.points.get->point[];
+          (1,0)->point;
+          3->theTriangle.points.get->point[];
+          (1,-1)->point;
+          
+       #);     
+     
+     update:: 
+       (# 
+       do (theColor[],theColor[],1)->theBasicStyle;
+       #);
+     
+     onChanged:: 
+       (# 
+       do 'foregroundcolour' -> options.lookupColor -> theColor[];
+       #);
+  #);
+
+LineWidthFigure: Figure
+  (# useDefaultHotspot::(# do true -> value; #);
+     theBasicStyle: ^BasicStyle;
+     theLineWidth: @real;
+     
+     init:: 
+       (# 
+          point: ^Point2d;
+          theLineWidthFigure: ^Composite;
+          theLine: ^Line;
+          theStyle: ^CompositeStyle;
+       do &Composite[]->theLineWidthFigure[];
+          &Line[]->theLine[];
+          
+          &CompositeStyle[]->theStyle[];
+          &BasicStyle[]->theBasicStyle[];
+          
+          theBasicStyle[]->theStyle.add;
+          theStyle[]->theLineWidthFigure.theStyle[];
+          
+          &PointList[]->theLine.points[];
+          (for 2 repeat &Point2d[]->point[]->theLine.points.append for);
+          
+          theLine[]->theLineWidthFigure.add;
+          theLineWidthFigure[]->add;
+          
+          1->theLine.points.get->point[];   
+          (-10,0)->point;
+          2->theLine.points.get->point[];   
+          (10,0)->point;
+          
+       #);     
+     
+     update:: 
+       (# 
+       do (black[],black[],theLineWidth)->theBasicStyle;
+       #);
+     
+     onChanged:: 
+       (# 
+          do 'linewidth'->options.lookupReal->theLineWidth;
+       #);     
+  #);
+
+LinePatternFigure: Figure
+  (# useDefaultHotspot::(# do true -> value; #);
+     thePatternStyle: ^PatternStyle;
+     theLinePattern: ^Text;
+     
+     init:: 
+       (# 
+          theLinePatternFigure: ^Composite;
+          theLine: ^Line;
+          theStyle: ^CompositeStyle;
+          theBasicStyle: ^BasicStyle;
+          point: ^Point2d;
+       do &Composite[]->theLinePatternFigure[];
+          &Line[]->theLine[];
+          
+          &CompositeStyle[]->theStyle[];
+          &BasicStyle[]->theBasicStyle[];
+          &PatternStyle[]->thePatternStyle[];
+          
+          (black[],black[],3)->theBasicStyle;
+          
+          theBasicStyle[]->theStyle.add;
+          thePatternStyle[]->theStyle.add;
+          theStyle[]->theLinePatternFigure.theStyle[];
+          
+          &PointList[]->theLine.points[];
+          (for 2 repeat &Point2d[]->point[]->theLine.points.append for);
+          
+          theLine[]->theLinePatternFigure.add;
+          theLinePatternFigure[]->add;
+          
+          1->theLine.points.get->point[];   
+          (-10,0)->point;
+          2->theLine.points.get->point[];   
+          (10,0)->point;
+          
+       #);     
+     
+     update:: 
+       (# 
+       do theLinePattern[]->thePatternStyle;          
+       #);
+     
+     onChanged:: 
+       (# 
+       do 'linepattern1' -> options.lookupText -> theLinePattern[];
+       #);     
+     
+  #);
+    
+CycleFigure: Figure
+  (# useDefaultHotspot::(# do true -> value; #);
+     cycleSymbol: ^Composite;
+     upperArrow: ^Line;
+     lowerArrow: ^Line;
+     
+     Init::< 
+       (# 
+       do &Composite[]->cycleSymbol[];
+          &Line[]->upperArrow[];
+          &Line[]->lowerArrow[];
+          
+          &PointList[]->upperArrow.points[];
+          &PointList[]->lowerArrow.points[];
+          
+          (for 3 repeat &Point2d[]->upperArrow.points.append for); 
+          (for 3 repeat &Point2d[]->lowerArrow.points.append for); 
+          
+          upperArrow[]->cycleSymbol.add;
+          lowerArrow[]->cycleSymbol.add;
+          INNER;
+          Layout;
+          cycleSymbol[]->add;
+       #);    
+     
+     Layout: 
+       (# 
+          theBasicStyle: ^CompleteStyle;   
+          point: ^Point2d;
+       do &CompleteStyle[]->theBasicStyle[];
+          0.5->theBasicStyle.arrowHeadSize;
+          10->theBasicStyle.curvature;
+          (Black[],NONE,1,ARROW_END)->theBasicStyle;
+          theBasicStyle[]->lowerArrow.theStyle[];
+          theBasicStyle[]->upperArrow.theStyle[];
+          
+          1->upperArrow.points.get->point[];
+     	  (0,0)->point;  
+          2->upperArrow.points.get->point[];
+	  (10,-12)->point;  
+          3->upperArrow.points.get->point[];
+	  (20,0)->point;  
+          
+          1->lowerArrow.points.get->point[];
+	  (20,10)->point;  
+          2->lowerArrow.points.get->point[];
+	  (10,22)->point;  
+          3->lowerArrow.points.get->point[];
+	  (0,10)->point;  
+	  
+	  INNER;
+       #);     
+  #);
+
+CycleArcHeadFigure: CycleFigure 
+  (#
+     arrows: ^Composite;
+     leftArrow: ^Line;
+     rightArrow: ^Line;
+     
+     Init::< 
+       (#  
+       do &Composite[]->arrows[];
+          &Line[]->leftArrow[];
+          &Line[]->rightArrow[];
+          
+          &PointList[]->leftArrow.points[];
+          &PointList[]->rightArrow.points[];
+          
+          (for 2 repeat &Point2d[]->leftArrow.points.append for); 
+          (for 2 repeat &Point2d[]->rightArrow.points.append for); 
+          
+          leftArrow[]->arrows.add;
+          rightArrow[]->arrows.add;
+          
+	  INNER;      
+          
+          Layout;
+          arrows[]->add;     
+       #);
+     
+     Layout: 
+       (#     
+          
+          theBasicStyle: ^CompleteStyle;   
+          point: ^Point2d;       
+          
+       do &CompleteStyle[]->theBasicStyle[];
+          0.5->theBasicStyle.arrowHeadSize;
+          (Black[],NONE,1,ARROW_END)->theBasicStyle;
+          theBasicStyle[]->leftArrow.theStyle[];
+          &CompleteStyle[]->theBasicStyle[];
+          0.9->theBasicStyle.arrowHeadSize;
+          (Black[],NONE,1,ARROW_END)->theBasicStyle; 
+          theBasicStyle[]->rightArrow.theStyle[];
+          
+          1->leftArrow.points.get->point[];
+     	  (8,5)->point;  
+          2->leftArrow.points.get->point[];
+     	  (-4,5)->point;  
+          
+          1->rightArrow.points.get->point[];
+     	  (24,5)->point;  
+          2->rightArrow.points.get->point[];
+     	  (10,5)->point;  
+       #);   
+  #);
+
+ToggleFillFigure: CycleFigure
+  (#
+     circles: ^Composite;
+     oneColoredCircle: ^Ellipse;
+     twoColoredCircle: ^Ellipse;
+     
+     Init::< 
+       (#  
+       do &Composite[]->circles[];
+          &Ellipse[]->oneColoredCircle[];
+          &Ellipse[]->twoColoredCircle[];
+          
+          oneColoredCircle[]->circles.add;
+          twoColoredCircle[]->circles.add;
+          
+	  INNER;      
+          
+          Layout;
+          circles[]->add;     
+       #);
+     
+     Layout:
+       (#     
+          theBasicStyle: ^BasicStyle;   
+       do &BasicStyle[]->theBasicStyle[];
+          (Black[],Black[],1)->theBasicStyle;
+          theBasicStyle[]->oneColoredCircle.theStyle[];
+          &BasicStyle[]->theBasicStyle[];
+          (Black[],White[],1)->theBasicStyle; 
+          theBasicStyle[]->twoColoredCircle.theStyle[];
+          
+          2->twoColoredCircle.x;
+          5->twoColoredCircle.y;
+          8->twoColoredCircle.width;
+          8->twoColoredCircle.height;
+          
+          18->oneColoredCircle.x;
+          5->oneColoredCircle.y;
+          8->oneColoredCircle.width;
+          8->oneColoredCircle.height;
+         
+       #);   
+  #);
+
+CloneGraphicsFigure: Figure
+  (# useDefaultHotspot::(# do true -> value; #);
+     theColor: ^Color;
+     Rect1: @Rect;
+     Rect2: @Rect;
+     
+     init::<
+       (# theStyle1: ^CompositeStyle;
+          theStrokeStyle1: ^StrokeStyle;
+          theStyle2: ^CompositeStyle;
+          theStrokeStyle2: ^StrokeStyle;
+          theStrokeWidthStyle: ^StrokeWidthStyle;
+          
+       do &CompositeStyle[] -> theStyle1[] -> Rect1.theStyle[];
+          &StrokeStyle[] -> theStrokeStyle1[];
+          &StrokeWidthStyle[] -> theStrokeWidthStyle[];
+          black[] -> theStrokeStyle1.stroke[];
+          2 -> theStrokeWidthStyle.strokeWidth;
+          theStrokeStyle1[] -> theStyle1.add;
+          theStrokeWidthStyle[] -> theStyle1.add;
+          &CompositeStyle[] -> theStyle2[] -> Rect2.theStyle[];
+          &StrokeStyle[] -> theStrokeStyle2[];
+          black[] -> theStrokeStyle2.stroke[];
+          theStrokeStyle2[] -> theStyle2.add;
+          theStrokeWidthStyle[] -> theStyle2.add;
+          Rect1[] -> add;
+          Rect2[] -> add;
+          INNER;
+          Layout;
+       #);
+     
+     Layout:
+       (# 
+       do (16,12)->(Rect1.width,Rect1.height);
+          0 -> Rect1.x;
+          0 -> Rect1.y;
+          
+          16 -> Rect2.width;
+          12 -> Rect2.height;
+          4 -> Rect2.x;
+          -4 -> Rect2.y;
+       #);
+  #);
+
+ApplyGraphicsFigure: Figure
+  (# 
+     
+     theStyleShowFigure: ^Composite;
+     theOuterTriangle: ^Line;
+     theInnerTriangle: ^Line;
+     point: ^Point2d;
+          
+     init::< 
+       (# 
+          theOuterTriangleStyle: ^CompositeStyle;
+          theInnerTriangleStyle: ^CompositeStyle;
+          thePatternStyle: ^PatternStyle;
+          theBasicStyle: ^BasicStyle;
+          thePageElement: ^PageElement;
+       enter thePageElement[]          
+       do (if thePageElement[] <> NONE then
+              &Composite[]->theStyleShowFigure[];
+              &Line[]->theOuterTriangle[];
+              &Line[]->theInnerTriangle[];
+              
+              &PointList[]->theOuterTriangle.points[];
+              (for 3 repeat &Point2d[]->point[]->theOuterTriangle.points.append; for);
+              &PointList[]->theInnerTriangle.points[];
+              (for 3 repeat &Point2d[]->point[]->theInnerTriangle.points.append; for);
+              
+              &CompositeStyle[]->theOuterTriangleStyle[];
+              &CompositeStyle[]->theInnerTriangleStyle[];
+              
+              &PatternStyle[]->thePatternStyle[];
+              &BasicStyle[]->theBasicStyle[];
+              (thePageElement.linecolor,NONE,thePageElement.strokeWidth)->theBasicStyle;
+              thePageElement.linetype[]->thePatternStyle;
+              theBasicStyle[]->theOuterTriangleStyle.add;
+              thePatternStyle[]->theOuterTriangleStyle.add;
+              
+              &PatternStyle[]->thePatternStyle[];
+              &BasicStyle[]->theBasicStyle[];(*here is where different interior styles should be added*)
+              (NONE,thePageElement.fillcolor,2)->theBasicStyle;
+              theBasicStyle[]->theInnerTriangleStyle.add;
+              
+              theOuterTriangleStyle[]->theOuterTriangle.theStyle[];
+              theInnertriangleStyle[]->theInnerTriangle.theStyle[];
+              
+              theInnerTriangle[]->theStyleShowFigure.add;
+              theOuterTriangle[]->theStyleShowFigure.add;
+              theStyleShowFigure[]->add;
+              
+              Layout;
+          if);
+       #); 
+     
+     Layout: 
+       (# 
+       do 
+          1->theOuterTriangle.points.get->point[];
+          (0,0)->point;
+          2->theOuterTriangle.points.get->point[];
+          (15,0)->point;
+          3->theOuterTriangle.points.get->point[];
+          (15,-15)->point;
+          
+          1->theInnerTriangle.points.get->point[];
+          (0,0)->point;
+          2->theInnerTriangle.points.get->point[];
+          (15,0)->point;
+          3->theInnerTriangle.points.get->point[];
+          (15,-15)->point;
+       #);
+     
+  #);

@@ -1,0 +1,351 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../cpnworkspace';
+
+INCLUDE 'cpninstrument';
+INCLUDE 'clipping';
+INCLUDE '../resources/figures/monitoringfigures';
+
+BODY 'private/monitoringinstrumentsbody';
+
+
+-- WorkspaceLib: Attributes --
+
+MonitorClipping: Clipping
+  (# Element:: AbstractMonitor;
+     ContextType:: MonitorBlock;
+     beforeMonitor: ^AbstractMonitor;
+     init:: (# enter beforeMonitor[] #);
+     insert:: (# <<SLOT MonitorClippingInsert:DoPart>> #);     
+     remove:: (# <<SLOT MonitorClippingRemove:DoPart>> #);
+  #);
+MonitorDeclarationClipping: Clipping
+  (# Element:: Declaration;
+     ContextType:: Monitor;
+     previous: ^Text;
+     init:: (# <<SLOT MonitorDeclarationClippingInit:DoPart>> #);
+     insert:: (# <<SLOT MonitorDeclarationClippingInsert:DoPart>> #);
+     remove:: (# <<SLOT MonitorDeclarationClippingRemove:DoPart>> #);
+  #);
+GenerateTemplateCodeCommand: StandardInsertCommand
+  (# TargetType:: Monitor;
+     ClippingType:: MonitorDeclarationClipping;
+  #);
+-- CPNWorkspaceLib:Attributes --
+
+getMLName:
+  (# theName: ^Text;
+  enter theName[]
+  do  (if not theName.isLegalMLIdentifier then
+         '' -> theName[];
+      else
+         (# i: @integer;
+            length: @integer;
+         do 1-> i;
+            theName.length -> length;
+            findFirstIllegalChar:
+              (# current: ^Text;
+              do (i,length) -> theName.sub -> current[];
+                 (if not (current.isUpperCaseLetter or
+                     current.isLowerCaseLetter or
+                     current.isDigit or
+                     ('_' -> ((1,1) -> current.sub).equal) or
+                     ('\'' -> ((1,1) -> current.sub).equal) or
+                     (' ' -> ((1,1) -> current.sub).equal)) then
+                     (1,i-1) -> theName.sub -> theName[];
+                     leave findFirstIllegalChar;
+                 if);
+                 (if i<length then
+                     i+1 -> i;
+                     restart findFirstIllegalChar;
+                 if);
+              #);
+         #);
+     if);
+  exit theName[]
+  #);
+
+CreateMonitorWithNodeInstances:
+  (# nodes: ^NodeInstanceList;
+     name: ^Text;
+     net: ^CPNet;
+     type: @integer;
+     theMonitor: ^Monitor;
+  enter (nodes[], name[], net[], type)
+  <<SLOT CreateMonitorWithNodeInstances:DoPart>>
+  exit theMonitor[]
+  #);
+CreateMonitor:
+  (# theGroup: ^Group;
+     type: @integer;
+     theMonitor: ^Monitor;
+  enter (theGroup[], type)
+  <<SLOT CreateMonitor:DoPart>>
+  exit theMonitor[]
+  #);
+CreateMonitorCommand: StandardInsertCommand
+  (# TargetType:: MonitorBlock;
+     ClippingType:: MonitorClipping;
+  #);
+DeleteMonitorCommand: StandardRemoveCommand
+  (# TargetType:: MonitorBlock;
+     ClippingType:: MonitorClipping;
+  #);
+MonitorInstrument: FigureTInstrument
+  (# MonitorType:< IntegerObject;
+     instanceDependent:<
+       (# value: @boolean;
+       do INNER;
+       exit value
+       #);
+     useGroup:<
+       (# value: @boolean;
+       do true -> value;
+          INNER;
+       exit value
+       #);
+     getMonitorName:<
+       (# target: ^TargetType;
+          name: ^Text;
+          theHand: ^Hand;
+       enter (target[], theHand[])
+       do inner;
+          (if (name[] = none) or (name.isAllWhitespace) then
+              NamesNewMonitor -> getGlobalNames -> name[];
+          if);
+       exit name[]
+       #);
+     getGroup:<
+       (# target: ^TargetType;
+          theGroup: ^Group;
+       enter target[]
+       do inner
+       exit theGroup[]
+       #);
+     getNet:<
+       (# net: ^CPNet;
+       do inner;
+       exit net[]
+       #);       
+     apply::< (# theMonitor: ^Monitor; <<SLOT MonitorInstrumentApply:DoPart>> #);
+  #);
+MonitorOnZeroOrMoreNodesInstrument: MonitorInstrument
+  (# relevant:: (# <<SLOT MonitorOnZeroOrMoreNodesInstrumentRelevant:DoPart>> #);
+     getNet:: (# <<SLOT MonitorOnZeroOrMoreNodesInstrumentGetNet:DoPart>> #);
+     getGroup::< (# <<SLOT MonitorOnZeroOrMoreNodesInstrumentGetGroup:DoPart>> #);
+  #);
+MonitorOnSingleNodeInstrument: MonitorOnZeroOrMoreNodesInstrument
+  (# TargetType::< CPNNode;
+     realTarget: ^NodeInstance;
+     instanceDependent::
+       (# 
+       do true -> value;
+       #);
+     useGroup::
+       (# 
+       do false -> value;
+       #);
+     getSimulatorMonitorType:<
+       (# type: ^Text;
+       do &Text[] -> type[];
+          inner
+       exit type[]
+       #);
+     getGroup:: (# <<SLOT MonitorOnSingleNodeInstrumentGetGroup:DoPart>> #);
+     (*Calculates the real target as a side effect*)
+     getMonitorName:: (# <<SLOT MonitorOnSingleNodeInstrumentGetMonitorName:DoPart>> #);
+     apply:: (# <<SLOT MonitorOnSingleNodeInstrumentApply:DoPart>> #);
+  #);
+MonitorOnSinglePlaceInstrument: MonitorOnSingleNodeInstrument
+  (# TargetType:: Place;
+  #);
+MonitorOnSingleTransitionInstrument: MonitorOnSingleNodeInstrument
+  (# TargetType:: Transition;
+  #);
+DataCollectionInstrument: MonitorOnZeroOrMoreNodesInstrument
+  (# FigureT:: DataCollectionFigure;    
+     MonitorType:: (# do DataCollectionType -> value; #);
+     ToolTip:: (# do NamesDataCollectionType -> getGlobalNames -> theTip[]; #);
+  #);
+MarkingSizeInstrument: MonitorOnSinglePlaceInstrument
+  (# FigureT:: MarkingSizeFigure;
+     MonitorType:: (# do MarkingSizeType -> value; #);
+     getSimulatorMonitorType:: (# do 'Marking_size' -> type[]; #);
+     ToolTip:: (# do NamesMarkingSizeType -> getGlobalNames -> theTip[]; #);
+  #);
+BreakpointInstrument: MonitorOnZeroOrMoreNodesInstrument
+  (# FigureT:: BreakpointFigure;
+     MonitorType:: (# do BreakpointType -> value; #);
+     ToolTip:: (# do NamesBreakpointType -> getGlobalNames -> theTip[]; #);
+  #);
+UserDefinedInstrument: MonitorOnZeroOrMoreNodesInstrument
+  (# FigureT:: UserDefinedFigure;
+     MonitorType:: (# do UserDefinedType -> value; #);
+     ToolTip:: (# do NamesUserDefinedType -> getGlobalNames -> theTip[]; #);
+  #);
+WriteInFileInstrument: MonitorOnZeroOrMoreNodesInstrument
+  (# FigureT:: WriteToFileFigure;
+     MonitorType:: (# do WriteInFileType -> value; #);
+     ToolTip:: (# do NamesWriteInFileType -> getGlobalNames -> theTip[]; #);
+  #);
+ListLengthDataCollectionInstrument: MonitorOnSinglePlaceInstrument
+  (# FigureT:: ListLengthDataCollectionFigure;
+     MonitorType:: (# do ListLengthDataCollectionType -> value; #);
+     getSimulatorMonitorType:: (# do 'List_length_dc' -> type[]; #);
+     ToolTip:: (# do NamesListLengthDataCollectionType -> getGlobalNames -> theTip[]; #);
+  #);
+CountTransitionOccurrenceDataCollectionInstrument: MonitorOnSingleTransitionInstrument
+  (# FigureT:: CountTransitionOccurrenceDataCollectionFigure;
+     MonitorType:: (# do CountTransitionOccurrenceDataCollectionType -> value; #);
+     getSimulatorMonitorType:: (# do 'Count_trans_occur' -> type[]; #);
+     ToolTip:: (# do NamesCountTransitionOccurrenceDataCollectionType -> getGlobalNames -> theTip[]; #);
+  #);
+PlaceContentBreakpointInstrument: MonitorOnSinglePlaceInstrument
+  (# FigureT:: PlaceContentBreakpointFigure;
+     MonitorType:: (# do PlaceContentBreakpointType -> value; #);
+     getSimulatorMonitorType:: (# do 'Place_content_bp' -> type[]; #);
+     ToolTIp:: (# do NamesPlaceContentBreakpointType -> getGlobalNames -> theTip[]; #);
+  #);
+TransitionEnabledBreakpointInstrument: MonitorOnSingleTransitionInstrument
+  (# FigureT:: TransitionEnabledBreakpointFigure;
+     MonitorType:: (# do TransitionEnabledBreakpointType -> value; #);
+     getSimulatorMonitorType:: (# do 'Transition_enabled_bp' -> type[]; #);
+     ToolTip:: (# do NamesTransitionEnabledBreakpointType -> getGlobalNames -> theTip[]; #);
+  #);
+AppendMonitorBlock:
+  (# father: ^MonitorBlock;
+     previousMonitor: ^AbstractMonitor;
+  enter (father[], previousMonitor[])
+  <<SLOT AppendMonitorBlock:DoPart>>
+  #);
+AppendMonitorBlockInstrument: Instrument
+  (# TargetType:: theIndex.AbstractMonitorNode;
+     apply:: (# <<SLOT AppendMonitorBlockInstrumentApply:DoPart>> #);
+  #);
+DeleteMonitor:
+  (# theMonitor: ^AbstractMonitor;     
+  enter theMonitor[]
+  <<SLOT DeleteMonitor:DoPart>>
+  #);
+DeleteMonitorNoRegister:
+  (# deletionCommand: ^Command;
+     theMonitor: ^AbstractMonitor;
+  enter theMonitor[]
+  <<SLOT DeleteMonitorNoRegister:DoPart>>
+  exit deletionCommand[]
+  #);
+DeleteMonitorInstrument: Instrument
+  (# TargetType:: theIndex.AbstractMonitorNode;
+     relevant:: (# <<SLOT DeleteMonitorRelevant:DoPart>> #);
+     apply:: (# <<SLOT DeleteMonitorInstrumentApply:DoPart>> #);
+  #);
+DisableMonitor:
+  (# theMonitor: ^AbstractMonitor;
+  enter theMonitor[]
+  <<SLOT DisableMonitor:DoPart>>     
+  #);
+DisableMonitorInstrument: Instrument
+  (# TargetType:: theIndex.AbstractMonitorNode;
+     relevant:: (# <<SLOT DisableMonitorRelevant:DoPart>> #);
+     apply:: (# <<SLOT DisableMonitorInstrumentApply:DoPart>> #);     
+  #);
+MonitorNodeClipping: Clipping
+  (# Element:: NodeInstance;
+     ContextType:: Monitor;
+     insert:: (# <<SLOT MonitorNodeClippingInsert:DoPart>> #);
+     remove:: (# <<SLOT MonitorNodeClippingRemove:DoPart>> #);
+  #);
+MonitorInsertNodeCommand: StandardInsertCommand 
+  (# TargetType:: Monitor;
+     ClippingType:: MonitorNodeClipping;
+  #);
+MonitorRemoveNodeCommand: StandardRemoveCommand 
+  (# TargetType:: Monitor;
+     ClippingType:: MonitorNodeClipping;
+  #);
+AddNodesToMonitor:
+  (# theMonitor: ^Monitor;
+     nodes: ^NodeInstanceIDDictionary;
+  enter (theMonitor[], nodes[])
+  <<SLOT AddNodesToMonitor:DoPart>>
+  #);
+AddSurroundingNodesToMonitorInstrument: GenericInstrument
+  (# AddSurroundingPlacesInstrument: @Instrument
+       (# TargetType:: theIndex.MonitorPlaceNode;
+          apply:: (# <<SLOT AddSurroundingNodesInstrumentAddSurroundingPlacesInstrument:DoPart>> #);
+          relevant:: (# do target.theMonitor.canChangeDeclarations -> value; #);
+       #);
+     AddSurroundingTransitionsInstrument: @Instrument
+       (# TargetType:: theIndex.MonitorTransitionNode;
+          apply:: (# <<SLOT AddSurroundingNodesInstrumentAddSurroundingTransitionsInstrument:DoPart>> #);          
+          relevant:: (# do target.theMonitor.canChangeDeclarations -> value; #);
+       #);    
+     init:: (# <<SLOT AddSurroundingNodesInstrumentInit:DoPart>> #);
+  #);
+RemoveNodesFromMonitor:
+  (# theMonitor: ^Monitor;
+     nodes: ^NodeInstanceList;
+  enter (theMonitor[], nodes[])
+  <<SLOT RemoveNodesFromMonitor:DoPart>>
+  #);
+RemoveNodeFromMonitorInstrument: Instrument
+  (# TargetType:: theIndex.MonitorNodeNode;
+     relevant:: (# do target.theMonitor.canChangeDeclarations -> value; #);
+     apply:: (# <<SLOT RemoveNodeFromMonitorInstrumentApply:DoPart>> #);     
+  #);
+RemoveNodesOnPageInstanceFromMonitorInstrument: Instrument
+  (# TargetType:: theIndex.MonitorPageNode;
+     relevant:: (# do target.theMonitor.canChangeDeclarations -> value; #);
+     apply:: (# <<SLOT RemoveNodesOnPageInstanceFromMonitorInstrumentApply:DoPart>> #);
+  #);
+CloneAbstractMonitor:
+  (# absMonitor: ^AbstractMonitor;
+  enter absMonitor[]
+  <<SLOT CloneAbstractMonitor:DoPart>>
+  #);
+CloneAbstractMonitorInstrument: Instrument
+  (# TargetType:: theIndex.AbstractMonitorNode;
+     relevant:: (# <<SLOT CloneAbstractMonitorInstrumentRelevant:DoPart>> #);
+     apply:: (# <<SLOT CloneAbstractMonitorInstrumentApply:DoPart>> #);
+  #);
+CreateGroupOfMonitorNodes:
+  (# theMonitor: ^Monitor;
+  enter theMonitor[]
+  <<SLOT CreateGroupOfMonitorNodes:DoPart>>
+  #);
+CreateGroupOfMonitorNodesInstrument: Instrument
+  (# TargetType:: theIndex.MonitorPagesNode;
+     apply:: (# <<SLOT CreateGroupOfMonitorNodesInstrumentApply:DoPart>> #);
+  #);
+GenerateNewTemplateCode:
+  (# mon: ^Monitor;
+  enter mon[]
+  <<SLOT GenerateNewTemplateCode:DoPart>>
+  #);
+GenerateNewTemplateCodeInstrument: Instrument 
+  (# TargetType:: theIndex.MonitorNode;
+     apply:: (# <<SLOT GenerateNewTemplateCodeInstrumentApply:DoPart>> #);
+  #);

@@ -1,0 +1,2417 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../cpnworkspace';
+INCLUDE '../../cpnet/stylerecord.bet';
+INCLUDE '../resources/figures/xmlfigure';
+INCLUDE '../resources/texts/texts';
+INCLUDE '~beta/containers/seqContainers';
+INCLUDE 'netinstruments';
+INCLUDE 'hierarchyinstruments';
+INCLUDE 'clipping';
+INCLUDE 'groupinstruments';
+INCLUDE 'geometryrecords';
+
+BODY 'private/creationinstrumentsbody';
+
+-- CPNWorkSpaceLib: attributes --
+
+GroupList: List
+  (# element:: Group;
+  #);
+
+DefaultClipping: PageElementClipping
+  (# Element:: PageElement;
+     insert::
+       (# 
+       do 'DefaultClipping' -> FIXME;
+       #);
+     remove::
+       (# 
+       do (** Not easy to know how to insert a pageelement
+           ** so insert is not implemented.
+           **
+           ** Therefore the element is only deleted once.
+           **)
+          'DefaultClipping' -> FIXME;
+          
+          (if elm.father[] <> NONE  then
+              elm.delete;
+          if);
+       #);
+  #);
+
+PageElementClipping: Clipping
+  (# ContextType:: CPNPage;
+     Element::< PageElement;
+     groups: ^GroupList;
+     guides: ^GuideLineList;     
+     insert::< (# <<SLOT PageElementClippingInsert:DoPart>> #);
+     remove::< (# <<SLOT PageElementClippingRemove:DoPart>> #);     
+     init::<
+       (# 
+       enter (groups[], guides[])
+       do ;
+          INNER;
+       #);
+  #);
+AuxClipping: PageElementClipping
+  (# Element:: Aux;
+     
+     insert::
+       (#
+       do elm[] -> context.addAux;
+       #);
+     remove::
+       (#
+       do elm.delete;
+       #);
+  #);
+NodeClipping: PageElementClipping
+  (# Element::< Node;
+     storage: @List (# Element:: Clipping #);
+     add:
+       (# theClipping: ^Clipping;
+       enter theClipping[]
+       do theClipping[] -> storage.append;
+       #);
+     insert::<
+       (#
+       do context.net.withLock
+          (#
+          do inner insert;
+          #);
+	 #);
+     remove::<
+       (#
+       do context.net.withLock
+          (#
+          do inner remove;
+          #);
+       #);
+  #);
+PlaceClipping: NodeClipping
+  (# Element:: Place;
+     theAssignmentCommands: @CommandList;
+     init:: (# <<SLOT PlaceClippingInit:DoPart>> #);
+     insert::
+       (#
+       do elm[] -> context.addPlace; 
+	  storage.scan
+	  (#
+	  do elm[] -> current.insert;
+	  #);
+          theAssignmentCommands.scan
+          (# 
+          do current.redo;
+          #);
+          (if theAssignmentCommands.size > 0 then
+              elm.semanticChangedOnPlaceGraph;
+          if);
+       #);
+     remove:: (# <<SLOT PlaceClippingRemove:DoPart>> #);
+  #);
+
+SSNodeClipping: NodeClipping
+  (# ssNumber: @Integer;
+     Element:: SSNode;
+     init:: (# enter ssNumber #);
+     insert::
+       (# errorMessage: ^Text;
+       do (if not(elm[] -> context.addSSNode) then
+	      'SSNode #' -> errorMessage[];
+	      elm.number -> errorMessage.putInt;
+	      ' is allready represented on this page and will not be inserted' ->
+              errorMessage.append -> status.error;
+              
+	  if);
+	  (if (NOT elm.deadInfo) AND ((context.Net.stateSpaceNumber <> ssNumber) 
+              OR (NOT context.net.stateSpaceEntered)) then
+	      true -> elm.dead;
+	  if);
+       #);
+     remove::
+       (#
+       do elm.delete;
+       #);
+  #);
+
+DeletePage: 
+  (# theTransition: ^Transition;
+     thePage: ^CPNPage;
+     theCommand: ^DeletePageCommand;
+     compositeCommand: ^Command;
+     removeMonitors: ^CommandList;
+  enter (theTransition[], thePage[])
+  <<SLOT deletepage:doPart>>
+  #);
+
+TransitionClipping: NodeClipping
+  (# Element:: Transition;
+     theDeletePageCommand: ^DeletePageCommand;
+     insert:: (# <<SLOT TransitionClippingInsert:doPart>> #);
+     remove:: (# <<SLOT TransitionClippingRemove:doPart>> #);
+  #);
+BendPointClipping: Clipping
+  (# Element:: BendPoint;
+     ContextType:: Arc;
+     guides: ^GuideLineList;
+     position: @integer;
+
+     init::
+       (#
+       enter (position, guides[])
+       #);
+     
+     insert::
+       (# newBends: ^BendPointList;
+       do &BendPointList[] -> newBends[];
+          (if (context.getBends = NONE) OR (context.getBends).empty then
+              elm[] -> newBends.append;
+           else
+              (context.getBends).scan
+              (#
+              do (if inx = position then
+                     elm[] -> newBends.append;
+                 if);
+                 current[] -> newBends.append;
+              #);
+              (if position > (context.getBends).size then
+                  elm[] -> newBends.append;
+              if);
+          if);
+          newBends[] -> context.setBends;
+          elm[] -> context.addBendPoint;
+          context.getCPNPage -> elm.setCPNPage;
+
+          (if guides[] <> NONE then
+              guides.scan
+              (#
+              do elm[] -> current.AddGuideElement;
+              #);
+          if);
+          elm.changed;
+       #);
+
+     remove::
+       (# newBends: ^BendPointList;
+       do (if guides[] <> NONE then
+              guides.scan
+              (#
+              do elm[] -> current.RemoveGuideElement;
+              #);
+          if);
+          &BendPointList[] -> newBends[];
+          (context.getBends).scan
+          (#
+          do (if inx <> position then
+                 current[] -> newBends.append;
+             if);
+          #);
+          elm[] -> context.removeBendPoint;
+          newBends[] -> context.setBends;
+          context.changed;
+       #);
+
+  #);
+ArcClipping: PageElementClipping
+  (# Element:: Arc;
+     thePlace: ^Place;
+     theTransition: ^Transition;
+     originalX, originalY: @Real;
+     theAssignmentClipping: ^AssignmentClipping;
+     storage: @List
+       (# Element:: Clipping;
+       #);     
+     add:
+       (# theClipping: ^Clipping;
+       enter theClipping[]
+       do theClipping[] -> storage.append;
+       #);
+     init::
+       (# 
+       enter (thePlace[], theTransition[])
+       <<SLOT ArcClippingInit:DoPart>>
+       #);
+     insert:: (# <<SLOT ArcClippingInsert:DoPart>> #);
+     remove:: (# <<SLOT ArcClippingRemove:DoPart>> #);
+  #);
+SSArcClipping: PageElementClipping
+  (# ssNumber: @Integer;
+     Element:: SSArc;
+     source: ^Node;
+     destination: ^Node;
+     originalX, originalY: @Real;
+     storage: @List
+       (# Element:: Clipping;
+       #);
+     add:
+       (# theClipping: ^Clipping;
+       enter theClipping[]
+       do theClipping[] -> storage.append;
+       #);
+     init::
+       (# 
+       enter (source[], destination[], ssNumber)
+       <<SLOT SSArcClippingInit:DoPart>>
+       #);
+     insert:: (# <<SLOT SSArcClippingInsert:DoPart>> #);
+     remove:: (# <<SLOT SSArcClippingRemove:DoPart>> #);
+  #);
+
+AnnotationClipping: InscriptionClipping
+  (# ContextType:: Arc;
+     InscriptionType:: Annotation;
+     insert::
+       (#
+       do context.getAnnotation -> theOriginal[];
+          elm[] -> context.setAnnotation;
+       #);
+     remove::
+       (# 
+       do theOriginal[] -> context.setAnnotation;
+       #);
+  #);
+
+InscriptionClipping: Clipping
+  (# InscriptionType:< Inscription;
+     Element:: InscriptionType;
+     theOriginal: ^InscriptionType;
+     ContextType::< PageElement;
+     insert::< (# <<SLOT InscriptionClippingInsert:DoPart>> #);
+     remove::< (# <<SLOT InscriptionClippingRemove:DoPart>> #);
+  #);
+
+TransitionInscriptionClipping: InscriptionClipping
+  (# ContextType:: Transition;
+     InscriptionType::< TransitionInscription;
+  #);
+
+TransGuardClipping: TransitionInscriptionClipping
+  (# InscriptionType:: TransGuard;
+     insert::
+       (# 
+       do context.getTransGuard -> theOriginal[];
+          elm[] -> context.setTransGuard;
+       #);
+     remove::
+       (#
+       do theOriginal[] -> context.setTransGuard;
+       #);
+  #);
+
+TransTimeClipping: TransitionInscriptionClipping
+  (# InscriptionType:: TransTime;
+     insert::
+       (#
+       do context.getTransTime -> theOriginal[];
+          elm[] -> context.setTransTime;
+       #);
+     remove:: 
+       (#
+       do theOriginal[] -> context.setTransTime;
+       #);
+  #);
+
+TransActionClipping: TransitionInscriptionClipping
+  (# InscriptionType:: TransAction;
+     insert::
+       (# 
+       do context.getTransAction -> theOriginal[];
+          elm[] -> context.setTransAction;
+       #);
+     remove:: (# <<SLOT TransActionClippingRemove:DoPart>> #);
+  #);
+
+TransChannelClipping: TransitionInscriptionClipping
+  (# InscriptionType:: TransChannel;
+     insert::
+       (# 
+       do context.getTransChannel -> theOriginal[];
+          elm[] -> context.setTransChannel;
+       #);
+     remove:: (# <<SLOT TransChannelClippingRemove:DoPart>> #);
+  #);
+
+TransPriorityClipping: TransitionInscriptionClipping
+  (# InscriptionType:: TransPriority;
+     insert::
+       (# 
+       do context.getTransPriority -> theOriginal[];
+          elm[] -> context.setTransPriority;
+       #);
+     remove:: (# do theOriginal[] -> context.setTransPriority; #);
+  #);
+
+PlaceInscriptionClipping: InscriptionClipping
+  (# ContextType:: Place;     
+     InscriptionType::< PlaceInscription;
+  #);
+
+PlaceTypeClipping: PlaceInscriptionClipping
+  (# InscriptionType:: PlaceType;
+     insert:: (# <<SLOT PlaceTypeClippingInsert:doPart>> #);
+     remove:: (# <<SLOT PlaceTypeClippingRemove:doPart>> #);
+  #);
+
+InitMarkClipping: PlaceInscriptionClipping
+  (# thePlace: ^Place;     
+     InscriptionType:: InitMark;
+     insert:: (# <<SLOT InitMarkClippingInsert:doPart>> #);
+     remove:: (# <<SLOT InitMarkClippingRemove:doPart>> #);
+  #);
+
+PortTypeClipping: Clipping
+  (# Element:: PortType;
+     ContextType:: Place;
+     insert:: (# <<SLOT PortTypeClippingInsert:DoPart>> #);
+     remove:: (# <<SLOT PortTypeClippingRemove:DoPart>> #);
+  #);
+
+GroupClipping: Clipping
+  (# ContextType:: CPNPage;
+     Element:: Group;
+     
+     insert::
+       (#
+       do elm[] -> context.addGroup;
+       #);
+     
+     remove::
+       (#
+       do elm.delete;
+          context.nofgroups - 1 -> context.nofgroups;
+       #);
+  #);
+
+ClippingFactory:
+  (# elm: ^PageElement;
+     theClipping: ^Clipping;
+  enter elm[]
+  <<SLOT ClippingFactory:doPart>>
+  exit theClipping[]
+  #);
+
+PageClip:
+  (# getName:
+       (# theName: ^Text;
+       do scan: storage.scan
+          (#
+          do current.elm[] -> getPatternName -> theName[];
+             leave scan;
+          #);
+          (if storage.size > 1 then
+              '...' -> theName.puttext;
+          if);
+       exit theName[]
+       #);
+     storage: @List
+       (# Element:: PageElementClipping; 
+       #);
+     
+     
+     add:
+       (# theClipping: ^PageElementClipping;
+       enter theClipping[]
+       do theClipping[] -> storage.append;
+       #);
+     insert:
+       (# context: ^CPNPage;
+       enter context[]
+       do storage.scan
+          (# 
+	  do context[] -> current.insert;
+          #);
+       #);
+     remove:
+       (# context: ^CPNPage;
+       enter context[]
+       do (getTextEditor).stop;
+          storage.scanReverse
+          (#
+          do context[] -> current.remove;
+          #);
+       #);
+  #);
+
+ClipCommand: Command
+  (# TargetType:: CPNPage;
+     clip: ^PageClip;
+     
+     apply::<
+       (# theNet: ^CPNet;
+       enter clip[]
+       do target.net[] -> theNet[];
+          inner;
+          redo;
+       #);
+     
+     redo::<
+       (# theNet: ^CPNet;
+       do target.net[] -> theNet[];
+          INNER;
+       #);
+     
+     undo::<
+       (# theNet: ^CPNet;
+       do target.net[] -> theNet[];
+          INNER;
+       #);
+  #);
+CreateCommand: ClipCommand
+  (# getname::<
+       (#
+       do 'Create ' -> name[];
+          clip.getname -> name.puttext;
+          inner;
+       #);
+     undo::<
+       (#
+       do target[] -> clip.remove;
+          INNER;
+       #);
+     redo::<
+       (#
+       do target[] -> clip.insert;
+          INNER;
+       #);
+  #);
+DeleteCommand: ClipCommand
+  (# getname::
+       (#
+       do 'Delete ' -> name[];
+          clip.getname -> name.puttext;
+       #);
+     undo::
+       (#
+       do target[] -> clip.insert;
+       #);
+     redo::
+       (#
+       do target[] -> clip.remove;
+       #);
+  #);
+
+GuideInstrument: CPNGenericInstrument
+  (# CommandType:: CreateCommand;
+     create:<
+       (# context: ^CPNPage;
+          at: ^Point2d;
+       enter (context[], at[])
+       do INNER;
+       #);
+     PageInstrument: @Instrument
+       (# TargetType:: CPNSheet;
+          apply::
+            (# context: ^CPNPage;
+               at: ^Point2d;
+            do target.content.thePage[] -> context[];
+               &Point2d[] -> at[];
+               theHand.anchor -> target.globalToLocal -> at;
+               (context[], at[]) -> create;
+		   
+               finish;
+            #);
+          
+       #);
+     init::
+       (# 
+       do PageInstrument.init;
+          PageInstrument[] -> register;
+          'create_guideline'->helpname[];
+       #);
+  #);
+
+CreateVerticalGuideInstrument: GuideInstrument
+(#   FigureT :: VerticalGuideFigure;
+     
+     create::
+       (#
+	 do (context[], at[]) -> CreateVerticalGuide;
+	 #);
+
+     ToolTip::
+       (# 
+       do   NamesCreateVertGuide -> getGlobalNames -> theTip[];
+       #);
+#);
+
+CreateHorizontalGuideInstrument: GuideInstrument
+(#   FigureT::HorizontalGuideFigure;
+
+     create::
+       (#
+	 do (context[], at[]) -> CreateHorizontalGuide;
+	 #);
+
+     ToolTip::
+	(# 
+	do NamesCreateHorizGuide -> getGlobalNames -> theTip[];
+	#);
+#);
+
+SetArcDirectionInstrument: CPNInstrument
+  (*** CPNInstrument-User ***)
+  (# CommandType:: SetArcOrientation;
+     FigureT:: CycleArcFigure;
+
+     init::
+       (# 
+       do 'cycle_arc'->helpname[];
+       #);
+     
+     ToolTip::
+       (# 
+       do NamesCycleArc -> getGlobalNames -> theTip[];
+       #);
+  #);
+
+SetArcOrientation: CPNCommand
+  (# TargetType:: Arc;
+     Relevant::
+       (# 
+       do ((target## <= Arc##) and not(target## <= SSArc##))-> value;
+       #);
+     previousOrientation: @Integer;
+     apply::
+       (# 
+       do redo;
+       #);
+     undo:: (# <<SLOT SetArcOrientationUndo:DoPart>> #);
+     redo:: (# <<SLOT SetArcOrientationRedo:DoPart>> #);
+     getName::
+       (#
+       do 'Set Arc orientation' -> name[];
+       #);
+  #);
+
+CloneNode:
+  (# theHand: ^Hand;
+     prototype: ^PageElement;
+  enter (theHand[], prototype[])
+  <<SLOT CloneNode:doPart>>   
+  #);
+
+InscriptionInstrument: CursorScalingInstrument
+  (# TargetType::< PageElement;
+     FigureT::< InscriptionFigure;
+     theInscription: ^Inscription;          
+     InscriptionCommandType:< InscriptionCommand;     
+     apply::<
+       (# theCommand: ^InscriptionCommandType;
+       do &InscriptionCommandType[] -> theCommand[];
+          theInscription.clone -> theCommand.init;
+          
+          target[] -> theCommand.prepare;
+          theCommand.apply;
+          (target.getCPNet,theCommand[]) -> registerCommand;
+          finish;
+       #);     
+     init::
+       (# tmpFigure: ^FigureT;
+       enter theInscription[]     
+       do &FigureT[] -> tmpFigure[];
+          theInscription[] -> tmpFigure.init;
+          tmpFigure[] -> instrumentcursor.setFigure;
+       #);
+  #);
+
+AnnotationInstrument: InscriptionInstrument
+  (# TargetType:: Arc;
+     InscriptionCommandType:: CloneAnnotationCommand;
+  #);
+
+PlaceTypeInstrument: InscriptionInstrument
+  (# TargetType:: Place;
+     InscriptionCommandType:: ClonePlaceTypeCommand;     
+  #);
+
+InitMarkInstrument: InscriptionInstrument
+  (# TargetType:: Place;
+     InscriptionCommandType:: CloneInitMarkCommand;
+  #);
+
+TransActionInstrument: InscriptionInstrument
+  (# TargetType:: Transition;
+     InscriptionCommandType:: CloneTransActionCommand;
+  #);
+
+TransChannelInstrument: InscriptionInstrument
+  (# TargetType:: Transition;
+     InscriptionCommandType:: CloneTransChannelCommand;
+  #);
+
+TransTimeInstrument: InscriptionInstrument
+  (# TargetType:: Transition;
+     InscriptionCommandType:: CloneTransTimeCommand;
+  #);
+
+TransGuardInstrument: InscriptionInstrument
+  (# TargetType:: Transition;
+     InscriptionCommandType:: CloneTransGuardCommand;
+  #);
+
+TransPriorityInstrument: InscriptionInstrument
+  (# TargetType:: Transition;
+     InscriptionCommandType:: CloneTransPriorityCommand;
+  #);
+
+(* This command swaps 2 inscriptions *)
+InscriptionCommand: Command
+  (# InscriptionType:< Inscription;
+     theOldInscription, theNewInscription: ^Inscription;     
+     PageElementType:< PageElement;
+     init::
+       (# 
+       enter theNewInscription[]          
+       #);
+     getOldInscription:< 
+       (# thePageElement: ^PageElementType;
+       enter thePageElement[]
+       do INNER;
+       #);
+     swap:<
+       (# thePageElement: ^PageElementType;
+          theOldInscription, theNewInscription: ^InscriptionType;
+       enter (thePageElement[], theOldInscription[], theNewInscription[])
+       <<SLOT InscriptionCommandSwap:DoPart>>
+       #);
+     apply::
+       (# 
+       do target[] -> getOldInscription;
+          redo;     
+       #);
+     undo::
+       (# 
+       do (target[], theNewInscription[], theOldInscription[]) -> swap
+       #);
+     redo::
+       (# 
+       do (target[], theOldInscription[], theNewInscription[]) -> swap
+       #);
+  #);
+
+CloneAnnotationCommand: InscriptionCommand
+  (# InscriptionType:: Annotation;
+     PageElementType:: Arc;
+     getName::
+       (#
+       do 'Clone Annotation' -> name[];
+       #);
+     getOldInscription::
+       (#        
+       do thePageElement.getAnnotation -> theOldInscription[]
+       #);
+     swap::
+       (# createdAnnotation: ^Annotation;
+       do theNewInscription[] -> thePageElement.setAnnotation;
+          
+          theOldInscription.attached -> 
+          theNewInscription.attached;
+          theOldInscription.t -> 
+          theNewInscription.t;
+          theOldInscription.dist -> 
+          theNewInscription.dist;
+          theOldInscription.attachedSegment -> 
+          theNewInscription.attachedSegment;
+          theOldInscription.x -> 
+          theNewInscription.x;
+          theOldInscription.y -> 
+          theNewInscription.y;
+       #);
+  #);
+
+ClonePlaceTypeCommand: InscriptionCommand
+  (# InscriptionType:: PlaceType;
+     PageElementType:: Place;
+     getName::
+       (#
+       do 'Clone Type' -> name[];
+       #);
+     getOldInscription::
+       (# 
+       do thePageElement.getPlaceType -> theOldInscription[]
+       #);   
+     swap:: (# <<SLOT ClonePlaceTypeCommandSwap:DoPart>> #);
+  #);
+
+CloneInitMarkCommand: InscriptionCommand
+  (# InscriptionType:: InitMark;
+     PageElementType:: Place;
+     getName::
+       (#
+       do 'Clone Initial Marking' -> name[];
+       #);
+     getOldInscription::
+       (# 
+       do thePageElement.getInitMark -> theOldInscription[]
+       #);
+     swap:: (# <<SLOT CloneInitMarkCommandSwap:DoPart>> #);
+  #);
+
+CloneTransActionCommand: InscriptionCommand
+  (# InscriptionType:: TransAction;
+     PageElementType:: Transition;
+     getName::
+       (#
+       do 'Clone Action' -> name[];
+       #);
+     getOldInscription::
+       (# 
+       do thePageElement.getTransAction -> theOldInscription[]
+       #);
+     swap::
+       (# 
+       do theNewInscription[] -> thePageElement.setTransAction;
+       #);
+  #);
+
+CloneTransChannelCommand: InscriptionCommand
+  (# InscriptionType:: TransChannel;
+     PageElementType:: Transition;
+     getName::
+       (#
+       do 'Clone Channel' -> name[];
+       #);
+     getOldInscription::
+       (# 
+       do thePageElement.getTransChannel -> theOldInscription[]
+       #);
+     swap::
+       (# 
+       do theNewInscription[] -> thePageElement.setTransChannel;
+       #);
+  #);
+
+CloneTransGuardCommand: InscriptionCommand
+  (# InscriptionType:: TransGuard;
+     PageElementType:: Transition;
+     getName::
+       (#
+       do 'Clone Guard' -> name[];
+       #);
+     getOldInscription::
+       (# 
+       do thePageElement.getTransGuard -> theOldInscription[]
+       #);
+     swap::
+       (# 
+       do theNewInscription[] -> thePageElement.setTransGuard;
+       #);
+  #);
+
+CloneTransPriorityCommand: InscriptionCommand
+  (# InscriptionType:: TransPriority;
+     PageElementType:: Transition;
+     getName::
+       (#
+       do 'Clone Priority' -> name[];
+       #);
+     getOldInscription::
+       (# 
+       do thePageElement.getTransPriority -> theOldInscription[]
+       #);
+     swap::
+       (# 
+       do theNewInscription[] -> thePageElement.setTransPriority;
+       #);
+  #);
+
+CloneTransTimeCommand: InscriptionCommand
+  (# InscriptionType:: TransTime;
+     PageElementType:: Transition;
+     getName::
+       (#
+       do 'Clone Time' -> name[];
+       #);
+     getOldInscription::
+       (# 
+       do thePageElement.getTransTime -> theOldInscription[]
+       #);
+     swap::
+       (# 
+       do theNewInscription[] -> thePageElement.setTransTime;
+       #);
+  #);
+
+IndexClonePageCommand: Command
+  (# TargetType::theIndex.instanceNode;
+     theNode: ^theIndex.netNode;     
+     theInstance: ^PageInstance;
+     new: ^CpnPage;
+     theClipping: ^PageInstanceClipping;
+     Apply:: (# <<SLOT IndexClonePageCommandApply:doPart>> #);       
+     undo::
+       (# 
+       do none -> theClipping.remove;
+       #);
+     redo::
+       (# 
+       do none -> theClipping.insert;
+       #);
+     getName::
+       (# 
+       do &Text[] -> name[];
+          'Clone page %s ' 
+            -> name.putFormat (# do (target.instance).thePage.theName.copy -> s #);
+       #);
+  #);
+
+IndexClonePageInstrument: Instrument
+  (# TargetType::theIndex.instanceNode;
+     theNode: ^theIndex.instanceNode;
+     CommandType:< indexClonePageCommand;
+     com: ^CommandType;
+     apply::
+       (# 
+          theNet: ^CPNet;
+       do &CommandType[] -> com[];
+          target[] -> com.prepare;
+          target[] -> theNode[];
+          
+          (theNode.getPageInstance).thePage.net[] -> theNet[];
+          com.apply;
+          (theNet[],com[]) -> registerCommand;
+
+          finish;
+       #);
+  #);
+
+CreateCloneInstrument: CPNGenericInstrument
+  (# 
+     FigureT:: CloneFigure;
+     ToolTip::
+       (# 
+       do NamesCloneElement -> getGlobalNames -> theTip[];
+       #);
+     pageElementInstrument: @Instrument
+       (# TargetType:: PageElement;
+
+          relevant::
+            (#
+	    do (NOT (candidate## <= guideline##)) AND 
+	       (NOT (candidate## <= SSArc##)) AND
+	       (NOT (candidate## <= SSNode##)) AND
+               (NOT ((target[], theHand[]) -> pageElementsInstrument.relevant)) -> value;
+            #);
+          apply:: 
+            (# 
+	    do (theHand[], target[]) -> CloneNode;
+               finish;
+            #);
+       #);
+     pageElementsInstrument: @CloneGroupElementsInstrument;
+     indexPageInstrument: @indexClonePageInstrument;
+     init::
+       (#
+       do 'clone_element'->helpname[];
+          pageElementsInstrument.init;
+          pageElementsInstrument[] -> register;
+          pageElementInstrument.init;
+          pageElementInstrument[] -> register;
+          indexPageInstrument.init;
+          indexPageInstrument[] -> register;
+       #);
+  #);
+
+CreateAuxBoxInstrument: PageElementInstrument
+  (# PrototypeT:: Aux;
+     getPrototype:: (# do defaultAuxBox[] -> prototype[]; #);
+     ToolTip::
+       (# 
+       do NamesCreateAuxBox -> getGlobalNames -> theTip[];
+       #);
+     init::
+       (#
+       do 'create_auxiliary_box'->helpname[];
+          ('width','auxbox.width') -> options.setAddOptionWithDefault;
+          ('height','auxbox.height') -> options.setAddOptionWithDefault;
+       #);
+     create::
+       (#
+       do (context[], at[], getPrototype) -> CreateAux;
+       #);
+     setdefaults::
+       (#
+       do width -> defaultAuxBox.theShape.width;
+          height -> defaultAuxBox.theShape.height;
+	    getPrototype -> theFigure.thePageElement[];
+       #);
+     getDefaults::
+       (#
+       do defaultAuxBox.theShape.width -> width;
+          defaultAuxBox.theShape.height -> height;
+	    getPrototype -> theFigure.thePageElement[];
+       #);
+  #);
+
+CreateAuxEllipseInstrument: PageElementInstrument
+  (# PrototypeT:: Aux;
+     getPrototype:: (# do defaultAuxEllipse[] -> prototype[]; #);
+     ToolTip::
+       (# 
+       do NamesCreateAuxEllipse -> getGlobalNames -> theTip[];
+       #);
+     init::
+       (#
+       do 'create_auxiliary_ellipse'->helpname[];
+          ('width','auxellipse.width') -> options.setAddOptionWithDefault;
+          ('height','auxellipse.height') -> options.setAddOptionWithDefault;
+       #);
+     create::
+       (#
+       do (context[], at[], getPrototype) -> CreateAux;
+       #);
+     setdefaults::
+       (#
+       do width -> defaultAuxEllipse.theShape.width;
+          height -> defaultAuxEllipse.theShape.height;
+	    getPrototype -> theFigure.thePageElement[];
+       #);
+     getDefaults::
+       (#
+       do defaultAuxEllipse.theShape.width -> width;
+          defaultAuxEllipse.theShape.height -> height;
+	    getPrototype -> theFigure.thePageElement[];
+       #);
+  #);
+
+CreateAuxLabelInstrument: PageElementInstrument
+  (# PrototypeT:: Aux;
+     theText: ^text;
+     myClone: ^Aux;
+     
+     getPrototype:: (# do defaultAuxLabel[] -> prototype[]; #);
+     getFigure:
+       (# theClone: ^Aux;
+       do (if myClone[] = NONE then
+	      (getPrototype).clone -> myClone[] -> theClone[];
+	   else
+	      myClone[] -> theClone[];
+          if);
+       exit theClone[]
+       #);
+     
+     ToolTip::
+       (# 
+       do NamesCreateAuxText -> getGlobalNames -> theTip[];
+       #);
+     create::
+       (#
+       do (context[], at[], getPrototype) -> CreateAux;
+       #);
+     setdefaults::
+       (#
+       do 'auxlabel' -> options.lookupText -> theText[];
+	  theText[]->arial.measuretext -> (defaultAuxLabel.theShape.width, defaultAuxLabel.theShape.height);
+	  theText.copy -> defaultAuxLabel.setText; 
+	  defaultAuxLabel.update;
+          getPrototype -> theFigure.thePageElement[];
+       #);
+     getDefaults::
+       (#
+       do (defaultAuxLabel.getText).copy -> theText[]; 
+          getPrototype -> theFigure.thePageElement[];
+       #);
+     init::
+       (# 
+       do 'create_auxiliary_text'->helpname[];
+          options.clear;
+          ('auxlabel','auxlabel.label') -> options.setAddOptionWithDefault
+          (# OptionType::TextOption(# dname:: (# do 'Label' -> value[]; #); #); #);
+	 #);
+  #);
+
+CreateAuxLineInstrument: Instrument
+  (# apply:: (# do finish #);
+  #);
+CreateAuxPngInstrument: Instrument
+  (# apply:: (# do finish #);
+  #);
+
+ArcInstrument: CPNGenericInstrument
+  (# FigureT:: ArcFigure;
+          
+     destination: ^Node;
+     bends: @PointList;
+     FolderListener: @Element
+       (# theFolder: ^Folder;
+          setFolder:
+            (# newFolder: ^Folder;
+            enter newFolder[]
+            do (if theFolder[] <> NONE then
+                   THIS(FolderListener)[] -> theFolder.detach;
+               if);
+               newFolder[] -> theFolder[];
+               (if theFolder[] <> NONE then
+                   THIS(FolderListener)[] -> theFolder.attach;
+               if);
+            #);
+          onChanged::
+            (#
+            do (if (view[] <> NONE) AND (theFolder.topSheet <> view[]) then
+                   cancel;
+               if);
+            #);
+          onRemoved::
+            (# 
+            do (if source[] = theFolder[] then
+                   cancel;
+               if);
+               (if source[] = view[] then
+                   cancel;
+               if);
+            #);
+       #);
+     
+     source: ^Node;
+     page: ^CPNPage;
+     setPage:
+       (# newPage: ^CPNPage;
+       enter newPage[]
+       do (if page[] <> NONE then
+              PageListener[] -> page.detach;
+          if);
+          newPage[] -> page[];
+          (if page[] <> NONE then
+              PageListener[] -> page.attach;
+          if);
+       #);
+     
+     PageListener: @Element
+       (#
+          onRemoved::
+            (#
+            do (if source[] = THIS(ArcInstrument).source[] then
+                   cancel;
+               if);
+            #);
+       #);
+
+     thePrototype: ^Arc;
+     getPrototype:
+       (# prototype: ^Arc;
+       do (if thePrototype[] <> NONE then
+              thePrototype[] -> prototype[];
+           else
+	      defaultArc[] -> prototype[];
+          if);
+       exit prototype[]
+       #);
+     
+     present::
+       (# sr: @StyleRecord;
+       do getPrototype -> sr.prepare;
+          sr.createBasicStyle -> presentation.theStyle[];
+       #);
+     busy::
+       (#
+       do (arrow[] <> NONE) -> value;
+       #);
+     view: ^CpnSheet;
+     arrow: ^Line;
+     
+     ToolTip::
+       (# 
+       do NamesCreateArc -> getGlobalNames -> theTip[];
+       #);
+     
+     addArrow:
+       (# style: ^CompositeStyle;
+          sr: @StyleRecord;
+       do &Line[] -> arrow[];
+          arrow.init;
+          &CompositeStyle[] -> style[];
+          getPrototype -> sr.prepare;
+          sr.createBasicStyle -> style.add;
+          15 -> &CurvatureStyle -> style.add;
+          style[] -> arrow.theStyle[];
+          IGNORE -> arrow.status;
+          arrow[] -> foreground.add;
+       #);
+     updateArrow:
+       (# x, y: @real;
+          points: ^PointList;
+	    snapPoint: @Point2d;
+            guides: ^GuideLineList;
+       enter (x, y)
+       do (if arrow.points[] = NONE then
+	        &PointList[] -> arrow.points[];
+	    else
+	        arrow.points.clear;
+	    if);
+	    (source.x, source.y) -> snapPoint;
+	    bends.scan
+	    (#
+	    do current -> MakePoint -> arrow.points.append;
+	       current -> snapPoint;
+	    #);
+
+	    (* Snap to guideline(s) *)
+	    (source.getCPNPage, x, y) -> MakeGuideList -> (guides[], x, y);
+	    (source.getCPNPage, guides[]) -> HiliteGuides;
+
+	    (* Snap to previous point *)
+	    (if ((x - snapPoint.x) -> fabs) < 10 then
+	         snapPoint.x -> x;
+	    if);
+	    (if ((y - snapPoint.y) -> fabs) < 10 then
+	         snapPoint.y -> y;
+	    if);
+
+	    (if bends.empty then
+              (x, y)  -> source.intersect -> arrow.points.prepend;
+             else
+	        (bends.first).XY -> source.intersect -> arrow.points.prepend;
+	    if);
+
+          (x, y) -> MakePoint -> arrow.points.append;
+          arrow.points.scan
+          (#
+          do current -> view.localToGlobal -> current;
+          #);
+          arrow.changed;
+       #);
+     addBend:
+       (# x, y: @real;
+          snapPoint: @Point2d;
+          guides: ^GuideLineList;
+       enter (x, y)
+       do (if bends.empty then
+              (source.x, source.y) -> snapPoint;
+           else
+              (bends.last).XY -> snapPoint;
+          if);
+          
+          (* Snap to guideline(s) *)
+          (source.getCPNPage, x, y) -> MakeGuideList -> (guides[], x, y);
+          source.getCPNPage -> LoliteAllGuides;
+          
+          (* Snap to previous point *)
+          (if ((x - snapPoint.x) -> fabs) < 10 then
+              snapPoint.x -> x;
+          if);
+          (if ((y - snapPoint.y) -> fabs) < 10 then
+              snapPoint.y -> y;
+          if);
+          
+          (x, y) -> MakePoint -> bends.append;
+          (x, y) -> updateArrow;
+       #);
+     removeArrow:
+       (#
+       do (if arrow[] <> NONE then
+              arrow[] -> foreground.remove;
+              NONE -> arrow[];
+          if);
+       #);
+     
+     onMouseFloat::
+       (#
+       do (if arrow[] <> NONE then
+              (x, y) -> view.globalToLocal -> updateArrow;
+          if);
+       #);
+     
+     clean:
+       (#
+       do NONE -> view[];
+          NONE -> source[];
+          NONE -> setPage;
+          NONE -> destination[];
+          NONE -> folderListener.setFolder;
+          bends.clear;
+          removeArrow;
+       #);
+     
+     cancel::
+       (#
+       do clean;
+       #);
+     
+     startArc: @Instrument
+       (# TargetType:: CPNNode;
+          relevant::
+            (#
+            do source[] = NONE -> value;
+            #);
+          apply::
+            (# picker: ^PickInstrument;
+            do target[] -> source[];
+               search: theHand.selection.scan
+                 (#
+                 do current.scan
+                    (#
+                    do (if current## <= CpnSheet## then
+                           current[] -> view[];
+                           leave search;
+                       if);
+                    #);
+                 #);
+               search: theHand.selection.scan
+                 (#
+                 do current.scan
+                    (#
+                    do (if current## <= Folder## then
+                           current[] -> folderListener.setFolder;
+                           leave search;
+                       if);
+                    #);
+                 #);
+               view.content.thePage[] -> setPage;
+               addArrow;
+               theHand.active[] -> picker[];
+               THIS(ArcInstrument)[] -> picker.ActivateInstrument;
+               finish;
+            #);
+       #);
+     createBendPoint: @Instrument
+       (# TargetType:: CPNSheet;
+          
+          relevant::
+	    (#
+	    do (source[] <> NONE) AND (source.getCPNPage = target.content.thePage[]) -> value;
+	    #);
+	  
+          apply::
+	    (# at: ^Point2d;
+               picker: ^PickInstrument; 
+               removeBendPointsInsideNode:
+                 (# point: ^Point2D;
+                    height, width: @real;
+                 enter (height, width)
+                 do loop:
+                      (# 
+                      do (if bends.size > 0 then
+                             bends.last -> point[];
+                             (if (at.x >= point.x - height / 2) and
+                                 (at.x <= point.x + height / 2) and
+                                 (at.y >= point.y - width / 2) and
+                                 (at.y <= point.y + width / 2) then
+                                 bends.deleteLast;
+                                 restart loop;
+                             if);
+                         if);
+                      #);
+                 #);               
+	    do (if not theHand.doubleClick then
+                   theHand.position -> view.globalToLocal -> addBend;
+                else
+                   &Point2d[] -> at[];
+                   theHand.position -> view.globalToLocal -> at;
+                   (if source## <= Place## then
+                       (defaultTransition.height, defaultTransition.width) 
+                         -> removeBendPointsInsideNode;
+                       (target.content.thePage[], at[], defaultTransition[]) 
+                         -> CreateTransition 
+                         -> destination[];
+                   if);
+                   (if source## <= Transition## then
+                       (defaultPlace.height, defaultPlace.width) 
+                         -> removeBendPointsInsideNode;
+                       (target.content.thePage[], at[], defaultPlace[]) 
+                         -> CreatePlace
+                         -> destination[];
+                   if);
+                   ('destination <> NONE', destination[] <> NONE) -> assert(# #);
+                   NONE -> view[];
+                   (source.getCPNPage, source[], destination[], bends[], getPrototype) -> CreateArc;
+                   destination.snap;
+                   destination.changed;
+                   target.content.thePage[] -> LoliteAllGuides;
+                   theHand.active[] -> picker[];
+                   picker.DeactivateInstrument;                   
+               if);
+               finish;
+	    #);
+	 #);
+     finishArc: @Instrument
+       (# TargetType:: CPNNode;
+          relevant::
+            (#
+            do false -> value;
+               (if NOT (target## <= BendPoint##) then
+                   (if source[] <> NONE then
+                       (target## <> source##) AND (target.getCPNPage = source.getCPNPage) -> value;
+                   if);
+               if);
+            #);          
+          apply::
+            (# picker: ^PickInstrument;
+            do 
+               
+               NONE -> view[];
+               target[] -> destination[];
+               (source.getCPNPage, source[], destination[], bends[], getPrototype) -> CreateArc;
+               destination.snap;
+               destination.changed;
+               target.getCPNPage -> LoliteAllGuides;
+               theHand.active[] -> picker[];
+               finish;
+               (if DropAfterFirstInvocation then
+                   picker.DeactivateInstrument;
+                else
+                   clean;
+               if);               
+            #);
+       #);  
+     DropAfterFirstInvocation:< BooleanObject;     
+     init::
+       (# sr: @StyleRecord;
+       enter thePrototype[]
+       do 'create_arc' -> helpname[];
+          bends.init;
+          startArc.init;
+          startArc[] -> register;
+          createBendPoint.init;
+          createBendPoint[] -> register;
+          finishArc.init;
+          finishArc[] -> register;
+          getPrototype -> sr.prepare;
+          sr.createBasicStyle -> instrumentIcon.theFigure.theStyle[];
+       #);
+  #);
+
+
+GroupClipCommand: Command
+  (# TargetType:: CPNPage;
+     clip: ^GroupClipping;
+     
+     apply::<
+       (#
+       enter clip[]
+       do redo;
+          INNER;
+       #);
+  #);
+DeleteGroupCommandClip: GroupClipCommand
+  (# redo::
+       (#
+       do target[] -> clip.remove;
+       #);
+     undo::
+       (#
+       do target[] -> clip.insert;
+       #);
+  #);
+CreateGroupCommandClip: GroupClipCommand
+  (# redo::
+       (#
+       do target[] -> clip.insert;
+       #);
+     undo::
+       (#
+       do target[] -> clip.remove;
+       #);
+  #);
+
+
+
+MakeGroupList:
+  (# context: ^CPNPage;
+     groups: ^GroupList;
+  enter context[]
+  do &GroupList[] -> groups[];
+     (if context.getSelectedGroup <> NONE then
+         (if NOT (context.getSelectedGroup).all then
+             context.getSelectedGroup -> groups.append;
+         if);
+     if);
+     
+  exit groups[]
+  #);
+
+(* Computes the Groups elm belongs to *)
+MakeBelongToGroupList:
+  (# elm: ^PageElement;
+     groups: ^GroupList;
+  enter elm[]
+  <<SLOT MakeBelongToGroupList:DoPart>>
+  exit groups[]
+  #);
+
+MakeGuideList:
+  (# context: ^CPNPage;
+     guides: ^GuideLineList;
+     x, y: @real;
+     snappedVGL: ^VerticalGuideLine;
+     snappedHGL: ^HorizontalGuideline;
+     snaph, snapv: @real;
+  enter (context[], x, y)
+  do &GuideLineList[] -> guides[];
+     15.0 -> snaph -> snapv;
+     context.scanGuideLines
+     (# vgl: ^VerticalGuideLine;
+        hgl: ^HorizontalGuideline;
+        csnap: @real;
+     do (if current##
+         // HorizontalGuideline## then
+            current[] -> hgl[];
+            y - hgl.y -> fAbs -> csnap;
+            (if csnap < snaph then
+                hgl[] -> snappedHGL[];
+                csnap -> snaph;
+            if);
+         // VerticalGuideLine## then
+            current[] -> vgl[];
+            x - vgl.x -> fAbs -> csnap;
+            (if csnap < snapv then
+                vgl[]-> snappedVGL[];
+                csnap -> snapv;
+            if);
+        if);
+        (if snappedHGL[] <> NONE then
+            snappedHGL[] -> guides.append;
+            snappedHGL.y -> y;
+            NONE -> snappedHGL[];
+        if);
+        (if snappedVGL[] <> NONE then
+            snappedVGL[] -> guides.append;
+            snappedVGL.x -> x;
+            NONE -> snappedVGL[];
+        if);
+     #);
+  exit (guides[], x, y)
+  #);
+
+(* Computes the guidelines elm belongs to *)
+MakeBelongToGuideList:
+  (# elm: ^PageElement;
+     guides: ^GuideLineList;
+  enter elm[]
+  do &GuideLineList[] -> guides[];
+     (if elm## <= GuideLineSnapable## then
+         
+         (if elm.getCPNPage <> NONE then (* the elm may not be on a page *)
+             (elm.getCPNPage).scanGuideLines
+             (# gl: ^GuideLine;
+             do current[] -> gl[];
+                (if elm[] -> gl.has then
+                    gl[] -> guides.append;
+                if);
+             #);
+         if);
+     if);
+  exit guides[]
+  #);
+
+LoliteAllGuides:
+  (# context: ^CPNPage;
+  enter context[]
+  do context.scanGuidelines
+     (# 
+     do current.lolite;
+        current.update;
+     #);
+  #);
+
+HiliteGuides:
+  (# context: ^CPNPage;
+     guides: ^GuideLineList;
+  enter (context[], guides[])
+  do context.scanGuidelines
+     (# 
+     do current.lolite;
+     #);
+
+     guides.scan
+     (#
+     do current.hilite;
+     #);
+
+     context.scanGuidelines
+     (# 
+     do current.update;
+     #);
+     
+  #);
+
+GuidelineClipping: PageElementClipping
+  (#
+     Element:: Guideline;
+     
+     MovedPageElement: 
+       (# thePageElement: ^PageElement;
+          dx, dy: @real;
+       enter (thePageElement[], dx, dy)
+       #);
+     
+     MovedPageElementList: List (# Element:: MovedPageElement; #);
+     
+     elements: ^MovedPageElementList;   
+         
+     insert::
+       (# snapPageElement:
+            (# thePageElement: ^PageElement;
+               theMovedPageElement: ^MovedPageElement;
+               dx, dy: @real;
+            enter thePageElement[]
+            do (if thePageElement[] -> elm.isObjectClose then
+                   (***
+                    * The true below means that bendpoints are excluded
+                    * from the snap
+                    ***)
+                   true -> thePageElement.snap -> (dx, dy);
+                   (if thePageElement[] -> elm.isObjectOnGuide then
+                       thePageElement[] -> elm.addGuideElement;
+                   if);
+                   (if (dx <> 0) or (dy <> 0) then
+                       thePageElement.changed;
+                       &MovedPageElement[] -> theMovedPageElement[];
+                       (thePageElement[], dx, dy) -> theMovedPageElement;
+                       theMovedPageElement[] -> elements.append;
+                   if);
+                   elm.getCPNPage -> Loliteallguides;
+               if);
+            #);
+       do elm[] -> context.addGuideline;
+          (if elements[] = NONE then
+              &MovedPageElementList[] -> elements[];
+              elements.init;
+              context.scanPageElements
+              (# theArc: ^Arc;            
+              do (if current## <= Arc## then
+                     current[] -> theArc[];
+                     (if theArc.getBends <> NONE then
+                         theArc.scanBendPoints
+                         (# 
+                         do current[] -> snapPageElement;
+                         #);
+                     if);
+                  else
+                     current[] -> snapPageElement;
+                 if);
+              #);          
+           else
+              elements.scan
+              (# 
+              do current.thePageElement[] -> elm.addGuideElement;
+              #);
+              NONE -> elements[];
+          if);
+       #);
+     
+     remove::
+       (#
+       do (if elements[] = NONE then              
+              &MovedPageElementList[] -> elements[];
+              elements.init;
+              elm.scanGuideElements
+              (# theMovedPageElement: ^MovedPageElement;
+              do (if current## <= PageElement## then
+                     &MovedPageElement[] -> theMovedPageElement[];
+                     (current[], 0, 0) -> theMovedPageElement;
+                     theMovedPageElement[] -> elements.append;
+                     current[] -> elm.removeGuideElement;
+                 if);
+              #);
+              elm[] -> context.removeGuideline;
+           else             
+              elm[] -> context.removeGuideline;
+              elements.scan
+              (# pe: ^PageElement; 
+              do current.thePageElement[] -> pe[];
+                 pe.x - current.dx -> pe.x;
+                 pe.y - current.dy -> pe.y;
+                 pe.changed;             
+              #);
+              NONE -> elements[];
+          if);
+       #);
+  #);
+
+CreateHorizontalGuide: 
+  (# context: ^CPNPage;
+     at: ^Point2d;
+  enter (context[], at[])
+  do (# theGuideLine: ^HorizontalGuideline;
+        theGuideClipping: ^GuidelineClipping;
+        theGuideCommand: ^CreateGuideCommand;
+     do &HorizontalGuideline[] -> theGuideLine[];
+        theGuideLine.init;
+        at.y -> theGuideLine.setParameter;
+        &GuidelineClipping[] -> theGuideClipping[];
+        (theGuideLine[], none, none) -> theGuideClipping.init;
+        &CreateGuideCommand[] -> theGuideCommand[];
+        theGuideCommand.init;
+        context[] -> theGuideCommand.prepare;
+        
+        theGuideClipping[] -> theGuideCommand.apply;        
+        
+        (context.net[],theGuideCommand[]) -> registerCommand;
+     #);
+  #);
+
+CreateVerticalGuide:
+  (# context: ^CPNPage;
+     at: ^Point2d;
+  enter (context[], at[])
+  do (# theGuideLine: ^VerticalGuideline;
+        theGuideClipping: ^GuidelineClipping;
+        theGuideCommand: ^CreateGuideCommand;
+     do &VerticalGuideline[] -> theGuideLine[];
+        theGuideLine.init;
+        at.x -> theGuideLine.setParameter;
+        &GuidelineClipping[] -> theGuideClipping[];
+        (theGuideLine[], none, none) -> theGuideClipping.init;
+        &CreateGuideCommand[] -> theGuideCommand[];
+        theGuideCommand.init;
+        context[] -> theGuideCommand.prepare;
+        theGuideClipping[] -> theGuideCommand.apply;
+        
+        (context.net[],theGuideCommand[]) -> registerCommand;
+     #);
+  #);
+
+CreateGuideCommand: StandardInsertCommand 
+  (# TargetType:: CPNPage;
+     ClippingType:: GuidelineClipping;
+     getName::
+       (#
+       do 'Create Guideline' -> name[];
+       #);
+  #);
+
+DeleteGuideCommand: StandardRemoveCommand
+  (# TargetType:: CPNPage;
+     ClippingType:: GuidelineClipping;
+     getName::
+       (#
+       do 'Delete Guideline' -> name[];
+       #);
+  #);
+
+CreateAux:  (# context: ^CPNPage;
+     at: ^Point2d;
+     thePrototype: ^Aux;
+     theAux: ^Aux;
+  enter (context[], at[], thePrototype[])
+  do (# theAuxClipping: ^AuxClipping;
+        clip: ^PageClip;
+        com: ^CreateCommand;
+        groups: ^GroupList;
+        guides: ^GuideLineList;
+     do thePrototype.clone -> theAux[];
+        context[] -> theAux.setCPNPage;
+        (context[], at.x, at.y) -> MakeGuideList -> (guides[], at.x, at.y);
+        at  -> theAux.position;
+        theAux[] -> ClippingFactory -> theAuxClipping[];
+        context[] -> MakeGroupList -> groups[];
+        (groups[], guides[]) -> (theAuxClipping.groups[], theAuxClipping.guides[]);
+        &PageClip[] -> clip[];
+        theAuxClipping[] -> clip.add;
+        &CreateCommand[] -> com[];
+        context[] -> com.prepare;
+        clip[] -> com.apply;
+        (if theAux.editable then
+            theAux[] -> makeTextEditor;
+        if);
+        
+        (context.net[],com[]) -> registerCommand;
+     exit theAux[]
+     #);
+  #);
+
+CreatePlace:
+  (# context: ^CPNPage;
+     at: ^Point2d;
+     thePrototype: ^Place;
+     thePlace: ^Place;
+  enter (context[], at[], thePrototype[])
+  do (# thePlaceClipping: ^PlaceClipping;
+        clip: ^PageClip;
+        com: ^CreateCommand;
+     do thePrototype.clone -> thePlace[];
+        thePlace[] -> ClippingFactory -> thePlaceClipping[];
+
+        (context[], at.x, at.y) -> MakeGuideList -> (thePlaceClipping.guides[], at.x, at.y);
+        at -> thePlace.position;
+        context[] -> MakeGroupList -> thePlaceClipping.groups[];
+
+        &PageClip[] -> clip[];
+        thePlaceClipping[] -> clip.add;
+
+        thePlace.scanArcs
+        (#
+        do current[] -> ClippingFactory -> clip.add;
+        #);
+
+        &CreateCommand[] -> com[];
+        context[] -> com.prepare;
+        clip[] -> com.apply;
+        
+        (context.net[],com[]) -> registerCommand;
+        
+        thePlace.startTextEditor;
+     #);
+     exit thePlace[]     
+  #);
+
+CreateSSNode:
+  (# context: ^CPNPage;
+     at: ^Point2d;
+     thePrototype, theSSNode, theInfoNode: ^SSNode;
+     insertNow: @Boolean;
+     com: ^CreateCommand;
+  enter (context[], at[], thePrototype[], theInfoNode[], insertNow)
+  do (# theSSNodeClipping: ^SSNodeClipping;
+        clip: ^PageClip;
+        groups: ^GroupList;
+        guides: ^GuideLineList;
+	allreadyInNet: @Boolean;
+     do false -> allreadyInNet;
+	context.scanSSNodes
+        (#
+        do (if (NOT current.dead) AND (current.number = theInfoNode.number) then
+	       true -> allreadyInNet;
+	       Current[] -> theSSNode[];
+           if);
+        #);
+      (if NOT allreadyInNet then
+	    thePrototype.clone -> theSSNode[];
+	    theInfoNode.number -> theSSNode.number;
+	    theInfoNode.MLXPos -> theSSNode.MLXPos;
+	    theInfoNode.MLYPos -> theSSNode.MLYPos;
+	    theInfoNode.pred -> theSSNode.pred;
+	    theInfoNode.suc -> theSSNode.suc;
+	    theInfoNode.processed -> theSSNode.processed;
+	    theInfoNode.fullyProcessed -> theSSNode.fullyProcessed;
+	    theInfoNode.completeSS -> theSSNode.completeSS;
+	    theInfoNode.descriptor[] -> theSSNode.descriptor[];
+	    theInfoNode.dead -> theSSNode.dead;
+	    COMPILED -> theSSNode.status;
+            
+	    context[] -> theSSNode.setCPNPage;
+	    (context[], at.x, at.y) -> MakeGuideList -> (guides[], at.x, at.y);
+	    at -> theSSNode.position;
+	    theSSNode[] -> ClippingFactory -> theSSNodeClipping[];
+	    context[] -> MakeGroupList -> groups[];
+	    (groups[], guides[]) -> (theSSNodeClipping.groups[], theSSNodeClipping.guides[]);
+	    &PageClip[] -> clip[];
+	    theSSNodeClipping[] -> clip.add;
+	    &CreateCommand[] -> com[];
+	    context[] -> com.prepare;
+	    clip[] -> com.apply;
+	    (if insertNow then (context.net[],com[]) -> registerCommand; if);
+	else
+	   'Node allready displayed on page' -> status.warning;
+	if);
+     #);
+     exit (theSSNode[], com[])
+  #);
+
+CreateGroupElements:
+  (# context: ^CPNPage;
+     at: ^Point2D;
+     protoTypeElements: ^PageElementList;     
+     keepInstances: @boolean;
+     thePageElements: ^PageElementList;
+  enter (context[], at[], protoTypeElements[], keepInstances)
+  <<SLOT CreateGroupElements:doPart>>  
+  exit thePageElements[]
+  #);
+CreateTransition:
+  (# context: ^CPNPage;
+     at: ^Point2d;
+     thePrototype: ^Transition;
+     theTransition: ^Transition;
+  enter (context[], at[], thePrototype[])
+  do (# theTransitionClipping: ^TransitionClipping;
+        clip: ^PageClip;
+        groups: ^GroupList;
+        guides: ^GuideLineList;
+        com: ^CreateCommand;
+     do thePrototype.clone -> theTransition[];
+        theTransition[] -> ClippingFactory -> theTransitionClipping[];
+
+        (context[], at.x, at.y) -> MakeGuideList -> (theTransitionClipping.guides[], at.x, at.y);
+        at -> theTransition.position;
+        context[] -> MakeGroupList -> theTransitionClipping.groups[];
+
+        
+        &PageClip[] -> clip[];
+        theTransitionClipping[] -> clip.add;
+
+        theTransition.scanArcs
+        (# 
+        do current[] -> ClippingFactory -> clip.add;
+        #);
+
+        &CreateCommand[] -> com[];
+        context[] -> com.prepare;
+        clip[] -> com.apply;
+        (context.net[],com[]) -> registerCommand;
+        
+        theTransition.startTextEditor;
+     #);
+   exit theTransition[]
+     
+  #);
+
+CreateArc:
+  (# context: ^CPNPage;
+     source, destination: ^Node;
+     bends: ^PointList;
+     thePrototype: ^Arc;
+     theArc: ^Arc;
+  enter (context[], source[], destination[], bends[], thePrototype[])
+  <<SLOT CreateArc:DoPart>>  
+  exit theArc[]
+  #);
+
+CreateConnector:
+  (# context: ^CPNPage;
+     source, destination: ^Node;
+     bends: ^PointList;
+     thePrototype: ^Arc;
+     theArc: ^Arc;
+  enter (context[], source[], destination[], bends[], thePrototype[])
+  <<SLOT CreateConnector:doPart>>
+  exit theArc[]
+  #);
+
+CreateSSConnector:
+  (# context: ^CPNPage;
+     source, destination: ^SSNode;
+     bends: ^PointList;
+     thePrototype: ^SSArc;
+     theArc: ^SSArc;
+     doRegisterCommand, allreadyInserted: @Boolean;
+     com: ^CreateCommand;
+  enter (context[], source[], destination[], bends[], thePrototype[], doRegisterCommand)
+  <<SLOT CreateSSConnector:doPart>>
+  exit (theArc[], com[], (NOT allreadyInserted))
+  #);
+
+CreateGroupClip:
+  (# target: ^CPNPage;
+     
+  enter target[]
+  do (# theGroup: ^Group;
+        theGroupClipping: ^GroupClipping;
+        com: ^CreateGroupCommandClip;
+        theNet: ^CPNet;
+     do (*** Create group ***)
+        &Group[] -> theGroup[];
+        theGroup.init;
+        target.getNewGroupName -> theGroup.name;
+        
+        
+        (*** Create GroupCipping ***)
+        &GroupClipping[] -> theGroupClipping[];
+        theGroup[] -> theGroupClipping.init;
+        
+        (*** Create command ***)        
+        &CreateGroupCommandClip[] -> com[];
+        target[] -> com.prepare;
+        theGroupClipping[] -> com.apply;
+        (theGroup.getCPNPage).net[] -> theNet[];
+        
+        (theNet[],com[]) -> registerCommand;
+     #);
+  #);
+
+
+PageElementInstrument: GenericCursorScalingInstrument
+  (# CommandType:: CreateCommand;
+     theFigure: ^FigureT;
+     FigureT:: PageElementFigure;
+     width, height: @IntegerObject;
+     PrototypeT:< PageElement;
+     thePrototype: ^PrototypeT;
+     getPrototype:<
+     (# prototype: ^PrototypeT;
+     do (if thePrototype[] <> NONE then
+            thePrototype[] -> prototype[];
+        else
+	      INNER;
+        if);
+     exit prototype[]
+     #);
+     changedOptions::
+       (#
+       do 'width' -> options.lookupInteger -> width;
+          'height' -> options.lookupInteger -> height;
+          setDefaults;
+       #);
+     create:<
+       (# context: ^CPNPage;
+          at: ^Point2d;
+       enter (context[], at[])
+       do INNER;
+       #);
+     PageInstrument: @Instrument
+       (# TargetType:: CPNSheet;
+          apply::
+            (# context: ^CPNPage;
+               at: ^Point2d;
+            do target.content.thePage[] -> context[];
+               context[] -> LoliteAllGuides;
+               &Point2d[] -> at[];
+               theHand.anchor -> target.globalToLocal -> at;
+               (context[], at[]) -> create;
+		   
+               finish;
+            #);
+          
+       #);
+     getDefaults:<
+       (#
+       do INNER;
+       #);
+     setDefaults:<
+       (#
+       do INNER;
+       #);
+     onMouseFloat::
+       (# guides: ^GuideLineList;
+	    thePage: ^CPNPage;
+          theSheet: ^CPNSheet;
+	 do M: theHand.over.scan
+	    (#
+	    do current.scan
+	       (# 
+		 do (if current## <= CpnSheet## then
+		 	  current[] -> theSheet[];
+			  theSheet.content.thePage[] -> thePage[];
+			  leave M;
+		    if);
+		 #);
+	    #);
+	    (if thePage[] <> NONE then
+	       (x, y) -> theSheet.globalToLocal -> (x, y);
+	       (thePage[], x, y) -> MakeGuideList -> (guides[], x, y);
+		 (thePage[], guides[]) -> HiliteGuides;
+		 (x, y) -> theSheet.localToGlobal -> (x, y);
+	    if);
+	 #);
+     init::<
+       (# toolCellFigure: ^FigureT;
+       enter thePrototype[]
+       do tmpFigure[] -> theFigure[];          
+          getDefaults;
+          (* Warning: Do not remove the (# #) below, it will
+           * trigger a bug in the compiler. (See bug #1979)*)
+          &FigureT(# #)[] -> toolCellFigure[];
+          theFigure.thePageElement[] -> toolCellFigure.init;
+          toolCellFigure[] -> instrumentIcon.setFigure;
+          theFigure.changed;
+          ('width',width[])->options.setAddOption
+          (# OptionType:: IntegerOption
+               (# dname:: (# do 'Width' -> value[]; #); 
+               #); 
+          #);
+          ('height',height[])->options.setAddOption
+          (# OptionType:: IntegerOption
+               (# dname:: (# do 'Height' -> value[]; #); 
+               #); 
+          #);
+          PageInstrument.init;
+          PageInstrument[] -> register;
+          INNER;
+       #);
+  #);
+
+PlaceInstrument: PageElementInstrument
+  (# PrototypeT:: Place;
+     getPrototype:: (# do defaultPlace[] -> prototype[]; #);
+     ToolTip::
+       (# 
+       do NamesCreatePlace -> getGlobalNames -> theTip[];
+       #);
+     init::
+       (#
+       do 'create_place'->helpname[];
+          ('width','place.width') -> options.setAddOptionWithDefault;
+          ('height','place.height') -> options.setAddOptionWithDefault;
+       #);
+     create::
+       (#
+       do (context[], at[], getPrototype) -> CreatePlace;
+       #);
+     setdefaults::
+       (#
+       do width -> defaultPlace.width;
+          height -> defaultPlace.height;
+          getPrototype -> theFigure.thePageElement[];
+       #);
+     getDefaults::
+       (#
+       do defaultPlace.width -> width;
+          defaultPlace.height -> height;
+	    getPrototype -> theFigure.thePageElement[];
+       #);
+  #);
+TransitionInstrument: PageElementInstrument
+  (# PrototypeT:: Transition;
+     getPrototype:: (# do defaultTransition[] -> prototype[]; #);
+     ToolTip::
+       (# 
+       do NamesCreateTransition -> getGlobalNames -> theTip[];
+       #);
+     init::
+       (#
+       do 'create_transition'->helpname[];
+          ('width','transition.width') -> options.setAddOptionWithDefault;
+          ('height','transition.height') -> options.setAddOptionWithDefault;
+       #);
+     create::
+       (#
+       do (context[], at[], getPrototype) -> CreateTransition;
+       #);
+     setdefaults::
+       (#
+       do width -> defaultTransition.width;
+          height -> defaultTransition.height;
+          getPrototype -> theFigure.thePageElement[];
+       #);
+     getDefaults::
+       (#
+       do defaultTransition.width -> width;
+          defaultTransition.height -> height;
+	    getPrototype -> theFigure.thePageElement[];
+       #);
+     
+  #);
+GroupElementsInstrument: CursorScalingInstrument
+  (# FigureT::< GroupFigure;
+     TargetType:: CPNSheet;     
+     thePageElements: ^PageElementList;
+     theGroup: ^Group;
+     apply:: (# <<SLOT GroupElementsInstrumentApply:doPart>> #);
+     init::
+       (# 
+       enter theGroup[]
+       <<SLOT GroupElementsInstrumentInit:doPart>>         
+       #);
+     cancel:: (# <<SLOT GroupElementsInstrumentCancel:doPart>> #);
+  #);
+centerPageElements:
+  (# thePageElements: ^PageElementList;
+  enter thePageElements[]
+  <<SLOT CenterPageElements:doPart>> 
+  #);
+CloneGroupElementsInstrument: Instrument
+  (# TargetType:: PageElement; 
+     danglingArcs: booleanValue
+       (# theGroup: ^Group;
+       enter theGroup[]
+       <<SLOT CloneGroupElementsInstrumentDanglingArcs:DoPart>>
+       #);                       
+     relevant:: (# <<SLOT CloneGroupElementsInstrumentRelevant:DoPart>> #);
+     apply::
+       (# theGroupElementsInstrument: ^GroupElementsInstrument;
+          picker: ^PickInstrument;
+       do (if NOT (((target.getCPNPage).getSelectedGroup).containsSSElement) then
+	      (if (target.getCPNPage).getSelectedGroup -> danglingArcs then
+    		  'Dangling arc detected -- cannot clone group elements\n'
+    		  'while group contains arcs without endpoints.'-> status.error; 
+    	       else
+    		  &GroupElementsInstrument[] -> theGroupElementsInstrument[];
+    		  (target.getCPNPage).getSelectedGroup -> theGroupElementsInstrument.init;
+    		  theHand.active[] -> picker[];
+    		  theGroupElementsInstrument[] -> picker.activateInstrument;
+    	      if);
+	   else
+	      'Cannot clone group with SS Elements' -> status.error;
+          if);
+          finish;
+       #);
+  #);
+CloneHierarchyInfoInstrument: CursorScalingInstrument
+  (# FigureT::< PageElementFigure;
+     typeOfHierarchyInfo:< HierarchyInfo;
+     theHierarchyInfo: ^typeOfHierarchyInfo;
+     init::<
+       (# tmpFigure: ^FigureT;
+       enter theHierarchyInfo[]
+       do &FigureT[] -> tmpFigure[];
+          theHierarchyInfo[] -> tmpFigure.init;
+          tmpFigure[] -> instrumentcursor.setFigure;
+          INNER;
+       #);     
+  #);
+
+CloneFusionTagInstrument: GenericCursorScalingInstrument
+  (# TargetType:: Place;
+     FigureT::< PageElementFigure;
+     theFusionInfo: ^FusionInfo;
+     theFusionInstrument: ^FusionInstrument;
+     originalPlace: ^Place;
+     init::
+       (# tmpFigure: ^FigureT;
+       enter (theFusionInfo[],originalPlace[])
+       do &FusionInstrument[] -> theFusionInstrument[];
+          theFusionInstrument.init;
+          originalPlace.getFusionSet -> theFusionInstrument.theFusionSet[];
+          theFusionInstrument[] -> register;
+          
+          &FigureT[] -> tmpFigure[];
+          theFusionInfo[] -> tmpFigure.init;
+          tmpFigure[] -> instrumentcursor.setFigure;          
+       #);
+  #);
+
+CloneSubpageTagInstrument: CloneHierarchyInfoInstrument
+  (# TargetType:: Transition;
+     typeOfHierarchyInfo::< SubpageInfo;
+     theSubpage: ^CPNPage;
+     init::
+       (# 
+       enter theSubpage[]
+       #);
+     apply::
+       (# 
+       do (theSubpage[],target[]) -> SetSubPage;
+          target[] -> automaticAssignPortSocket;
+          finish;
+       #);
+  #);
+ClonePortTypeInstrument: CloneHierarchyInfoInstrument
+  (# TargetType:: Place;
+     typeOfHierarchyInfo::< PortType;
+     thePortType: ^Text;
+     init:: (# enter thePortType[] #);
+     apply::
+       (# 
+       do (target[],thePortType[]) -> SetPortType;
+          finish;
+       #);
+  #);
+
+
+MoveToSubPageInstrument: CPNGenericInstrument
+  (# FigureT:: MoveToSubpageFigure;
+     ToolTip:: 
+       (# 
+       do NamesMoveToSubpage -> getGlobalNames -> theTip[];
+       #);
+     MoveTransitionToSubpageInstrument: @Instrument
+       (# TargetType:: Transition;
+          relevant:: (# <<SLOT MoveToSubPageInstrumentMoveTransitionToSubpageInstrument:DoPart>> #);
+          apply::
+            (# 
+            do target[] -> MoveToSubPage;
+               finish;          
+            #);
+          init:: 
+            (# 
+            do 'move_to_subpage'->helpname[]; 
+            #);
+       #);
+     MoveGroupOnPageToSubpageInstrument: @Instrument
+       (# TargetType:: CPNSheet;     
+          relevant::
+            (# 
+            do (NOT (target.content.thePage.getSelectedGroup).all) and 
+                 (not (target.content.thePage.getSelectedGroup).isGlobal)-> value;
+            #);
+          apply::
+            (# 
+            do (if not (target.content.thePage.getSelectedGroup).all then
+		   (if (target.content.thePage.getSelectedGroup).containsSSElement then
+		       'Cannot apply this instrument to group containing SS element' -> status.error;
+		    else
+		       target.content.thePage.getSelectedGroup -> MoveGroupToSubpage;
+		   if);
+               if);
+               finish;
+            #);
+       #);
+     MoveGroupToSubpageInstrument: @Instrument
+       (# TargetType:: GroupTab;     
+          relevant::
+            (# 
+            do (NOT (target.getGroup).all) and
+	       (NOT (target.getGroup).isGlobal) and
+	       (NOT (target.getGroup).containsSSElement) -> value;
+            #);
+          apply::
+            (# 
+	    do (if (target.getGroup).containsSSElement then
+		   'Cannot apply this instrument to group containing SS element' -> status.error;
+		else
+		   target.getGroup -> MoveGroupToSubpage; 
+	       if);
+               finish;
+            #);
+       #);
+     init::
+       (# 
+       do MoveTransitionToSubpageInstrument.init;
+          MoveTransitionToSubpageInstrument[] -> register;
+          MoveGroupOnPageToSubpageInstrument.init;
+          MoveGroupOnPageToSubpageInstrument[] -> register;
+          MoveGroupToSubpageInstrument.init;
+          MoveGroupToSubpageInstrument[] -> register;
+          
+          'move_to_subpage' -> helpname[];
+       #);
+  #);
+
+MoveGroupToSubpage: 
+  (# theGroup: ^Group;
+  enter theGroup[]
+  <<SLOT MoveGroupToSubpage:DoPart>>
+  #);
+
+BuildMoveGroupToSubpage: 
+  (# theGroup: ^Group;  
+     theMoveGroupToSubpageCommand: ^MoveGroupToSubpageCommand;
+     theNameOfTransition, theNameOfSubpage: ^Text;
+     generateNewName: (# <<SLOT BuildMoveGroupToSubpageGenerateNewName:DoPart>> #);
+     CalculateInternalAndExternalArcs:
+       (# places: ^PlaceList;
+          transitions: ^TransitionList;
+          internalArcs, externalArcs: ^ArcList;
+       enter (places[], transitions[])
+       <<SLOT MoveGroupToSubpageCalculateInternalAndExternalArcs:doPart>>
+       exit (internalArcs[], externalArcs[])
+       #);
+     isValid: BooleanValue
+       (# 
+       <<SLOT MoveGroupToSubpageIsValid:doPart>>
+       #);
+     removeGroupFromPage:
+       (# theDeleteGroupCommand: ^GroupRemovalCommand;
+       <<SLOT MoveGroupToSubpageRemoveGroupFromPage:doPart>>   
+       exit theDeleteGroupCommand[]
+       #);
+     removeGroupElements:
+       (# theRemoveFromPageClip: ^PageClip;
+          theRemovedSubpageCommands: ^CommandList;
+       <<SLOT MoveGroupToSubpageRemoveGroupElements:doPart>>
+       exit (theRemoveFromPageClip[], theRemovedSubpageCommands[])
+       #);
+     calculateAverage:
+       (# xPos, yPos: @real;
+       <<SLOT MoveGroupToSubpageCalculateAverage:doPart>>
+       exit (xPos, yPos)
+       #);
+     insertInsteadOfGroupElements:
+       (# theInsertToPageClip: ^PageClip;
+       <<SLOT MoveGroupToSubpageInsertInsteadOfGroupElements:doPart>>   
+       exit theInsertToPageClip[]
+       #);
+     insertSubpage:
+       (# theSetSubpageCommand: ^SetSubpageCommand;
+       <<SLOT MoveGroupToSubpageInsertSubpage:doPart>>
+       exit theSetSubpageCommand[]
+       #);         
+     insertGroupElementsOnSubpage:
+       (# theSetSubpageCommand: ^SetSubpageCommand;
+          theNewPortSocketAssignments, theSetPortTypeCommands: ^CommandList;             
+          theInsertedSubpageCommands: ^CommandList;
+          theInsertedAssignmentCommands: ^CommandList;
+          theSubpageClip: ^PageClip
+       <<SLOT MoveGroupToSubpageInsertGroupElementsOnSubpage:doPart>>      
+       exit (theSubpageClip[], theNewPortSocketAssignments[],
+          theSetPortTypeCommands[], theInsertedSubpageCommands[],
+          theInsertedAssignmentCommands[])
+       #);        
+     thePlaceList: @PlaceList;
+     theTransitionList: @TransitionList;
+     theBendpointLists: @BendpointListIDDictionary;
+     otherPageElements: @PageElementList;     
+     internalArcs, externalArcs: ^ArcList;
+     theSubpage: ^CPNPage;
+     theSubTransition: ^Transition;      
+  enter theGroup[]
+  <<SLOT BuildMoveGroupToSubpage:doPart>>   
+  exit theMoveGroupToSubpageCommand[]
+  #);
+
+MoveGroupToSubpageCommand: Command
+  (# theGroup: ^Group;     
+     theDeleteGroupCommand: ^GroupRemovalCommand;
+     theRemoveFromPageClip, theInsertToPageClip, theSubpageClip: ^PageClip;
+     theSetSubpageCommand: ^Command;
+     theSetPortTypeCommands, theNewPortSocketAssignments: ^CommandList;
+     theSubpage, theSuperpage: ^CPNPage;     
+     theRemovedSubpageCommands, theInsertedSubpageCommands: ^CommandList;
+     theInsertedAssignmentCommands: ^CommandList;
+     init::
+       (# 
+       enter (
+          theGroup[], theDeleteGroupCommand[], theRemoveFromPageClip[],
+          theInsertToPageClip[], theSetSubpageCommand[],
+          theSubpageClip[], theSetPortTypeCommands[],
+          theNewPortSocketAssignments[], theSubpage[],
+          theSuperpage[], theRemovedSubpageCommands[],
+          theInsertedSubpageCommands[], theInsertedAssignmentCommands[]
+          )
+       #);
+     apply::
+       (# 
+       do redo;
+       #);
+     redo:: (# <<SLOT MoveGroupToSubpageCommandRedo:doPart>> #);
+     undo:: (# <<SLOT MoveGroupToSubpageCommandUndo:doPart>> #);
+     getName::
+       (#
+       do &Text[] -> name[];
+          'Move %s to subpage' 
+            -> name.putFormat (# do theGroup.theName.copy -> s #);
+       #);
+  #);
+
+ToogleExplicitInstrument: CPNInstrument
+  (# CommandType:: ToogleExplicit;
+     FigureT:: ToogleExplicitFigure;
+     ToolTip::
+       (# 
+       do 'Toggle whether a transition is passive or active' -> theTip[];
+       #);
+  #);
+
+ToogleExplicit: CPNCommand
+  (# TargetType:: Transition;
+     previousChoiceType: @boolean;
+     apply::
+       (# 
+       do redo;
+       #);
+     undo:: (# <<SLOT ToogleExplicitUndo:DoPart>> #);
+     redo:: (# <<SLOT ToogleExplicitRedo:DoPart>> #);
+     getName::
+       (#
+       do 'Toggle Explicit' -> name[];
+       #);
+  #);
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+

@@ -1,0 +1,279 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../cpnet';
+
+-- HierarchyInfoPrivate:Descriptor --
+(# cpnml: ^Text;
+   theItem: ^TextItem;
+   init:
+     (# 
+     do &Text[] -> cpnml[];
+        &TextItem[] -> theItem[];
+        theItem.init;
+     #);
+#)
+
+-- HierarchyInfoGetTextItem:DoPart --
+do private.theItem[] -> theTextItem[];
+
+--HierarchyInfoUpdate:doPart--
+do (*presentation.clear;*)
+   private.cpnml[] -> theText[];
+   INNER;
+   theRect[] -> presentation.add;
+   (if private.theItem.content[] = none then
+       theText[] -> private.theItem.content[];
+   if);
+   (# setRect: 
+        (# theText: ^Text;
+        enter theText[] 
+        do theText[] -> arial.measureText -> (w, h);
+           (w + 5, h/2 + 5) -> (theRect.width, theRect.height);
+        #);
+   do (if theText[] <> NONE then
+          theText[] -> setRect;
+       else
+          (if private.theItem.content[] <> none then
+              private.theItem.content[] -> setRect;
+           else
+              14 -> theRect.width;
+              9 -> theRect.height;
+          if);
+      if);
+   #);
+   - theRect.width/2 + 2 -> private.theItem.x;
+   theRect.height/2 - 2 -> private.theItem.y;
+   private.theItem[] -> presentation.add;
+
+   (if (being_checked or being_compiled or has_error) then
+       &Rect[] -> halo[];
+       halo.init;
+       theRect.width -> halo.width;
+       theRect.height -> halo.height;
+       (halo_width, status -> statusToColor)
+         -> &HaloStyle
+         -> halo.theStyle[];
+       halo[] -> presentation.add;
+   if)
+   
+-- HierarchyInfoBounds:doPart --
+do present;
+   presentation.bounds -> (xmin,xmax,ymin,ymax);
+   
+-- HierarchyInfoInit:doPart -- 
+do private.init;
+   blueish[] -> StrokeStyle -> private.theItem.theStyle[];
+   theRect.init;
+   &CompositeStyle[] -> theCompStyle[] -> theRect.theStyle[];
+   blueish[] -> StrokeStyle -> theCompStyle.add;
+   lightblueish[] -> RectColor[];
+   RectColor.lighten -> FillStyle -> theCompStyle.add;
+   this(HierarchyInfo)[] -> private.theItem.owner[];
+   this(HierarchyInfo)[] -> theRect.owner[];
+   INNER;
+
+-- HierarchyInfoOnChanged:doPart --
+do (if presentation[] <> NONE then
+       update;
+   if);
+   INNER;
+   
+   
+-- HierarchyInfoClone:doPart --
+do (if private.cpnml[] <> NONE then
+       private.cpnml.copy -> new.setCPNML;
+   if);
+   INNER;
+
+-- HierarchyInfoDefaultSnap:doPart --
+do theRect.width -> w;
+   theRect.height -> h;
+   SE -> snap_id;
+   RightJustify -> changeAnchorHorizontal;
+   TopJustify -> changeAnchorVertical;
+   INNER;
+
+-- HierarchyInfoDelete:doPart --
+do INNER;
+   
+-- HierarchyInfoStatus:doPart --
+do compiled -> value;
+   INNER;
+   
+-- HierarchyInfoOnSemanticChanged:doPart --
+do (if father[] <> NONE then (* New DS: must be removed /omega *)
+       (if debugging then
+           'cpnet.bet: HierarchyInfo.onSemanticChanged: Delegating to ' -> debugCPNet;
+           father[] -> getPatternName -> debugCPNet;
+       if);
+       father.semanticChanged;
+   if);
+   INNER;
+   
+-- HierarchyInfoSetCPNML:doPart --
+do theCPNML[] -> private.cpnml[] -> private.theItem.content[];
+   update;
+   
+-- HierarchyInfoGetCPNML:doPart --
+do private.cpnml[] -> theCPNML[];
+   
+
+-- FusionInfoPrivate:Descriptor --
+(# 
+   thePlace: ^Place;
+#)
+
+-- FusionInfoGetPlace:doPart --
+do private.thePlace[] -> thePlace[];
+
+-- FusionInfoDefaultSnapToElement:doPart --
+do private.thePlace[] -> elm[];
+
+-- FusionInfoSetPlace:doPart --
+do thePlace[] -> private.thePlace[];
+   
+-- FusionInfoDelete:doPart --
+do (if (getPlace).getFusionSet <> none then
+       getPlace -> ((getPlace).getFusionSet).removePlace;
+   if);
+
+-- FusionInfoOnTextUpdated:doPart --
+do update;
+
+-- FusionInfoOnSemanticChanged:doPart --
+do ('private.thePlace[] <> NONE', private.thePlace[] <> NONE) -> assert (# #);
+   private.thePlace.semanticChanged;
+
+-- FusionInfoOnChanged:doPart --
+do (if private.thePlace[] <> NONE then (* if it is in a hand *)
+       This(FusionInfo)[] -> private.thePlace.changed;
+   if);
+
+-- FusionInfoSnap:doPart --
+do THIS(FusionInfo)[] -> private.thePlace.snapTo -> (dx,dy);
+
+-- PortTypePrivate:Descriptor --
+(# 
+   thePlace: ^Place;
+#)
+
+-- PortTypeGetPlace:doPart --
+do private.thePlace[] -> thePlace[];
+
+-- PortTypeDefaultSnapToElement:doPart --
+do private.thePlace[] -> elm[];
+
+-- PortTypeSetPlace:doPart --
+do thePlace[] -> private.thePlace[];
+
+-- PortTypeDelete:doPart --
+do (# theTransition: ^Transition;
+      thePlace: ^Place;
+      thePort: ^PortType;
+   do father[] -> thePlace[];
+   #);
+   
+-- PortTypeUpdate:doPart --
+do ('theText[]<> none', theText[]<> none) -> assert (# #);
+   (if theText[]<> none then
+       (if true
+        // ('in' -> theText.equal) then
+           NamesPortTypeIn -> getGlobalNames -> theText[];
+        // ('out' -> theText.equal) then
+           NamesPortTypeOut -> getGlobalNames -> theText[];
+        // ('i/o' -> theText.equal) then
+           NamesPortTypeIO -> getGlobalNames -> theText[];
+       if);
+   if);
+        
+-- PortTypeNext:doPart --
+do father[] -> QUA
+     (# as:: Place;
+     do thisObj.getPortType -> elm[];
+        (if elm[] = NONE then
+            thisObj.createPortType -> elm[];
+        if);
+     #);
+
+-- PortTypeOnSemanticChanged:doPart --
+do ('private.thePlace[] <> NONE', private.thePlace[] <> NONE) -> assert (# #);
+   private.thePlace.semanticChanged;
+
+-- PortTypeOnChanged:doPart --
+do (if private.thePlace[] <> NONE then (* if it is in a hand *)
+       THIS(PortType)[] -> private.thePlace.changed;
+   if)
+
+-- PortTypeSnap:doPart --
+do THIS(PortType)[] -> private.thePlace.snapTo -> (dx, dy);
+  
+-- SubPageInfoPrivate:descriptor--
+(#
+   theTransition: ^Transition;
+#)
+   
+-- SubPageInfoSetTransition:doPart--
+do theTransition[] -> private.theTransition[];
+
+-- SubPageInfoGetTransition:doPart--
+do ('theTransition[] <> NONE ', private.theTransition[] <> NONE) -> assert (# #);
+   private.theTransition[] -> theTransition[];
+
+-- SubPageInfoDefaultSnapToElement:doPart --
+do private.theTransition[] -> elm[];
+
+-- SubPageInfostatus:doPart --
+do (* (if private.theTransition.getSubpage <> NONE then *)
+(*        (private.theTransition.getSubpage).getNodesAndSubpagesStatus -> value; *)
+(*    if); *)
+   
+--SubPageInfodelete: doPart--
+do (if debugging then 'Cpnet: Deleting SubPageInfo\n' -> debugCPNet if);   
+   (getTransition).socketplaces.clear;
+   NONE -> (getTransition).setSubpage; 
+   
+--SubPageInfoNext:doPart--
+do private.theTransition.getSubPageInfo -> elm[];
+   (if elm[] = NONE then
+       private.theTransition.createSubPageInfo -> elm[];
+       elm[] -> private.theTransition.setSubPageInfo;
+   if);
+
+-- SubPageInfoOnSemanticChanged:doPart --
+do ('private.theTransition[] <> NONE', private.theTransition[] <> NONE) -> assert (# #);
+   private.theTransition.semanticChanged;
+
+-- SubPageInfoOnChanged:doPart --
+do (if private.theTransition[] <> NONE then
+       THIS(SubPageInfo)[] -> private.theTransition.changed;
+       (if private.theTransition.getSubpage <> NONE then
+           (private.theTransition.getSubpage).name -> setCPNML;
+       if);
+   if); 
+   
+-- SubPageInfoSnap:doPart --
+do THIS(SubPageInfo)[] -> private.theTransition.snapTo -> (dx,dy);   
+

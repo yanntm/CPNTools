@@ -1,0 +1,256 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../cpnworkspace';
+INCLUDE 'moveinstruments';
+INCLUDE 'binderinstruments.bet';
+INCLUDE 'cpninstrument';
+INCLUDE '../wselements/index';
+INCLUDE 'cpnoption';
+
+-- CpnWorkspaceLib: attributes --
+
+CreateOptionViewInstrument: CPNInstrument
+  (# CommandType:: CreateOptionViewCommand;
+  #);
+
+instrumentHasOptions:
+  (# theInstrument: ^Instrument;
+     hasOptions: @boolean;
+  enter theInstrument[]
+  do false -> hasOptions;
+     (if theInstrument##<=CPNGenericInstrument## then
+         theInstrument[] -> QUA
+         (# as:: CPNGenericInstrument;
+         do (if thisObj.options[]<>none then
+                findVisibleOptions:thisObj.options.options.scan
+                  (# 
+                  do (if current.showMe and (current##<Option##) and 
+                         (not (current##<=PositionOption##)) then
+                         true -> hasOptions;
+                         leave findVisibleOptions;
+                     if);
+                  #);
+            if);
+         #);
+      else
+         (if theInstrument##<=nonGenericInstrumentWithOptions## then
+             theInstrument[] -> QUA
+             (# as:: nonGenericInstrumentWithOptions;
+             do (if thisObj.options[]<>none then
+                findVisibleOptions:thisObj.options.options.scan
+                  (#
+                  do (if current.showMe and (current##<Option##) and
+                         (not (current##<=PositionOption##)) then
+                         true -> hasOptions;
+                         leave findVisibleOptions;
+                     if);
+                  #);
+                if);
+             #);
+         if);
+     if);
+  exit hasOptions
+  #);
+
+CreateOptionViewCommand: CPNCommand
+  (# notUndoable:: (# do true -> value; #);
+     TargetType:: ToolCell;
+     relevant::
+       (# 
+       do value and not target.visibleOptions -> value;
+          (if value then
+              target.theInstrument[] -> instrumentHasOptions -> value;
+          if);
+       #);
+     apply::
+       (# theNode: ^IndexNode;
+       do true -> target.visibleOptions;
+          (if target.optionsView[]=none then
+              &ToolCellindex[] -> target.optionsView[];
+              target[] -> target.optionsView.theToolCell[];
+              target.optionsView.init;
+              target.theInstrument[] -> theIndex.createOptions -> theNode[];
+              theNode.scanIndexNodes
+              (# 
+              do current[] -> target.optionsView.addIndexNode;
+              #);
+              theNode.clearIndexNodes;
+          if);
+          target.optionsView.changed;
+          target.updateOptions;
+       #);
+  #);
+
+CloseOptionViewInstrument: CPNInstrument
+  (# CommandType:: CloseOptionViewCommand;
+  #);
+
+CloseOptionViewCommand: CPNCommand
+  (# notUndoable:: (# do true -> value; #);
+     TargetType:: ToolCell;
+     relevant::
+       (# 
+       do value and target.visibleOptions -> value;
+       #);
+     apply::
+       (# 
+       do false -> target.visibleOptions;
+          target.updateOptions;
+       #);
+  #);
+
+CloseOptionViewIndexInstrument: CPNInstrument
+  (# CommandType:: CloseOptionViewIndexCommand;
+  #);
+
+CloseOptionViewIndexCommand: CPNCommand
+  (# notUndoable:: (# do true -> value; #);
+     TargetType:: ToolCellIndex;
+     apply::
+       (# 
+       do false -> target.theToolCell.visibleOptions;
+          target.theToolCell.updateOptions;
+       #);
+  #);
+
+CloseOptionViewIndexInstrumentAdapter: Instrument
+  (# theCloseOptionViewIndexInstrument: @CloseOptionViewIndexInstrument;
+     TargetType::theIndex.optionNode;
+     realTarget: ^ToolCellIndex;
+     
+     init::
+       (# 
+       do theCloseOptionViewIndexInstrument.init;
+       #);
+     
+     relevant::
+       (# 
+       do search: theHand.over.scan
+            (# 
+            do current.scan
+               (# 
+               do (if current## <= ToolCellIndex## then
+                      current[] -> realTarget[];
+                      leave search;
+                  if);
+                  (if current## <= Index## then
+                      none -> realTarget[];
+                  if);
+               #);
+            #);
+          (realTarget[]<>none) and 
+          ((realTarget[],theHand[])->theCloseOptionViewIndexInstrument.relevant) -> value;
+       #);
+     
+     prepare::
+       (# 
+       do (theHand[],realTarget[]) -> theCloseOptionViewIndexInstrument.prepare;
+       #);
+     
+     apply::
+       (# 
+       do theHand[] -> theCloseOptionViewIndexInstrument.apply;
+          finish;
+       #);
+     
+     cancel::
+       (# 
+       do theCloseOptionViewIndexInstrument.cancel;
+       #);
+     
+  #);
+
+CloneToolCell: Command
+  (# TargetType:: ToolCell;
+  #);
+
+CloneToolCellInstrument: Instrument
+  (# TargetType:: ToolCell;
+     
+     Apply::
+       (# com: ^CommandType;
+          CommandType:< CloneToolCell;
+       do &CommandType[] -> com[];
+          target[] -> com.prepare;
+          INNER;
+          Finish;
+       #);
+  #);
+
+DeleteToolCell: Command
+  (# TargetType:: ToolCell;
+  #);
+
+DeleteToolCellInstrument: Instrument
+  (# TargetType:: ToolCell;
+     
+     Apply::
+       (# com: ^CommandType;
+          CommandType:< DeleteToolCell;
+       do &CommandType[] -> com[];
+          target[] -> com.prepare;
+          com.apply;
+          INNER;
+          Finish;
+       #);
+  #);
+
+CloneToolCollection: Command
+  (# TargetType:: ToolTab;
+  #);
+
+CloneToolCollectionInstrument: Instrument
+  (# TargetType:: ToolTab;
+     
+     Apply::
+       (# com: ^CommandType;
+          CommandType:< CloneToolCollection;
+       do &CommandType[] -> com[];
+          target[] -> com.prepare;
+          com.apply;
+          INNER;
+          Finish;
+       #);
+  #);
+
+DeleteToolCollection: Command
+  (# TargetType:: ToolTab;
+  #);
+
+DeleteToolCollectionInstrument: Instrument
+  (# TargetType:: ToolTab;
+     
+     Apply::
+       (# com: ^CommandType;
+          CommandType:< DeleteToolCollection;
+       do &CommandType[] -> com[];
+          target[] -> com.prepare;
+          com.apply;
+          INNER;
+          Finish;
+       #);
+  #);
+
