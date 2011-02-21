@@ -1,0 +1,1273 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../index';
+
+INCLUDE '../../../cpnet/cpnet';
+INCLUDE '../../cpnworkspace';
+INCLUDE '../../instruments/cpninstrument';
+INCLUDE '../../instruments/netinstruments';
+INCLUDE '../../instruments/binderinstruments';
+INCLUDE '../../instruments/cpnoption';
+INCLUDE '../../../cpnet/xmlutilities';
+INCLUDE '~beta/sysutils/pathhandler';
+INCLUDE '../../instruments/cpncommands';
+INCLUDE '../../instruments/monitoringinstruments';
+
+--CPNIndexprivate:descriptor--
+(# tools: ^ToolBox;
+   collection: ^ToolCollection;
+#)
+
+-- CPNIndexDynamicNodeUpdate:doPart --
+do (if theIndexNodes.empty then
+       expander.makeTriangle -> presentation.add;
+   if);
+
+--CPNIndexpack: doPart--
+do 'index' -> theXML.createElement -> elm[];
+   
+   scanIndexNodes(# type::Node;
+       do theIndexNode.pack -> elm.addElement;
+       #);
+   INNER;
+   
+--CPNIndexunPack: doPart--
+do INNER
+   
+--CPNIndexLoadNodegetName:doPart--
+do NamesLoadingNet -> getGlobalNames -> name[];
+   dots[] -> name.puttext;
+   
+--CPNIndexLoadNodeinit:doPart--
+do (101/256, 138/256, 85/256) -> &Color -> hilite_color[];
+   0 -> step;
+   &Text[] -> dots[];
+   
+--CPNIndexLoadNodeonAdded: doPart--
+do step + 1 -> step;
+   (if (step mod 4) = 0 then
+       dots.clear;
+    else
+       '.' -> dots.put;
+   if);
+   update;
+   
+--CPNIndexStepNodeprivate: descriptor--
+(# content: ^CPNet;
+#)
+
+--CPNIndexStepNodegetName: doPart--
+do NamesStepNode -> getGlobalNames -> name[];
+   private.content.currentStep -> name.putint;
+   
+--CPNIndexStepNodeinit: doPArt--
+do content[] -> private.content[];
+   THIS(StepNode)[] -> private.content.stepAndTimeNotifier.attach;
+   
+--CPNIndexTimeNodeprivate: descriptor--
+(# content: ^CPNet;
+#)
+
+--CPNIndexTimeNodegetName: doPart--
+do NamesTimeNode -> getGlobalNames -> name[];
+   (if (private.content.currentTime[] = NONE) then
+       '0'->name.puttext;
+    else
+       private.content.currentTime[] -> name.puttext;
+   if);
+   
+--CPNIndexTimeNodeinit: doPart--
+do content[] -> private.content[];
+   THIS(TimeNode)[] -> private.content.stepAndTimeNotifier.attach;
+   
+   
+--CPNIndexSheetNodeTrianglemakeTriangle:doPart--
+do (if being_checked or being_compiled or has_error then       
+       &Line[] -> halo[];
+       halo.init;
+       lin.points[] -> halo.points[];
+       (if true
+        // being_checked then
+           (halo_width, check_color) -> &HaloStyle -> halo.theStyle[];
+        // being_compiled then
+           (halo_width, compile_color) -> &HaloStyle -> halo.theStyle[];
+        // has_error then
+           (halo_width, error_color) -> &HaloStyle -> halo.theStyle[];
+       if);
+   if);
+   inner;
+   (if halo[] <> none then
+       halo[] -> tri.add;
+   if);
+   
+--CPNIndexSheetNodeshowSheet:doPart--
+do (# theCPNWorkSpace: ^CPNWorkspace;
+      destination: ^Folder;      
+   do getSheet -> theSheet[];
+      (if theSheet[] <> NONE then
+          THIS(Workspace)[] -> theCPNWorkSpace[];
+          (theSheet[], getName, x, y) -> theCPNWorkSpace.ShowSheet;
+      if);
+   #);
+   INNER;
+   
+--CPNIndexInstanceNodeTrianglechildStatus: doPart--
+do (if (private.instance[] <> NONE) and (private.instance.thePage[] <> NONE) then
+       private.instance.thepage.getSubpagesStatus -> value;
+       (if (value = unchecked) or (value = compiled) then
+           private.instance.getSubpagesStatus -> value;
+       if);
+   if);
+   
+-- CPNIndexInstanceNodeTrianglemakeTriangle:DoPart --
+do (# setHalo: 
+        (# theColor: ^Color;
+        enter theColor[]
+        do (if theColor[] <> none then
+              &Line[] -> halo[];
+              halo.init;
+              lin.points[] -> halo.points[];
+              (halo_width, theColor[]) -> &HaloStyle -> halo.theStyle[];
+          if);
+        #);
+   do (if true
+       // private.instance.thePage.getSubpagesHalo <> none then
+          private.instance.thePage.getSubpagesHalo
+            -> setHalo;
+       // halo[] = none then
+          private.instance.getCurrentHighlightOfSubpageTree 
+            -> setHalo;
+      if);
+   #);   
+   
+--CPNIndexInstanceNodeprivate: descriptor--
+(# instance: ^PageInstance;
+#)
+
+--CPNIndexInstanceNodeinstanceenter: doPart--
+do instance[] -> private.instance[]; 
+   
+--CPNIndexInstanceNodeinstanceexit: doPart--
+do private.instance[] -> instance[];
+   
+-- InstanceNodegetPageInstance:doPart --
+do private.instance[] -> theInstance[];
+      
+--CPNIndexInstanceNodeonFocusLost: doPart--
+do (if ('' -> majorTextItem.content.equal) then
+       'Page' -> majorTextItem.content[];
+       majorTextItem.changed;
+   if);
+   
+--CPNIndexInstanceNodegetName: doPart--
+do (if true then
+       private.instance.thePage.name -> name[];
+    else
+       (private.instance.thePage.name).copy -> name[];
+       (if private.instance.thePage.numberOfInstances > 1 then
+           (if private.instance.mlInstanceNumber <> 0 then
+               ' (' -> name.puttext;
+               private.instance.mlInstanceNumber -> name.putint;
+               ')' -> name.puttext;
+            else
+               ' (?)' -> name.puttext;
+           if);
+       if);
+   if);
+   
+--CPNIndexInstanceNodegetSecondaryText: doPart--
+do (if private.instance.thePage.numberOfInstances > 1 then
+       &Text[] -> txt[];
+       (if private.instance.mlInstanceNumber <> 0 then
+           '(' -> txt.puttext;
+           private.instance.mlInstanceNumber -> txt.putint;
+           ')' -> txt.puttext;
+        else
+           '(?)' -> txt.puttext;
+       if);
+   if);
+   
+--CPNIndexInstanceNodeonTextUpdated: doPart--
+do private.instance.thePage.changed;
+   private.instance.thePage.onTextUpdated; 
+   
+--CPNIndexInstanceNodegetSheet: doPart--
+do &CpnSheet[] -> theSheet[];
+   theSheet.init;
+   private.instance[] -> theSheet.setContent;
+   private.instance.thepage.showallerrormsg;
+   private.instance.thepage[] -> (private.instance.thepage.getSelectedGroup).onSelect;
+   theSheet.contentChanged;
+   
+--CPNIndexInstanceNodeonChanged: doPart--
+do private.instance.getCurrentHighlight -> hilite_color[];
+   
+--CPNIndexInstanceNodeonAdded: doPart--
+do (# new: ^InstanceNode;
+      relevant: @boolean;
+      theInstance: ^PageInstance;
+      oneOfMyKids:
+        (# res: @boolean;
+        do false -> res;
+           scanIt: scanIndexNodes
+             (# theInstanceNode: ^InstanceNode;
+             do (if current## <= InstanceNode## then
+                    current[] -> theInstanceNode[];
+                    (if theInstanceNode.instance = theInstance[] then
+                        true -> res;
+                        leave scanIt;
+                    if);
+                if);
+             #);
+        exit res
+        #);      
+   do (if source## <= PageInstance## then
+          source[] -> theInstance[];          
+          (theInstance.getsuperpageinstance = instance) and not oneOfMyKids -> relevant;
+          
+          (if relevant then 
+              &InstanceNode[] -> new[];
+              source[] -> new.init;
+              new[] -> addIndexNode;
+              layout;
+          if);
+      if);
+   #);
+   
+--CPNIndexInstanceNodeonRemoved: doPart--
+do 'InstanceNode: removing' -> debugIndex;
+   (if source## <= PageInstance## then
+       (if debugging then
+           'index.bet: deleting instance:' -> debug;
+       if);
+       search: scanIndexNodes
+         (# Type:: InstanceNode;
+         do (if current.private.instance[] = source[] then
+                current[] -> removeIndexNode;
+                layout;
+                leave search;
+            if);
+         #);
+   if);
+   
+--CPNIndexInstanceNodeinit: doPart--
+do instance[] -> private.instance[];
+   THIS(InstanceNode)[] -> private.instance.attach;
+   THIS(InstanceNode)[] -> private.instance.thepage.attach;
+   THIS(InstanceNode)[] -> private.instance.attachSubpageInstances;
+   private.instance.scanSubpageinstances
+   (# node: ^InstanceNode;
+   do &InstanceNode[] -> node[];
+      current[] -> node.init; (* recurse *)
+      node[] -> addIndexNode;
+   #);
+   true -> expanded;
+   
+--CPNIndexPageNodeTrianglechildStatus: doPart--
+do (if private.page[]<>NONE then 
+       private.page.getNodesAndSubpagesStatus -> value; 
+   if)
+   
+--CPNIndexPageNodeprivate: descriptor--
+(# page: ^CPNPage;
+#)
+
+--CPNIndexPageNodeonRemoved: doPart--
+do 'PageNode: removing' -> debugIndex;
+   THIS(PageNode)[] -> father.removed;
+   
+--CPNIndexPageNodegetName: doPart--
+do private.page.name -> name[];
+   
+--CPNIndexPageNodeinit: doPart--
+do page[] -> private.page[];
+   true -> expanded;
+   
+--CPNIndexPageNodegetSheet: doPart--
+do (# fake: ^PageInstance;
+   do &CpnSheet[] -> theSheet[];
+      theSheet.init;
+      &PageInstance[] -> fake[];
+      private.page[] -> fake.thePage[];
+      fake[] -> theSheet.setContent;
+   #);
+   
+--CPNIndexPageNodeonChanged: doPart--
+do INNER;
+   
+--CPNIndexNetNodeToolTip: doPart--
+do (if net[]<>NONE then
+       (if net.path[]<>NONE then
+           net.path.copy->theTip[];
+           directorychar -> theTip.put;
+        else
+           '' -> theTip[];
+       if);
+       net.name->theTip.puttext;
+   if);
+   
+-- CPNIndexNetNodeGetInstanceNodePosition:doPart --
+do theIndexNodes[] -> findNode -> (father[], child[], position);
+      
+-- CPNIndexNetNodeGetInstanceNodePositionFindNode:doPart --
+do 0 -> position;
+   findInstanceNode: theList.scan
+     (# theInstanceNode: ^InstanceNode;
+     do (if current## <= InstanceNode## then
+            current[] -> theInstanceNode[];            
+            (if (theInstanceNode.getPageInstance).thePage[] = thePage[] then
+                theInstanceNode.father[] -> father[];
+                theInstanceNode[] -> child[];
+                leave findInstanceNode;
+             else 
+                theInstanceNode.theIndexNodes[] -> findNode -> (father[], child[], position);
+                (if father[] <> NONE then
+                    leave findInstanceNode;
+                if);
+            if);    
+        if);
+        position + 1 -> position;
+     #);
+
+--CPNIndexNetNodeonTextUpdated: doPart--
+do (# theWorkspace: ^CPNWorkspace;
+      status: ^StatusBubble;
+   do this(workspace)[] -> theWorkspace[];
+      (if net.path[] <> none then
+          net[] -> theWorkspace.SaveNet;
+       else
+          ObjectPool.get(# Type::StatusBubble; #) -> status[];
+          'Save failed: No file location chosen for net.' -> status.error;
+      if);
+   #);
+   
+--CPNIndexNetNodegetName: doPart--
+do (if net[] <> none then
+       net.name -> name[];
+   if);
+   
+--CPNIndexNetNodeonChanged: doPart--
+do (# theNet: ^CPNet;
+   do net.getCurrentHighlight -> hilite_color[];
+      (if source##<=CPNet## then
+          source[] -> theNet[];
+          (if not (majorTextItem.content[] -> theNet.theName.equal) 
+              and (not ((getTextEditor).target[]=this(Netnode)[])) then
+              theNet.theName[] -> netName[];
+              netName[] -> majorTextItem.content[];
+          if);
+      if);
+   #);
+     
+--CPNIndexNetNodeinit: doPart--
+do net[] -> step.init;
+   (net.name).copy -> netName[];
+   step[] -> addIndexNode;
+   net[] -> time.init;
+   time[] -> addIndexNode;
+      
+   (# on: @OptionListNode;
+      op: @OptionListOption (# dname:: (# do 'Options' -> value[]; #); #);
+   do op.init;
+      net.options[] -> op.theValue[];
+      op[] -> on.init;
+      on[] -> addIndexNode;
+      on.scanIndexNodes
+      (# 
+      do (if current## <= FolderPathOptionNode## then
+             current[] -> qua
+             (# as:: FolderPathOptionNode;
+             do net[] -> thisObj.net[];
+             #);
+         if);
+      #);
+   #);
+   
+   (* Initialize CommandManager and HistoryNode for the net *)
+   (# theCommandManager: ^CommandManager;
+   do &CommandManager[] -> theCommandManager[];
+      theCommandManager.init;
+      (net[],theCommandManager[]) -> (getCommandManagerManager).associate;
+      theCommandManager[] -> history.init;
+      history[] -> addIndexNode;
+   #);
+   
+   (if net.theGlobals[] <> NONE then
+       &GlobalBoxNode[] -> globals[];
+       net.theGlobals[] -> globals.content[];
+       globals.init;
+       globals[] -> addIndexNode;
+   if);
+   
+   (net.theGlobalMonitor[], true) -> monitors.init;
+   monitors[] -> addIndexNode;
+   
+   (# pages: @integer;
+      theInstanceNode: ^InstanceNode;
+      theSheet: ^Sheet;
+      x: @integer;
+      theCpnWorkspace: ^CpnWorkspace;
+   do net.scanInstanceRoots
+      (# node: ^InstanceNode;
+      do &InstanceNode[] -> node[] -> theInstanceNode[];
+         pages + 1 -> pages;
+         current[] -> node.init;
+         node[] -> addIndexNode;
+      #);
+      rightedge + 100 -> x;
+   #);
+    
+   THIS(NetNode)[] -> net.attachToInstanceRoots;
+   THIS(NetNode)[] -> net.attach;
+   true -> expanded;
+      
+--CPNIndexNetNodeonRemoved: doPart--
+do (if debugging then
+       'Removing %s %s.' 
+         -> debugNetNode(# 
+                      do source[] -> getpatternname -> s; 
+                         (source[]->QUA(# as::Notifier; #)).id[] -> s;
+                      #);
+   if);   
+   (if true
+    //source## <= PageInstance## then       
+       (# theInstance: ^PageInstance;
+          theInstanceNode: ^InstanceNode;
+          deletedNode: @boolean;
+       do false -> deletedNode;
+          search: scanIndexNodes
+            (# Type:: InstanceNode;
+            do (if current.private.instance[] = source[] then
+                   current[] -> removeIndexNode;
+                   true -> deletedNode;
+                   layout;
+                   leave search;
+               if);
+            #);
+          source[] -> theInstance[];            
+        #)
+    //source## <= CPNPage## then
+       0 -> instancenodes;
+       scanIndexNodes(# Type:: InstanceNode;
+           do instancenodes + 1 -> instancenodes
+           #);
+       (if instancenodes = 1 then
+           layout;
+       if);
+    //source## <= ToolCollection## then
+       source[] -> tool[];
+       l: theIndexNodes.scan
+         (# 
+         do current[] -> theNode[];
+            (if theNode.collection[] = tool[] then
+                theNode[] -> removeIndexNode;
+                leave l;
+            if);
+         #);
+       layout;
+   if);
+   INNER;
+   
+--CPNIndexNetNodeonAdded: doPart--
+do (if debugging then
+       'Adding %s %s to %s %s.'
+         -> debugNetNode(# 
+                      do source[] -> getpatternname -> s; 
+                         (source[]->QUA(# as::Notifier; #)).id[] -> s;
+                         source.father[] -> getpatternname -> s;
+                         (source.father[]->QUA(# as::Notifier; #)).id[] -> s;
+                      #);
+   if);
+   (if true
+    //(source## <= PageInstance##) then       
+       (# theInstance: ^PageInstance;
+          theInstanceNode: ^InstanceNode;
+          notAdded: @boolean;
+          oneOfMyKids:
+            (# res: @boolean;
+            do false -> res;
+               scanIt: scanIndexNodes
+               (# theInstanceNode: ^InstanceNode;
+               do (if current## <= InstanceNode## then
+                      current[] -> theInstanceNode[];
+                      (if (theInstanceNode.instance).thePage[] = theInstance.thePage[] then
+                          true -> res;
+                          leave scanIt;
+                      if);
+                  if);
+               #);
+            exit res
+            #);
+       do true -> notAdded;
+          source[] -> theInstance[]; 
+          (if (theInstance[] = theInstance.thePage.prime[]) and
+              ((theInstance.id[] -> theInstance.thePage.lookupInstance) <> none)  and
+              (theInstance.getsuperpageInstance = none) and
+              (not oneOfMyKids) then
+              &InstanceNode[] -> theInstanceNode[];
+              theInstance.thePage.prime[] -> theInstanceNode.init;
+              theInstanceNode[] -> addIndexNode;
+              layout;
+          if); 
+          (if oneOfMyKids and (theInstance.theTransition[] <> none) then
+              search: scanIndexNodes
+                (# Type:: InstanceNode;
+                do (if current.instance = source[] then
+                       current[] -> removeIndexNode;
+                       layout;
+                       leave search;
+                   if);
+                #);
+          if);
+       #);        
+    //(source## <= ToolCollection##) then
+       doit:(# 
+            do scanIndexNodes(# Type::ToolNode
+                   do (if current.collection[] = source[] then
+                          (if debugging then
+                              'Rejected (collection already added)'
+                                -> debugIndex;
+                          if);
+                          leave doit;
+                      if);
+                   #);
+               source[] -> tool[];
+               &ToolNode[] -> theNode[];
+               tool[] -> theNode.init;
+               theNode[] -> theIndexNodes.append;
+               layout;
+            #);
+   if);
+   
+--CPNIndexGlobalBoxNodesort: doPart--
+do theIndexNodes.clear;
+   (content.getTopDeclaration).scanDeclarations
+   (#
+   do current.node[] -> theIndexNodes.append;
+   #);
+   
+--CPNIndexGlobalBoxNodeselectTexteditNode: doPart--   
+do (# dn: ^DeclarationNode;
+   do (if (target[] <> NONE) then
+          (if (target## <= DeclarationNode##) then
+              target[] -> dn[];
+              true -> dn.expanded;
+              dn[] -> target[];
+          if);
+      if);
+   #);
+   
+--CPNIndexGlobalBoxNodenextUp: doPart--
+do (# nextNode: ^AbstractDeclNode; 
+   do (* Keep current node as default *)
+      currentNode[] -> nextNode[];
+      
+      (* Find the successor to current node *)
+      (if theIndexNodes.size > 1 then
+          (* Use head element as default *)
+          (theIndexNodes.head).elm[] -> nextNode[];
+          (if (currentNode[] -> theIndexNodes.at).succ[] <> none then
+              (currentNode[] -> theIndexNodes.at).succ.elm[] -> nextNode[];
+          if);
+      if);
+      
+      nextNode[] -> selectTexteditNode -> elm[];
+   #);   
+   
+--CPNIndexGlobalBoxNodenext: doPart--
+do (# nextNode: ^AbstractDeclNode; 
+   do (if true
+       // currentNode## <= DeclarationNode## then
+          (* Keep the current interior node active as default *)
+          currentNode[] -> nextNode[];
+          
+          (* If there are more declarations, find the next *)
+          (if theIndexNodes.size > 1 then
+              (theIndexNodes.head).elm[] -> nextNode[];
+              (if (currentNode[] -> theIndexNodes.at).succ[] <> none then
+                  (currentNode[] -> theIndexNodes.at).succ.elm[] -> nextNode[];
+              if);
+          if);
+       // currentNode## <= DeclBlockNode## then
+          (* Keep the current node active as default *)
+          currentNode[] -> nextNode[];
+          (if true
+           // currentNode.theIndexNodes.size > 1 then
+              (currentNode.theIndexNodes.head).elm[] -> nextNode[];
+              (* Find a child of this node or the successor *)
+           // theIndexNodes.size > 1 then
+              (theIndexNodes.head).elm[] -> nextNode[];
+              (if (currentNode[] -> theIndexNodes.at).succ[] <> none then
+                  (currentNode[] -> theIndexNodes.at).succ.elm[] -> nextNode[];
+              if);
+          if);
+      if);
+      nextNode[] -> selectTexteditNode -> elm[];
+   #);
+   
+--CPNIndexGlobalBoxNodeforceNext: doPart--   
+do (# currentDeclNode: ^DeclarationNode;
+      new: ^Declaration;
+      newNode: ^AbstractDeclNode;
+      createNewDeclaration:
+        (# 
+        do &Declaration[] -> new[];
+           (if currentNode## <= DeclBlockNode## then
+               true -> new.isBlock;
+           if);
+           new.init;
+        #);
+      addNewToFather:
+        (# theFather: ^Declaration;
+        do currentNode.content.getParent -> theFather[];
+           (new[], currentNode.content[]) -> theFather.addDeclarationAfter;
+        #);
+      expandNewNode:
+        (# theNode: ^DeclarationNode;
+        do (if newNode[] <> none then
+               (if true 
+                // newNode## <= DeclarationNode## then
+                   newNode[] -> theNode[];
+                   true -> theNode.expanded;
+               if);
+               newNode[] -> elm[];
+           if);
+        #);
+   do createNewDeclaration;
+      addNewToFather;
+      currentNode[] -> currentNode.next -> newNode[];
+      expandNewNode;
+   #);
+   
+--CPNIndexGlobalBoxNodeonAdded: doPart--   
+do (# d: ^Declaration;
+   do (if source## <= Declaration## then
+          source[] -> d[];
+          (if d.getParent = content.getTopDeclaration then
+              d[] -> makeDeclNode -> addIndexNode;
+              sort;
+              changed;
+          if);
+      if);
+   #);
+   
+--CPNIndexGlobalBoxNodeonRemoved: doPart--
+do (if source## <= Declaration## then
+       removing: scanIndexNodes
+         (# Type:: AbstractDeclNode;
+         do (if current.content[] = source[] then
+                current[] -> removeIndexNode;
+                leave removing;
+            if);
+         #);
+       changed;
+   if);
+   
+--CPNIndexGlobalBoxNodeonChanged: doPart--
+do (# 
+   do content.getCurrentHighlight -> hilite_color[];
+   #);
+   
+--CPNIndexGlobalBoxNodeinit: doPart--
+do THIS(GlobalBoxNode)[] -> content.attach;
+   (content.getTopDeclaration).scanDeclarations
+   (# 
+   do current[] -> makeDeclNode -> addIndexNode;
+   #);
+   THIS(GlobalBoxNode)[] -> (content.getTopDeclaration).node[];
+   true -> expanded;
+   
+-- CPNIndexHistoryNodePrivate:Descriptor --
+(# manager: ^CommandManager;
+   oldHistoryNode: @AbstractHistoryNode
+     (# fatherType:: HistoryNode;
+        init::
+          (# 
+          do 'Old history'->setTextContent;
+          #);
+        getName:: (# do majorTextItem.content[] -> name[] #);
+        getCommandManager::
+          (# 
+          do (father.getCommandManager) -> theCommandManager[];
+          #);
+        getNet::
+          (# 
+          do father.getNet -> theNet[];
+          #);
+        clear::
+          (# 
+          do father.clear;
+          #);
+     #);
+   numberOfShownCommands: @integer;
+#)
+   
+-- CPNIndexHistoryNodeGetName:doPart --
+do NamesHistoryNode -> getGlobalNames -> name[];
+   INNER;
+   
+-- CPNIndexHistoryNodeObserverOnChanged:doPart --
+do (if source[] = private.manager[] then
+       build;
+   if);
+   
+-- CPNIndexHistoryNodeBuild:doPart --
+do (# node: ^CommandNode;
+   do clearIndexNodes;
+      private.oldHistoryNode.clearIndexNodes;
+      private.manager.redoStack.scan
+      (#
+      do &CommandNode[] -> node[];
+         current[] -> node.setCommand;
+         node.init;
+         (if countIndexNodes < private.numberOfShownCommands then
+             node[] -> addIndexNode;
+          else
+             (if private.oldHistoryNode.father[]=NONE then
+                 private.oldHistoryNode[] -> addIndexNode;
+             if);
+             node[] -> private.oldHistoryNode.addIndexNode;
+         if);
+         node.dim;
+      #);
+      private.manager.undoStack.scanReverse
+      (#
+      do &CommandNode[] -> node[];
+         current[] -> node.setCommand;
+         node.init;
+         (if countIndexNodes < private.numberOfShownCommands then
+             node[] -> addIndexNode;
+          else
+             (if private.oldHistoryNode.father[]=NONE then
+                 private.oldHistoryNode[] -> addIndexNode;
+             if);
+             node[] -> private.oldHistoryNode.addIndexNode;
+         if);
+      #);
+      layout;
+   #);
+   
+-- CPNIndexHistoryNodeClear:doPart --
+do private.manager.redoStack.clear;
+   private.manager.undoStack.clear;
+   clearIndexNodes;
+   private.oldHistoryNode.clearIndexNodes;
+   
+-- CPNIndexHistoryNodeInit:doPart --
+do theCommandManager[] -> private.manager[];
+   observer[] -> private.manager.attach;
+   private.oldHistoryNode.init;
+   10 -> private.numberOfShownCommands;
+   
+-- CPNIndexHistoryNodeGetCommandManager: doPart --
+do private.manager[] -> theCommandManager[];
+   
+-- CPNIndexCommandNodePrivate:Descriptor --
+(# theHistoryNode: ^HistoryNode;
+   theCommand: ^Command;
+#)
+
+-- CPNIndexCommandNodeSetHistoryNode:doPart --
+do theHistoryNode[] -> private.theHistoryNode[];   
+   
+-- CPNIndexCommandNodeGetHistoryNode:doPart --
+do private.theHistoryNode[] -> theHistoryNode[];   
+   
+-- CPNIndexCommandNodeGetName:doPart --
+do private.theCommand.getName -> name[];
+   
+-- CPNIndexDragDeclaration:doPart --
+do (# clip: ^DeclarationDragClipping;
+      com: ^DeclarationDragCommand;
+   do (if target.getCPNet=container.getCPNet then      
+          &DeclarationDragClipping[] -> clip[];
+          (container[], after[], target[]) -> clip.prepare;
+          &DeclarationDragCommand[] -> com[];
+          (target[] -> MakeDeclarationDragClipping, clip[]) -> com.apply;
+          (target.getCPNet,com[]) -> registerCommand;
+      if);
+   #);
+   
+   
+-- DeclBlockNodeNextUp:DoPart --
+do (# nextNode: ^AbstractDeclNode; 
+      nextDeclNode: ^DeclarationNode;
+      fatherNode, grandFatherNode: ^Node;
+   do (* Find the successor to current node *)
+      (if theIndexNodes.size > 1 then
+          (if (currentNode[] -> theIndexNodes.at).succ[] <> none then
+              (currentNode[] -> theIndexNodes.at).succ.elm[] -> nextNode[];
+          if);
+      if);
+      
+      (if nextNode[] <> none then
+          (if true 
+           // nextNode## <= DeclarationNode## then
+              nextNode[] -> nextDeclNode[];
+              true -> nextDeclNode.expanded;
+              nextDeclNode[] -> elm[];
+           // nextNode## <= DeclBlockNode## then
+              nextNode[] -> elm[];
+          if);
+       else 
+          (* No node found - propagate upwards *)
+          father[] -> fatherNode[];
+          (if fatherNode## <= GlobalBoxNode## then
+              THIS(DeclBlockNode)[] -> fatherNode.nextUp -> elm[];
+           else 
+              father.father[] -> grandFatherNode[];
+              fatherNode[] -> grandFatherNode.nextUp -> elm[];
+          if);
+      if);
+   #);
+   
+-- DeclBlockNodeNext:DoPart --
+do (# nextNode: ^AbstractDeclNode;
+      nextDeclNode: ^DeclarationNode;
+      fatherNode, grandFatherNode: ^Node;
+   do (if currentNode[] = none then
+          THIS(DeclBlockNode)[] -> currentNode[];
+      if);
+      (if true 
+       // currentNode## <= DeclBlockNode## then
+          (* If the current node is a block node: *)
+          (* Does it have children? *)
+          (if not currentNode.theIndexNodes.empty then
+              (* If yes, the next node is the first of the 
+               * children *)
+              (currentNode.theIndexNodes.head).elm[] -> nextNode[];
+           else 
+              (* If no, does the current node have a successor
+               * in this node? *)
+              (if (currentNode[] -> theIndexNodes.at) <> none then
+                  (if (currentNode[] -> theIndexNodes.at).succ[] <> none then
+                      (* If yes, use this *)
+                      (currentNode[] -> theIndexNodes.at).succ.elm[] -> nextNode[];
+                  if);
+              if);
+          if);
+       // currentNode## <= DeclarationNode## then
+          (* If the current node is a decl node: *)
+          (* Does the current node have a successor? *)
+          (if (currentNode[] -> theIndexNodes.at).succ[] <> none then
+              (* If yes, use this *)
+              (currentNode[] -> theIndexNodes.at).succ.elm[] -> nextNode[];
+          if);
+      if);
+      (if nextNode[] <> none then
+          (if true 
+           // nextNode## <= DeclarationNode## then
+              true -> expanded;
+              nextNode[] -> nextDeclNode[];
+              true -> nextDeclNode.expanded;
+              nextDeclNode[] -> elm[];
+           // nextNode## <= DeclBlockNode## then
+              nextNode[] -> elm[];
+          if);
+       else 
+          (* No node found - propagate upwards *)
+          father[] -> fatherNode[];
+          (if fatherNode## <= GlobalBoxNode## then
+              THIS(DeclBlockNode)[] -> fatherNode.nextUp -> elm[];
+           else 
+              father.father[] -> grandFatherNode[];
+              fatherNode[] -> grandFatherNode.nextUp -> elm[];
+          if);
+      if);
+   #);
+   
+-- CPNIndexDeclBlockNodeOnAdded:doPart --
+do (if source## <= Declaration## then
+       (# asDeclaration: ^Declaration;
+       do source[] -> asDeclaration[];
+          (if asDeclaration.getParent = content[] then
+              asDeclaration[] -> makeDeclNode -> addIndexNode;
+              sort;
+              changed;
+          if);
+       #);
+   if);
+     
+-- DeclarationNodeGetName:DoPart --
+do (if not majorTextItem.editActive then
+       data.clear;
+       data[] -> content.print;
+   if);
+   (if expander.expanded then
+       data[] -> name[];
+    else
+       content.shortName -> name[];
+   if);
+   
+-- DeclarationNodeOnFocusGained:DoPart --
+do true -> expander.expanded;
+   getName -> setTextContent;
+   
+-- DeclarationNodeOnTextUpdated:DoPart --
+do data[] -> content.parse;
+   data[] -> setTextContent;
+      
+-- DeclarationNodeGetNumberOfLines:DoPart --
+do '\n' -> data.findTextAll 
+   (# 
+   do lines + 1 -> lines; 
+   #); 
+   
+-- DeclarationNodeNext:DoPart --
+do inner;
+   (if elm[] = none then
+       (# fatherNode: ^Node;
+       do father[] -> fatherNode[];
+          THIS(DeclarationNode)[] -> fatherNode.nextUp -> elm[];
+       #);
+   if);
+   
+-- DeclarationNodeForceNext:DoPart --
+do (# fatherNode: ^Node;
+   do father[] -> fatherNode[];
+      THIS(DeclarationNode)[] -> fatherNode.forceNext -> elm[];
+   #);
+   
+-- DeclarationNodeOnChanged:DoPart --
+do content.getCurrentHighlight -> hilite_color[];
+   
+-- DeclarationNodeGetHeight:DoPart --
+do (if not majorTextItem.editActive and 
+       not expander.expanded then
+       getName -> arial.measureText -> (width, height);
+    else 
+       majorTextItem.content[] -> arial.measureText -> (width, height);
+   if);
+   height + 2 -> height;
+   
+-- DeclarationNodeExpanderChanged:DoPart --
+do (# 
+   do stopTextEditor;
+      (if expander.expanded or avoidShortForm then
+          data[] -> setTextContent;
+       else
+          content.shortName -> setTextContent;
+      if);
+   #);
+   
+-- DeclarationNodeUpdate:DoPart --
+do (if not avoidShortForm then
+       expander.makeTriangle -> presentation.add;
+   if);
+   
+-- DeclarationNodeToolTip:DoPart --
+do (# tmp: ^text;
+   do (if data[]<>NONE then
+          data.copy->theTip[];
+       else
+          ''->theTip;
+      if);
+      (if content.mldecl[]<>NONE then
+          content.mldecl.error->tmp[];   
+          (if (tmp[]<>NONE) AND NOT tmp.empty then
+              NamesDeclNode -> getGlobalNames -> theTip.puttext;
+              tmp[] -> theTip.puttext;
+          if);
+      if);
+   #);
+   
+-- DeclarationNodeInit:DoPart --
+do THIS(DeclarationNode)[] -> content.attach;
+   &Text[] -> data[];   
+   
+   content[] -> FlowsNode.content[];
+   content[] -> WeightsNode.content[];
+   FlowsNode.init;
+   WeightsNode.init;
+   (if isInv then
+       FlowsNode[] -> addIndexNode;
+       WeightsNode[] -> addIndexNode;
+   if);
+   
+   (if avoidShortForm then
+       true -> expanded;
+   if);
+   
+-- CPNIndexToolBoxNodeInit:doPart --
+do THIS(ToolBoxNode)[] -> tools.attach;
+   tools.tools.scan
+   (# node: ^ToolNode;
+   do &ToolNode[] -> node[];
+      current[] -> node.init;
+      node[] -> addIndexNode;
+   #);
+   
+-- CPNIndexToolBoxNodeOnAdded:doPart --
+do (if source## <= ToolCollection## then
+       source[] -> tool[];
+       &ToolNode[] -> theNode[];
+       tool[] -> theNode.init;
+       theNode[] -> addIndexNode;
+       layout;
+   if);
+   
+-- CPNIndexToolBoxNodeOnRemoved:doPart --
+do source[] -> tool[];
+   l: scanIndexNodes
+     (# 
+     do current[] -> theNode[];
+        (if theNode.collection[] = tool[] then
+            theNode[] -> removeIndexNode;
+            leave l;
+        if);
+     #);
+   layout;
+   
+-- CPNIndexToolNodeGetName:doPart --
+do collection.name[] -> name[];
+   
+-- CPNIndexToolNodeGetSheet:doPart --
+do (# theCollection: ^ToolCollection;
+   do (if debugging then 
+          'get-sheet: ' -> debug; 
+      if);
+      
+      &ToolSheet[] -> theSheet[];
+      theSheet.init;
+      collection[] -> theCollection[];
+      
+      theCollection.onChanged;
+      theCollection[] -> theSheet.setContent;
+   #);
+   
+-- CPNIndexToolNodeInit:doPart --
+do 
+   (*
+    * Remove nodes for tools in index, as people misunderstand them /mw
+   collection.cells.scan
+   (# tc: ^ToolCellNode;
+   do &ToolCellNode[] -> tc[];
+      current[] -> tc.init;
+      this(ToolNode)[] -> tc.setToolNode;
+      tc[] -> addIndexNode;
+   #);
+   *)
+   
+-- CPNIndexCommandNodeSetCommand:doPart --
+do theCommand[] -> private.theCommand[];
+   
+-- CPNIndexCommandNodeGetCommand:doPart --
+do private.theCommand[] -> theCommand[];
+   
+-- CPNIndexToolNodeSetToolNode:doPart --
+do theToolNode[] -> private.theToolNode[];
+   
+-- CPNIndexToolCellNodeShowSheet:doPart --
+do private.theToolNode.getName -> getShortName -> theSheet.toptab.label[];
+   theSheet.toptab.changed;
+   
+-- CPNIndexToolCellNodeGetSheet:doPart --
+do private.theToolNode.getSheet -> theSheet[];
+   
+-- CPNIndexToolCellNodeGetName:doPart --
+do private.cell.name[] -> name[];
+   
+-- CPNIndexToolCellNodeInit:doPart --
+do cell[] -> private.cell[];
+   (if cell.theInstrument## <= CPNGenericInstrument## then
+       cell.theInstrument[] -> private.theInstrument[];
+       (if private.theInstrument.options[] <> NONE then
+           (# theNode: ^OptionListNode;
+              theOption: ^OptionListOption;
+           do &OptionListNode[] -> theNode[];
+              &OptionListOption[] -> theOption[];
+              private.theInstrument.options[] -> theOption.value;
+              theOption[] -> theNode.init;
+              theNode.scanIndexNodes
+              (# type:: OptionNode;
+              do current[] -> THIS(ToolCellnode).addIndexNode;
+              #);
+              theNode.clearIndexNodes;
+              layout;
+           #)
+       if);
+   if);
+   
+-- CPNIndexToolCellNodePrivate:descriptor --
+(# theInstrument: ^CPNGenericInstrument;
+   theToolNode: ^ToolNode;
+   cell: ^ToolCell;          
+#)
+
+   
+   
+--TabNodeGetName:doPart--
+do &Text[] -> name[];
+   theTab.label[] -> name.puttext;
+   ' ' -> name.puttext;
+   theTab.secondary[] -> name.puttext;
+   
+--TabNodeInit:doPart--
+do THIS(TabNode)[] -> theTab.attach;
+   THIS(TabNode)[] -> theTab.theSheet.attach;
+   
+--TabNodeGetSheet:doPart--
+do (if true
+    // theTab.theSheet## <= MLCodeOptionSheet ## then
+       &MLCodeOptionSheet[] -> theSheet[];
+    // theTab.theSheet## <= CPNSheet## then
+       &CpnSheet[] -> theSheet[];
+    // theTab.theSheet## <= ToolSheet## then
+       &ToolSheet[] -> theSheet[];
+    // theTab.theSheet## <= TextSheet## then
+       &TextSheet[] -> theSheet[];
+   if);
+   theSheet.init;
+   theTab.theSheet.content[] -> theSheet.setContent;
+   
+--TabNodeOnChanged:doPart--
+do (# cpnt: ^CPNTab;
+   do (if theTab## <= CpnTab## then
+          theTab[] -> cpnt[];
+          NONE -> hilite_color[];
+          (if cpnt.thesheet.content[] <> NONE then
+              cpnt.thesheet.content.thepage.getCurrentHighlight -> hilite_color[];
+          if);
+      if);
+   #);
+   
+-- TextOptionNodeUpdate:doPart --
+do (# colon: ^TextItem;
+   do &TextItem[] -> colon[];
+      colon.init;
+      ':' -> colon.content[];
+      xmax + 6 -> colon.x;
+      colon[] -> presentation.add;
+      xmax + 14 -> contentText.x;
+      contentText[] -> presentation.add;
+   #);
+   
+-- FolderPathOptionNodeEditable:DoPart --
+do true -> value;
+   
+-- FolderPathOptionNodeShowSheet:DoPart --
+do 
+   
+-- OptionListNodeBuildOptions:DoPart --
+do this(OptionListNode).theIndexNodes.clear;
+   (content.value).options.scan
+   (# rendered: @boolean;
+      onOption:
+        (# OptionType:< Option;
+           content: ^OptionType;
+           OptionNodeType:< OptionNode;
+           new: ^OptionNodeType;
+        enter content[]
+        do (if content.showme AND NOT rendered then
+               &OptionNodeType[] -> new[];
+               content[] -> new.init;
+               new[] -> content.attach;
+               new[] -> this(OptionListNode).addIndexNode;
+           if);
+        #);
+      onBooleanOption: onOption
+        (# OptionType:: BooleanOption;
+           OptionNodeType:: BooleanOptionNode;
+        #);
+      onFolderPathOption: onOption
+        (# OptionType:: FolderPathOption;
+           OptionNodeType:: FolderPathOptionNode;
+        #);
+      onTextOption: onOption
+        (# OptionType:: TextOption;
+           OptionNodeType:: TextOptionNode;
+        #);
+      onMLCodeOption: onOption
+        (# optionType:: MLCodeOption;
+           OptionNodeType:: MLCodeOptionNode;
+        #);
+      onXMLOption: onOption
+        (# OptionType:: XMLOption;
+           OptionNodeType:: XMLOptionNode;
+        #);
+      onColorOption: onOption
+        (# OptionType:: ColorOption;
+           OptionNodeType:: ColorOptionNode;
+        #);
+      onIntegerOption: onOption
+        (# OptionType:: IntegerOption;
+           OptionNodeType:: IntegerOptionNode;
+        #);
+      onRealOption: onOption
+        (# OptionType:: RealOption;
+           OptionNodeType:: RealOptionNode;
+        #);
+      onOptionListOption: onOption
+        (# OptionType:: OptionListOption;
+           OptionNodeType:: OptionListNode;
+        #);
+   do (if true
+       // (current## <= MLCodeOption##) then
+          (* MLCodeOption## <= TextOption## so remember to test 
+           * in the right order. 
+           *)
+          current[] -> onMLCodeOption;
+       // current## <= FolderPathOption## then
+          current[] -> onFolderPathOption;
+       // (current## <= TextOption##) then
+          current[] -> onTextOption;
+       // (current## <= BooleanOption##) then
+          current[] -> onBooleanOption;
+       // (current## <= IntegerOption##) then
+          current[] -> onIntegerOption;
+       // (current## <= RealOption##) then
+          current[] -> onRealOption;
+       // (current## <= ColorOption##) then
+          current[] -> onColorOption;
+       // (current## <= XMLOption##) then
+          current[] -> onXMLOption;
+       // (current## <= OptionListOption##) then
+          current[] -> onOptionListOption;
+      if);
+      layout;
+   #);
+   
+-- CPNIndexMakeAbstractMonitorNodeTextEditor:DoPart --
+do scanIndexNodes
+   (# 
+   do (if current## <= NetNode## then
+          current[] -> qua
+          (# as:: NetNode;
+          do (if thisObj.net[] = theMonitor.theCPNet[] then
+                 scan: thisObj.monitors.scanAbstractNodeTree
+                   (# 
+                   do (if current.getMonitor = theMonitor[] then
+                          current.expandFathers;
+                          current[] -> makeTextEditor;
+                          leave scan;
+                      if);
+                   #);
+             if);
+          #);             
+      if);
+   #);
+
+

@@ -1,0 +1,207 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '~beta/postwimp/workspace';
+INCLUDE '../cpntools/wselements/cpntoken';
+BODY 'private/highlightablebody';
+
+-- Workspacelib: Attributes --
+
+(* Static structure flags *)
+any_status: (# exit -3 #);
+incorrect: (# exit -2 #);
+nameError: (# exit -1 #);
+unchecked: (# exit 0 #);
+checking: (# exit 1 #);
+checked: (# exit 2 #);
+compiling: (# exit 3 #);
+compiled: (# exit 4 #);
+
+statusToString:
+  (# status: @integer;
+     string: ^Text;
+  enter status
+  <<SLOT statusToString:doPart>>         
+  exit string[]
+  #);
+
+StatusContainer:
+  (# private: @<<SLOT StatusContainerPrivate:descriptor>>;
+     init: (# <<SLOT StatusContainerInit:doPart>> #);     
+     toString:
+       (# str: ^Text;
+       <<SLOT StatusContainerToString:doPart>>
+       exit str[]
+       #);
+     decrement:
+       (# status: @integer;
+       enter status
+       <<SLOT StatusContainerDecrement:doPart>>
+       #);
+     increment:
+       (# status: @integer;
+       enter status
+       <<SLOT StatusContainerIncrement:doPart>>
+       #);
+     calculateLeastUpperBound:
+       (# 
+       <<SLOT StatusContainerCalculateLeastUpperBound:doPart>>
+       #);
+     leastUpperBound:
+       (# status: @integer;
+       <<SLOT StatusContainerLeastUpperBound:doPart>>
+       exit status
+       #);
+  #);
+
+(* Instance structure flags *)
+anyStatus: (# exit 98 #);
+hasSimulationError: (# exit 99 #);
+isUnassigned: (# exit 100 #);
+isEnabled: (# exit 101 #);
+noRemarks: (# exit 102 #);
+
+InstanceStatusContainer:
+  (# private: @<<SLOT InstanceStatusContainerPrivate:descriptor>>;
+     init: (# <<SLOT InstanceStatusContainerInit:doPart>> #);     
+     toString:
+       (# str: ^Text;
+       <<SLOT InstanceStatusContainerToString:doPart>>
+       exit str[]
+       #);
+     decrement:
+       (# status: @integer;
+       enter status
+       <<SLOT InstanceStatusContainerDecrement:doPart>>
+       #);
+     increment:
+       (# status: @integer;
+       enter status
+       <<SLOT InstanceStatusContainerIncrement:doPart>>
+       #);
+     calculateLeastUpperBound:
+       (# 
+       <<SLOT InstanceStatusContainerCalculateLeastUpperBound:doPart>>
+       #);
+     leastUpperBound:
+       (# status: @integer;
+       <<SLOT InstanceStatusContainerLeastUpperBound:doPart>>
+       exit status
+       #);
+     numberOfIsEnabled: IntegerValue
+       (# <<SLOT InstanceStatusContainerNumberOfIsEnabled:DoPart>> #);
+     numberOfIsUnassigned: IntegerValue
+       (# <<SLOT InstanceStatusContainerNumberOfIsUnassigned:DoPart>> #);
+  #);
+
+getHighlight:
+  (# status: @integer;
+     highlight: ^Color;
+  enter status
+  <<SLOT GetHighlight:DoPart>>
+  exit highlight[]
+  #);
+
+highlight_color: 
+  (# exit (0,1,1)->&Color #);
+compile_color: 
+  (# exit (1, 0xd7/255, 0)->&Color #);
+check_color: 
+  (# exit (1, 0x8c/255, 0)->&Color #);
+error_color: 
+  (# exit (1, 0, 0)->&Color #);
+depend_color: 
+  (# exit (0, 0, 1)->&Color #);
+fusion_color: 
+  (# exit (1, 0, 1)->&Color #);
+sim_color: 
+  (# exit token_color #);
+enabled_color: 
+  (# exit sim_color #);
+preenabled_color: 
+  (# exit olive #);
+nameerror_color: 
+  (# exit (0.8,0.3,0.3)->&Color #);
+unassignedport_color:
+  (# exit (0.1,0.1,0.1)->&Color #);
+
+
+statusToColor:
+  (# status: @integer;
+     theColor: ^Color;
+  enter status
+  do (if status
+      //incorrect then
+         error_color -> theColor[];
+      //unchecked
+      // checking then
+         check_color -> theColor[];
+      //checked
+      //compiling then
+         compile_color -> theColor[];
+     if);
+  exit theColor[]
+  #);
+
+Highlightable: ContentItem
+  (# private: @<<SLOT HighlightablePrivate:Descriptor>>;
+     
+     debugNotifications:: (# do false -> value #);
+     
+     fatherType::< Notifier;
+     qerror: ^MessageBubble;     
+     qerrorMsg: ^Text;
+     addError: 
+       (# errorElement: ^Highlightable;
+       enter (errorElement[], qerrorMsg[])
+       <<SLOT HighlightableAddError:DoPart>> 
+       #);       
+     removeError: (# <<SLOT HighlightableRemoveError:DoPart>> #);
+     getCurrentHighlight:< 
+       (# currentHighlight: ^Color;
+       <<SLOT HighlightableGetCurrentHighlight:DoPart>>
+       exit currentHighlight[]
+       #);
+     setHalo:<
+       (# halo: ^Color
+       enter halo[]
+       <<SLOT HighlightableSetHalo:DoPart>>
+       #);     
+     getHalo:<
+       (# halo: ^Color
+       <<SLOT HighlightableGetHalo:DoPart>>
+       exit halo[]
+       #);     
+     highlight:
+       (# 
+       do highlight_color -> setHalo;
+       #);
+     lowlight:
+       (# 
+       do NONE -> setHalo;
+       #);     
+     init::< (# <<SLOT HighlightableInit:DoPart>> #);
+  #);
+

@@ -1,0 +1,695 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../cpnet';
+
+-- TransitionPrivate:Descriptor --
+(# theTransGuard: ^TransGuard;
+   theTransTime: ^TransTime;
+   theTransAction: ^TransAction;
+   theTransChannel: ^TransChannel;
+   theTransPriority: ^TransPriority;
+   theSubpageInfo: ^SubpageInfo;
+   theSubpage: ^CPNPage;
+   transActionSyntaxError: @boolean;
+   explicit: @boolean;
+   init:
+     (# 
+     do false -> transActionSyntaxError;
+        (7.2,-3)->deltaPositionOfBindingIndex;
+        false -> explicit;
+     #);
+#)
+
+-- TransitionInit:DoPart --
+do private.init;
+
+-- TransitionSetTransActionSyntaxError:DoPart --
+do error -> private.transActionSyntaxError;
+   (if error then       
+       (any_status, incorrect) -> changeStatus;
+       (getTransAction, SyntaxErrorInTransAction -> getGlobalNames) 
+         -> addError;
+   if);
+
+-- TransitionSetCPNPage:doPart --
+do theCPNPage[] -> private.theTransGuard.setCPNPage;
+   theCPNPage[] -> private.theTransTime.setCPNPage;
+   theCPNPage[] -> private.theTransAction.setCPNPage;
+   theCPNPage[] -> private.theTransChannel.setCPNPage;
+   theCPNPage[] -> private.theTransPriority.setCPNPage;
+   (if private.theSubpageInfo[] <> none then
+       theCPNPage[] -> private.theSubpageInfo.setCPNPage;       
+   if);
+   
+-- TransitionGetElementsToAddToGroupWithThisElement: doPart --
+do (if theGroup[]<>NONE then
+       scanArcs
+       (# 
+       do (if current.placeEnd[] -> theGroup.isMember then
+              current[] -> theElements.append;
+              (current.getInscriptions).scan
+              (# 
+              do current[] -> theElements.append;
+              #);
+          if);
+       #);
+   if);
+   
+   
+-- TransitionScanInstances: doPart --
+do (if getCPNPage <> NONE then
+       (getCPNPage).scanInstances
+       (#
+       do id[] -> current.lookupTransitionInstance -> this(scanInstances).current[];
+          (if this(scanInstances).current[] <> none then
+              inner scanInstances;
+          if);
+       #);
+   if);
+
+-- TransitionScanSubpageInstances: doPart --
+do (if getSubpage <> none then
+       (getSubpage).scanInstances
+       (#
+       do (if current.theTransition[] = this(Transition)[] then
+              current[] -> theSubpageInstance[];
+              inner scanSubpageInstances;
+          if);
+       #);
+   if);
+   
+-- TransitionScanSurroundingPlaces:DoPart --
+do (# places: @PlaceIDDictionary;
+   do places.init;
+      scanArcs
+      (# 
+      do (if (current.placeEnd.id[], current.placeEnd[]) -> places.associate then
+             current.placeEnd[] -> this(scanSurroundingPlaces).current[];
+             inner scanSurroundingPlaces
+         if);
+      #);
+   #);
+   
+-- TransitionChangeStatus: doPart --
+do scanArcs
+   (#
+   do status -> current.status;
+   #);
+   (if status = unchecked then
+       scanInstances
+       (# 
+       do false -> current.setEnabled;
+       #);
+   if);
+   
+-- TransitionGetTransGuard:doPart --
+do private.theTransGuard[] -> theTransGuard[];
+   
+-- TransitionGetTransTime:doPart --
+do private.theTransTime[] -> theTransTime[];
+   
+-- TransitionGetTransAction:doPart --
+do private.theTransAction[] -> theTransAction[];
+
+-- TransitionGetTransChannel:doPart --
+do private.theTransChannel[] -> theTransChannel[];
+
+-- TransitionGetTransPriority:doPart --
+do private.theTransPriority[] -> theTransPriority[];
+
+-- TransitiongetSubPageInfo: dopart --
+do private.theSubpageInfo[] -> theSubpageInfo[];
+
+-- TransitionGetSubpage:doPart --
+do private.theSubpage[] -> theSubpage[]
+   
+-- TransitionSetSubPageInfo:doPart --
+do theSubPageInfo[] -> private.theSubPageInfo[];
+   (if theSubPageInfo[] <> none then
+       (if isLolited then
+           theSubPageInfo.lolite;
+        else
+           theSubPageInfo.hilite;
+       if);
+   if);
+
+-- TransitionSetTransGuard:dopart --
+do (if (theTransGuard[] = none) and
+       (private.theTransGuard[] <> none) then
+       private.theTransGuard[] -> removeMessageBubble;
+   if);
+   (if private.theTransGuard[] <> NONE then (* the first time *)
+       this(Transition)[] -> private.theTransGuard.detach;
+       NONE -> private.theTransGuard.setTransition;
+   if);
+   (if theTransGuard[] = none then
+       &TransGuard[] -> private.theTransGuard[];
+       private.theTransGuard.init;
+       this(Transition)[] -> private.theTransGuard.setTransition;
+       private.theTransGuard.defaultSnap;
+       none -> private.theTransGuard.setInscription;
+    else
+       theTransGuard[] -> private.theTransGuard[];
+   if);
+   this(Transition)[] -> private.theTransGuard.attach;
+   this(Transition)[] -> private.theTransGuard.setTransition;
+   getCPNPage -> private.theTransGuard.setCPNPage;
+   
+-- TransitionSetTransTime:dopart --
+do (if private.theTransTime[] <> NONE then (* the first time *)
+       this(Transition)[] -> private.theTransTime.detach;
+       NONE -> private.theTransTime.setTransition;
+   if);
+   (if theTransTime[] = none then
+       &TransTime[] -> private.theTransTime[];
+       private.theTransTime.init;
+       this(Transition)[] -> private.theTransTime.setTransition;
+       private.theTransTime.defaultSnap;
+       none -> private.theTransTime.setInscription;
+    else
+       theTransTime[] -> private.theTransTime[];
+   if);
+   this(Transition)[] -> private.theTransTime.attach;
+   this(Transition)[] -> private.theTransTime.setTransition;
+   getCPNPage -> private.theTransTime.setCPNPage;
+   
+-- TransitionSetTransAction:dopart --
+do (if private.theTransAction[] <> NONE then (* the first time *)
+       this(Transition)[] -> private.theTransAction.detach;
+       NONE -> private.theTransAction.setTransition;
+   if);
+   (if theTransAction[] = none then
+       &TransAction[] -> private.theTransAction[];
+       private.theTransAction.init;
+       this(Transition)[] -> private.theTransAction.setTransition;
+       private.theTransAction.defaultSnap;
+       none -> private.theTransAction.setInscription;
+    else
+       theTransAction[] -> private.theTransAction[];
+   if);
+   this(Transition)[] -> private.theTransAction.attach;
+   this(Transition)[] -> private.theTransAction.setTransition;
+   getCPNPage -> private.theTransAction.setCPNPage;
+   (if getCPNPage <> none then
+       private.theTransAction.onTextUpdated;
+   if);
+
+-- TransitionSetTransChannel:dopart --
+do (if private.theTransChannel[] <> NONE then (* the first time *)
+       this(Transition)[] -> private.theTransChannel.detach;
+       NONE -> private.theTransChannel.setTransition;
+   if);
+   (if theTransChannel[] = none then
+       &TransChannel[] -> private.theTransChannel[];
+       private.theTransChannel.init;
+       this(Transition)[] -> private.theTransChannel.setTransition;
+       private.theTransChannel.defaultSnap;
+       none -> private.theTransChannel.setInscription;
+    else
+       theTransChannel[] -> private.theTransChannel[];
+   if);
+   this(Transition)[] -> private.theTransChannel.attach;
+   this(Transition)[] -> private.theTransChannel.setTransition;
+   getCPNPage -> private.theTransChannel.setCPNPage;
+   (if getCPNPage <> none then
+       private.theTransChannel.onTextUpdated;
+   if);
+   
+-- TransitionSetTransPriority:dopart --
+do (if private.theTransPriority[] <> NONE then (* the first time *)
+       this(Transition)[] -> private.theTransPriority.detach;
+       NONE -> private.theTransPriority.setTransition;
+   if);
+   (if theTransPriority[] = none then
+       &TransPriority[] -> private.theTransPriority[];
+       private.theTransPriority.init;
+       this(Transition)[] -> private.theTransPriority.setTransition;
+       private.theTransPriority.defaultSnap;
+       none -> private.theTransPriority.setInscription;
+    else
+       theTransPriority[] -> private.theTransPriority[];
+   if);
+   this(Transition)[] -> private.theTransPriority.attach;
+   this(Transition)[] -> private.theTransPriority.setTransition;
+   getCPNPage -> private.theTransPriority.setCPNPage;
+
+-- TransitioncreateSubPageInfo: dopart --
+do ('creating a subpageinfo from something', cpnml[] <> NONE) -> assert (# #);
+   &SubPageInfo[] -> theSubPageInfo[];
+   theSubPageInfo.init;
+   cpnml[] -> theSubPageInfo.setCPNML;
+   getCPNPage -> theSubPageInfo.setCPNPage;
+   this(Transition)[] -> theSubPageInfo.setTransition;
+   theSubPageInfo.defaultSnap;
+   
+-- TransitionHasSubpageInfo:doPart --
+do private.theSubpageInfo[] <> none -> value;
+   
+-- TransitionIsSubstituationTransition:doPart --
+do getSubpage <> none -> value;
+   
+-- TransitionSetSubpage:doPart --
+do (# onlyUnderOneTransition: BooleanValue
+        (# 
+        do true -> value;
+           scan: (getCPNPage).scanTransitions
+             (# 
+             do (if (current[] <> this(Transition)[]) and
+                    (current.getSubpage = private.theSubpage[]) then
+                    false -> value;
+                if);
+             #);
+        #);
+   do (if (private.theSubpage[] <> none) and
+          (((getCPNPage).id[] -> private.theSubpage.lookupTopCPNPage) <> none) and          
+          onlyUnderOneTransition then
+          getCPNPage -> private.theSubpage.removeTopCPNPage;
+          private.theSubpage[] -> (getCPNPage).removeSubpage;          
+      if);
+      
+      theSubpage[] -> private.theSubpage[];
+      
+      (if (theSubpage[] <> none) and
+          (((getCPNPage).id[] -> theSubpage.lookupTopCPNPage) = none) then
+          getCPNPage -> theSubpage.addTopCPNPage;
+          theSubpage[] -> (getCPNPage).setSubpage;          
+      if);      
+   #);
+   
+-- TransitionRemovePortSocketAssignment: dopart --
+do A.delete;
+   semanticChanged;
+
+-- TransitionAddPortSocketAssignment: dopart --
+do (*'TransitionAddPortSocketAssignment'->debugtemp;   *)
+   &Assignment[] -> A[];
+   (port[], socket[], this(Transition)[]) -> A.init;
+
+   (*('not (port.id[] -> socket.id.equals)', not (port.id[] -> socket.id.equal)) -> assert (# #);*)
+
+-- TransitionSetPortSocketPair: dopart --
+do (if (P1[] <> NONE) and (P2[] <> NONE) then
+       (*('not (p1.id[] -> p2.id.equals)', not (p1.id[] -> p2.id.equal)) -> assert (# #);
+	'TransitionSetPortSocketPair'->debugtemp;*)
+       (P1[],P2[]) -> AddPortSocketAssignment;
+       semanticChanged;
+       (*P2.transitivelyMarkPorts;
+	P2.transitivelyMarkSockets;*)
+   if);
+
+-- TransitionIntersect: dopart --
+do position -> MakePoint -> pos[];
+   width / 2 -> w;
+   height / 2 -> h;
+   p.x - pos.x -> x0;
+   p.y - pos.y -> y0;
+   (if true
+    //x0 > w then
+       w -> q.x;
+    //x0 < -w then
+       -w -> q.x;
+    else
+       0 -> q.x;
+   if);
+
+   (if (x0 = 0) then
+       0 -> q.y;
+    else
+       q.x * y0 / x0 -> q.y;
+   if);
+   (if (q.x = 0) OR (q.y < -h) OR (q.y > h) then
+       (if true
+        //y0 < -h then
+           -h -> q.y;
+        //y0 > h then
+           h -> q.y;
+        else
+           0 -> q.y;
+       if);
+       (if (y0 = 0) then
+           0 -> q.x;
+        else
+           q.y * x0 / y0 -> q.x;
+       if);
+   if);
+   q.x + pos.x -> q.x;
+   q.y + pos.y -> q.y;
+
+-- TransitionGetInscriptions:doPart --
+do private.theTransAction[] -> theList.append;
+   private.theTransChannel[] -> theList.append;
+   private.theTransPriority[] -> theList.append;
+   private.theTransGuard[] -> theList.append;
+   private.theTransTime[] -> theList.append;
+
+-- TransitionGetHierarchyInfos:doPart --
+do (if private.theSubPageInfo[] <> NONE then
+       private.theSubPageInfo[] -> theList.append;
+   if); 
+
+
+-- TransitiongetSlaves: doPart --
+do (if getCPNPage <> NONE then
+       (getCPNPage).scanArcs
+       (# 
+       do (if current.transEnd[] = THIS(Transition)[] then
+              (if current.getAnnotation <> NONE then
+                  current.getAnnotation -> theList.append;
+              if);
+              current[] -> theList.append;
+          if);
+       #);
+   if);
+   private.theTransGuard[] -> theList.append;
+   private.theTransAction[] -> theList.append;
+   private.theTransChannel[] -> theList.append;
+   private.theTranspriority[] -> theList.append;
+   private.theTransTime[] -> theList.append;
+   (if private.theSubPageInfo[] <> NONE then
+       private.theSubPageInfo[] -> theList.append;
+   if);
+
+-- TransitiongetAnchors: doPart --
+do (x + a, y - b) -> MakePoint -> anchors.append;
+   (x - a, y - b) -> MakePoint -> anchors.append;
+   (x - a, y + b) -> MakePoint -> anchors.append;
+   (x + a, y + b) -> MakePoint -> anchors.append;
+
+-- Transitiondelete: doPart --
+do (any_status, unchecked) -> ChangeStatus;
+   removeError;
+   (*   ((getCPNPage).transitionNames[],Transition##) -> nameChanged;*)
+   (getCPNPage).transitionNames[] -> nameChanged;
+
+-- TransitionClone: doPart --
+do (# theGuard: ^TransGuard;
+      theTime: ^TransTime;
+      theAction: ^TransAction;
+      theChannel: ^TransChannel;
+      thePriority: ^TransPriority;
+   do private.theTransGuard.clone -> theGuard[] -> new.setTransGuard;
+      new[] -> theGuard.setTransition;
+      
+      private.theTransTime.clone -> theTime[] -> new.setTransTime;
+      new[] -> theTime.setTransition;
+      
+      private.theTransAction.clone -> theAction[] -> new.setTransAction;
+      new[] -> theAction.setTransition;
+      
+      private.theTransChannel.clone -> theChannel[] -> new.setTransChannel;
+      new[] -> theChannel.setTransition;
+      
+      private.theTransPriority.clone -> thePriority[] -> new.setTransPriority;
+      new[] -> thePriority.setTransition;
+      
+      private.explicit -> new.setExplicit;
+    #);
+
+-- Transitionnext: doPart --
+do (# theTransGuard: ^TransGuard;
+      (*       theTextItem: ^TextItem; *)
+   do getTransGuard -> elm[] -> theTransGuard[];
+      theTransGuard.setTextItem;
+      (*       theTransGuard.getTextItem -> theTextItem[]; *)
+      (*       (if theTextItem[] <> NONE then *)
+      (*           (if theTextItem.content[] = NONE then *)
+      (*               '' -> theTransGuard.cpnml[]; *)
+      (*               theTransGuard.cpnml[] -> theTextItem.content[]; *)
+      (*           if); *)
+      (*       if); *)
+      semanticChanged;
+   #);
+
+-- TransitiononTextUpdated: doPart --
+do (getCPNPage).transitionNames[] -> nameChanged;
+
+-- TransitiononSemanticChanged: doPart --
+do (* Remove error messages on arcs. *)
+   (getCPNPage).scanArcs
+   (# 
+   do (if current.transend[] = THIS(Transition)[] then
+          current.removeError;
+      if);
+      (*(if current.placeEnd.hasPortSocketTypeError or
+       current.placeEnd.isConnectedToSubTransitionButNotAssignedError then
+       current.placeEnd.removeError;
+       if);*)
+   #);
+   removeError;
+   scanInstances 
+   (# 
+   do current.removeError; 
+      (if not THIS(Transition).isSubstitutionTransition then
+          NONE -> current.thePortSocketDialog[]; (*Bug #1931*)
+      if);
+      (if current.thePortSocketDialog[]<>NONE then
+          current.thePortSocketDialog.onSemanticChanged;
+      if);
+   #);
+
+-- TransitiononChanged: doPart --
+do scanInstances (* to get the errorMessage placed right *)
+   (# 
+   do position -> current.position;
+   #);
+   
+-- TransitionlocalCheck: doPart --
+do (# atLeastOneArc, allArcsHaveAnnotation, allPlacesHaveType: @boolean;
+      allSocketPlacesIsAssigned, allPlacesHasNoAssignmentChainError: @boolean;
+      allCurrentMarkingsHasNoError: @boolean;
+      allPlaceAreChecked: @boolean;
+      IAmFine: @boolean;
+      warning: ^Text;
+      portok: @boolean;
+   do (* Check that:
+       *   - there is at least one arc
+       *   - all arcs has an annotation
+       *   - all places have a type
+       *)
+      hasArcs -> atLeastOneArc;
+      true -> allPlacesHaveType;
+      true -> allArcsHaveAnnotation;
+      true -> allSocketPlacesIsAssigned;
+      true -> allPlacesHasNoAssignmentChainError;
+      true -> allCurrentMarkingsHasNoError;
+      true -> allPlaceAreChecked;
+      
+      (if not private.transActionSyntaxError then
+          check: scanArcs
+	    (# socketPlaceIsAssigned, portPlaceIsAssigned: @boolean;
+	    do (current.getPlaceEnd).scanInstances
+               (# do (if current.currentMarkingError then
+                         false -> allCurrentMarkingsHasNoError;
+                         (* 'TransitionlocalCheck: not allCurrentMarkingsHasNoError'->debugtemp; *)
+                         leave check;
+                     if);
+               #);
+	       (if (current.getPlaceEnd).getPlaceType = none then
+	           false -> allPlacesHaveType;
+	           (* 'TransitionlocalCheck: not allPlacesHaveType'->debugtemp; *)
+	           leave check;
+	       if);
+	       (* has to check if the place is uncheck!? (#930) /omega*)
+	       (if (current.getPlaceEnd).status = unchecked then
+	           false -> allPlaceAreChecked;
+                   (* 'TransitionlocalCheck: not allPlaceAreChecked'->debugtemp; *)
+	           leave check;
+	       if);
+	       (if (getSubpage = none) and
+                   ((current.getAnnotation = NONE) or
+                   ((current.getAnnotation).defaultInscription
+                     -> ((current.getAnnotation).getInscription).equal)) then
+	           false -> allArcsHaveAnnotation;
+	           (* 'TransitionlocalCheck: not allArcsHaveAnnotation'->debugtemp; *)
+	           leave check;
+	       if);
+	       (if getSubpage <> none then
+	           false -> socketPlaceIsAssigned;
+	           (current.getPlaceEnd).scanSubstitutionTransitions
+                   (#
+                   do socketPlaceIsAssigned or 
+                      (current[] = this(Transition)[]) 
+                        -> socketPlaceIsAssigned;
+                   #);
+	           (if not socketPlaceIsAssigned then
+		       false -> allSocketPlacesIsAssigned;
+		       (* 'TransitionlocalCheck: not allSocketPlacesIsAssigned'->debugtemp; *)
+		       leave check;
+	           if);
+	       if);
+	       (if (current.getPlaceEnd).hasAssignmentGraphError then
+	           false  -> allPlacesHasNoAssignmentChainError;
+                   (* 'TransitionlocalCheck: not allPlacesHasNoAssignmentChainError'->debugtemp; *)
+	           leave check;
+	       if);
+	    #);
+      if);
+      
+      not private.transActionSyntaxError and
+      atLeastOneArc and allPlacesHaveType and
+      allArcsHaveAnnotation and allSocketPlacesIsAssigned and
+      allPlacesHasNoAssignmentChainError and allCurrentMarkingsHasNoError and
+      allPlaceAreChecked -> IAmFine;
+      
+      (if NOT IAmFine then
+	  (* 'TransitionlocalCheck: not IAmFine: %s '->debugtemp(# do theName.copy->s#); *)
+	  (any_status,unchecked) -> changeStatus;
+       else
+	  (*  'TransitionlocalCheck: IAmFine: %s '->debugtemp(# do theName.copy->s#); *)
+      if);
+      (if (status < checked) then
+          NONE -> private.theTransGuard.setAST;
+      if);
+   #);
+   
+-- TransitionGetSourcePoint: doPart --
+do &Point2d[] -> theSource[];
+   (if (theArc.getBends).empty then
+       (if theArc.placeEnd[] <> NONE then
+           theArc.placeEnd.position -> theSource;
+       if);
+    else
+       ((theArc.getBends).first).getPoint2d -> theSource[];
+   if);
+   
+   
+-- TransitionSetIncidentPoint: doPart --
+do theIncidentPoint[] -> theArc.transIncidentPoint[];
+   (if NOT theArc.moving then
+       (# bends: ^BendPointList;
+          first: ^BendPoint;
+          w, h: @integer;
+       do theArc.getBends -> bends[];
+          (if bends[] <> NONE then
+              (if not bends.empty then
+                  width -> w;
+                  height -> h;
+                  bends.first -> first[];
+                  (if (first.x > (x - w/2 - 10)) and (first.x < (x + w/2 + 10)) then
+                      theIncidentPoint.x -> first.x;
+                  if);
+                  (if (first.y > (y - h/2 - 10)) and (first.y < (y + h/2 + 10)) then
+                      theIncidentPoint.y -> first.y;
+                  if);
+              if);
+          if);
+       #);
+   if);
+   
+-- TransitionIsExplicit:DoPart --
+do private.explicit -> value;
+   
+-- TransitionSetImplicit:DoPart --
+do explicit -> private.explicit;
+   (if explicit then
+       'dashed' -> linetype[];
+    else
+       'solid' -> linetype[];
+   if);
+   changed;
+
+-- TransitionMakeShape:DoPart --
+do (# theRect: ^Rect;
+      theLine: ^Line;
+   do (if true then
+          &Rect[] -> theRect[];
+          theRect.init;
+          width -> theRect.width;
+          height -> theRect.height;
+          theRect[] -> theItem.add;
+          (if isSubstitutionTransition then
+              &Rect[] -> theRect[];
+              theRect.init;
+              width - 8 -> theRect.width;
+              height - 8 -> theRect.height;
+              1 -> &StrokeWidthStyle -> theRect.theStyle[];
+              theRect[] -> theItem.add;
+          if);
+       else
+	  (# points: ^PointList;
+	  do &PointList[] -> points[];
+	     (0, -height/2) -> makePoint -> points.append;
+	     (width/2, -height/2) -> makePoint -> points.append;
+	     (width/2, height/2) -> makePoint -> points.append;
+	     (0, height/2) -> makePoint -> points.append;
+	     (-width/2, height/2) -> makePoint -> points.append;
+	     (-width/2, -height/2) -> makePoint -> points.append;
+	     (0, -height/2) -> makePoint -> points.append;
+	     &Line[] -> theLine[];
+	     theLine.init;
+	     15.0 -> &CurvatureStyle -> theLine.theStyle[];
+	     points[] -> theLine.points[];
+	     theLine[] -> theItem.add;
+	  #);
+      if);
+   #);
+-- TransitionGetIntersect:doPart --
+do (# l, t, b, r: @real;
+      tl: ^Point2d;
+      tr: ^Point2d;
+      bl: ^Point2d;
+      br: ^Point2d;
+      left: ^GeomLine;
+      top: ^GeomLine;
+      right: ^GeomLine;
+      bottom: ^GeomLine;
+      x, y: @real;
+      center: ^Point2d;
+   do &Point2d[] -> center[];
+      position -> center;
+      center.x - width / 2 -> l;
+      center.x + width / 2 -> r;
+      center.y - height / 2 -> t;
+      center.y + height / 2 -> b;
+      (l, t) -> MakePoint -> tl[];
+      (l, b) -> MakePoint -> bl[];
+      (r, t) -> MakePoint -> tr[];
+      (r, b) -> MakePoint -> br[];
+      (bl[], tl[]) -> createFiniteLine -> left[];
+      (tl[], tr[]) -> createFiniteLine -> top[];
+      (tr[], br[]) -> createFiniteLine -> right[];
+      (br[], bl[]) -> createFiniteLine -> bottom[];
+      line.a.x -> x;
+      line.a.y -> y;
+      
+      (if x < l then
+          line[] -> left.intersect -> intersect[];
+      if);
+      (if x > r then
+          line[] -> right.intersect -> intersect[];
+      if);
+      (if intersect[] = NONE then
+          (if y > b then
+              line[] -> bottom.intersect -> intersect[];
+          if);
+          (if y < t then
+              line[] -> top.intersect -> intersect[];
+          if);
+      if);
+      (if intersect[] = NONE then
+          center[] -> intersect[];
+      if);
+   #);

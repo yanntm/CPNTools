@@ -1,0 +1,1028 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../cpnworkspace';
+  
+INCLUDE '../resources/texts/texts';
+INCLUDE '../resources/figures/hierarchyfigures';
+INCLUDE '../../cpnet/cpnet';
+INCLUDE 'clipping';
+INCLUDE 'cpninstrument';
+INCLUDE 'binderinstruments';
+INCLUDE '~beta/basiclib/regexp';
+INCLUDE 'navigationinstruments';
+INCLUDE '../wselements/index';
+
+BODY 'private/hierarchyinstrumentsbody'
+
+-- CPNWorkspaceLib: attributes --
+
+(*
+ * Global methods
+ *)
+
+CreateRemoveMemberFromFusionSetCommand:
+  (# thePlace: ^Place;
+     theCommand: ^RemoveMemberFromFusionSetCommand;
+  enter thePlace[]
+  do ('thePlace.getFusionSet <> none', thePlace.getFusionSet <> none) -> assert (# #);
+     
+  exit theCommand[]
+  #);
+
+AddMembersToFusionSet:
+  (# thePlaceList: ^PlaceList;
+     theFusionSet: ^FusionSet;
+  enter (thePlaceList[], theFusionSet[])
+  <<SLOT AddMembersToFusionSet:DoPart>>  
+  #);
+
+AssignPortSocketAndCreateCommand:
+  (# thePort, theSocket: ^Place; 
+     theSubTransition: ^Transition;
+     theAssignPortSocketCommand: ^Command;
+  enter (thePort[], theSocket[], theSubTransition[])
+  <<SLOT AssignPortSocket:DoPart>>
+  exit theAssignPortSocketCommand[]
+  #);
+
+CreateFusionSet: 
+  (# thePlaceList: ^PlaceList;   
+     theName: ^Text;
+  enter (thePlaceList[], theName[])
+  do (# theFusionSet: ^FusionSet;
+        theClipping: ^FusionSetClipping;
+        theCommand: ^AddMemberToFusionSetCommand;
+     do &FusionSet[] -> theFusionSet[];
+        theFusionSet.init;
+        ((thePlaceList.first).getCPNPage).net[] -> theFusionSet.net[];
+        theName[] -> theFusionSet.setName;
+        (theFusionSet.getName, theFusionSet[]) -> theFusionSet.net.fusionSets.associate;
+        theFusionSet[] -> theFusionSet.net.addFusionSet;     
+        
+        (thePlaceList[], theFusionSet[]) -> AddMembersToFusionSet;
+     #);
+  #);
+
+MoveToSubpageCommand: Command
+  (# theMoveGroupToSubpageCommand: ^Command;
+     theGroup: ^Group;
+     theCPNPage: ^CPNPage;
+     init:: 
+       (# 
+       enter (theMoveGroupToSubpageCommand[], theGroup[], theCPNPage[])
+       #);
+     apply::
+       (# 
+       do theMoveGroupToSubpageCommand.apply;
+       #);
+     redo::
+       (# 
+       do (if theGroup.getCPNPage = none then
+              theGroup[] -> theCPNPage.addGroup;
+          if);
+          theMoveGroupToSubpageCommand.redo;
+       #);
+     undo:: (# <<SLOT MoveToSubpageCommandUndo:DoPart>> #);
+  #);
+  
+MoveToSubpage:
+  (# theTransition: ^Transition;
+  enter theTransition[]
+  <<SLOT MoveToSubpage:DoPart>>
+  #);
+
+SetPortType:
+  (# thePlace: ^Place;
+     thePortType: ^Text;
+  enter (thePlace[], thePortType[])
+  do (# theClipping: ^PortClipping;
+        theCommand: ^SetPortTypeCommand;
+     do &PortClipping[] -> theClipping[];
+        (if thePlace.getPortType <> none then
+            (thePlace[], ((thePlace.getPortType).getTextItem).content[]) -> theClipping.init;
+         else 
+            (thePlace[], none) -> theClipping.init;
+        if);
+        
+        &SetPortTypeCommand[] -> theCommand[];
+        theCommand.init;
+        thePortType[] -> theCommand.prepare;
+        theClipping[] -> theCommand.apply;
+        (thePlace.getCPNet,theCommand[]) -> registerCommand;
+     #);
+  #);
+
+RemovePortType:
+  (# thePlace: ^Place;
+  enter thePlace[]
+  do (# theClipping: ^PortClipping;
+        theCommand: ^RemovePortTypeCommand;
+     do &PortClipping[] -> theClipping[];
+        (thePlace[], none) -> theClipping.init;
+        
+        &RemovePortTypeCommand[] -> theCommand[];
+        theCommand.init;
+        ((thePlace.getPortType).getTextItem).content[] -> theCommand.prepare;
+        theClipping[] -> theCommand.apply;
+        (thePlace.getCPNet,theCommand[]) -> registerCommand;
+     #);
+  #);
+CreateSubpageCommand:
+  (# theCommand: ^SetSubPageCommand;
+     thePage: ^CPNPage;
+     theTransition: ^Transition;
+  enter (thePage[], theTransition[])
+  <<SLOT CreateSubpageCommand:doPart>>  
+  exit theCommand[]
+  #);
+SetSubPage:
+  (# thePage: ^CPNPage;
+     theTransition: ^Transition;
+     didSetSubPageGoWell: @boolean;
+  enter (thePage[], theTransition[])
+  <<SLOT SetSubPage:doPart>>
+  exit didSetSubPageGoWell
+  #);
+
+automaticAssignPortSocket:
+  (# theSubTransition: ^Transition;
+     aSubTransitionInstance: ^TransitionInstance;
+     useNameAsACriteria: @boolean;
+  enter theSubTransition[]
+  do true -> useNameAsACriteria;
+     findAMatchingTransitionInstance:theSubTransition.scanInstances
+     (# 
+     do current[] -> aSubTransitionInstance[];
+        leave findAMatchingTransitionInstance;
+     #);
+     
+     (if aSubTransitionInstance.thePortSocketDialog[]=NONE then
+         ('portsocketdialog<>NONE',false) -> assert(# #);
+      else
+         theSubTransition.scanSurroundingPlaces
+         (# possiblePorts: ^PlaceList;
+         do (current[],useNameAsACriteria) 
+              -> aSubTransitionInstance.thePortSocketDialog.getPossiblePorts
+              -> possiblePorts[];
+            (if possiblePorts.size=1 then
+                ((possiblePorts.head).elm[],current[],theSubTransition[])
+                  -> AssignPortSocketAndCreateCommand;
+            if);
+         #);
+     if);
+  #);
+
+FlattenCommand: CPNCommand
+  (# targetType:: Transition;
+     private: @<<SLOT flattenCommandPrivate:descriptor>>;
+     succes: @boolean;
+     notUndoable::
+       (# 
+       do not succes -> value;
+       #);
+     getName::
+       (# 
+       do 'Replace by subpage' -> name[];
+       #);
+     relevant::
+       (# 
+       do (value and (target.isSubstitutionTransition) and 
+            ((target.getCPNPage).net.status=compiled) and
+            (not (target.getCPNPage).net.ml.isSimulating))-> value;
+       #);
+     prepare:: (# <<SLOT flattenCommandPrepare:doPart>> #); 
+     apply:: (# <<SLOT flattenCommandApply:doPart>> #);
+     undo:: (# <<SLOT flattenCommandUndo:doPart>> #);
+     redo:: (# <<SLOT flattenCommandRedo:doPart>> #);
+  #);
+FlattenNetCommand: MultipleTargetCommand
+  (# targetType:: theIndex.netNode;
+     CommandType:: flattenCommand;
+     succesForAny: @boolean;
+     notUndoable::
+       (# 
+       do not succesForAny -> value;
+       #);
+     getName::
+       (# 
+       do 'Replace by subpage' -> name[];
+       #);
+     relevant::
+       (# 
+       do value and (target.net.status=compiled) and (not target.net.ml.isSimulating) 
+            and (target.net.isHierarchical) -> value;
+       #);
+     prepare::
+       (# cpnpagePriorities: @sequence(# element:: CPNPageList; #);
+          depthOfHierarchy: @integer;
+       do cpnpagePriorities.clear;
+          0->depthOfHierarchy;
+          getDepthOfHierarchy:target.net.scanCPNPages
+            (# depthOfCurrent: @integer;
+            do current.calculateMaxNoOfSuperPages -> depthOfCurrent;
+               (if depthOfCurrent>depthOfHierarchy then depthOfCurrent->depthOfHierarchy if);
+            #);
+          (for i:depthOfHierarchy+1 repeat
+               &CPNPageList[] -> cpnpagePriorities.append;
+          for);
+          createPriorityList: target.net.scanCPNPages
+            (# 
+            do current[] -> ((current.calculateMaxNoOfSuperPages+1)->cpnpagePriorities.get).append;
+            #);
+          prepareCommandsInRightOrder: cpnpagePriorities.scanReverse
+            (# 
+            do current.scan
+               (# 
+               do current.scanSubstitutionTransitions
+                  (# 
+                  do current[] -> prepareSingleCommand;
+                  #);
+               #);
+            #);          
+       #);
+     apply::
+       (# 
+       do false -> succesForAny;
+          commands.scan
+          (# 
+          do succesForAny or (not current.notUndoable) -> succesForAny;
+          #);
+          (if not (notUndoable) then
+              (target.net[],THIS(FlattenNetCommand)[]) -> registerCommand;
+          if);
+       #);
+  #);
+
+(*
+ * Instruments
+ *)
+
+FlattenInstrument: CPNGenericInstrument
+  (# FigureT:: FlattenFigure;
+     
+     toolTip:: (# do NamesFlatten -> getGlobalNames -> theTip[];  #);
+     
+     theSubTransInstrument: ^FlattenSubTransInstrument;
+     theInstNodeInstrument: ^FlattenInstanceNodeInstrument;
+     theNetNodeInstrument: ^FlattenNetInstrument;
+     theSubpageTagInstrument: ^FlattenSubpageTagInstrument;
+     theSheetInstrument: ^FlattenSheetInstrument;
+     theTabInstrument: ^FlattenPageTabInstrument;
+     
+     init::
+       (# 
+       do &FlattenSubTransInstrument[] -> theSubTransInstrument[];
+          theSubTransInstrument.init;
+          theSubTransInstrument[] -> register;
+          
+          &FlattenInstanceNodeInstrument[] -> theInstNodeInstrument[];
+          theInstNodeInstrument.init;
+          theInstNodeInstrument[] -> register;
+          
+          &FlattenNetInstrument[] -> theNetNodeInstrument[];
+          theNetNodeInstrument.init;
+          theNetNodeInstrument[] -> register;
+          
+          &FlattenSubpageTagInstrument[] -> theSubpageTagInstrument[];
+          theSubpageTagInstrument.init;
+          theSubpageTagInstrument[] -> register;
+          
+          &FlattenSheetInstrument[] -> theSheetInstrument[];
+          theSheetInstrument.init;
+          theSheetInstrument[] -> register;
+
+          &FlattenPageTabInstrument[] -> theTabInstrument[];
+          theTabInstrument.init;
+          theTabInstrument[] -> register;
+          
+          'flatten' -> helpName[];
+       #);
+     
+     apply::
+       (# 
+       do 'generic apply' -> debugFlatten;
+       #);
+  #);
+FlattenSubTransInstrument: CPNInstrument
+  (# visitGlobalGroupBottomUp:: (# do true -> value #);
+     commandType::FlattenCommand;
+  #);
+FlattenNetInstrument: CPNInstrument
+  (# TargetType::theIndex.netNode;
+     commandType::FlattenNetCommand;
+  #);
+FlattenInstanceNodeInstrument: NewTargetFlattenInstrument
+  (# TargetType::theIndex.InstanceNode;
+     getTransition::
+       (# 
+       do (target.getPageInstance).theTransition[] -> theTransition[];
+       #);
+  #);
+FlattenSubpageTagInstrument: NewTargetFlattenInstrument
+  (# TargetType:: SubpageInfo;
+     getTransition::
+       (# 
+       do target.getTransition -> theTransition[];
+       #);
+  #);
+FlattenSheetInstrument: NewTargetFlattenInstrument
+  (# TargetType::CPNSheet;
+     getTransition::
+       (# 
+       do target.content.theTransition[] -> theTransition[];
+       #);
+  #);
+FlattenPageTabInstrument: NewTargetFlattenInstrument
+  (# TargetType::CpnTab;
+     getTransition::
+       (# 
+       do target.theSheet.content.theTransition[] -> theTransition[];
+       #);
+  #);
+NewTargetFlattenInstrument: Instrument
+  (# theFlattenSubTransInstrument: @FlattenSubTransInstrument;
+     init:: (# do theFlattenSubTransInstrument.init; #);
+     getTransition:<
+       (# theTransition: ^Transition;
+          target: ^TargetType;
+       enter target[]
+       do INNER;
+       exit theTransition[]
+       #);
+     relevant:: 
+       (# 
+       do (if ((target[]->getTransition)) <> NONE then
+              ((target[]->getTransition), theHand[]) 
+                -> theFlattenSubTransInstrument.relevant
+                -> value;
+           else
+              false -> value;
+          if);
+       #);
+     prepare:: 
+       (# 
+       do (theHand[], (target[]->getTransition))
+            -> theFlattenSubTransInstrument.prepare;
+       #);
+     apply:: 
+       (#
+       do theHand[] -> theFlattenSubTransInstrument.apply;
+          finish;
+       #);
+     cancel::
+       (# 
+       do theFlattenSubTransInstrument.cancel;
+       #);
+     
+  #);
+
+SetPortInstrument: FigureTInstrument
+  (# FigureT:: SetPortFigure;
+     TargetType:: Place;
+     thePortType: ^Text;
+     relevant::
+       (# 
+       do target.getFusionSet = none -> value;
+       #);
+     apply::
+       (# 
+       do (target[], thePortType[]) -> SetPortType;
+          finish;
+       #);
+     
+     init::<
+       (# 
+       do INNER;
+          'set_port_type' -> helpname[];
+          ('porttype', thePortType[]) -> options.setaddoption
+          (# OptionType::TextOption(# invisible:: trueObject; #); #);
+       #);
+  #);
+
+InPortInstrument: SetPortInstrument
+  (# ToolTip:: 
+       (# 
+       do NamesSetPort -> getGlobalNames -> 
+          theTip.putFormat (# do NamesPortTypeIn -> getGlobalNames -> s; #);
+       #);     
+     
+     init:: 
+       (# 
+       do 'In' -> thePortType[]; 
+       #);
+  #);
+
+OutPortInstrument: SetPortInstrument
+  (# ToolTip:: 
+       (# 
+       do NamesSetPort -> getGlobalNames -> 
+          theTip.putFormat (# do NamesPortTypeOut -> getGlobalNames -> s; #);
+       #);
+
+     init:: 
+       (# 
+       do 'Out' -> thePortType[]; 
+       #);
+  #);
+
+IOPortInstrument: SetPortInstrument
+  (# ToolTip:: 
+       (# 
+       do NamesSetPort -> getGlobalNames -> 
+          theTip.putFormat (# do NamesPortTypeIO -> getGlobalNames -> s; #);
+       #);
+
+     init:: 
+       (# 
+       do 'I/O' -> thePortType[]; 
+       #);
+  #);
+
+SetSubPageInstrument: CPNGenericInstrument
+  (# FigureT:: SetSubpageFigure;
+     theTransition: ^Transition;
+     phase: ^IntegerObject;
+     ToolTip:: (# do NamesSetSubPage -> getGlobalNames -> theTip[]; #);
+     theFigure: ^SetSubpageFigure;
+     updateFigure:
+       (#          
+       do 1 - theFigure.thePhase -> theFigure.thePhase;
+          theFigure.update;
+       #);     
+     SelectTransitionInstrument: @Instrument
+       (# TargetType:: Transition;               
+          relevant::
+            (# 
+            do theTransition[] = none -> value
+            #);
+          apply::
+            (# 
+            do target[] -> theTransition[];
+               1 -> theFigure.thePhase;
+	       theFigure.update;
+               finish;
+            #);
+          cancel::
+	    (#
+	    do 0 -> theFigure.thePhase;
+	       theFigure.update;
+	    #);
+       #);
+     SelectSubPageInstrument: @Instrument
+       (# relevant::
+            (# theSheet: ^CPNSheet;
+               theInstanceNode: ^theIndex.InstanceNode;
+            do (if (theTransition[] <> none) and
+                   ((target## <= CPNSheet##) or (target## <= theIndex.InstanceNode##)) then
+                   (if target## <= CPNSheet## then
+                       target[] -> theSheet[];
+                   if);
+                   (if target## <= theIndex.InstanceNode## then
+                       target[] -> theInstanceNode[];
+                       theInstanceNode.getSheet -> theSheet[];
+                   if); 
+                   theSheet.content.thePage.net[] = (theTransition.getCPNPage).net[] -> value;
+                else
+                   false -> value;
+               if);
+            #);                  
+          apply::
+            (# theSheet: ^CPNSheet;
+               theInstanceNode: ^theIndex.InstanceNode;
+            do (if target## <= CPNSheet## then
+                   target[] -> theSheet[];
+               if);
+               (if target## <= theIndex.InstanceNode## then
+                   target[] -> theInstanceNode[];
+                   theInstanceNode.getSheet -> theSheet[];
+               if);          
+               (if ((theSheet.content.thePage[], theTransition[]) -> SetSubPage) then
+                   theTransition[] -> automaticAssignPortSocket;
+               if);
+               none -> theTransition[];
+               0 -> theFigure.thePhase;
+	       theFigure.update;
+               finish;
+            #);
+          cancel::
+            (# 
+            do none -> theTransition[];
+	       0 -> theFigure.thePhase;
+	       theFigure.update;
+            #);
+       #);
+     init::
+       (# toolCellFigure: ^FigureT;
+       do SelectTransitionInstrument.init;
+          SelectSubPageInstrument.init;
+          SelectTransitionInstrument[] -> register;
+          SelectSubPageInstrument[] -> register;
+          'set_subpage'->helpname[]; 
+          tmpFigure[] -> theFigure[];
+          &FigureT[] -> toolCellFigure[];
+          toolCellFigure.init;
+          toolCellFigure[] -> instrumentIcon.setFigure;
+       #);
+  #);
+
+
+FusionInstrument: CPNGenericInstrument
+  (# FigureT:: FusionFigure;
+     theFusionSet: ^FusionSet;
+     ToolTip:: 
+       (# 
+       do NamesAssignFusion -> getGlobalNames -> theTip[]; 
+       #);
+     updateFusionInfo:
+       (# theFusionName: ^Text;
+       enter theFusionSet[]                 
+       do 'fusionname' -> options.lookupText -> theFusionName[];
+          (if theFusionName[] <> theFusionSet.getName then
+              theFusionName.clear;
+              (theFusionSet.getName).copy -> theFusionName.append;
+              ('fusionname', theFusionName[]) -> options.setaddoption
+              (# OptionType::TextOption(# dname:: (# do 'Name of fusiongroup' -> value[]; #); #); #);        
+          if);
+       #);
+     PickUpFusionInstrument: @Instrument
+       (# TargetType:: Place;          
+          relevant:: (# <<SLOT FusionInstrumentPickUpFusionInstrumentRelevant:DoPart>> #);
+          apply:: (# <<SLOT FusionInstrumentPickUpFusionInstrumentApply:DoPart>> #);              
+          cancel::
+            (# 
+            do setFusionSetToNone;
+            #);
+       #);
+     AssignFusionInstrument: @Instrument
+       (# TargetType:: Place;     
+          relevant:: (# <<SLOT FusionInstrumentPickUpAssignFusionInstrumentRelevant:DoPart>> #);
+          apply:: (# <<SLOT FusionInstrumentAssignFusionInstrumentApply:DoPart>> #);            
+          cancel::
+            (# 
+            do setFusionSetToNone;
+            #);
+       #);
+     setFusionSetToNone:
+       (# theFusionName: ^Text;
+       do 'fusionname' -> options.lookupText -> theFusionName[];
+          theFusionName.clear;
+          freshFusionName.copy -> theFusionName.append;
+          ('fusionname', theFusionName[]) -> options.setaddoption
+          (# OptionType::TextOption(# dname:: (# do 'Name of fusiongroup' -> value[]; #); #); #);  
+          none -> theFusionSet[];
+       #);
+     freshFusionName: ^Text;
+     init:: 
+       (#
+       do PickUpFusionInstrument.init;
+          AssignFusionInstrument.init;
+          PickUpFusionInstrument[] -> register;
+          AssignFusionInstrument[] -> register;
+          'assign_fusion_set'->helpname[];
+          'Fusion' -> freshFusionName[];
+          ('fusionname', freshFusionName.copy) -> options.setAddOption          
+          (# OptionType::TextOption(# dname:: (# do 'Name of fusiongroup' -> value[]; #); #); #);
+          ('fusionname', 'fusion.fusionname') -> options.setDefault;
+       #);
+     cancel::
+       (# 
+       do setFusionSetToNone;
+       #);
+  #);
+
+AssignPortSocketInstrument: CPNGenericInstrument
+  (# TargetType:: Place;
+     FigureT:: AssignPortSocketFigure;
+     theSubTransition: ^Transition;
+     thePortPlace: ^Place;
+     theFigure: ^AssignPortSocketFigure;
+     showSubpage: @ShowSubPageInstrument;
+     showSuperpage: @ShowSocketPageInstrument;
+     init::
+       (# theName: ^Text;
+          toolCellFigure: ^FigureT;
+       do 'assign_port-socket'->helpname[]; 
+          NamesAssignPortSocketInstrument -> getGlobalNames -> theName[];
+          ('portsocket', theName[]) -> 
+          options.setaddoption (# OptionType:: TextOption(# invisible:: trueObject; #); #);
+          tmpFigure[] -> theFigure[];
+          &FigureT[] -> toolCellFigure[];
+          toolCellFigure.init;
+          toolCellFigure[] -> instrumentIcon.setFigure;
+          SelectPortInstrument[] -> register;
+          SelectSocketInstrument[] -> register;
+          showSubpage.init;
+          showSuperpage.init;
+       #);                 
+     ToolTip:: 
+       (# 
+       do NamesAssignPortSocket -> getGlobalNames -> theTip[]
+       #);
+     cancel::
+       (# 
+       do NONE -> thePortPlace[];
+          0 -> theFigure.thePhase;
+          theFigure.update;
+       #);
+     SelectPortInstrument: @Instrument
+       (# TargetType:: Place;
+          relevant::
+            (# 
+            do ((thePortPlace[] = none) AND 
+               (target.getFusionSet = none) AND
+               (target.getPortType <> NONE)) AND
+               ((target.getCPNPage).nofSuper<>0) -> value;                             
+            #);
+          prepare::
+            (# 
+            do search: theHand.over.scan
+                 (# 
+                 do current.scan
+                    (# theCPNSheet: ^CPNSheet;
+                    do (if current## <= CPNSheet## then
+                           current[] -> theCPNSheet[];
+                           (if target.getCPNPage = theCPNSheet.content.thePage[] then
+                               theCPNSheet.content.theTransition[] -> theSubTransition[];
+                               (if theSubTransition[] = none then
+                                   'theSubTransition[] = none' -> debugtemp;
+                                   '%s '->debugtemp (# do theCPNSheet.content.thepage.thename.copy->s#);;
+                               if);
+                               leave search;
+                           if);
+                       if);
+                    #);
+                 #);  
+            #);
+          apply::
+            (# picker: ^PickInstrument;
+            do (if theSubTransition[] <> NONE then
+                   target[] -> thePortPlace[];
+	           1 -> theFigure.thePhase;
+	           theFigure.update;
+                   (theHand[],(target.getPortType)) -> showSuperpage.prepare;
+                   (if (((target.getPortType),theHand[]) -> showSuperpage.relevant) then
+                       showSuperpage.apply;
+                       showSuperpage.finish;
+                   if);
+               if);
+               
+               theHand.active[] -> picker[];
+               THIS(AssignPortSocketInstrument)[] -> picker.ActivateInstrument;
+               
+               finish;
+               SelectSocketInstrument[] -> selected[];
+            #);
+       #);
+     SelectSocketInstrument: @Instrument
+       (# TargetType:: Place;
+          relevant::
+            (# 
+            do ((thePortPlace[] <> NONE) and 
+               (theSubTransition[] <> NONE) and 
+               (thePortPlace.getCPNPage <> target.getCPNPage) and
+               (target.getFusionSet = none)) -> value
+            #);
+          apply::
+            (# theAssignPortSocketCommand: ^Command;
+            do (thePortPlace[], target[], theSubTransition[]) 
+                 -> AssignPortSocketAndCreateCommand -> theAssignPortSocketCommand[];
+               (if theAssignPortSocketCommand[]<>NONE then (*The assigment went well*)
+                   ((theSubTransition.getCPNPage).net[],theAssignPortSocketCommand[]) 
+                     -> registerCommand;
+                   none -> thePortPlace[];
+	           0 -> theFigure.thePhase;
+	           theFigure.update;
+                   (theHand[],(theSubTransition.getSubPageInfo)) -> showSubpage.prepare;
+                   (if (((theSubTransition.getSubPageInfo),theHand[]) -> showSubpage.relevant) then
+                       showSubpage.apply;
+                       showSubpage.finish;
+                   if);
+               if);
+               finish;
+            #);
+       #);
+  #);
+
+(*
+ * Commands
+ *)
+
+
+SetPortTypeCommand: StandardInsertCommand
+  (# ClippingType:: PortClipping;
+     getName::
+       (#
+       do 'Set PortType' -> name[];
+       #);
+  #);
+
+RemovePortTypeCommand: StandardRemoveCommand
+  (# ClippingType:: PortClipping;
+     getName::
+       (#
+       do 'Remove PortType' -> name[];
+       #);
+  #);
+
+SetSubpageCommand: StandardInsertCommand
+  (# TargetType:: Transition;
+     ClippingType:: CPNPageClipping;
+     getName::
+       (#
+       do 'Set Subpage' -> name[];
+       #);
+  #);
+
+RemoveSubpageCommand: StandardRemoveCommand
+  (# TargetType:: Transition;
+     ClippingType:: CPNPageClipping;
+     getName::
+       (#
+       do 'Remove Subpage' -> name[];
+       #);
+  #);
+
+CreateFusionSetCommand: StandardInsertCommand
+  (# TargetType:: FusionSet;
+     ClippingType:: FusionSetClipping;
+     getName::
+       (#
+       do 'Create FusionSet' -> name[];
+       #);
+  #);
+
+AddMemberToFusionSetCommand: StandardInsertCommand
+  (# TargetType:: FusionSet;
+     ClippingType:: FusionSetClipping;
+     getName::
+       (#
+       do 'Add Place to FusionSet' -> name[];
+       #);
+  #);
+
+RemoveMemberFromFusionSetCommand: StandardRemoveCommand
+  (# TargetType:: FusionSet;
+     ClippingType:: FusionSetClipping;
+     getName::
+       (#
+       do 'Remove Place from FusionSet' -> name[];
+       #);
+  #);
+
+AssignPortSocketCommand: StandardInsertCommand
+  (# TargetType:: Place;
+     ClippingType:: AssignmentClipping;
+     getName::
+       (#
+       do 'Assign Port to Socket' -> name[];
+       #);
+  #);
+
+SetSubpageInstanceCommand: StandardInsertCommand
+  (# TargetType:: PageInstance;
+     ClippingType:: PageInstanceClipping;
+     getName::
+       (#
+       do 'Set Subpage Instance' -> name[];
+       #)
+  #);
+
+RemoveSubpageInstanceCommand: StandardRemoveCommand
+  (# TargetType:: PageInstance;
+     ClippingType:: PageInstanceClipping;
+     getName::
+       (#
+       do 'Remove Subpage Instance' -> name[];
+       #);
+  #);     
+  
+(*
+ * Clippings
+ *)
+
+SafeClipping: Clipping
+(#
+   getCPNet:< 
+     (# net: ^CPNet; 
+     do INNER;
+        ('net[] <> none', net[] <> none)
+          -> assert (# #);
+     exit net[] 
+     #);
+   insert::< 
+     (# 
+     do INNER
+     #);
+   remove::< 
+     (# 
+     do INNER
+     #);
+#);
+
+PortClipping: SafeClipping
+  (# Element:: Place;
+     getCPNet:: (# do (elm.getCPNPage).net[] -> net[]; #);
+     ContextType:: Text;     
+     previousPortType: ^Text;
+     previousTag: ^PortType;
+     removedAssignments: @AssignmentList;
+     init::
+       (# 
+       enter previousPortType[]
+       do removedAssignments.init;
+          elm.getPortType -> previousTag[];
+       #);     
+     insert::
+       (# 
+       do previousTag[] -> elm.setPortType;
+          context[] -> elm.createPortType -> elm.setPortType;
+          (if elm.isLolited then
+              elm.lolite;
+           else
+              elm.hilite;
+          if);
+          removedAssignments.scan
+          (# 
+          do (current.getPort, current.getSocket, current.getSubTransition) -> current.init;
+          #);
+       #);     
+     remove:: (# <<SLOT PortClipping:DoPart>> #);
+  #);
+CreateDeletePageCommand: 
+  (# theTransition: ^Transition;
+     thePage: ^CPNPage;
+     removeSheets: @boolean;
+     theCommand: ^DeletePageCommand;
+     theClipping: ^CPNPageClipping;
+     theRemovePageCommand: ^RemoveSubpageCommand;
+     theCommandList: ^CommandList;
+     <<SLOT CreateDeletePageCommandLib:Attributes>>     
+  enter (theTransition[], thePage[], removeSheets)
+  <<SLOT CreateDeletePageCommand:doPart>>   
+  exit theCommand[]
+  #);
+DeletePageCommand: Command
+  (# theRemoveSubpageCommand: ^Command;
+     theWorkspaceCommands: ^CommandList;
+     
+     getName::
+       (#
+       do 'Delete Page' -> name[];
+       #);
+     init:
+       (# 
+       enter (theRemoveSubpageCommand[], theWorkspaceCommands[])
+       #);
+     apply::
+       (# 
+       do redo;
+       #);
+     undo::
+       (# 
+       do theRemoveSubpageCommand.undo;
+          theWorkspaceCommands.scan (# do current.undo #);
+       #);
+     redo::
+       (# 
+       do theWorkspaceCommands.scan (# do current.redo #);
+          theRemoveSubpageCommand.redo;          
+       #);     
+  #);
+CPNPageClipping: SafeClipping
+  (# <<SLOT CPNPageClippingLib:attributes>>;
+     Element:: CPNPage;
+     getCPNet:: (# do elm.net[] -> net[]; #);
+     ContextType:: Transition;
+     oldSubpageCommands, newSubpageCommands: @List (# Element:: Command #);
+     oldSubpageInfo, newSubpageInfo: ^SubpageInfo;
+     removedSubpage: ^CPNPage;
+     init:: (# <<SLOT CPNPageClippingInit:doPart>> #);
+     insert:: (# <<SLOT CPNPageClippingInsert:doPart>> #);       
+     remove:: (# <<SLOT CPNPageClippingRemove:doPart>> #);       
+  #);
+
+PageInstanceClipping: SafeClipping
+  (# Element:: PageInstance;
+     getCPNet:: (# do elm.thePage.net[] -> net[]; #);
+     ContextType:: PageInstance;     
+     theSubpageClippings: @List (# Element:: PageInstanceClipping #);
+     previousSuperpageInstance: ^PageInstance;
+     theTransition: ^Transition;
+     removedAssignments: @AssignmentList;     
+     init:: 
+       (#       
+       enter theTransition[]
+       <<SLOT PageInstanceClippingInit:doPart>>       
+       #);
+     insert:: (# <<SLOT PageInstanceClippingInsert:doPart>> #);       
+     remove:: (# <<SLOT PageInstanceClippingRemove:doPart>> #);
+  #);
+
+
+FusionInfoClipping: SafeClipping
+  (# Element:: FusionInfo;
+     ContextType::Place;
+     theFusionSet: ^FusionSet;
+     getCPNet:: (# do (elm.getCPNPage).net[] -> net[]; #);
+     insert::
+       (# 
+       do (if theFusionSet[] = NONE then
+              context.getFusionSet -> theFusionSet[];
+          if);
+          elm[] -> context.setFusionInfo;
+          elm.update;
+          context.changed;
+          (if context.isLolited then
+              elm.lolite;
+           else
+              elm.hilite;
+          if);
+          (if theFusionSet[] <> NONE then
+              context[] -> theFusionSet.addPlace;
+          if);
+          context.semanticChanged;
+       #);
+     remove::
+       (# 
+       do (if theFusionSet[] = NONE then
+              context.getFusionSet -> theFusionSet[];
+          if);
+          (if theFusionSet[] <> NONE then
+              context[] -> theFusionSet.removePlace;
+          if);
+          NONE -> context.setFusionInfo;
+       #);
+  #);
+
+(* This clipping do not merge fusion sets. Merging needs to be done on a higher level *)
+FusionSetClipping: Clipping
+  (# Element:: Place;
+     ContextType:: FusionSet;
+     theFusionInfo: ^FusionInfo;
+     theInitMark, thePlaceType: ^Text;
+     init:: (# <<SLOT FusionSetClippingInit:DoPart>> #);
+     insert:: (# <<SLOT FusionSetClippingInsert:DoPart>> #);
+     remove:: (# <<SLOT FusionSetClippingRemove:DoPart>> #);
+  #);
+
+AssignmentClipping: SafeClipping
+  (# <<SLOT AssignmentClippingLib:attributes>>;
+     Element:: Place; (* the port *)
+     getCPNet:: (# do (elm.getCPNPage).net[] -> net[]; #);
+     ContextType:: Place; (* the socket *)
+     oldAssignment, oldAssignment2, newAssignment: ^Assignment;
+     oldPort, oldSocket: ^Place;
+     oldPort2, oldSocket2: ^Place;
+     theSubTrans: ^Transition;
+     init:: (# enter theSubTrans[] #);
+     insert:: (# <<SLOT AssignmentClippingInsert:doPart>> #);           
+     remove:: (# <<SLOT AssignmentClippingRemove:doPart>> #);
+  #);
+
+BuildAssignmentCommand:
+  (# thePort, theSocket: ^Place;
+     theSubTransition: ^Transition;
+     theCommand: ^AssignPortSocketCommand;
+  enter (thePort[], theSocket[], theSubTransition[])
+  do (# theAssignmentClipping: ^AssignmentClipping;
+     do &AssignmentClipping[] -> theAssignmentClipping[];
+        (thePort[], theSubTransition[]) -> theAssignmentClipping.init;
+        
+        &AssignPortSocketCommand[] -> theCommand[];
+        theSocket[] -> theCommand.prepare;
+        theAssignmentClipping[] -> theCommand.clip[];
+     #);
+  exit theCommand[]
+  #);
+
+SubpageInfoClipping: SafeClipping
+  (# Element:: SubpageInfo;
+     getCPNet:: (# do (elm.getCPNPage).net[] -> net[]; #);
+     theTransition: ^Transition;
+     init:: (# <<SLOT SubpageInfoClippingInit:doPart>> #);
+     insert:: (# <<SLOT SubpageInfoClippingInsert:doPart>> #);
+     remove:: (# <<SLOT SubpageInfoClippingRemove:doPart>> #);
+  #);

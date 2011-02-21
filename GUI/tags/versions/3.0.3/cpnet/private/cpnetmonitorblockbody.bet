@@ -1,0 +1,186 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../cpnet';
+
+-- MonitorBlockPrivate:Descriptor --
+(# monitors: @AbstractMonitorIDDictionary;
+   status: @integer;
+   init:
+     (# 
+     do monitors.init;
+        unchecked -> status;
+     #);
+#)   
+   
+-- MonitorBlockAddMonitorAfter:DoPart --
+do (# position: ^private.monitors.theList.theCellType;      
+   do (* ('this(MonitorBlock)[] <> theMonitor[]', this(MonitorBlock)[] <> theMonitor[]) -> assert (# #); *)
+(*       'adding %s to %s '->debugtemp (# do theMonitor.name.copy -> s; name.copy->s;#); *)
+      (theMonitor.id[], theMonitor[]) -> private.monitors.associate;
+      theMonitor[] -> private.monitors.theList.at -> private.monitors.theList.delete;
+      (if beforeMonitor[] = none then          
+          theMonitor[] -> private.monitors.theList.prepend;
+       else
+          beforeMonitor[] -> private.monitors.theList.at -> position[];
+          (theMonitor[], position[]) -> private.monitors.theList.insertAfter;
+      if);
+      (if disabled then
+          true -> theMonitor.disabled;
+      if);
+      this(MonitorBlock)[] -> theMonitor.setFatherMonitor;
+      this(MonitorBlock)[] -> theMonitor.attach;
+      (* 'START----'->debugtemp; *)
+      theMonitor[] -> added;
+   #);
+   
+-- MonitorBlockAddMonitorLast:DoPart --
+do (theMonitor[], lastMonitor) -> addMonitorAfter;
+   
+-- MonitorBlockRemoveMonitor:DoPart --
+do theMonitor.id[] -> private.monitors.disassociate;
+   this(MonitorBlock)[] -> theMonitor.detach;
+   (if theMonitor## = Monitor## then
+       theMonitor[] -> theCPNet.removeMonitor;
+   if);
+   theMonitor[] -> removed;
+   semanticChanged;
+   
+-- MonitorBlockScanAbstractMonitors:DoPart --
+do private.monitors.scan
+   (# 
+   do current[] -> this(scanAbstractMonitors).current[];
+      inner scanAbstractMonitors;
+   #);
+   
+-- MonitorBlockScanAbstractMonitorTree:DoPart --
+do (# visitMonitor:
+        (# 
+        enter current[]
+        do inner scanAbstractMonitorTree;
+           (if current## <= MonitorBlock## then
+               current[] -> qua
+               (# as:: MonitorBlock;
+               do thisObj.scanAbstractMonitors
+                  (# 
+                  do current[] -> visitMonitor;
+                  #);
+               #);
+           if);
+        #);
+   do this(MonitorBlock)[] -> visitMonitor;
+   #);
+   
+-- MonitorBlockScanMonitorTree:DoPart --
+do scanAbstractMonitorTree
+   (# 
+   do (if current## <= Monitor## then
+          current[] -> this(scanMonitorTree).current[];
+          inner scanMonitorTree;
+      if);
+   #);
+   
+-- MonitorBlockNumberOfMonitorsInTree:DoPart --
+do 0 -> value;
+   scanMonitorTree (# do value + 1 -> value #);
+   
+-- MonitorBlockPreviousMonitor:DoPart --
+do search: private.monitors.scan
+     (# 
+     do (if theMonitor[] = current[] then
+            leave search;
+        if);
+        current[] -> thePreviousMonitor[];
+     #);
+   
+-- MonitorBlockLastMonitor:DoPart --
+do private.monitors.theList.last -> theLastMonitor[];
+   
+-- MonitorBlockOnSemanticChanged:DoPart --
+do (# newStatus: @integer;
+   do maxInt -> newStatus;
+      scan: scanAbstractMonitors
+      (# currentStatus: @integer;
+      do (if current.qerror[] <> none then
+             incorrect -> newStatus;
+             leave scan;
+          else
+             current.getStatus -> currentStatus;
+         if);
+         (if currentStatus < newStatus then
+             currentStatus -> newStatus;
+         if);
+         (if newStatus = incorrect then
+             leave scan;
+         if);
+      #);
+      newStatus -> private.status;
+   #);
+   
+-- MonitorBlockOnAdded:DoPart --
+do semanticChanged;
+   
+-- MonitorBlockGetStatus:DoPart --
+do (if private.monitors.size = 0 then
+       compiled -> value;
+    else
+       private.status -> value;
+   if);
+   
+-- MonitorBlockOnDisabledChanged:DoPart --
+do private.monitors.scan
+   (# 
+   do disabled -> current.disabled;
+   #);
+   
+-- MonitorBlockInit:DoPart --
+do private.init;   
+
+-- MonitorBlockLookupMonitor:DoPart --
+do search: scanMonitorTree
+   (# 
+   do (if current.id[] -> id.equal then
+          current[] -> result[];
+          leave search;
+      if);
+   #);
+   
+-- MonitorBlockIsBefore:DoPart --
+do (# foundBefore: @boolean;
+   do false -> foundBefore;
+      scan: scanAbstractMonitorTree
+      (# 
+      do (if true
+          // current[] = before[] then
+             true -> foundBefore;
+          // current[] = after[] then
+             not foundBefore -> value;
+             leave scan;
+         if);
+      #);
+   #);
+   
+-- MonitorBlockHasMonitor:DoPart --
+do (mon.id[] -> private.monitors.lookup) <> none -> value;

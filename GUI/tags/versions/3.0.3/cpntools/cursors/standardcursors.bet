@@ -1,0 +1,161 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '~beta/postwimp/workspace'; 
+INCLUDE '../resources/figures/figure';
+
+-- workspacelib: attributes --
+StandardArrowFigure: Composite
+  (#
+    leftPart: ^Line;
+     rightPart: ^Line;
+     outLine: ^Line;
+     
+     init::<
+       (#
+          theBasicStyle: ^BasicStyle;
+          
+       do &Line[]->leftPart[];
+          &Line[]->rightPart[];
+          &Line[]->outLine[];
+          
+          &PointList[]->leftPart.points[];         
+          &PointList[]->rightPart.points[];         
+          &PointList[]->outLine.points[];         
+          
+          &BasicStyle[]->theBasicStyle[];
+          (gray2[],gray2[],1)->theBasicStyle->leftPart.theStyle[];         
+          &BasicStyle[]->theBasicStyle[];
+          (gray9[],gray9[],1)->theBasicStyle->rightPart.theStyle[];         
+          &BasicStyle[]->theBasicStyle[];
+          (gray4[],NONE,1)->theBasicStyle->outLine.theStyle[];         
+          
+          (for 3 repeat &Point2d[]->leftPart.points.append for); 
+          (for 5 repeat &Point2d[]->rightPart.points.append for);         
+          (for 5 repeat &Point2d[]->outLine.points.append for); 
+          
+          INNER;
+          
+          leftPart[]->add;
+          rightPart[]->add;
+          outLine[]->add;        
+          Layout;
+       #);
+     
+     Layout:
+       (# point: ^Point2d;
+       do 1->leftPart.points.get->point[];
+          (0,0)->point;
+          2->leftPart.points.get->point[];
+          (18,9)->point;
+          3->leftPart.points.get->point[];
+          (9,9)->point;
+          
+          1->rightPart.points.get->point[];
+          (0,0)->point;
+          2->rightPart.points.get->point[];
+          (9,18)->point;
+          3->rightPart.points.get->point[];
+          (9,9)->point;
+          
+          1->outLine.points.get->point[];
+          (0,0)->point;
+          2->outLine.points.get->point[];
+          (18,9)->point;         
+          3->outLine.points.get->point[];
+          (9,9)->point;
+          4->outLine.points.get->point[];
+          (9,18)->point;
+          5->outLine.points.get->point[];
+          (0,0)->point;
+       #);     
+     
+  #);
+
+(* the resizing and hotspotting stuff should probably be done by the framework *)
+CPNCursor: Entity
+  (# FigureType:< Figure;
+     theFigure: ^FigureType;
+     theAlphaStyle: ^Alphastyle;
+     theAlphaComposite: ^Composite;
+     
+     update::<
+       (# size,xmin,ymin,xmax,ymax: @real;
+       do theAlphaComposite[] -> presentation.add;
+          INNER;          
+          (if theFigure.useDefaultHotspot then
+              (*resize and translate the figure to a default position below and right of the cursorspot *)
+              theAlphaComposite.bounds -> (xmin,xmax,ymin,ymax);
+              (* let's say max 20x20 *)
+              ((xmax - xmin),(ymax - ymin)) -> max -> size;
+              (if size > 0.0 then
+                  (20.0 / size) -> theAlphaComposite.scale;
+              if);
+              (-xmin * 20.0 / size + 15, -ymin * 20.0 / size + 15) -> (x, y);
+          if);
+       #);
+     init::<
+       (#
+       do &FigureType[] -> theFigure[];
+          theFigure.init;
+          &Composite[] -> theAlphaComposite[];
+          theAlphaComposite.init;
+          1.0 -> &Alphastyle -> theAlphaStyle[];
+          theAlphaStyle[] -> theAlphaComposite.theStyle[];
+          INNER;
+       #);
+     
+     setFigure: 
+       (# 
+          enter theFigure[]
+       do theAlphaComposite.clear;
+          theFigure[] -> theAlphaComposite.add;
+          true -> setHighlighted;
+          update;
+       #);
+     
+     lastb: @boolean;
+     setHighlighted:
+       (# b: @boolean;
+       enter b
+       do (if (b<>lastb) then
+              b -> lastb;
+              (if b then 
+                  1.0 -> setAlpha;
+               else  
+                  0.4 -> setAlpha;
+              if); 
+          if);
+       #);
+     
+     setAlpha:
+       (# a: @Real; 
+       enter a 
+       do a -> theAlphaStyle; 
+          update;
+          changed;
+       #);
+  #);
+

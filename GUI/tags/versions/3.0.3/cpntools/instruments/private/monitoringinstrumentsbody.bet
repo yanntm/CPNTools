@@ -1,0 +1,708 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../monitoringinstruments';
+
+INCLUDE '../netinstruments';
+INCLUDE '../groupinstruments';
+
+-- CreateMonitorWithNodeInstances:DoPart --
+do (# clip: ^MonitorClipping;
+      com: ^CreateMonitorCommand;
+      lastMonitor: ^AbstractMonitor;
+   do &Monitor[] -> theMonitor[];
+      (net[], name[], type) -> theMonitor.init;
+      nodes.scan
+      (# 
+      do current[] -> theMonitor.addNodeInstance;
+      #);
+      
+      net.theGlobalMonitor.lastMonitor -> lastMonitor[];      
+      
+      &MonitorClipping[] -> clip[];
+      (theMonitor[], lastMonitor[]) -> clip.init;
+      
+      &CreateMonitorCommand[] -> com[];
+      com.init;
+      net.theGlobalMonitor[] -> com.prepare;
+      clip[] -> com.apply;
+      
+      (net[], com[]) -> registerCommand;
+   #);
+      
+-- CreateMonitor:DoPart --
+do (# nodes: @NodeInstanceList;
+      net: ^CPNet;
+      name: ^Text;
+   do (if theGroup.IsGlobal then
+          theGroup.getCPNet -> net[];
+       else
+          (theGroup.getCPNPage).net[] -> net[];
+      if);
+      
+      theGroup.theName.copy -> getMLName -> name[];
+      (if name.isAllWhitespace then
+          NamesNewMonitor -> getGlobalNames -> name[];
+      if);
+      nodes.init;
+      theGroup.scanNodeInstances
+      (# 
+      do current[] -> nodes.append;
+      #);
+      
+      (nodes[], name[], net[], type) 
+        -> CreateMonitorWithNodeInstances
+        -> theMonitor[];
+   #);
+   
+-- MonitorClippingInsert:DoPart --
+do (elm[], beforeMonitor[]) -> context.addMonitorAfter;
+   elm.unDeleted;
+   
+-- MonitorClippingRemove:DoPart --
+do elm[] -> context.removeMonitor;
+   elm.deleted;
+   
+-- MonitorDeclarationClippingInit:DoPart --
+do elm.mlDecl.data.copy -> previous[];
+   
+-- MonitorDeclarationClippingInsert:DoPart --
+do true -> context.generateTemplateCode;
+   context.semanticChanged;
+   
+-- MonitorDeclarationClippingRemove:DoPart --
+do previous[] -> elm.parse;
+   context.semanticChanged;
+   
+-- MonitorInstrumentApply:DoPart --
+do (if (getNet).path[] = none then
+       ErrorNetNotSaved -> getGlobalNames -> status.error;
+   if);
+   (if (getNet).path[] <> none then
+       (if instanceDependent then
+           INNER;
+        else
+           (target[] -> getGroup, MonitorType) -> CreateMonitor -> theMonitor[];
+       if);
+       (if theMonitor[]<>none then
+           theMonitor[] -> theIndex.makeAbstractMonitorNodeTextEditor;
+       if);
+   if);
+   finish;
+   
+-- MonitorOnZeroOrMoreNodesInstrumentRelevant:DoPart --
+do (if true
+    // target## <= theIndex.NetNode## then
+       true -> value;
+    // target## <= Node##  then
+       target[] -> qua
+       (# as:: Node;
+          selectedGroup: ^Group;
+       do thisObj.status = compiled -> value;
+          (if useGroup then
+              (thisObj.getCPNPage).getSelectedGroup -> selectedGroup[];
+              (if (not selectedGroup.all) and (thisObj[] -> selectedGroup.isMember) then
+                  checkAllCompiled:selectedGroup.scanElements
+                    (# 
+                    do (if current##<=Node## then
+                           current[] -> QUA
+                           (# as:: Node; 
+                           do (if thisObj.status <> compiled then
+                                  false -> value;
+                                  leave checkAllCompiled;
+                              if);
+                           #);
+                       if);
+                    #);
+              if);
+          if);
+       #);
+    else
+       false -> value;
+   if);
+   
+-- MonitorOnZeroOrMoreNodesInstrumentGetNet:DoPart --
+do (if target## <= theIndex.NetNode## then
+       target[] -> qua
+       (# as:: theIndex.NetNode;
+       do thisObj.net[] -> net[];
+       #);
+    else
+       target[] -> qua
+       (# as:: Node;
+       do thisObj.getCPNet -> net[]; 
+       #);
+   if);
+   
+-- MonitorOnZeroOrMoreNodesInstrumentGetGroup:DoPart --
+do inner;
+   (if theGroup[] = none then
+       (if target## <= theIndex.NetNode## then
+           target[] -> qua
+           (# as:: theIndex.NetNode;
+           do &Group[] -> theGroup[];
+              thisObj.net[] -> theGroup.setCPNet;
+              theGroup.init;
+              (thisObj[], theHand[]) -> getMonitorName -> theGroup.name;    
+           #);
+        else
+           target[] -> qua
+           (# as:: Node;
+           do (if ((thisObj.getCPNPage).getSelectedGroup).all or
+                  (not (thisObj[] -> ((thisOBj.getCPNPage).getSelectedGroup).isMember)) then
+                  &Group[] -> theGroup[];
+                  thisObj.getCPNPage -> theGroup.setCPNPage;
+                  theGroup.init;
+                  (thisObj[], theHand[]) -> getMonitorName -> theGroup.name;
+                  thisObj[] -> theGroup.addElement;
+               else
+                  (thisObj.getCPNPage).getSelectedGroup -> theGroup[];          
+              if);
+           #);
+       if);
+   if);
+   
+-- MonitorOnSingleNodeInstrumentGetGroup:DoPart --
+do &Group[] -> theGroup[];
+   target.getCPNPage -> theGroup.setCPNPage;
+   theGroup.init;
+   (target[], theHand[]) -> getMonitorName -> theGroup.name;
+   target[] -> theGroup.addElement;
+   
+-- MonitorOnSingleNodeInstrumentGetMonitorName:DoPart --
+do getSimulatorMonitorType -> name[];
+   '_' -> name.append;
+   (target.getCPNPage).theName.copy -> getMLName -> name.append;
+   '\'' -> name.append;
+   target.getNameWithNoWS -> getMLName -> name.append;
+   '_' -> name.append;
+   scan: theHand.over.scan
+     (# 
+     do current.scan
+        (# 
+        do (if current## <= CPNSheet## then
+               current[] -> qua
+               (# as:: CPNSheet;
+               do thisObj.content.MLInstanceNumber -> name.putint;
+                  target.id[] -> thisObj.content.lookupNodeInstance -> realTarget[];
+                  leave scan;
+               #);
+           if);
+        #);
+     #);
+   
+-- MonitorOnSingleNodeInstrumentApply:DoPart --
+do (# nodes: @NodeInstanceList; 
+      monitorName: ^Text;
+   do (target[],theHand[]) -> getMonitorName -> monitorName[];
+      nodes.init;
+      nodes.clear;
+      realTarget[] -> nodes.append;
+      (nodes[], monitorName[], (getNet), MonitorType)
+        -> CreateMonitorWithNodeInstances -> theMonitor[];
+   #);
+   
+-- AppendMonitorBlock:DoPart --
+do (# clip: ^MonitorClipping;
+      com: ^CreateMonitorCommand;
+      net: ^CPNet;
+      theMonitorBlock: ^MonitorBlock;
+   do father.theCPNet[] -> net[];
+      
+      &MonitorBlock[] -> theMonitorBlock[];      
+      (net[], NamesMonitoringName -> getGlobalNames) -> theMonitorBlock.init;
+      
+      &MonitorClipping[] -> clip[];
+      (theMonitorBlock[], previousMonitor[]) -> clip.init;
+      
+      &CreateMonitorCommand[] -> com[];
+      com.init;
+      father[] -> com.prepare;
+      clip[] -> com.apply;
+      
+      theMonitorBlock[] -> theIndex.makeAbstractMonitorNodeTextEditor;
+      
+      (net[], com[]) -> registerCommand;
+   #);
+   
+-- AppendMonitorBlockInstrumentApply:DoPart --
+do (# father: ^MonitorBlock;
+      previousMonitor: ^AbstractMonitor;
+   do (if ((target.getMonitor).getFatherMonitor = none) or
+          (target.expanded and
+          (target## <= theIndex.MonitorBlockNode##)) then
+          target.getMonitor -> father[];
+       else
+          target.getMonitor -> previousMonitor[];
+          previousMonitor.getFatherMonitor -> father[];          
+      if);
+      (father[], previousMonitor[]) -> AppendMonitorBlock;
+      finish;
+   #);
+   
+-- DeleteMonitor:DoPart --
+do (theMonitor.theCPNet[],(theMonitor[] -> DeleteMonitorNoRegister)) -> registerCommand;
+   
+-- DeleteMonitorNoRegister:DoPart --
+do (# closeTextSheet:
+        (# clip: ^TabClipping;
+           closeTabCom: ^CloseTabCommand;
+           decl: ^Declaration;
+        enter decl[]
+        do FolderManager.theStandardLayer.folders.scan
+           (# 
+           do current.sheets.scan
+              (# 
+              do (if current.content[] = decl[] then
+                     &TabClipping[] -> clip[];
+                     (current[], FolderManager.theStandardLayer[]) -> clip.init;
+                     &CloseTabCommand[] -> closeTabCom[];
+                     current.father[] -> closeTabCom.prepare;
+                     clip[] -> closeTabCom.clip[];
+                     closeTabCom[] -> theCommandList.append;
+                 if);
+              #);
+           #);
+        #);
+      deleteMonitor:
+        (# clip: ^MonitorClipping;
+           com: ^DeleteMonitorCommand;
+           theMonitor: ^AbstractMonitor;
+        enter theMonitor[]
+        do &MonitorClipping[] -> clip[];
+           (theMonitor[], theMonitor[] -> (theMonitor.getFatherMonitor).previousMonitor)
+             -> clip.init;
+           
+           &DeleteMonitorCommand[] -> com[];
+           com.init;
+           theMonitor.getFatherMonitor -> com.prepare;
+           clip[] -> com.clip[];
+           
+           com[] -> theCommandList.prepend;
+           
+           (if theMonitor## <= MonitorBlock## then
+               theMonitor[] -> qua
+               (# as:: MonitorBlock;
+               do thisObj.scanAbstractMonitors
+                  (# 
+                  do current[] -> deleteMonitor;
+                  #);
+               #);
+           if);
+        #);
+      theCommandList: @CommandList;
+      com: ^Command;
+   do theCommandList.init;
+      
+      (if theMonitor## <= Monitor## then
+          theMonitor[] -> qua
+          (# as:: Monitor;
+          do thisObj.scanDeclarations
+             (# 
+             do current[] -> closeTextSheet;
+             #);
+          #);
+      if);
+      
+      theMonitor[] -> deleteMonitor;
+      
+      &Command
+      (# getName::
+           (# 
+           do 'Delete ' -> name[];
+              theMonitor.name[] -> name.puttext;
+           #);
+         apply::
+           (# 
+           do redo;
+           #);
+         undo::
+           (# 
+           do theCommandList.undo;
+              (theMonitor.getFatherMonitor).changed;
+           #);
+         redo::
+           (# 
+           do theCommandList.redo; 
+              (theMonitor.getFatherMonitor).changed;
+           #);
+      #)[] -> com[];
+      com.apply;
+      
+      com[] -> deletionCommand[];
+   #);
+   
+-- DeleteMonitorRelevant:DoPart --
+do true -> value;
+   (if target## <= theIndex.MonitorBlockNode## then
+       target[] -> qua
+       (# as:: theIndex.MonitorBlockNode;
+       do not thisObj.IsGlobal -> value;
+       #);
+   if);
+   
+-- DeleteMonitorInstrumentApply:DoPart --
+do target.getMonitor -> DeleteMonitor;
+   finish;
+   
+-- DisableMonitor:DoPart --
+do (# com: ^Command;      
+   do &Command
+      (# prefix: ^Text;
+         getName::
+           (# 
+           do prefix.copy -> name[];
+              theMonitor.name[] -> name.append;
+           #);
+         apply:: 
+           (# 
+           do redo;
+              (if theMonitor.disabled then
+                  'Disable ' -> prefix[];
+               else
+                  'Enable ' ->prefix[];
+              if);
+           #);
+         undo::
+           (# 
+           do not theMonitor.disabled -> theMonitor.disabled;
+           #);
+         redo::
+           (# 
+           do not theMonitor.disabled -> theMonitor.disabled;
+           #);
+      #)[] -> com[];
+      com.apply;
+      
+      (theMonitor.theCPNet[], com[]) -> registerCommand;
+   #);
+   
+-- DisableMonitorRelevant:DoPart --
+do (target.getMonitor).getStatus = compiled -> value;
+   
+-- DisableMonitorInstrumentApply:DoPart --
+do target.getMonitor -> DisableMonitor;
+   finish;
+   
+-- MonitorNodeClippingInsert:DoPart --
+do elm[] -> context.addNodeInstance; 
+   context.semanticChanged;
+   
+-- MonitorNodeClippingRemove:DoPart --
+do elm[] -> context.removeNodeInstance;
+   context.semanticChanged;
+   
+-- AddNodesToMonitor:DoPart --
+do (# createCommand:
+        (# theNodeInstance: ^NodeInstance;
+           clip: ^MonitorNodeClipping;
+           com: ^MonitorInsertNodeCommand;
+        enter theNodeInstance[]
+        do &MonitorNodeClipping[] -> clip[];
+           theNodeInstance[] -> clip.init;
+           
+           &MonitorInsertNodeCommand[] -> com[];
+           com.init;
+           theMonitor[] -> com.prepare;
+           clip[] -> com.clip[];           
+        exit com[]
+        #);
+      commands: @CommandList;
+      com: ^Command;
+   do commands.init;
+      nodes.scan
+      (# 
+      do (if not (current[] -> theMonitor.hasNodeInstance) then
+             current[] -> createCommand -> commands.append;
+         if);
+      #);
+      &Command
+      (# getName:: (# do 'Add nodes to monitor' -> name[]; #);
+         apply:: (# do redo; #);
+         undo:: (# do commands.undo; #);
+         redo:: (# do commands.redo; #);
+      #)[] -> com[];
+      com.apply;
+      (theMonitor.theCPNet[], com[]) -> registerCommand;
+   #);
+   
+-- AddSurroundingNodesInstrumentAddSurroundingPlacesInstrument:DoPart --
+do (# nodes: @NodeInstanceIDDictionary;
+   do nodes.init;
+      target.thePlace.scanPlaceInstanceGroup
+      (# 
+      do (if not ((current.thePlace.isFusionPlace) or (current.thePlace.hasAssignments)) then
+             (current.id[], current[]) -> nodes.associate;
+         if);
+         current.scanSurroundingTransitionInstances
+         (# 
+         do (if not current.theTransition.isSubstitutionTransition then
+                (current.id[], current[]) -> nodes.associate; 
+            if);
+         #);
+      #);
+      (target.theMonitor[], nodes[]) -> AddNodesToMonitor;
+   #);
+   finish;
+   
+-- AddSurroundingNodesInstrumentAddSurroundingTransitionsInstrument:DoPart --
+do (# nodes: @NodeInstanceIDDictionary;
+   do nodes.init;
+      target.theTransition.scanSurroundingPlaceInstances
+      (# 
+      do (current.id[], current[]) -> nodes.associate;
+      #);
+      (target.theMonitor[], nodes[]) -> AddNodesToMonitor;
+   #);
+   finish;
+   
+-- AddSurroundingNodesInstrumentInit:DoPart --
+do AddSurroundingPlacesInstrument.init;
+   AddSurroundingPlacesInstrument[] -> register;
+   AddSurroundingTransitionsInstrument.init;
+   AddSurroundingTransitionsInstrument[] -> register;
+   
+-- RemoveNodesFromMonitor:DoPart --
+do (# makeCommand:
+        (# theNode: ^NodeInstance;
+           clip: ^MonitorNodeClipping;
+           com: ^MonitorRemoveNodeCommand;
+        enter theNode[]
+        do &MonitorNodeClipping[] -> clip[];
+           theNode[] -> clip.init;
+           
+           &MonitorRemoveNodeCommand[] -> com[];
+           com.init;
+           theMonitor[] -> com.prepare;
+           clip[] -> com.clip[];      
+        exit com[]
+        #);
+      com: ^Command;
+      coms: @CommandList;
+   do coms.init;
+      nodes.scan
+      (# 
+      do current[] -> makeCommand -> coms.append;
+      #);
+      &Command
+      (# getName:: (# do 'Remove nodes from monitor' -> name[]; #);
+         apply:: (# do redo; #);
+         redo:: (# do coms.redo; #);
+         undo:: (# do coms.undo; #);
+      #)[] -> com[];
+      com.apply;
+      (theMonitor.theCPNet[], com[]) -> registerCommand;
+   #);
+   
+-- RemoveNodeFromMonitorInstrumentApply:DoPart --
+do (# nodes: @NodeInstanceList;
+   do (if target## <= theIndex.MonitorPlaceNode## then
+          target[] -> qua
+          (# as:: theIndex.MonitorPlaceNode;
+          do thisObj.thePlace[] -> nodes.append;
+          #);
+       else
+          target[] -> qua
+          (# as:: theIndex.MonitorTransitionNode;
+          do thisObj.theTransition[] -> nodes.append;
+          #);
+      if);
+      (target.theMonitor[], nodes[]) -> RemoveNodesFromMonitor;
+   #);
+   finish;
+   
+-- RemoveNodesOnPageInstanceFromMonitorInstrumentApply:DoPart --
+do (# nodes: @NodeInstanceList
+   do target.theMonitor.scanNodeInstances
+      (# 
+      do (if current.thePageInstance[] = target.thePage[] then
+             current[] -> nodes.append;
+         if);
+      #);
+      (target.theMonitor[], nodes[]) -> RemoveNodesFromMonitor;
+   #);
+   finish;
+   
+-- CloneAbstractMonitorInstrumentRelevant:DoPart --
+do (target.getMonitor).theCPNet.theGlobalMonitor[] <> target.getMonitor
+     -> value;
+   
+-- CloneAbstractMonitor:DoPart --
+do (# cloneMonitorBlock:
+        (# block, clone: ^MonitorBlock;
+           name: ^Text;
+        enter block[]
+        do &MonitorBlock[] -> clone[];
+           block.name.copy -> name[];
+           ' (clone)' -> name.append;
+           (block.theCPNet[], name[]) -> clone.init;
+           block.scanAbstractMonitors
+           (# 
+           do (if current## <= MonitorBlock## then
+                  current[] -> cloneMonitorBlock -> clone.addMonitorLast;
+               else
+                  current[] -> cloneMonitor -> clone.addMonitorLast;
+              if);
+           #);
+        exit clone[]
+        #);
+      cloneMonitor:
+        (# mon, clone: ^Monitor;
+           name: ^Text;
+           options, declarations: @SmartList;
+        enter mon[]
+        do options.init;
+           declarations.init;
+           &Monitor[] -> clone[];
+           mon.name.copy -> name[];
+           ' clone' -> name.append;
+           (mon.theCPNet[], name[], mon.type) -> clone.init;           
+           mon.disabled -> clone.disabled;
+           mon.scanOptions
+           (# 
+           do (if true
+               // current## <= BooleanOption## then
+                  current[] -> qua
+                  (# as:: BooleanOption;
+                     bol: ^BooleanObject;
+                  do &BooleanObject[] -> bol[];
+                     thisObj.theValue -> bol;
+                     bol[] -> options.append;
+                  #);
+               // current## <= TextOption## then
+                  current[] -> qua
+                  (# as:: TextOption;
+                  do thisObj.theValue.copy -> options.append;
+                  #);
+              if);
+           #);
+           clone.scanOptions
+           (# 
+           do options.first -> current.theValue[];
+              options.first -> options.at -> options.delete;
+           #);
+           mon.scanDeclarations
+           (# 
+           do current.mldecl.data.copy -> declarations.append;
+           #);
+           clone.scanDeclarations
+           (# 
+           do declarations.first -> current.parse;
+              declarations.first -> declarations.at -> declarations.delete;
+           #);
+           mon.scanNodeInstances
+           (# 
+           do current[] -> clone.addNodeInstance;
+           #);
+           false -> clone.generateTemplateCode;
+           true -> clone.syntaxCheckAndGenerateMonitor;
+        exit clone[]
+        #);
+      clip: ^MonitorClipping;
+      com: ^StandardInsertCommand;
+      clone: ^AbstractMonitor;
+   do (if absMonitor## <= MonitorBlock## then
+          absMonitor[] -> cloneMonitorBlock -> clone[];
+       else
+          absMonitor[] -> cloneMonitor -> clone[];
+      if);
+      &MonitorClipping[] -> clip[];
+      (clone[], absMonitor.theCPNet.theGlobalMonitor.lastMonitor) -> clip.init;
+      &StandardInsertCommand
+      (# getName:: 
+           (# 
+           do 'Clone monitor ' -> name[]; 
+              absMonitor.name[] -> name.append; 
+           #);
+      #)[] -> com[];
+      absMonitor.theCPNet.theGlobalMonitor[] -> com.prepare;
+      clip[] -> com.apply;
+      (absMonitor.theCPNet[], com[]) -> registerCommand;
+   #);
+   
+-- CloneAbstractMonitorInstrumentApply:DoPart --
+do target.getMonitor -> CloneAbstractMonitor;
+   finish;
+   
+-- CreateGroupOfMonitorNodes:DoPart --
+do (# clip: ^GlobalGroupClipping;
+      com: ^GlobalGroupInsertCommand;
+      grp: ^Group;
+      name: ^Text;
+   do &Group[] -> grp[];
+      grp.init;
+      theMonitor.name.copy -> name[];
+      ' nodes' -> name.append;
+      name[] -> grp.theName[];
+      theMonitor.theCPNet[] -> grp.setCPNet;
+      theMonitor.scanNodeInstances
+      (# 
+      do current.getNode -> grp.addElement;
+      #);
+      &GlobalGroupClipping[] -> clip[];
+      (grp[], none) -> clip.init;
+      &GlobalGroupInsertCommand[] -> com[];
+      theMonitor.theCPNet[] -> com.prepare;
+      clip[] -> com.apply;
+      (theMonitor.theCPNet[], com[]) -> registerCommand;
+   #);
+   
+-- CreateGroupOfMonitorNodesInstrumentApply:DoPart --
+do target.theMonitor[] -> CreateGroupOfMonitorNodes;
+   finish;
+   
+-- GenerateNewTemplateCode:DoPart --
+do (# makeCommand: 
+        (# decl: ^Declaration;
+           clip: ^MonitorDeclarationClipping;
+           com: ^GenerateTemplateCodeCommand;
+        enter decl[]
+        do &MonitorDeclarationClipping[] -> clip[];
+           decl[] -> clip.init;
+           &GenerateTemplateCodeCommand[] -> com[];
+           mon[] -> com.prepare;
+           clip[] -> com.clip[];
+        exit com[]
+        #);
+      com: ^Command;
+      coms: @CommandList;
+   do coms.init;
+      mon.scanDeclarations
+      (# 
+      do current[] -> makeCommand -> coms.append;
+      #);
+      &Command
+      (# getName:: (# do 'Generate new template code' -> name[]; #);
+         apply:: (# do redo; #);
+         redo:: (# do coms.redo; #);
+         undo:: (# do coms.undo; #);
+      #)[] -> com[];
+      com.apply;
+      (mon.theCPNet[], com[]) -> registerCommand;
+   #);
+   
+-- GenerateNewTemplateCodeInstrumentApply:DoPart --
+do target.getMonitor -> GenerateNewTemplateCode;
+   finish;

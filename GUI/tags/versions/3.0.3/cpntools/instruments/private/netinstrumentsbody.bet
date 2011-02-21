@@ -1,0 +1,984 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../netinstruments';
+
+INCLUDE '~beta/sysutils/pathhandler';
+
+-- CreateNetInstrumentInit:DoPart --
+do 'new_net' -> helpname[];
+   ('filename','newnet.filename') -> options.setAddOptionWithDefault(# OptionType:: FilePathOption(# dname::(# do 'Template location' -> value[]; #); #); #);
+   
+-- LoadNetCommandInit:DoPart --
+do 'load_net'->helpname[];  
+
+-- LoadNetCommandApply:DoPart --
+do (# manager: ^CommandManager;
+      filename, netname: ^Text;            
+      fileDialog: widget.fileSelectionDialog
+        (# 
+        do NamesFileDialogFilter  -> getGlobalNames -> filter[];
+           NamesLoadInstrument -> getGlobalNames -> title[];
+        #);              
+      chooseBackup: 
+        (# 
+        #);      
+      loadNetFromDisc:
+        (# filename, netName, autosavePath: ^Text;
+           entry, autosaveEntry: @Diskentry;
+             entryFile, backupFile: @File;
+           input: @FileObject(# OtherError:: 
+                                  (# 
+                                  do false -> loadstatus;
+                                     true -> continue;
+                                     true -> errorWhenOpening;
+                                  #);
+                             #); 
+           errorWhenOpening: @boolean;
+           myXML: ^theXML.Element;
+           theWorkspaceElements: ^WorkspaceElements;
+           loadstatus,errorReported: @boolean;
+           errorMsg: ^Text;
+           theNet: ^CPNet;
+        enter filename[]
+        do attemptLoadNet:
+             (# entryExists: @boolean;
+             do filename[] -> entry.path;
+                filename[] -> getNetName -> netName[];
+                (if not netName.isAsciiOne then
+                    ExtendedASCIIInFilename -> getGlobalNames -> errorMsg[];
+                    false -> loadstatus;
+                 else
+                    entry.exists
+                    (# error::
+                         (# 
+                         do false -> loadstatus; 
+                            true -> continue; 
+                            leave attemptLoadNet;
+                         #); 
+                    #) -> entryExists;
+                if);
+                (if entryExists AND (entry.isFile) AND (entry.readable)
+                    and (errorMsg[]=NONE) then
+                    true -> loadstatus;
+                    entry.path.head -> autosavePath[];
+                    '\\#' -> autosavePath.append;
+                    entry.path.name -> autosavePath.append;
+                    autosavePath[] -> autosaveEntry.path;
+                    (if (autosaveEntry.exists) AND (autosaveEntry.isFile) AND (autosaveEntry.readable) then
+                        (if ('Autosave available', 'An autosave file is available. Load Autosave?') -> Widget.promptUser
+                         // Widget.UserYes then
+                            autosavePath[] -> input.name;
+                         // Widget.UserNo then
+                            filename[] -> input.name;
+                         // Widget.UserCancel then
+                            false -> loadstatus;
+                            leave attemptLoadNet;
+                        if);
+                     else
+                        filename[] -> input.name;
+                    if);
+                    input.openRead;
+                    (if errorWhenOpening then
+                        leave attemptLoadNet;
+                    if);
+                    input[] -> 
+                    theXML.parse
+                    (# onError::
+                         (# theError: ^Text;
+                         do &Text[] -> theError[];
+                            XMLLoadError -> getGlobalNames -> theError.putFormat(# do errorString[] -> s; #);
+                            theError[] -> errorMsg[];
+                            false -> loadstatus;
+                            true -> errorWhenOpening;
+                            true -> continue; 
+                         #);
+                    #) -> myXml[];
+                    input.close;
+                    (if loadstatus then
+                        false -> loadstatus;
+                        (* update the max id to avoid clashes of ids *)
+                        ((myXML[] -> theXML.maxID), THIS(World).maxID) -> max -> THIS(World).maxID;
+                        (if debugging then 
+                            'MaxID is now [%i]' -> debugLoad(# do THIS(World).maxID -> i; #) 
+                        if);
+                        
+                        (if myXML[] <> NONE then
+                            (if 'workspaceElements' -> myXML.tag.equalNCS then
+                                &WorkspaceElements[] -> theWorkspaceElements[];
+                                (filename[], myXML[]) -> theWorkspaceElements.unPack -> (theNet[],errorReported);
+                                (if theNet[]<>NONE then
+                                    (if newNet then
+                                        none -> theNet.path[];
+                                    if);
+                                    true -> loadstatus;
+                                 else 
+                                    false -> loadstatus;
+                                    true -> errorWhenOpening;
+                                if);
+                            if);
+                        if);
+                    if);
+                 else
+                    true -> errorWhenOpening;
+                if); 
+             #);
+           (if errorWhenOpening and not errorReported then
+               ObjectPool.get(# Type::StatusBubble; #) -> status[];
+               (if errorMsg[]<>NONE then
+                   errorMsg[] -> status.error;
+                else 
+                   (if newNet then
+                       'Could not open new net template.\nPlease check the location in\n  Tool box -> Net -> New net ' -> status.error;
+                    else
+                       'Could not open net' -> status.error;
+                   if);
+               if);
+           if);
+        exit loadstatus
+        #);          
+      loadSavedNet: 
+        (# dialog: @fileDialog;
+           loadOK: @BooleanObject;
+           filename: ^Text;
+           entry: @Diskentry;
+           suffix: ^Text;
+           content: ^Element;
+           netAlreadyLoaded:
+             (# value: @boolean;
+             do false -> value;
+                lookForTheSameNet:theIndex.scanIndexNodes
+                  (# Type::theIndex.NetNode; 
+                     currentQualifiedFileName: ^Text;
+                  do (if current.net.path[]<>none then
+                         current.net.path.copy -> currentQualifiedFileName[];
+                         '\\' -> currentQualifiedFileName.append;
+                         current.net.theName[] -> currentQualifiedFileName.append;
+                         (*This has to be different on linux since filenames are
+                          * only non-casesensitive on windows*)
+                         (if fileName[] -> currentQualifiedFileName.equalNCS then
+                             true -> value;
+                             leave lookForTheSameNet;
+                         if);
+                     if);
+                  #);
+             exit value
+             #);
+           errorMessage: ^Text;
+           filenameRelative:
+             (# 
+             do filename.reset;
+                (if not ((filename.peek = '\\') or
+                    (filename.peek = '/') or
+                    ((2 -> filename.inxget) = ':')) then
+                    filename[] -> relativeFile -> filename[];
+                if);
+             exit filename[]
+             #)
+        do 'filename' -> options.lookuptext -> filename[];
+           (if filename[] = NONE then 
+               dialog->filename[];
+            else
+               (* Load new net from template. Ensure the path to the template is absolute. *)
+               filenameRelative;
+           if); 
+           (if filename[] <> NONE then
+               filename[] -> entry.path;
+               entry.path.name.suffix -> suffix[];
+               (if netAlreadyLoaded then
+                   ObjectPool.get(# Type::StatusBubble; #) -> status[];
+                   &Text[] -> errorMessage[];
+                   NetIsAlreadyLoaded -> getGlobalNames -> errorMessage.putFormat
+                   (# 
+                   do entry.path.name -> s;
+                   #);
+                   errorMessage[] -> status.error;
+                   none -> fileName[];
+                else
+                   filename[] -> loadNetFromDisc -> loadOK;    
+               if);
+           if);
+           ('loadstatus',loadOK[]) -> options.setAddOption(# OptionType:: BooleanOption(# temporary:: trueObject; #); #);
+           loadOk -> netLoaded;   
+        exit filename[]
+        #);          
+      loadNewNet:
+        (# status: @boolean;
+           myXml: ^theXML.Element;
+           xml: ^Text;
+           theWorkspaceElements: ^WorkspaceElements;
+           filename: ^Text;
+           errorReported: @boolean;
+        do loadSavedNet;
+           'loadstatus' -> options.lookupboolean -> status;
+           (if not status then
+               (*no new net has been found*)
+               (*build a default new net - parse some standard xml*)
+               'filename' -> options.lookuptext -> filename[];
+               'creating own new net, since templates/new net is nonexisting' -> debugTemp;
+               '' -> xml[];
+               '<?xml version="1.0" encoding="iso-8859-1"?>' -> xml.putline;
+               '<!DOCTYPE workspaceElements PUBLIC "-//CPN//DTD CPNXML 1.0//EN" "http://www.daimi.au.dk/~cpntools/bin/dtd/5/cpn.dtd">' -> xml.putline;
+               ''->xml.putline;
+               '<workspaceElements>' -> xml.putline;
+               '<generator tool="CPN Tools" version="" format="5"/>' -> xml.putline;
+               '<cpnet>' -> xml.putline;
+               '<globbox>' -> xml.putline;
+               '<color id="ID1">' -> xml.putline;
+               '<id>INT</id>' -> xml.putline;
+               '<int/></color></globbox>' -> xml.putline;
+               '<page id="ID2">' -> xml.putline;
+               '<pageattr name="' -> xml.puttext;
+               NamesDefaultNameOfNewPage -> getGlobalNames -> xml.puttext;
+               '"/></page></cpnet></workspaceElements>'  -> xml.putline;
+               xml[] -> theXML.parse -> myXml[];
+               
+               (* Use the XMLLibrary instead *)
+               'Template_CPNet' -> theXMLLibrary.lookup -> myXml[];
+               ('name', NamesDefaultNameOfNewPage -> getGlobalNames) -> ('pageattr' -> ('page' -> ('cpnet' -> myXml.getChild).getChild).getChild).changeAttribute;
+               
+               (if (myXML[] <> NONE) and ('workspaceElements' -> myXML.tag.equalNCS) then
+                   (# theNet: ^CPNet;
+                   do &WorkspaceElements[] -> theWorkspaceElements[];
+                      ('./New Net.cpn', myXML[]) -> theWorkspaceElements.unPack -> (theNet[],errorReported);
+                      none -> theNet.path[];
+                   #);
+               if);
+           if);
+        exit 'filename' -> options.lookuptext
+        #);    
+      status: ^Workspace.StatusBubble;
+   do (if NOT modalDialog then
+          true -> modalDialog;
+          (if newNet then 
+              loadNewNet -> filename[];
+           else 
+              loadSavedNet -> filename[];
+          if);             
+          (if filename[] <> none then
+              filename[] -> getNetName -> netName[];
+              scan: theIndex.theIndexNodes.scanReverse
+                (# delimiter: ^Text;
+                do (if current## <= theIndex.NetNode## then
+                       current[] -> theNetNode[];
+                       (if theNetNode.net.theName[] -> netname.equal then
+                           (if not netLoaded then
+                               theNetNode[] -> theIndex.removeIndexNode;
+                               leave scan;
+                           if);
+                           theNetNode.net.theName.copy -> theNetNode.net.lastLegalName[];
+                           (if theNetNode.net.path[] <> NONE then
+                               theNetNode.net.path.reset;
+                               ('/$', '') -> theNetNode.net.path.regexp_replace;
+                               &Text[] -> delimiter[];
+                               DirectoryChar -> delimiter.put;
+                               ('/', delimiter[]) -> theNetNode.net.path.regexp_replace_literally_global;
+                           if);
+                           leave scan;
+                        else 
+                           none -> theNetNode[];
+                       if);
+                   if);
+                #);
+          if);
+          getCommandManager -> manager[];
+          manager.clear;
+          false -> modalDialog;
+          (if newNet and (theNetNode[] <> none) then
+              scan: theNetNode.scanIndexNodes
+                (# 
+                do (if current## <= theIndex.InstanceNode## then
+                       current[] -> makeTextEditor;
+                       leave scan;
+                   if);
+                #);
+          if);
+      if);
+   #);
+   
+-- ExportEntity:DoPart --
+do (# saveDialog: @widget.fileCreationDialog
+        (# name, suffix: ^text;
+        enter (name[], suffix[], filter[])
+        do (if name[]<>NONE then
+               name.copy -> filename[];
+               suffix[] -> filename.puttext;
+            else
+               &text[] -> filename[]
+           if);
+           NamesPrintPSInstrument -> getGlobalNames -> title[];
+        #);      
+      openFile: 
+        (# ext: ^Text;
+           entry: @DiskEntry;
+        do (saveName.length-3, saveName.length) -> saveName.sub -> ext[];
+           (if NOT(suffix[] -> ext.equalNCS) then
+               suffix[] -> saveName.puttext;
+           if);
+           saveName[]->entry.path;           
+           &fileObject[]->theFile[];
+           saveName[]->theFile.name;          
+           theFile.openWrite;   
+        #);
+      theFile: ^FileObject;
+      suffix, filter: ^Text;      
+      thePrintCPNSheetCommand: ^PrintCPNSheetCommand;
+      theExportGlobalBoxNodeCommand: ^ExportGlobalBoxNodeCommand;
+      theExportDeclarationCommand: ^ExportDeclarationCommand;
+      thePrintIndexHierachyCommand: ^PrintIndexHierachyCommand;
+      errorMsg, pageName: ^Text;
+   do (if saveName[] = none then
+          (if true
+           // theEntity## <= CPNSheet## then
+              '.eps' -> suffix[];
+              theEntity[] -> QUA
+              (# as:: CPNSheet;
+              do thisObj.content.thePage.theName[] -> saveName[] -> pageName[];
+              #);
+              NamesPrintDialogFilter -> getGlobalNames -> filter[];
+           // theEntity## <= theIndex.AbstractDeclNode## then
+              '.txt' -> suffix[];
+              theEntity[] -> QUA
+              (# as:: theIndex.AbstractDeclNode;
+              do thisObj.content.shortName -> saveName[];
+              #);
+              NamesExportDeclarationFilter -> getGlobalNames -> filter[];
+           // theEntity## <= TextSheet## then
+              '.txt' -> suffix[];
+              theEntity[] -> QUA
+              (# as:: TextSheet;
+              do thisObj.content.shortName -> saveName[];
+              #);
+              NamesExportDeclarationFilter -> getGlobalNames -> filter[];
+           // theEntity## <= theIndex.GlobalBoxNode## then
+              '.txt' -> suffix[];
+              'Declarations' -> saveName[];
+              NamesExportDeclarationFilter -> getGlobalNames -> filter[];
+          if);
+          (if saveName.isLegalFileName then
+              (saveName[], suffix[], filter[])
+                -> saveDialog
+                -> saveName[];          
+          if);
+       else
+          (if true
+           // theEntity## <= CPNSheet## then
+              theEntity[] -> QUA
+              (# as:: CPNSheet;
+              do thisObj.content.thePage.theName[] -> pageName[];
+              #);
+              '.eps' -> suffix[]; 
+           // theEntity## <= theIndex.AbstractDeclNode## then
+              '.txt' -> suffix[];              
+           // theEntity## <= TextSheet## then
+              '.txt' -> suffix[];                       
+           // theEntity## <= theIndex.GlobalBoxNode## then
+              '.txt' -> suffix[];
+           // theEntity## <= theIndex.Node## then
+              '.eps' -> suffix[];
+          if);
+      if);
+      (if (pageName[]<>NONE) and not pageName.isLegalFileName then
+          'Cannot print. The page name ' -> errorMsg[];
+          saveName[] -> errorMsg.append;
+          ' results in an illegal filename.' -> errorMsg.append;
+          errorMsg[] -> (ObjectPool.get(# Type::Statusbubble; #)).error;
+          none -> saveName[];
+      if);
+      (if (saveName[] <> none) then
+          openFile;
+          (if true
+           // theEntity## <= CPNSheet## then
+              &PrintCPNSheetCommand[] -> thePrintCPNSheetCommand[];
+              (options[], theFile[]) -> thePrintCPNSheetCommand.init;
+              (theEntity[], none) -> thePrintCPNSheetCommand.prepare;
+              thePrintCPNSheetCommand.apply;           
+           // theEntity## <= theIndex.GlobalBoxNode## then
+              &ExportGlobalBoxNodeCommand[] -> theExportGlobalBoxNodeCommand[];
+              (options[], theFile[]) -> theExportGlobalBoxNodeCommand.init;
+              (theEntity[], none) -> theExportGlobalBoxNodeCommand.prepare;
+              theExportGlobalBoxNodeCommand.apply;
+           // theEntity## <= theIndex.AbstractDeclNode## then
+              &ExportDeclarationCommand[] -> theExportDeclarationCommand[];
+              (options[], theFile[]) -> theExportDeclarationCommand.init;
+              theEntity[] -> QUA
+              (# as:: theIndex.AbstractDeclNode;
+              do (thisObj.content[], none) -> theExportDeclarationCommand.prepare;
+              #);
+              theExportDeclarationCommand.apply;
+            // theEntity## <= TextSheet## then
+              &ExportDeclarationCommand[] -> theExportDeclarationCommand[];
+              (options[], theFile[]) -> theExportDeclarationCommand.init;
+              theEntity[] -> QUA
+              (# as:: TextSheet;
+              do (thisObj.content[], none) -> theExportDeclarationCommand.prepare;
+              #);
+              theExportDeclarationCommand.apply;          
+           // theEntity## <= theIndex.Node## then
+              &PrintIndexHierachyCommand[] -> thePrintIndexHierachyCommand[];
+              (options[], theFile[]) -> thePrintIndexHierachyCommand.init;
+              (theEntity[], none) -> thePrintIndexHierachyCommand.prepare;
+              thePrintIndexHierachyCommand.apply;
+           if);          
+          theFile.close;
+      if);
+   #);
+   
+-- ExportInstanceNodesAndDeclarations:DoPart --
+do export:
+     (# testIfExist:
+          (# saveName, entityname, errorMsg: ^Text; 
+             entry: @DiskEntry;
+             result: @integer;       
+            enter (saveName[],entityname[])
+          do (if not entityname.isLegalFileName then
+                 'Cannot print. The page name ' -> errorMsg[];
+                 entityname[] -> errorMsg.append;
+                 ' results in an illegal filename.' -> errorMsg.append;
+                 errorMsg[] -> (ObjectPool.get(# Type::Statusbubble; #)).error;
+                 leave export;
+             if);
+             saveName[] -> entry.path;
+             false -> overWrite;
+             (if not overWriteAll and                 
+                 entry.exists then
+                 'Overwrite file: ' -> errorMsg[];
+                 saveName[] -> errorMsg.puttext;
+                 ('File exists', errorMsg[]) 
+                   -> widget.promptUserForOverwrite
+                   -> result;
+                 (if result 
+                  // widget.UserYesToAll then true -> overWriteAll;
+                  // widget.UserYes then true -> overWrite;
+                  // widget.UserNoToAll then leave export;
+                 if);
+              else
+                 true -> overWrite;
+             if);
+          #);
+        visitIndex: 
+          (# theInstanceNode: ^theIndex.InstanceNode;
+             theCPNSheet: ^CPNSheet;             
+             saveName: ^Text;                    
+          enter theInstanceNode[]
+          do theInstanceNode.getSheet -> theCPNSheet[];
+             (if showInstanceInformation or
+                 ((theCPNSheet.content.thePage.id[], theCPNSheet.content.thePage[])
+                   -> theCPNPages.associate) then
+                 path.copy -> saveName[];
+                 '/' -> saveName.puttext;
+                 theCPNSheet.content.thePage.theName[] -> saveName.puttext;
+                 (if showInstanceInformation and
+                     (theCPNSheet.content.thePage.numberOfInstances > 1) then
+                     ' (' -> saveName.puttext;
+                     theCPNSheet.content.mlinstancenumber -> saveName.putint;                   
+                     ')' -> saveName.puttext;
+                 if);  
+                 '.eps' -> saveName.puttext;
+                 (saveName[],theCPNSheet.content.thePage.theName[]) -> testIfExist;
+                 (if overWrite or overWriteAll then
+                     (theCPNSheet[], saveName[], options[]) -> ExportEntity;
+                 if);
+                 theInstanceNode.scanIndexNodes
+                 (# 
+                 do current[] -> visitIndex;
+                 #);
+             if);
+          #);
+        visitDeclaration:
+          (# theDeclaration: ^Declaration;
+             saveName: ^Text;
+             theSheet: @TextSheet;
+          enter theDeclaration[]
+          do (if (theDeclaration.id[], theDeclaration[]) -> visitedDeclarations.associate then
+                 path.copy -> saveName[];
+                 '/' -> saveName.puttext;
+                 theDeclaration.shortName -> saveName.puttext;
+                 '.txt' -> saveName.puttext;
+                 (saveName[],theDeclaration.shortName) -> testIfExist;
+                 (if overWrite or overWriteAll then
+                     theDeclaration[] -> theSheet.content[];
+                     (theSheet[], saveName[], options[]) -> ExportEntity;
+                 if);
+             if);
+          #);
+        visitIndexHierachy:
+          (# theNode: ^theIndex.Node;             
+             saveName: ^Text;
+          enter theNode[]
+          do path.copy -> saveName[];
+             '/' -> saveName.puttext;
+             theNode.getName -> saveName.puttext;
+             'Hierarchy' -> saveName.puttext;
+             '.eps' -> saveName.puttext;
+             (saveName[],theNode.getName) -> testIfExist;
+             (if overWrite or overWriteAll then
+                 (theNode[], saveName[], options[]) -> ExportEntity;
+             if);
+          #);
+        copyInstanceNode:
+          (# index: @CPNIndex;
+             theInstanceNode: ^theIndex.InstanceNode;
+             theNode: ^theIndex.TextNode;
+          enter theInstanceNode[]
+          do &theIndex.TextNode[] -> theNode[];
+             theInstanceNode.getName -> theNode.init;
+             theInstanceNode.scanIndexNodes
+             (# 
+             do current[] -> copyInstanceNode -> theNode.addIndexNode;
+             #);
+             true -> theNode.expanded; 
+             index.init;
+             theNode[] -> index.addIndexNode;
+             index.dolayout;
+          exit theNode[]
+          #);
+        copyNetNode: 
+          (# index: @CPNIndex;
+             theNetNode: ^theIndex.NetNode;
+             theNode, theTextNode: ^theIndex.TextNode;
+             name, ext: ^Text;
+          enter theNetNode[]
+          do &theIndex.TextNode[] -> theNode[];
+             theNetNode.getName -> name[];
+             (name.length-3, name.length) -> name.sub -> ext[];
+             (if '.cpn' -> ext.equalNCS then
+                 (1, name.length - 4) -> name.sub -> name[];
+             if);
+             name[] -> theNode.init;
+             theNetNode.scanInstanceNodes
+             (# 
+             do current[] -> copyInstanceNode -> theNode.addIndexNode;
+             #);
+             true -> theNode.expanded;
+             index.init;
+             theNode[] -> index.addIndexNode;
+             index.dolayout;
+          exit theNode[]
+          #);
+        theCPNPages: @CPNPageIDDictionary;
+        visitedDeclarations: @DeclarationIDDictionary;
+        showInstanceInformation: @boolean;
+        overWrite: @boolean;
+        theNode: ^theIndex.Node;
+     do theCPNPages.init;
+        'currentmarking' -> options.lookupboolean -> showInstanceInformation;
+        theInstanceNodes.scan
+        (# 
+        do current[] -> visitIndex;
+        #);
+        (if exportHierachy then
+            (if exportNetHierachy then
+                scan: theIndex.scanIndexNodes
+                  (# 
+                  do (if current## <= theIndex.NetNode## then
+                         current[] -> qua 
+                         (# as:: theIndex.NetNode;
+                         do (if ((theInstanceNodes.first).instance).thePage.net[] = thisObj.net[] then
+                                thisObj[] -> copyNetNode -> theNode[];
+                                leave scan;
+                            if);
+                         #);
+                     if);
+                  #);
+             else
+                theInstanceNodes.first -> copyInstanceNode -> theNode[];
+            if);
+            theNode[] -> visitIndexHierachy;
+        if);
+        declarations.scan
+        (# 
+        do current[] -> visitDeclaration;
+        #);
+     #);
+   
+-- ExportCPNSheetInstrumentApply:DoPart --
+do (target[], none, options[]) -> ExportEntity;
+   finish;
+   
+-- ExportGlobalBoxNodeInstrumentApply:DoPart --
+do (target[], none, options[]) -> ExportEntity;
+   finish;
+   
+-- ExportBinderInstrumentApply:DoPart --
+do (# theSelectFolderDialog: @widget.selectFolder;
+      theInstanceNodes: @InstanceNodeList;
+      theInstanceNode: ^theIndex.InstanceNode;
+      theDeclarations: @DeclarationList;
+      path: ^Text;
+   do (if target.sheets.size = 1 then
+          target.sheets.scan
+          (# 
+          do (current[], none, options[]) -> ExportEntity;
+          #);
+       else
+          theSelectFolderDialog -> path[];
+          (if path[] <> none then
+              theInstanceNodes.init;
+              theDeclarations.init;
+              target.sheets.scan
+              (# 
+              do (if true
+                  // current## <= CPNSheet## then
+                     &theIndex.InstanceNode[] -> theInstanceNode[];
+                     current[] -> QUA
+                     (# as:: CPNSheet;
+                     do thisObj.content[] -> theInstanceNode.instance;
+                     #);
+                     theInstanceNode[] -> theInstanceNodes.append;
+                  // current## <= TextSheet## then
+                     current[] -> QUA
+                     (# as:: TextSheet;
+                     do thisObj.content[] -> theDeclarations.append;
+                     #);
+                 if);
+              #);
+              (theInstanceNodes[], theDeclarations[], path[], options[], false, false, false)
+                -> ExportInstanceNodesAndDeclarations;
+          if);
+      if);
+      finish;
+   #);
+   
+-- ExportDeclarationNodeInstrumentApply:DoPart --
+do (target[], none, options[]) -> ExportEntity;
+   finish;
+   
+-- ExportTextSheetInstrumentApply:DoPart --
+do (target[], none, options[]) -> ExportEntity;
+   finish;
+   
+-- ExportInstanceNodeInstrumentApply:DoPart --
+do (# theSelectFolderDialog: @widget.selectFolder;
+      path: ^Text;
+      instanceNodes: @InstanceNodeList;      
+   do (if target.countIndexNodes = 0 then
+          (target.getSheet, none, options[]) -> ExportEntity;
+       else
+          theSelectFolderDialog -> path[];
+          (if path[] <> none then
+              instanceNodes.init;
+              target[] -> instanceNodes.append;
+              (instanceNodes[], &DeclarationList[], path[], options[], false, true, false)
+                -> ExportInstanceNodesAndDeclarations;
+          if);
+      if);
+      finish;
+   #);   
+   
+-- ExportNetNodeInstrumentApply:DoPart --
+do export:
+     (# theSelectFolderDialog: @widget.selectFolder;
+        path, declPath, errorMsg: ^Text;
+        entry: @DiskEntry;
+        instanceNodes: @InstanceNodeList;
+        theGlobalBoxNode: ^theIndex.GlobalBoxNode;
+        result: @integer;
+        overWrite, overWriteAll: @Boolean;
+        tmp: ^Text;
+     do theSelectFolderDialog -> path[];
+        (if not ('' -> (path.trim).equal) then
+            instanceNodes.init;
+            target.scanIndexNodes
+            (# 
+            do (if true
+                // current## <= theIndex.InstanceNode## then
+                   current[] -> instanceNodes.append;
+                // current## <= theIndex.GlobalBoxNode## then
+                   current[] -> theGlobalBoxNode[];
+               if);
+            #);
+            path.copy -> declPath[];
+            '/Declarations.txt' -> declPath.puttext;
+            declPath[] -> entry.path;
+            false -> overWrite -> overWriteAll;
+            (if entry.exists then
+                'Overwrite file: ' -> errorMsg[];
+                declPath[] -> errorMsg.puttext;
+                ('File exists', errorMsg[]) 
+                  -> widget.promptUserForOverwrite
+                  -> result;
+                (if result 
+                 // widget.UserYesToAll then true -> overWriteAll;
+                 // widget.UserYes then true -> overWrite;
+                 // widget.UserNoToAll then leave export;
+                if);
+                (if overWrite or overWriteAll then
+                    (theGlobalBoxNode[], declPath[], options[]) -> ExportEntity;
+                if);
+             else
+                (theGlobalBoxNode[], declPath[], options[]) -> ExportEntity;
+            if);
+            (instanceNodes[], &DeclarationList[], path[], options[], overWriteAll, true, true)
+              -> ExportInstanceNodesAndDeclarations;          
+        if);        
+     #);
+   finish;
+   
+-- ExportInstrumentInit:DoPart --
+do 'print_net' -> helpname[];
+   ('blackwhite','print.blackandwhite')->options.setAddOptionWithDefault(# OptionType:: BooleanOption(# dname:: (# do 'Black/White' -> value[]; #); #); #);    
+   ('currentmarking','print.currentmarking')->options.setAddOptionWithDefault(# OptionType:: BooleanOption(# dname::(# do 'Show simulation feedback' -> value[]; #); #); #);
+   options[] -> theExportCPNSheetInstrument.init;
+   theExportCPNSheetInstrument[] -> register;
+   options[] -> theExportGlobalBoxNodeInstrument.init;
+   theExportGlobalBoxNodeInstrument[] -> register;
+   options[] -> theExportDeclarationNodeInstrument.init;
+   theExportDeclarationNodeInstrument[] -> register;
+   options[] -> theExportInstanceNodeInstrument.init;
+   theExportInstanceNodeInstrument[] -> register;
+   options[] -> theExportNetNodeInstrument.init;
+   theExportNetNodeInstrument[] -> register;
+   options[] -> theExportTextSheetInstrument.init;
+   theExportTextSheetInstrument[] -> register;
+   options[] -> theExportBinderInstrument.init;
+   theExportBinderInstrument[] -> register;
+   
+-- ExportInstrumentToolTip:DoPart --
+do (# bw,cm: @boolean;
+   do 'blackwhite' -> options.lookupboolean -> bw;
+      'currentmarking' -> options.lookupboolean -> cm;
+      '' -> theTip[];
+      NamesPrintNet -> getGlobalNames -> theTip.putFormat
+      (# 
+      do (if bw then
+             NamesPrintNetBW -> getGlobalNames -> s;
+          else
+             NamesPrintNetColor -> getGlobalNames -> s;
+         if);
+         (if cm then
+             NamesPrintNetCM -> getGlobalNames -> s;
+          else
+             NamesPrintNetNotCM -> getGlobalNames -> s;
+         if);
+      #);
+   #);
+   
+-- SaveNetAndSimulatorInstrument:DoPart --
+do (# saveName, simName, mlExpression, output: ^Text;          
+      error: @boolean;
+      theTexts: @List (# Element:: Text; #);
+      from, to: @integer;
+   do target.net[] -> SaveNet -> saveName[];
+      
+      0 -> from -> to;
+      saveName.scanAll
+      (#
+      do (if ch = '\\' then
+             (from, to) -> saveName.sub -> theTexts.append;
+             to + 2 -> from;
+         if);
+         to + 1 -> to;
+      #);
+      (if theTexts.size > 0 then
+          (from, saveName.length) -> saveName.sub -> theTexts.append;
+          '' -> saveName[];
+          theTexts.scan
+          (#
+          do current[] -> saveName.append;
+             '/' -> saveName.append;
+          #);
+      if);
+      
+      (0, saveName.length - 4) -> saveName.sub -> saveName[];
+      'ML' -> saveName.append;
+      &Text[] -> mlExpression[];
+      'CPN\'build "%s";' -> mlExpression.putFormat
+      (# do saveName[] -> s; #);
+      
+      (none, target.net.ML[], mlExpression[], true)
+        -> MLEvaluateExpression
+        -> (output[], error);
+      (if error then
+          output[] -> status.error;
+       else
+          output[] -> status.message;
+      if);
+      finish;
+   #);
+   
+-- DeclarationExtractText:DoPart --
+do (# extract: 
+        (# level: @integer;
+           target: ^Declaration;
+           printIndented:
+             (# txt: ^Text;
+             enter txt[]
+             do txt.reset;
+                loop:
+                  (if NOT txt.eos then
+                      (for level repeat
+                           '     ' -> output.puttext;
+                      for);                      
+                      txt.getline -> output.putline;
+                      restart loop;
+                  if);
+             #);
+           string: ^Text;
+        enter (target[], level)
+        do &Text[] -> string[];
+           (if target.isBlock then
+               '(' -> string.put;
+               '* ' -> string.puttext;
+               (if target.mldecl[] = NONE then
+                   'Declarations' -> string.puttext;
+                else
+                   string[] -> target.print;
+               if);
+               ' *' -> string.puttext;
+               ')' -> string.putline;
+               string[] -> printIndented;
+               target.scanDeclarations
+               (#
+               do (current[], level+1) -> extract;
+               #);
+            else
+               string[] -> target.print;
+               string.newline;
+               string[] -> printIndented;
+           if);
+        #);
+   do (target[], 0) -> extract;
+   #);
+   
+-- ExportDeclarationCommandApply:DoPart --
+do (target[], output[]) -> DeclarationExtractText;
+   
+-- ExportGlobalBoxNodeCommandApply:DoPart --
+do (target.content.getTopDeclaration).scanDeclarations
+   (#
+   do (current[], output[]) -> DeclarationExtractText;
+   #);
+   
+-- PrintCPNSheetCommandPrintPageElement:DoPart --
+do (if element.presentation[]<>NONE then
+       (if element## <= SSNode## then
+           (#
+              node: ^SSNode;
+              dialog: ^DescriptorDialog;
+           do element[] -> node[];
+              node.dialog[] -> dialog[];
+              true -> dialog.hideProxy;
+              dialog.update;
+              ctx[]->element.presentation.displayOpaque;
+              false -> dialog.hideProxy;
+              dialog.update;
+           #);
+        else
+           ctx[]->element.presentation.displayOpaque;
+       if);
+   if);
+   (element.gethierarchyinfos).scan
+   (# 
+   do current[]->printPageElement;
+   #);
+   
+   
+-- PrintCPNSheetCommandPrintSimulationFeedBack:doPart --
+do (# pi:^PlaceInstance;
+      ti: ^TransitionInstance;
+   do (if (elementToDecorate##<=Transition##) then
+          elementToDecorate.id[]->target.content.lookupTransitionInstance->ti[];
+          (if ti.enabled then
+              ctx.pushMatrix;
+              ctx.pushAttributes;
+              (ti.x, ti.y) -> ctx.translate;
+              4 -> ctx.strokewidth;
+              enabled_color -> ctx.stroke;
+              NONE -> ctx.fill;
+              (ti.theTransition.width-5, ti.theTransition.height-5) -> ctx.drawRect;
+              ctx.popAttributes;
+              ctx.popMatrix;               
+          if);
+      if);
+      (if (elementToDecorate##<=Place##) then
+          elementToDecorate.id[]->target.content.lookupPlaceInstance->pi[];
+          (if true then
+              ctx[] -> (pi.getToken).presentation.displayOpaque;
+              ctx[] -> (pi.getPlaceMarking).presentation.displayOpaque;
+           else
+              ctx[]->pi.presentation.displayOpaque;
+          if);
+      if);      
+   #);
+   
+-- PrintCPNSheetCommandApply:DoPart --
+do (# printAbstractWorkspaceIndex:
+        (# ti: ^TransitionInstance;
+           theTransition: ^Transition;
+           printBindingIndex: @boolean;
+        enter (theTransition[],printBindingIndex)
+        do theTransition.id[] -> target.content.lookupTransitionInstance->ti[];
+           (if (ti.theBindingdialog[]<>NONE) and printBindingIndex then
+               ctx[] -> (ti.theBindingdialog.getPrintablePart).displayOpaque;
+           if);
+           (if ti.thePortSocketDialog[]<>NONE then
+               ctx[] -> (ti.thePortSocketDialog.getPrintablePart).displayOpaque;
+           if);
+        #);
+      scanPageElementsInLayerOrder:
+        (# current: ^PageElement;
+        do target.mainlayer.content.scan
+           (# 
+           do (if current##<=PageElement## then
+                  current[] -> THIS(scanPageElementsInLayerOrder).current[];
+                  INNER scanPageElementsInLayerOrder;
+              if);
+           #);
+        #);
+      printElements:
+        (# 
+        do scanPageElementsInLayerOrder
+           (# 
+           do (if ((useGroup and (current[] -> theGroup.isMember)) or (not useGroup)) then
+                  current[] -> printPageElement;
+              if);
+           #);
+        #);
+      printCurrentMarkingAndEnabling:
+        (# 
+        do scanPageElementsInLayerOrder
+           (# 
+           do (if ((useGroup and (current[] -> theGroup.isMember)) or (not useGroup)) then
+                  current[] -> printSimulationFeedBack;
+              if);
+           #);
+        #);
+      printBindingAndPortSocketIndexes:
+        (# 
+        do scanPageElementsInLayerOrder
+           (# 
+           do (if current##<=Transition## then
+                  (current[],cm) -> printAbstractWorkspaceIndex;
+              if);
+           #);
+        #);
+   do printElements;
+      (if cm then
+          printCurrentMarkingAndEnabling;
+      if);
+      printBindingAndPortSocketIndexes;
+   #);
+    

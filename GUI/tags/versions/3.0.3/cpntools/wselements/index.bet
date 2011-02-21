@@ -1,0 +1,1827 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../../cpnet/cpnet';
+
+INCLUDE 'cpnbinder';
+INCLUDE '../resources/help';
+INCLUDE '../resources/default-values';
+INCLUDE '../cursors/stdcursors';
+INCLUDE '../resources/texts/texts';
+INCLUDE '../resources/help-resources';
+INCLUDE '../../cpnet/private/cpnetmonitorbody';
+INCLUDE '../../cpnet/decl';
+INCLUDE '../instruments/cpnoption';
+INCLUDE '../instruments/cpninstrument';
+
+BODY 'private/indexbody';
+BODY 'private/indexmonitorblocknodebody';
+BODY 'private/indexmonitornodebody';
+
+-- workspacelib: attributes --
+
+CPNIndex: Index
+  (# tools: ^ToolBox;
+     collection: ^ToolCollection;
+     
+     private:@<<SLOT CPNIndexprivate:Descriptor>>;
+     
+     Node: IndexNode
+       (# dragable::< trueObject;
+          
+          dim_flag: @boolean;
+          
+          dimmed: BooleanValue(# do dim_flag -> value; #);
+          
+          dim:
+            (# 
+            do (if not dim_flag then
+                   true -> dim_flag;
+                   changed;
+               if);
+            #);
+          
+          undim:
+            (# 
+            do (if dim_flag then
+                   false -> dim_flag;
+                   changed;
+               if);
+            #);
+          
+          nextUp:<
+            (# currentNode: ^Node;
+               elm: ^Entity;
+            enter currentNode[]
+            do INNER;
+            exit elm[]
+            #);
+          
+          next::<
+            (# currentNode: ^Node;
+            enter currentNode[]
+            do INNER;
+            #);
+          
+          forceNext::<
+            (# currentNode: ^AbstractDeclNode;
+            enter currentNode[]
+            do INNER;
+            #);
+          
+          update::<
+            (# 
+            do (if dimmed then
+                   0.2 -> AlphaStyle -> majorTextItem.theStyle[];
+                else
+                   1.0 -> AlphaStyle -> majorTextItem.theStyle[];
+               if);
+               INNER;
+            #);          
+       #);
+     DynamicNode: Node
+       (# update:: (# <<SLOT CPNIndexDynamicNodeUpdate:doPart>> #);
+       #);     
+     pack::< (# <<SLOT CPNIndexpack:doPart>> #);
+     unPack::< (# <<SLOT CPNIndexunPack:doPart>> #);     
+     LoadNode: Node
+       (# step: @integer;
+          dots: ^Text;          
+          getName:: (# <<SLOT CPNIndexLoadNodegetName:doPart>> #);          
+          init:: (# <<SLOT CPNIndexLoadNodeinit:doPart>> #);          
+          onAdded:: (# <<SLOT CPNIndexLoadNodeonAdded:doPart>> #);
+       #);
+     
+     StepNode: Node
+       (# clickable:: trueObject;          
+          private:@<<SLOT CPNIndexStepNodeprivate:Descriptor>>;          
+          getName:: (# <<SLOT CPNIndexStepNodegetName:doPart>> #);
+          init::
+            (# content: ^Notifier
+            enter content[]
+            <<SLOT CPNIndexStepNodeinit:doPart>>
+            #);
+       #);
+     TimeNode: Node
+       (# private:@<<SLOT CPNIndexTimeNodeprivate:Descriptor>>;
+          clickable:: trueObject;
+          getName:: (# <<SLOT CPNIndexTimeNodegetName:doPart>> #);
+          init::
+            (# content: ^Notifier;
+            enter content[]
+            <<SLOT CPNIndexTimeNodeinit:doPart>>
+            #);
+       #);
+     
+     
+     SheetNode: Node
+       (# Triangle::<
+            (# (* Status of subpages (children) *)
+               (* Unified status of all children *)
+               childStatus:< integerValue
+                 (# do compiled -> value; INNER #);
+               status: @childStatus;
+               being_checked:
+                 (# exit (status=unchecked) or (status=checking) #);
+               being_compiled: 
+                 (# exit (status=checked) or (status=compiling) #);
+               has_error: 
+                 (# exit status=incorrect #);               
+               makeTriangle::< (# <<SLOT CPNIndexSheetNodeTrianglemakeTriangle:doPart>> #);
+            #);          
+          onChanged::<
+            (# do INNER; #);
+          getSheet:<
+            (# theSheet: ^Sheet;
+            do INNER;
+            exit theSheet[]
+            #);
+          onRemoved::<
+            (#
+            do 'SheetNode: removing' -> debugIndex; INNER;
+            #);
+          showSheet::<
+            (# theSheet: ^Sheet;
+               theBinder: ^Folder;
+               done: @Boolean;
+            <<SLOT CPNIndexSheetNodeshowSheet:doPart>>
+            #);
+       #);          
+     InstanceNode: SheetNode
+       (# Triangle:: 
+            (# childStatus:: (# <<SLOT CPNIndexInstanceNodeTrianglechildStatus:doPart>> #);
+               makeTriangle:: (# <<SLOT CPNIndexInstanceNodeTrianglemakeTriangle:DoPart>> #);
+            #);
+          private:@<<SLOT CPNIndexInstanceNodeprivate:descriptor>>;
+          editable::trueObject;     
+          instance:
+            (# 
+            enter (# instance: ^PageInstance;
+                  enter instance[] 
+                  <<SLOT CPNIndexInstanceNodeinstanceenter:doPart>> 
+                  #)
+            exit (# instance: ^PageInstance;
+                 <<SLOT CPNIndexInstanceNodeinstanceexit:doPart>> 
+                 exit instance[]
+                 #)
+            #);          
+          getPageInstance:
+            (# theInstance: ^PageInstance;
+            <<SLOT InstanceNodegetPageInstance:doPart>>
+            exit theInstance[]
+            #);          
+          onFocusLost:: (# <<SLOT CPNIndexInstanceNodeonFocusLost:doPart>> #);
+          getName:: (# <<SLOT CPNIndexInstanceNodegetName:doPart>> #);
+          getSecondaryText:: (# <<SLOT CPNIndexInstanceNodegetSecondaryText:doPart>> #);
+          onTextUpdated:: (# <<SLOT CPNIndexInstanceNodeonTextUpdated:doPart>> #);
+          getSheet:: (# <<SLOT CPNIndexInstanceNodegetSheet:doPart>> #);
+          onChanged:: (# <<SLOT CPNIndexInstanceNodeonChanged:doPart>> #);
+          onAdded:: (# <<SLOT CPNIndexInstanceNodeonAdded:doPart>> #);
+          onRemoved:: (# <<SLOT CPNIndexInstanceNodeonRemoved:doPart>> #);
+          init::
+            (# instance: ^Notifier;
+            enter instance[]
+            <<SLOT CPNIndexInstanceNodeinit:doPart>>
+            #);
+       #);
+     
+     PageNode: SheetNode
+       (# Triangle::
+            (# childStatus:: (# <<SLOT CPNIndexPageNodeTrianglechildStatus:doPart>> #)
+            #);
+          private:@<<SLOT CPNIndexPageNodeprivate:descriptor>>;
+          onRemoved:: (# <<SLOT CPNIndexPageNodeonRemoved:doPart>> #);
+          getName:: (# <<SLOT CPNIndexPageNodegetName:doPart>> #);
+          init::
+            (# page: ^Notifier;
+            enter page[]
+            <<SLOT CPNIndexPageNodeinit:doPart>>
+            #);
+          getSheet:: (# <<SLOT CPNIndexPageNodegetSheet:doPart>> #);
+          onChanged:: (# <<SLOT CPNIndexPageNodeonChanged:doPart>> #);
+       #);
+     
+     onRemoved::
+       (# theCPNet: ^CPNet;
+       do (if source## <= CPNet## then
+              scanIt: scanIndexNodes
+                (# Type:: NetNode;
+                do (if source[] = current.net[] then
+                       current[] -> removeIndexNode;
+                       leave scanIt;
+                   if);
+                #);
+          if);
+       #);
+     
+     onAdded::
+       (# theCPNet: ^CPNet;
+          alreadyThere: @boolean;
+          theNetNode: ^NetNode;
+       do (if (source## <= CPNet##) then
+              false -> alreadyThere;
+              scanIt: scanIndexNodes
+                (# Type:: NetNode;                   
+                do (if source[] = current.net[] then
+                       true -> alreadyThere; 
+                       leave scanIt;
+                   if);
+                #);
+              (if not alreadyThere then
+                  &NetNode[] -> theNetNode[];
+                  source[] -> theNetNode.init;
+                  theNetNode[] -> addIndexNode;
+                  layout;
+              if);
+          if);
+       #);
+     
+     NetNode: Node
+       (# net: ^CPNet;
+          netName: ^Text;
+          time: @TimeNode;
+          step: @StepNode;
+          monitors: @MonitorBlockNode;
+          globals: ^GlobalBoxNode;
+          history: @HistoryNode;
+          
+          dragable:: (# do false -> value; #);
+          
+          getInstanceNodePosition:
+            (# thePage: ^CPNPage;
+               father: ^Node;
+               child: ^InstanceNode;
+               position: @integer;
+               findNode:
+                 (# theList: ^List;
+                 enter theList[]
+                 <<SLOT CPNIndexNetNodeGetInstanceNodePositionFindNode:doPart>>
+                 exit (father[], child[], position)
+                 #);               
+            enter thePage[]
+            <<SLOT CPNIndexNetNodeGetInstanceNodePosition:doPart>>
+            exit (father[], child[], position)
+            #);
+          
+          editable:: trueObject;
+	  ToolTip:: (# <<SLOT CPNIndexNetNodeToolTip:doPart>> #);
+          onTextUpdated:: (# <<SLOT CPNIndexNetNodeonTextUpdated:doPart>> #);
+          getName:: (# <<SLOT CPNIndexNetNodegetName:doPart>> #);
+          onChanged:: (# <<SLOT CPNIndexNetNodeonChanged:doPart>> #);
+          init::
+            (# 
+            enter net[]
+            <<SLOT CPNIndexNetNodeinit:doPart>>
+            #);
+          onRemoved::<
+            (# thenode: ^ToolNode;
+               tool: ^ToolCollection;
+               instancenodes: @Integer;
+            <<SLOT CPNIndexNetNodeonRemoved:doPart>>
+            #);
+          onAdded::
+            (# thenode: ^ToolNode;
+               tool: ^ToolCollection;
+               instancenodes: @Integer;
+            <<SLOT CPNIndexNetNodeonAdded:doPart>>
+            #);
+          scanInstanceNodes:
+            (# current: ^InstanceNode;
+            do scanIndexNodes
+               (# 
+               do (if current## <= InstanceNode## then
+                      current[] -> this(scanInstanceNodes).current[];
+                      inner scanInstanceNodes;
+                  if);
+               #);
+            #);
+       #);
+     
+     getNetNode:
+       (# theNet: ^CPNet;
+          theNode: ^NetNode;
+       enter theNet[]
+       do findNode: scanIndexNodes
+            (# 
+            do (if current## <= NetNode## then
+                   current[] -> theNode[];
+                   (if theNode.net[] = theNet[] then
+                       leave findNode;
+                   if);
+               if);
+            #);
+       exit theNode[]
+       #);
+     
+     AbstractHistoryNode: Node
+       (# 
+          getCommandManager:<
+            (# theCommandManager: ^CommandManager;
+            do INNER;
+            exit theCommandManager[]
+            #);
+          getNet:<
+            (# theNet: ^CPNet;
+            do INNER;
+            exit theNet[]               
+            #);
+          clear:<
+            (# 
+            do INNER;
+            #);
+       #);
+     
+     HistoryNode: AbstractHistoryNode
+       (# private: @<<SLOT CPNIndexHistoryNodePrivate:Descriptor>>;          
+          clickable:: trueObject;
+          fatherType:: NetNode;
+          getName::< (# <<SLOT CPNIndexHistoryNodeGetName:doPart>> #);
+          hasExpander:: (# do true -> value #);
+          observer: @Notifier
+            (# onChanged:: (# <<SLOT CPNIndexHistoryNodeObserverOnChanged:doPart>> #); #);
+          build: (# <<SLOT CPNIndexHistoryNodeBuild:doPart>> #);           
+          clear:: (# <<SLOT CPNIndexHistoryNodeClear:doPart>> #);
+          init:: (# theCommandManager: ^CommandManager;
+                 enter theCommandManager[]
+                 <<SLOT CPNIndexHistoryNodeInit:doPart>> 
+                 #);
+          getCommandManager::(#<<SLOT CPNIndexHistoryNodeGetCommandManager:doPart>> #);
+          getNet::
+            (# 
+            do father.net[] -> theNet[];
+            #);
+       #);
+     
+     CommandNode: Node
+       (# private: @<<SLOT CPNIndexCommandNodePrivate:Descriptor>>;         
+          clickable::FalseObject;
+          dragable::(# do false -> value; #);
+          fatherType:: AbstractHistoryNode;
+          setHistorynode:
+            (# theHistoryNode: ^HistoryNode;
+            enter theHistoryNode[]
+            <<SLOT CPNIndexCommandNodeSetHistoryNode:doPart>>
+            #);
+          getHistoryNode:
+            (# theHistoryNode: ^HistoryNode;
+            <<SLOT CPNIndexCommandNodeGetHistoryNode:doPart>>               
+            exit theHistoryNode[]
+            #);
+          setCommand:
+            (# theCommand: ^Command;
+            enter theCommand[]
+            <<SLOT CPNIndexCommandNodeSetCommand:doPart>>
+            #);
+          getCommand:
+            (# theCommand: ^Command;
+            <<SLOT CPNIndexCommandNodeGetCommand:doPart>>
+            exit theCommand[]
+            #);
+          getName:: (# <<SLOT CPNIndexCommandNodeGetName:doPart>> #);          
+       #);
+     makeDeclNode:
+       (# content: ^Declaration;
+          theNode: ^AbstractDeclNode
+       enter content[]
+       do (if content.node[] = NONE then
+              (if content.isBlock then
+                  &DeclBlockNode[] -> theNode[];
+               else
+                  &DeclarationNode[] -> theNode[];
+              if);
+              content[] -> theNode.content[];
+              theNode[] -> content.node[];
+              theNode.init;
+           else
+              content.node[] -> theNode[];
+          if);
+       exit theNode[]
+       #);
+     
+     MakeDeclarationDragClipping:
+       (# target: ^Declaration;
+          clip: ^DeclarationDragClipping;
+       enter target[]
+       do (# container: ^Declaration;
+             before: ^Declaration;
+          do target.getParent -> container[];
+             search: container.scanDeclarations
+               (#
+               do (if current[] = target[] then
+                      leave search;
+                   else
+                      current[] -> before[];
+                  if);
+               #);
+             &DeclarationDragClipping[] -> clip[];
+             (container[], before[], target[]) -> clip.prepare;
+          #);
+       exit clip[]
+       #);
+     DeclarationDragClipping:
+       (# container: ^Declaration;
+          after: ^Declaration;
+          target: ^Declaration;
+          prepare:
+            (#
+            enter (container[], after[], target[])
+            #);
+          apply:
+            (# father: ^Declaration;
+            do target.getParent -> father[];
+               target[] -> father.removeDeclarationNoDelete;
+               (target[], after[]) -> container.addDeclarationAfter;
+               target[] -> CheckAfterMove;
+            #);
+          CheckAfterMove:
+            (# target: ^Declaration;
+            enter target[]
+            do target.scanDeclarationTree
+               (#
+               do current[] -> CheckAfterMoveOne;
+               #);
+            #);
+          CheckAfterMoveOne:
+            (# target: ^Declaration;
+               net: ^CPNet;
+               before: @boolean;
+            enter target[]
+            do (if target.mldecl[] <> NONE then
+                   target.getCPNet -> net[];
+                   true -> before;
+                   (if target.mldecl.status = Incorrect then
+                       target.mldecl.semanticChanged;
+                   if);
+                   check: (net.theGlobals.getTopDeclaration).scanDeclarationTree
+                     (# 
+                     do (if current[] = target[] then
+                            false -> before;
+                         else
+                            (if current.mldecl[] <> NONE then
+                                (if before then
+                                    (if (current.mldecl.ID[] -> target.mldecl.lookupUsedBy) <> NONE then
+                                        current.mldecl.semanticChanged;
+                                    if);
+                                 else
+                                    (if current.mldecl.status = Incorrect then
+                                        current.mldecl.semanticChanged;
+                                     else
+                                        (if (target.mldecl.ID[] -> current.mldecl.lookupUsedBy) <> NONE then
+                                            target.mldecl.semanticChanged;
+                                        if);
+                                    if);
+                                if);
+                            if);
+                        if);
+                     #);
+               if);
+            #);
+       #);
+     DeclarationDragCommand: Command
+       (# before: ^DeclarationDragClipping;
+          after: ^DeclarationDragClipping;
+          net: ^CPNet;
+          getName::
+            (#
+            do 'Drag ' -> name[];
+               after.target.shortName -> name.puttext;
+            #);
+          apply::
+            (#
+            enter (before[], after[])
+            do after.apply;
+            #);
+          redo::
+            (#
+            do after.apply;
+            #);
+          undo::
+            (#
+            do before.apply;
+            #);
+       #);
+
+     DragDeclaration: WithCommandManager
+       (# container: ^Declaration;
+          after: ^Declaration;
+          target: ^Declaration;
+       enter (container[], after[], target[])
+       <<SLOT CPNIndexDragDeclaration:doPart>>
+       #);
+     
+     
+     AbstractDeclNode: SheetNode
+       (# content: ^Declaration;
+          getSheet::<
+            (# theTextSheet: ^TextSheet;
+            do &TextSheet[] -> theTextSheet[] -> theSheet[];
+               INNER;
+               theTextSheet.init;
+               content[] -> theTextSheet.setContent;
+            #);
+       #);
+     
+     InteriorNode: AbstractDeclNode
+       (# editable:: (# do true -> value #);
+          data: ^Text;
+          allowReturn::< (# do true -> value; #);
+          allowCtrlReturn:: TrueObject;
+          next::< 
+            (# declFatherNode: ^DeclarationNode;
+            do father[] -> declFatherNode[];
+               declFatherNode.next -> elm[]; 
+            #);
+          forceNext::<
+            (# declFatherNode: ^DeclarationNode;
+            do father[] -> declFatherNode[];
+               declFatherNode.forceNext -> elm[]; 
+            #);
+          onRemoved::<
+            (#
+            do 'removing' -> debugInteriorNode;
+            #);
+          getName::
+            (#
+            do (if not majorTextItem.editActive then
+                   data.clear;
+                   data[] -> content.print;
+               if);
+               data[] -> name[];
+            #);
+          getNumberOfLines:: 
+            (# 
+            do '\n' -> data.findTextAll 
+               (# 
+               do lines + 1 -> lines; 
+               #); 
+            #); 
+          getHeight::
+            (#
+            do (if not majorTextItem.editActive then
+                   getName -> arial.measureText -> (width, height);
+                else 
+                   majorTextItem.content[] -> arial.measureText -> (width, height);
+               if);
+               height + 2 -> height;
+            #);
+          onTextUpdated::
+            (#
+            do (if debugging then
+                   'the text was updated to %s\n editActive: %s\n' -> debugInteriorNode
+                   (# 
+                   do data.copy -> s; 
+                      (if majorTextItem.editActive then
+                          'true' -> s;
+                       else
+                          'false' -> s;
+                      if);
+                   #);
+               if);
+               data[] -> content.parse;
+            #);
+          onSemanticChanged::
+            (# 
+            do (if not majorTextItem.editActive then
+                   (if debugging then
+                       'Whopdidooo... the text changed\n was: %s\n is: %s\n' -> debugInteriorNode
+                       (# tempText: ^Text;
+                       do
+                          &Text[] -> tempText[] -> content.print;
+                          majorTextItem.content.copy -> s;
+                          tempText.copy -> s;
+                       #);
+                   if);
+                   data.clear;
+                   data[] -> content.print;
+                   data[] -> majorTextItem.content[];
+                   (if debugMe then
+                       printStatus (# #);
+                   if);
+                   update;
+                   'editActive: %s\n' -> debugInteriorNode
+                   (# 
+                   do
+                      (if majorTextItem.editActive then
+                          'true' -> s;
+                       else
+                          'false' -> s;
+                      if);
+                   #);
+               if);
+            #);
+          init::
+            (#
+            do &Text[] -> data[];
+               THIS(InteriorNode)[] -> content.attach;
+               false -> debugMe;
+            #);
+          onChanged::
+            (# 
+            do (if debugging then 
+                   'changed' -> debugInteriorNode; 
+                   'Onchanged: Data is: %s ' -> debugInteriorNode
+                   (# do data[] -> s; #);
+                   'Onchanged: textitem is: %s ' -> debugInteriorNode
+                   (# do majorTextItem.content[] -> s; #);
+                   'bounds of textitem: xmin: %f, xmax: %f, ymin: %f, ymax: %f '
+                     -> debugInteriorNode
+                   (# xmin,xmax,ymin,ymax:@Real;
+                   do majorTextItem.bounds -> (xmin, xmax, ymin, ymax);
+                      xmin -> f; xmax -> f; ymin -> f; ymax -> f;
+                   #);
+                   'height of node: height: %f '
+                     -> debugInteriorNode
+                   (# 
+                   do getHeight -> f;
+                   #);
+               if);
+               (if (not majorTextItem.editActive) then
+                   data.clear;
+                   data[] -> content.print;
+                   data[] -> majorTextItem.content[];
+                   (if debugMe then
+                       printStatus (# #);
+                   if);
+                   update;
+               if);
+               layout;
+            #);
+       #);
+     
+     getGlobalBoxContent:
+       (# node: ^GlobalBoxNode;
+          content: ^Declaration;
+       enter node[]
+       do node.content.getTopDeclaration -> content[];
+       exit content[]
+       #);
+     getAbstractDeclContent:
+       (# node: ^AbstractDeclNode;
+          content: ^Declaration;
+       enter node[]
+       do node.content[] -> content[];
+       exit content[]
+       #);
+     
+     getContent:
+       (# node: ^IndexNode;
+          content: ^Declaration;
+       enter node[]
+       do (if true
+           //(node## <= GlobalBoxNode##) then
+              node[] -> getGlobalBoxContent -> content[];
+           //(node## <= AbstractDeclNode##) then
+              node[] -> getAbstractDeclContent -> content[];
+          if);
+       exit content[]
+       #);
+     GlobalBoxNode: SheetNode
+       (# content: ^Globals;
+          noCycle: @Boolean;
+          
+          dragable:: (# do false -> value; #);
+          clickable:: (# do true -> value; #);
+          
+          sort:(# <<SLOT CPNIndexGlobalBoxNodesort:doPart>> #);
+          selectTexteditNode:
+            (# target: ^AbstractDeclNode;
+            enter target[]
+            <<SLOT CPNIndexGlobalBoxNodeselectTexteditNode:doPart>>
+            exit target[]
+            #);
+          
+          DropType:: AbstractDeclnode;
+          dropRelevant::
+            (#
+            do true -> value;
+            #);
+          
+          dropAccept::
+            (# child: ^Declaration;
+            do (if after[] <> NONE then
+                   after[] -> getContent -> child[];
+               if);
+               (if target[]<>after[] then
+                   (content.getTopDeclaration, child[], target.content[])-> DragDeclaration;
+               if);
+            #);
+          
+          
+          nextUp::< (# <<SLOT CPNIndexGlobalBoxNodenextUp:doPart>> #);
+          next::< (# <<SLOT CPNIndexGlobalBoxNodenext:doPart>> #);
+          forceNext::< (# <<SLOT CPNIndexGlobalBoxNodeforceNext:doPart>> #);
+          getName:: (# do NamesGlobalBoxNode -> getGlobalNames -> name[]; #);
+          onAdded:: (# <<SLOT CPNIndexGlobalBoxNodeonAdded:doPart>> #);
+          onRemoved:: (# <<SLOT CPNIndexGlobalBoxNodeonRemoved:doPart>> #);
+          onChanged:: (# <<SLOT CPNIndexGlobalBoxNodeonChanged:doPart>> #);
+          init:: (# <<SLOT CPNIndexGlobalBoxNodeinit:doPart>> #);
+       #);
+     DeclBlockNode: AbstractDeclnode
+       (# editable:: (# do true -> value #);
+          allowReturn::< (# do false -> value; #);
+          allowCtrlReturn::< TrueObject;          
+          nextUp:: (# <<SLOT DeclBlockNodeNextUp:DoPart>> #);         
+          next:: (# <<SLOT DeclBlockNodeNext:DoPart>> #);
+          hasExpander:: (# do true -> value #);
+          DropType:: AbstractDeclnode;
+          
+          dropRelevant::
+            (#
+            do true -> value;
+            #);
+          dropAccept::
+            (# child: ^Declaration;
+            do (if after[] <> NONE then
+                   after[] -> getContent -> child[];
+               if);
+               (if target[]<>after[] then
+                   (content[], child[], target.content[]) -> DragDeclaration;
+               if);
+            #);
+          
+          forceNext::<
+            (# fatherNode: ^Node;
+            do (if currentNode[] = none then
+                   THIS(DeclBlockNode)[] -> currentNode[];
+               if);
+               father[] -> fatherNode[];
+               currentNode[] -> fatherNode.forceNext -> elm[];
+            #);
+          getName::
+            (#
+            do content.shortName ->  name[];
+            #);
+          sort:
+            (# 
+            do theIndexNodes.clear;
+               content.scanDeclarations
+               (# 
+               do current.node[] -> theIndexNodes.append;
+               #);
+            #);
+          onAdded:: (# <<SLOT CPNIndexDeclBlockNodeOnAdded:doPart>> #);
+          onTextUpdated::
+            (#
+            do majorTextItem.content[] -> content.parse;
+            #);
+          onSemanticChanged::
+            (# 
+            do (if not majorTextItem.editActive then
+                   majorTextItem.content.clear;
+                   majorTextItem.content[] -> content.print;
+                   update;
+               if);
+            #);
+          onRemoved::<
+            (# 
+            do (if debugging then 'DeclNode: removing' -> debugIndex; if);
+               (if source## <= Declaration## then
+                   removing: scanIndexNodes
+                     (# Type:: AbstractDeclNode;
+                     do (if current.content[] = source[] then
+                            current[] -> removeIndexNode;
+                            leave removing;
+                        if);
+                     #);
+                   changed;
+               if);
+            #);
+          onChanged::
+            (# 
+            do (if (not majorTextItem.editActive) then
+                   majorTextItem.content.clear;
+                   majorTextItem.content[] -> content.print;
+                   update;
+               if);
+               content.getCurrentHighlight -> hilite_color[];
+            #);
+          init::
+            (#
+            do THIS(DeclBlockNode)[] -> content.attach;
+               content.scanDeclarations
+               (# 
+               do current[] -> makeDeclNode -> addIndexNode;
+               #);
+            #);
+       #);
+
+     DeclarationNode: AbstractDeclNode
+       (# data: ^Text;
+          editable:: (# do true -> value #);
+          allowReturn::< (# do true -> value; #);
+          allowCtrlReturn:: TrueObject;
+          avoidShortForm:< BooleanObject;
+          getName:: (# <<SLOT DeclarationNodeGetName:DoPart>> #);
+          onFocusGained:: (# <<SLOT DeclarationNodeOnFocusGained:DoPart>> #);
+          onTextUpdated:: (# <<SLOT DeclarationNodeOnTextUpdated:DoPart>> #);
+          getNumberOfLines:: (# <<SLOT DeclarationNodeGetNumberOfLines:DoPart>> #);
+          next::< (# <<SLOT DeclarationNodeNext:DoPart>> #);            
+          forceNext:: (# <<SLOT DeclarationNodeForceNext:DoPart>> #);            
+          onChanged:: (# <<SLOT DeclarationNodeOnChanged:DoPart>> #);
+          getHeight:: (# <<SLOT DeclarationNodeGetHeight:DoPart>> #);
+          expanderChanged:: (# <<SLOT DeclarationNodeExpanderChanged:DoPart>> #);
+          update:: (# <<SLOT DeclarationNodeUpdate:DoPart>> #);
+          ToolTip:: (# <<SLOT DeclarationNodeToolTip:DoPart>> #);	    
+          init:: (# <<SLOT DeclarationNodeInit:DoPart>> #);          
+          
+          isInv: booleanValue
+	    (#
+	    do (content.mldecl[] <> NONE) AND (content.mldecl## <= InvariantDecl##) -> value;
+	    #);
+          FlowsNode: @DynamicNode
+            (# content: ^Declaration;
+	       clickable:: trueObject;
+
+	       FlowNode: Node
+	         (# theTransition: ^Transition;
+	            
+		    getName::
+		      (#
+		      do &text[] -> name[];
+		         theTransition.theName[] -> name.puttext;
+		         '\n' -> name.findAll
+		         (#
+		         do (' ', inx) -> name.inxPut;
+		         #);
+		      #);
+		    
+	            init::
+		      (#
+		      enter theTransition[]
+		      #);
+	         #);
+
+	       getName::
+                 (#
+                 do 'Flows' -> name[];
+                 #);
+	       
+	       onChanged::
+	         (# pageList: @List (# element:: CPNPage; #);
+		    theNode: ^Node;
+		    thePageNode: ^PageNode;
+		 do (if isInv AND (source[] = THIS(FlowsNode)[]) AND expanded then
+                        theIndexNodes.clear;
+                        (content.getCPNet).scanCPNPages
+                        (# 
+                        do current[] -> pageList.append;
+                        #);
+                        THIS(FlowsNode)[] -> theNode[];
+                        pageList.scan
+                        (#
+                        do (if (pageList.size > 1) then
+                               &PageNode[] -> thePageNode[];
+                               current[] -> thePageNode.init;
+                               thePageNode[] -> theNode[];
+                               theNode[] -> addIndexNode;
+                           if);
+                           current.scanTransitions
+                           (# flow: ^FlowNode;
+                           do &FlowNode[] -> flow[];
+                              current[] -> flow.init;
+                              flow[] -> theNode.addIndexNode;
+                           #);
+                        #);
+		    if);
+		 #);
+            #);
+          
+          WeightsNode: @DynamicNode
+            (# content: ^Declaration;
+	       clickable:: trueObject;
+
+	       WeightNode: Node
+	         (# thePlace: ^Place;
+	            
+                    weight: @InteriorNode
+		      (#
+		         
+		      #);
+
+		    getName::
+		      (# inv: ^InvariantDecl;
+		      do content.mldecl[] -> inv[];
+		         &text[] -> name[];
+		         thePlace.theName[] -> name.puttext;
+		         ' : ' -> name.puttext;
+		         (thePlace.ID[] -> inv.weights.lookup).shortName -> name.puttext;
+		         '\n' -> name.findAll
+		         (#
+		         do (' ', inx) -> name.inxPut;
+		         #);
+		      #);
+		    
+	            init::
+		      (# theDecl: ^Declaration;
+		         inv: ^InvariantDecl;
+		      enter thePlace[]
+		      do content.mldecl[] -> inv[];
+		         thePlace.ID[] -> inv.weights.lookup -> theDecl[];
+		         (if theDecl[] = NONE then
+			     &Declaration[] -> theDecl[];
+			     theDecl.init;
+			     'zero' -> theDecl.parse;
+			     (thePlace.ID[], theDecl[]) -> inv.weights.associate;
+			 if);
+		         theDecl[] -> weight.content[];
+		         weight.init;
+		         weight[] -> addIndexNode;
+		      #);
+	         #);
+
+	       getName::
+                 (#
+                 do 'Weights' -> name[];
+                 #);
+
+	       onChanged::
+	         (# pageList: @List (# element:: CPNPage; #);
+		    theNode: ^Node;
+		    thePageNode: ^PageNode;
+		 do (if isInv AND (source[] = THIS(WeightsNode)[]) AND expanded then
+                        theIndexNodes.clear;
+                        (content.getCPNet).scanCPNPages
+                        (# 
+                        do current[] -> pageList.append;
+                        #);
+                        THIS(WeightsNode)[] -> theNode[];
+                        pageList.scan
+                        (#
+                        do (if (pageList.size > 1) then
+                               &PageNode[] -> thePageNode[];
+                               current[] -> thePageNode.init;
+                               thePageNode[] -> theNode[];
+                               theNode[] -> addIndexNode;
+                           if);
+                           current.scanPlaces
+                           (# 
+                              weight: ^WeightNode;
+                           do &WeightNode[] -> weight[];
+                              current[] -> weight.init;
+                              weight[] -> theNode.addIndexNode;
+                           #);
+                        #);
+		    if);
+		 #);
+            #);
+       #);
+     
+     theIndexNode: @Node
+       (# 
+	  clickable:: trueObject;
+          getName::
+            (#
+            do NamesIndexNode -> getGlobalNames -> name[];
+            #);
+       #);
+     
+     ToolBoxNode: Node
+       (# tools: ^ToolBox;
+	  clickable:: trueObject;
+          
+          getName::
+            (#
+            do tools.name[] -> name[];
+            #);
+          
+          pack::
+            (# 
+            do tools.pack -> elm[];
+            #);
+          
+          init::<
+            (#
+            enter tools[]
+            <<SLOT CPNIndexToolBoxNodeInit:doPart>>
+            #);            
+          
+          showSheet::
+            (# elm: ^theXML.Element;
+               output: ^File;
+               aToolCollection: ^ToolCollection;
+            do (if (debugging) and (debugSaveInstrument## -> debugEnabled) then
+                   'Save a toolbox' -> debugSaveInstrument;
+                   THIS(Index).pack -> elm[];
+                   &File[] -> output[];
+                   'instruments.xml' -> output.name;
+                   output.openWrite;
+                   (elm[], output[]) -> theXML.print;
+                   output.close;
+               if);
+            #);
+          
+          onAdded::
+            (# thenode: ^ToolNode;
+               tool: ^ToolCollection;
+               has: @Boolean;
+            <<SLOT CPNIndexToolBoxNodeOnAdded:doPart>>            
+            #);
+          
+          onRemoved::
+            (# thenode: ^ToolNode;
+               tool: ^ToolCollection;
+            <<SLOT CPNIndexToolBoxNodeOnRemoved:doPart>>            
+            #);
+       #);
+     
+     ToolNode: SheetNode
+       (# collection: ^ToolCollection;          
+          getName:: (# <<SLOT CPNIndexToolNodeGetName:doPart>> #);
+          getSheet:: (# <<SLOT CPNIndexToolNodeGetSheet:doPart>> #);          
+          init::
+            (#
+            enter collection[]
+            <<SLOT CPNIndexToolNodeInit:doPart>>
+            #);
+          showSheet::
+            (# 
+            do getName -> getShortName -> theSheet.toptab.label[];
+               theSheet.toptab.changed;
+            #);
+       #);
+     
+     ToolCellNode: SheetNode
+       (# (* For toolcellnodes to be dragable, they cannot
+           * be clickable. See bug #213
+           * 
+           * clickable:: trueObject;
+           *)
+          setToolNode:
+            (# theToolNode: ^ToolNode;
+            enter theToolNode[]
+            <<SLOT CPNIndexToolNodeSetToolNode:doPart>>
+            #);
+          showSheet:: (# <<SLOT CPNIndexToolCellNodeShowSheet:doPart>> #);
+          getSheet:: (# <<SLOT CPNIndexToolCellNodeGetSheet:doPart>> #);          
+          getName:: (# <<SLOT CPNIndexToolCellNodeGetName:doPart>> #);
+          init::
+            (# cell: ^ToolCell;
+            enter cell[]
+            <<SLOT CPNIndexToolCellNodeInit:doPart>>
+            #);          
+          private: @<<SLOT CPNIndexToolCellNodePrivate:descriptor>>
+       #);
+     
+     
+     
+     TabNode: SheetNode
+       (# theTab: ^Tab;
+          getName:: (# <<SLOT TabNodeGetName:doPart>> #);
+          init::
+            (# 
+            enter theTab[]
+            <<SLOT TabNodeInit:doPart>>
+            #);
+          getSheet:: (# <<SLOT TabNodeGetSheet:doPart>> #);          
+          onChanged:: (# <<SLOT TabNodeOnChanged:doPart>> #);
+       #);     
+     
+     OptionNode: Node
+       (# OptionType:< Option;
+          content: ^OptionType;
+          clickable::< (# do true -> value; INNER #);
+          getName::<
+            (#
+            do (if content[] <> NONE then
+                   content.displayName -> name[];
+                else
+                   INNER;
+               if);
+            #);
+          init::<
+            (#
+            enter content[]
+            do INNER;
+            #);
+       #);
+     BooleanOptionNode: OptionNode
+       (# OptionType:: BooleanOption;
+          
+          showSheet::<
+            (#
+            do NOT (content.theValue) -> content.theValue;
+               content.changed;
+               INNER;
+            #);
+          onChanged::
+            (#
+            do doLayout;
+            #);
+          update::
+            (# box: ^Rect;
+               mark: ^Line;
+            do &Rect[] -> box[];
+               box.init;
+               6 -> box.width;
+               6 -> box.height;
+               (arial.descent - arial.ascent) / 2 -> box.y;
+               -4 -> box.x;
+               (0.5, 0.5, 0.5) -> &Color -> &StrokeStyle -> box.theStyle[];
+               box[] -> presentation.add;
+               THIS(IndexNode)[] -> box.owner[];
+               (if content.theValue then
+                   &Line[] -> mark[];
+                   mark.init;
+                   (0, 1, 0) -> &Color -> &StrokeStyle -> mark.theStyle[];
+                   &PointList[] -> mark.points[];
+                   (-4, -6) -> MakePoint -> mark.points.append;
+                   (0, 0) -> MakePoint -> mark.points.append;
+                   (2, -6) -> MakePoint -> mark.points.append;
+                   (4, -10) -> MakePoint -> mark.points.append;
+                   (box.x, box.y + 2) -> (mark.x, mark.y);
+                   mark[] -> presentation.add;
+               if);
+            #);
+          init::
+            (#
+            do THIS(BooleanOptionNode)[] -> content.attach;
+            #);
+       #);
+     
+     MonitorBooleanOptionNode: BooleanOptionNode
+       (# net: ^CPNet;
+          showSheet::
+            (# toggleCommand: Command
+                 (# before: @boolean;
+                    getName:: (# toggle: ^Text;
+                              do 'Toggle ' -> toggle[];
+                                 (THIS(MonitorBooleanOptionNode).getName)
+                                   -> toggle.append -> name[]; 
+                              #);
+                    init:: (# enter before #);
+                    undo:: (# do before -> content.theValue; content.changed; #);
+                    redo:: (# do not before -> content.theValue; content.changed; #);
+                 #);
+               theCommand: ^toggleCommand;
+               currentNode: ^Node;
+            do (if net[]=none then
+                   father[] -> currentNode[];
+                   findNet:
+                     (# 
+                     do (if currentNode##<=NetNode## then
+                            currentNode[] -> QUA
+                            (# as:: NetNode; 
+                            do thisObj.net[] -> net[];
+                            #);
+                            leave findNet;
+                         else
+                            currentNode.father[] -> currentNode[];
+                            restart findNet;
+                        if);
+                     #);
+               if);
+               &toggleCommand[] ->theCommand[];
+               not (content.theValue) -> theCommand.init;
+               (net[],theCommand[]) -> registerCommand;
+            #);
+       #);
+     
+     TextOptionNode: OptionNode
+       (# contentText: ^TextItem;
+          OptionType::< TextOption;
+          
+          editable::< (# do true -> value; inner; #);
+	  (* #1012 *)
+	  allowReturn::< TrueObject;
+	  getNumberOfLines:: 
+            (# 
+	    do '\n' -> contentText.content.findTextAll 
+               (# 
+               do lines + 1 -> lines; 
+               #); 
+            #);
+	  getHeight::
+	    (#
+	    do contentText.content[] -> arial.measureText -> (width, height);
+	       height + 2 -> height;
+	    #);
+          
+          
+          data: ^Text;
+          onChanged::
+            (#
+            do (if not (contentText.editActive) then
+                   content.value -> contentText.content[];
+               if);
+            #);
+          onTextUpdated::
+            (#
+            do contentText.content[] -> content.value;
+            #);
+          update:: (# <<SLOT TextOptionNodeUpdate:doPart>> #);            
+          init::
+            (#
+            do &TextItem[] -> contentText[];
+               contentText.init;
+               contentText[] -> major[];
+               content.value -> data[] -> contentText.content[];
+               THIS(OptionNode)[] -> contentText.owner[];
+               THIS(OptionNode)[] -> content.attach;
+            #);
+       #);
+     FolderPathOptionNode: TextOptionNode
+       (# net: ^CPNet;
+          allowReturn::< (# do false -> value; #);
+          editable:: (# <<SLOT FolderPathOptionNodeEditable:DoPart>> #);
+          showSheet::  (# <<SLOT FolderPathOptionNodeShowSheet:DoPart>> #);
+       #);
+     MLCodeOptionNode: TextOptionNode
+       (# OptionType:: MLCodeOption;
+          dragable:: (# do true -> value #);
+          clickable:: (# do false -> value; #);
+          
+          getSheet:
+            (# theMLCodeOptionSheet: ^MLCodeOptionSheet;
+            do &MLCodeOptionSheet[] -> theMLCodeOptionSheet[];
+               theMLCodeOptionSheet.init;
+               content[] -> theMLCodeOptionSheet.setContent;
+            exit theMLCodeOptionSheet[]
+            #);
+          
+          showSheet::
+            (# theSheet: ^Sheet;
+            do getSheet -> theSheet[];
+               (if theSheet[] <> NONE then
+                   getName -> theSheet.toptab.label[];
+                   theSheet.toptab.changed;
+                   (x,y) -> theSheet.position;
+                   (theSheet[],x,y) -> folderManager.drop;
+               if);
+            #);
+       #);
+     
+     ColorOptionNode: OptionNode
+       (# OptionType:: ColorOption;
+          theColor: ^Color;
+          theRect: ^Rect;
+          
+          editable:: (# do false -> value #);
+          
+          update::
+            (# theBasicStyle: ^BasicStyle;
+            do  xmax + 6 -> theRect.x;
+               &BasicStyle[] -> theBasicStyle[];
+               (theColor[], theColor[], 1) -> theBasicStyle -> theRect.theStyle[];
+               theRect[] -> presentation.add;
+            #);
+          
+          init::
+            (# 
+            do content.value -> theColor[];
+               &Rect[] -> theRect[];
+               theRect.init;    
+               (10,10) -> (theRect.width, theRect.height); 
+            #);
+       #);
+     
+     NumberOptionNode: OptionNode
+       (# contentText: ^TextItem;
+          editable:: (# do true -> value #);
+          
+          getText:<
+            (# value: ^Text;
+            do INNER;
+            exit value[]
+            #);
+          setText:<
+            (#  value: ^Text;
+            enter value[]
+            do INNER;
+               getText -> contentText.content[];
+               changed;
+            #);
+          onTextUpdated::
+            (#
+            do contentText.content[] -> setText;
+               content.changed;
+            #);
+          update::
+            (# colon: ^TextItem;
+            do &TextItem[] -> colon[];
+               colon.init;
+               ':' -> colon.content[];
+               xmax + 6 -> colon.x;
+               colon[] -> presentation.add;
+               xmax + 14 -> contentText.x;
+               contentText[] -> presentation.add;
+               THIS(IndexNode)[] -> colon.owner[];
+               THIS(IndexNode)[] -> contentText.owner[];
+            #);
+          init::
+            (#
+            do &TextItem[] -> contentText[];
+               contentText.init;
+               contentText[] -> major[];
+               getText -> contentText.content[];
+            #);
+       #);
+     
+     IntegerOptionNode: NumberOptionNode
+       (# OptionType:: IntegerOption;
+          getText::
+            (#
+            do &Text[] -> value[];
+               content.theValue -> value.putint;
+            #);
+          legalIntegerValue:< (*Bug #1850*)
+            (# value: @integer;
+               legal: @boolean;
+            enter value
+            do value>=0 -> legal;
+               INNER;
+            exit legal
+            #);
+          setText::
+            (# failure: @Boolean;
+               theValue: @Integer
+            do value.reset;
+               (if value.length > 9 then
+                   contentText.content.copy -> value[];
+               if);
+               value.getInt(# syntaxError::(# do true -> failure; true -> continue; #); #) 
+                 -> theValue;
+               (if NOT failure and (theValue -> legalIntegerValue) then
+                   theValue -> content.theValue;
+               if);
+            #);
+          onChanged::<
+            (# 
+            do (if source## <= Option## then
+                   contentText.content.clear;
+                   content.theValue -> contentText.content.putint;
+               if);
+            #);
+       #);
+     RealOptionNode: NumberOptionNode
+       (# OptionType:: RealOption;
+          getText::
+            (#
+            do &Text[] -> value[];
+               content.theValue -> value.putreal;
+               
+            #);
+          setText::
+            (# failure: @Boolean;
+               theValue: @Real
+            do value.reset;
+               value.getReal(# syntaxError::(# do true -> failure; true -> continue; #); #) 
+                 -> theValue;
+               (if NOT failure then
+                   theValue -> content.theValue;
+               if);
+            #);
+          onChanged::<
+            (# 
+            do (if source## <= Option## then
+                   contentText.content.clear;
+                   content.theValue -> contentText.content.putreal;
+               if);
+            #);
+       #);
+     XMLOptionNode: OptionNode
+       (# 
+          OptionType:: XMLOption;
+       #);
+     OptionListNode: OptionNode
+       (# OptionType:: OptionListOption;
+          buildOptions: (# <<SLOT OptionListNodeBuildOptions:DoPart>> #);
+          init::<
+            (#
+            do buildOptions;
+            #);
+       #);
+     
+     createOptions:
+       (# nodeWithTheRightChildren: ^OptionListNode;
+          theInstrument: ^Instrument;
+       enter theInstrument[]
+       do (# theNode: ^OptionListNode;
+             theOption: ^OptionListOption;
+          do &OptionListNode[] -> theNode[];
+             &OptionListOption[] -> theOption[];
+             (if theInstrument##<=nonGenericInstrumentWithOptions## then
+                 theInstrument[] -> QUA
+                  (# as::nonGenericInstrumentWithOptions;
+                  do thisObj.options[] -> theOption.value;
+                  #);
+               else
+                  (if theInstrument##<=CPNGenericInstrument## then
+                      theInstrument[] -> QUA
+                      (# as::CPNGenericInstrument;
+                      do thisObj.options[] -> theOption.value;
+                      #);
+                  if);
+              if);
+             theOption[] -> theNode.init;
+             theNode[] -> nodeWithTheRightChildren[];
+          #)
+       exit nodeWithTheRightChildren[]
+       #);
+     
+     ShowHelp: @ShowHelpPage (* Must be a shared instance *);
+     
+     HelpNode: Node
+       (# clickable:: trueObject;
+          SubHelpNode: Node
+            (# clickable:: trueObject;            
+            #);
+          HomeNode: @SubHelpNode
+            (# getName::
+                 (#
+                 do NamesHomepage -> getGlobalNames -> name[];
+                 #);
+               
+               showSheet::
+                 (# 
+                 do 'http://cpntools.org/' -> ShowHelp;
+                 #);
+            #);	  
+          SupportNode: @SubHelpNode
+            (# getName::
+                 (#
+                 do  NamesSupportNode -> getGlobalNames -> name[];
+                 #);
+               
+               showSheet::
+                 (#
+                 do 'http://cpntools.org/support/' ->ShowHelp;
+                 #);
+            #);
+          getName::
+            (#
+            do NamesHelpNode -> getGlobalNames -> name[];
+            #);          
+	  showSheet::
+            (# 
+            do 'http://cpntools.org/help/' -> ShowHelp;
+            #);
+	  init::
+   	    (#
+            do
+               HomeNode.init;
+               HomeNode[] -> addIndexNode;
+               SupportNode.init;
+	       SupportNode[] -> addIndexNode;
+	    #);
+       #);     
+     MonitorNodeIDDictionary: IDDictionary (# Element:: MonitorNode; #);
+     AbstractMonitorNode: Node 
+       (# fatherMonitor: ^MonitorBlockNode;
+          expandFathers: (# <<SLOT AbstractMonitorNodeExpandFathers:DoPart>> #);
+          getMonitor:<
+            (# theMonitor: ^AbstractMonitor;
+            do inner;
+            exit theMonitor[]
+            #);
+          onChanged::< (# <<SLOT AbstractMonitorNodeOnChanged:DoPart>> #);
+          getNet:
+            (# currentNode: ^IndexNode;
+               theNet: ^CPNet;
+            do THIS(AbstractMonitorNode)[] -> currentNode[];
+               goUpToFindNetNode:
+                 (# 
+                 do currentNode.father[] -> currentNode[];
+                    (if currentNode##<=NetNode## then
+                        currentNode[] -> QUA
+                        (# as:: NetNode; 
+                        do thisObj.net[] -> theNet[];
+                           leave goUpToFindNetNode;
+                        #);
+                    if);
+                    restart goUpToFindNetNode;
+                 #);
+            exit theNet[]
+            #);
+       #);    
+     MonitorBlockNode: AbstractMonitorNode
+       (# private: @<<SLOT MonitorBlockNodePrivate:Descriptor>>;
+          editable:: (# do not IsGlobal -> value; #);
+          hasExpander:: (# do true -> value; #);
+          IsGlobal: @boolean;
+          init:: 
+            (# theMonitor: ^MonitorBlock;
+            enter (theMonitor[], IsGlobal)
+            <<SLOT MonitorBlockNodeInit:DoPart>> 
+            #);          
+          getName:: (# <<SLOT MonitorBlockNodeGetName:DoPart>> #);          
+          buildIndex: (# <<SLOT MonitorBlockNodeBuildIndex:DoPart>> #);
+          onAdded:: (# <<SLOT MonitorBlockNodeOnAdded:DoPart>> #);
+          onRemoved:: (# <<SLOT MonitorBlockNodeOnRemoved:DoPart>> #);
+          getMonitor:: (# <<SLOT MonitorBlockNodeGetMonitor:DoPart>> #);          
+          DropType:: AbstractMonitorNode;
+          dropRelevant:: (# <<SLOT MonitorBlockDropRelevant:DoPart>> #);
+          dropAccept:: (# <<SLOT MonitorBlockNodeDropAccept:DoPart>> #);
+          scanAbstractNodeTree:
+            (# current: ^AbstractMonitorNode;
+            <<SLOT MonitorBlockNodeScanAbstractNodeTree:DoPart>>
+            #);
+          scanMonitorNodeTree:
+            (# current: ^MonitorNode;
+            <<SLOT MonitorBlockNodeScanMonitorNodeTree:DoPart>>
+            #);
+          scanMonitorBlockNodeTree:
+            (# current: ^MonitorBlockNode;
+            <<SLOT MonitorBlockNodeScanMonitorBlockNodeTree:DoPart>>
+            #);
+       #);
+     TextNode: Node
+       (# theText: ^Text;
+          getName::< (# <<SLOT MonitorNodeTextNodeGetName:DoPart>> #);
+          init:: (# enter theText[] #);
+       #);
+     MonitorPageNode: Node 
+       (# thePage: ^PageInstance;
+          theMonitor: ^Monitor;
+          getName:: (# do (thePage.getName).getMLName -> name[]; #);
+          getSecondaryText::
+            (# 
+            do (if thePage.thePage.numberOfInstances >1 then
+                   &Text[] -> txt[];
+                   (if thePage.mlInstanceNumber <> 0 then
+                       '(' -> txt.puttext;
+                       thePage.mlInstanceNumber -> txt.putint;
+                       ')' -> txt.puttext;
+                    else
+                       '(?)' -> txt.puttext;
+                   if);
+               if);
+            #);
+          onChanged::
+            (# 
+            do scan: theMonitor.scanNodeInstances
+                 (# 
+                 do (if current.thePageInstance[] = thePage[] then
+                        ((current.getNode).getCPNPage).getCurrentHighlight -> hilite_color[];
+                        leave scan;
+                    if);
+                 #);
+            #);
+          init:: 
+            (# 
+            enter (thePage[], theMonitor[])
+            do this(MonitorPageNode)[] -> thePage.attach;
+            #);   
+       #);
+     MonitorNodeNode: Node
+       (# FatherType:: MonitorPageNode;
+          theMonitor: ^Monitor;
+          init::< (# enter theMonitor[] do inner; #);
+       #);
+     MonitorPlaceNode: MonitorNodeNode
+       (# thePlace: ^PlaceInstance;          
+          getName:: (# do thePlace.thePlace.theName.getMLName -> name[]; 
+                       ' (place)' -> name.append;#);
+          onChanged:: 
+            (# 
+            do thePlace.getCurrentHighlight -> hilite_color[];                
+            #);
+          init:: 
+            (# 
+            enter thePlace[]
+            do this(MonitorPlaceNode)[] -> thePlace.attach;   
+            #);
+       #);
+     MonitorTransitionNode: MonitorNodeNode
+       (# theTransition: ^TransitionInstance;
+          getName:: (# do theTransition.theTransition.theName.getMLName -> name[]; 
+                       ' (transition)' -> name.append; #);
+          onChanged::
+            (#
+            do theTransition.getCurrentHighlight -> hilite_color[];                
+            #);
+          init:: 
+            (# 
+            enter theTransition[]
+            do this(MonitorTransitionNode)[] -> theTransition.attach;   
+            #);
+       #);
+     makeAbstractMonitorNodeTextEditor:
+       (# theMonitor: ^AbstractMonitor;
+          theMontitorNode: ^AbstractMonitorNode;
+       enter theMonitor[]
+       <<SLOT CPNIndexMakeAbstractMonitorNodeTextEditor:DoPart>> 
+       exit theMontitorNode[]
+       #);
+     MonitorPagesNode: Node
+       (# private: @<<SLOT MonitorNodePagesNodePrivate:Descriptor>>;
+          buildIndex: 
+            (# addedNode: ^NodeInstance;
+            enter addedNode[]
+            <<SLOT MonitorNodePagesNodeBuildIndex:doPart>>
+            #);
+          getName:: (# do MonitorNodes -> getGlobalNames -> name[]; #);
+          onAdded:: (# <<SLOT MonitorNodePagesNodeOnAdded:DoPart>> #);
+          onRemoved:: (# <<SLOT MonitorNodePagesNodeOnRemoved:DoPart>> #);
+          onChanged:: (# <<SLOT MonitorNodePagesNodeOnChanged:DoPart>> #);
+          theMonitor: ^Monitor;
+          init:: 
+            (# 
+            enter theMonitor[]
+            <<SLOT MonitorNodePagesNodeInit:DoPart>> 
+            #);
+       #);
+     SimpleDeclarationNode: DeclarationNode
+       (# avoidShortForm:: TrueObject;
+          nextDeclarationNode: ^SimpleDeclarationNode;
+          next:: (# <<SLOT SimpleDeclarationNodeNext:DoPart>> #);
+          getSheet:: (# do &MonitorSheet[] -> theTextSheet[] -> theSheet[]; #);
+       #);    
+     MonitorDeclarationNode: SheetNode
+       (# description: ^Text;
+          theMonitor: ^Monitor;
+          theDeclaration: ^Declaration;
+          theDeclNode: ^SimpleDeclarationNode;
+          getName:: (# do description[] -> name[]; #);
+          init::< 
+            (# 
+            enter (theMonitor[], description[], theDeclaration[])
+            <<SLOT MonitorMonitorDeclarationNodeInit:DoPart>> 
+            #);
+          setMonitorOnSheetTopName:
+            (# 
+            do (if monitorNameOnSheetTop[]=none then
+                   &Text[] -> monitorNameOnSheetTop[];
+               if);
+               monitorNameOnSheetTop.clear;
+               '<' -> monitorNameOnSheetTop.append;
+               theMonitor.name[] -> monitorNameOnSheetTop.append;
+               '>' -> monitorNameOnSheetTop.append;
+            #);
+          monitorNameOnSheetTop: ^Text;
+          getSheet:: (# <<SLOT MonitorMonitorDeclarationNodeGetSheet:DoPart>> #);
+          expanderChanged:: (# <<SLOT MonitorMonitorDeclarationNodeExpanderChanged:DoPart>> #);
+          onSemanticChanged:: (# <<SLOT MonitorMonitorDeclarationNodeOnSemanticChanged:DoPart>> #);
+          ToolTip:: (# <<SLOT MonitorMonitorMonitorDeclarationNodeToolTip:DoPart>> #);
+       #);
+     MonitorNode: AbstractMonitorNode
+       (# private: @<<SLOT MonitorNodePrivate:Descriptor>>;
+          editable:: TrueObject;         
+          PagesNode: @MonitorPagesNode;
+          TypeNode: @TextNode
+            (# getName:: (# <<SLOT MonitorNodeTypeNodeGetName:DoPart>> #);               
+            #);
+          getName:: (# <<SLOT MonitorNodeGetName:DoPart>> #);
+          getMonitor:: (# <<SLOT MonitorNodeGetMonitor:DoPart>> #);
+          onChanged:: (# <<SLOT MonitorNodeOnChanged:DoPart>> #);
+          onAdded:: (# <<SLOT MonitorNodeOnAdded:DoPart>> #);
+          onTextUpdated:: (# <<SLOT MonitorNodeOnTextUpdated:DoPart>> #);
+          ToolTip:: (# <<SLOT MonitorNodeToolTip:DoPart>> #);
+          init:: 
+            (# theMonitor: ^Monitor;
+            enter theMonitor[]
+            <<SLOT MonitorNodeInit:DoPart>>
+            #);
+       #);     
+     setContent:
+       (# thenode: ^Node;
+          thePageNode: ^PageNode;
+          content: ^Element;
+       enter content[]
+       do (if true
+           // (content[] = NONE) then
+              &HelpNode[] -> theNode[];
+              theNode.init;
+           // (content## <= ToolBox##) then
+              (# tb: ^ToolBoxNode;
+              do &ToolBoxNode[] -> tb[] -> theNode[];
+                 content[] -> THIS(CPNIndex).tools[];
+                 content[] -> tb.init;
+              #);
+           // (content## <= ToolCollection##) then
+              (# tn: ^ToolNode;
+              do &ToolNode[] -> tn[] -> theNode[];
+                 content[] -> tn.init;
+              #);
+           // (content## <= CPnet##) then
+              (# nn: ^NetNode;
+              do &NetNode[] -> nn[] -> theNode[];
+                 content[] -> nn.init;
+              #);
+           //(content## <= CPNPage##) then
+              (# pn: ^PageNode;
+              do &PageNode[] -> thePageNode[] -> theNode[];
+                 content[] -> thePageNode.init;
+              #);
+           //(content## <= OptionListOption##) then
+              (# on: ^OptionListNode;
+              do &OptionListNode[] -> on[] -> theNode[];
+                 content[] -> on.init;
+              #);
+          if);
+          theNode[] -> addIndexNode;
+          layout;
+       #);
+     
+     
+     
+     getRandomNet:
+       (# theNet: ^CPNet;
+          theList: ^netNodeList;
+          count,chosen: @Integer;
+          netNodeList: List(# Element::NetNode; #);
+       do &netNodeList[] -> theList[];
+          scanIndexNodes
+          (# Type:: NetNode;
+          do current[] -> theList.append;
+          #);
+          (if theList.size > 0 then
+              0 -> count;
+              (1,theList.size) -> ignuin -> chosen;
+              search:
+                (# 
+                do theList.scan
+                   (# 
+                   do theList.scan
+                      (# 
+                      do count + 1 -> count;
+                         (if count = chosen then
+                             current.net[] -> theNet[];
+                             leave search;
+                         if);
+                      #);
+                   #);
+                #);
+          if);
+       exit theNet[]
+       #);
+     
+     getShortName:
+       (# toolBoxName: ^Text;
+          paletteName: ^Text;
+       enter toolBoxName[]
+       do findRightName:
+            (# 
+            do (if 'auxiliary' -> toolBoxName.equalNCS then
+                   'Aux' -> paletteName[];
+                   leave findRightName;    
+               if);
+               (if 'create' -> toolBoxName.equalNCS then
+                   'Create' -> paletteName[];
+                   leave findRightName;                       
+               if);       
+               (if 'hierarchy' -> toolBoxName.equalNCS then
+                   'Hier' -> paletteName[];
+                   leave findRightName;                       
+               if);       
+               (if 'monitoring' -> toolBoxName.equalNCS then
+                   'Mon' -> paletteName[];
+                   leave findRightName;                       
+               if);       
+               (if 'net' -> toolBoxName.equalNCS then
+                   'Net' -> paletteName[];
+                   leave findRightName;                       
+               if);       
+               (if 'simulation' -> toolBoxName.equalNCS then
+                   'Sim' -> paletteName[];
+                   leave findRightName;                       
+               if);       
+               (if 'state space' -> toolBoxName.equalNCS then
+                   'SS' -> paletteName[];
+                   leave findRightName;                       
+               if);       
+               (if 'style' -> toolBoxName.equalNCS then
+                   'Style' -> paletteName[];
+                   leave findRightName;                       
+               if);       
+               (if 'view' -> toolBoxName.equalNCS then
+                   'View' -> paletteName[];
+                   leave findRightName;                       
+               if);
+            #);
+       exit paletteName[]
+       #);
+     
+     init::<
+       (# 
+       do (* This catches the common missing OpenGL error.
+           * There should be a better place to do this, and a better test... *)
+          (if arial[] = NONE then
+              (NONE, 'Please check http://www.daimi.au.dk/CPNTools/faq.html for more information.', 'No OpenGL support found!') -> widget.alertUser;
+              widget.terminate;
+          if);
+          index_background_color -> backgroundStyle.fill[];
+          INNER;
+       #);
+  #);

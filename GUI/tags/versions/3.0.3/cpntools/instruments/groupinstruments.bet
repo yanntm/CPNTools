@@ -1,0 +1,328 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../cpnworkspace';
+
+INCLUDE '../../cpnet/cpnet';
+INCLUDE '../resources/texts/texts';
+INCLUDE '../resources/figures/groupfigures';
+INCLUDE 'cpninstrument';
+INCLUDE 'clipping';
+
+BODY 'private/groupinstrumentsbody';
+
+-- CPNWorkspaceLib: attributes --
+(*
+ * Instruments used in markingmenus
+ *)
+
+ToggleGroupInstrument: FigureTInstrument
+  (# TargetType:: PageElement;
+     FigureT:: ToggleGroupFigure;
+     init::(# do 'toggle_group'->helpname[]; #);
+     ToolTip:: (# do NamesGroupToggle -> getGlobalNames -> theTip[]; #);
+     relevant:: (# <<SLOT ToggleGroupInstrumentRelevant:doPart>> #);
+     apply:: (# <<SLOT ToggleGroupInstrumentApply:doPart>> #);
+  #);
+ToogleGroupElement:
+  (# theElm: ^PageElement;
+     theGroup: ^Group;     
+  enter (theElm[], theGroup[])
+  <<SLOT ToogleGroupElement:doPart>>
+  #);
+AddSurroundingNodesToGroup:
+  (# elm: ^Node;
+     grp: ^Group;
+  enter (elm[], grp[])
+  <<SLOT AddSurroundingNodesToGroup:DoPart>>
+  #);
+AddSurroundingNodesToGroupInstrument: Instrument
+  (# TargetType:: CPNNode;
+     apply:: 
+       (# 
+       do (target[], (target.getCPNPage).getSelectedGroup) -> AddSurroundingNodesToGroup;
+          finish;
+       #);
+     relevant::
+       (# <<SLOT AddSurroundingNodesToGroupRelevant:doPart>> #);
+  #);
+GroupElementClipping: Clipping
+  (# Element:: PageElement;
+     ContextType:: Group;
+     insert:: (# <<SLOT GroupElementClippingInsert:doPart>> #);
+     remove:: (# <<SLOT GroupElementClippingRemove:doPart>> #);
+  #);
+RemoveElementFromGroupCommand: StandardRemoveCommand
+  (# ClippingType:: GroupElementClipping;
+     getName::
+       (# 
+       do 'Remove ' -> name[];
+          clip.elm[] -> getPatternName -> name.puttext;
+          ' from Group' -> name.puttext;
+       #);
+  #);
+InsertElementIntoGroupCommand: StandardInsertCommand
+  (# ClippingType:: GroupElementClipping;
+     getName::
+       (# 
+       do 'Add ' -> name[];
+          clip.elm[] -> getPatternName -> name.puttext;
+          ' to Group' -> name.puttext;
+       #);
+  #);
+GroupClipping:
+  (# context: ^CPNPage;
+     target: ^Group;
+     
+     previous: ^Group;
+     
+     prepare:
+       (#
+       enter (context[], target[])
+       do (if context.getSelectedGroup <> target[] then
+              context.getSelectedGroup -> previous[];
+           else
+              context.all[] -> previous[];
+          if);
+       #);
+     insert:
+       (#
+       do target[] -> context.addGroup;
+          target[] -> context.setSelectedGroup;
+          context[] -> target.onSelect;
+       #);
+     remove:
+       (#
+       do target.delete;
+          previous[] -> context.setSelectedGroup;
+          context[] -> previous.onSelect;
+       #);
+  #);
+GlobalGroupClipping: Clipping
+  (# ContextType:: CPNet;
+     Element:: Group;
+     theCPNPage: ^CPNPage;
+     previouseSelected: ^Group;
+     init:
+       (# 
+       enter (elm[], theCPNPage[])
+       do (if theCPNPage[] <> none then
+              (if theCPNPage.getSelectedGroup = elm[] then
+                  theCPNPage.all[] -> previouseSelected[];
+               else
+                  theCPNPage.getSelectedGroup -> previouseSelected[];
+              if);
+          if);
+       #);
+     insert::
+       (#
+       do elm[] -> context.addGlobalGroup;
+          (if theCPNPage[] <> none then
+              elm[] -> theCPNPage.setSelectedGroup;
+              theCPNPage[] -> elm.onSelect;
+          if);
+       #);
+     remove::
+       (#
+       do elm.delete;
+          (if theCPNPage[] <> none then
+              previouseSelected[] -> theCPNPage.setSelectedGroup;
+              theCPNPage[] -> previouseSelected.onSelect;
+          if);
+       #);
+  #);
+GlobalGroupInsertCommand: StandardInsertCommand
+  (# ClippingType:: GlobalGroupClipping;
+  #);
+GlobalGroupRemoveCommand: StandardRemoveCommand
+  (# ClippingType:: GlobalGroupClipping;
+  #);
+GroupInsertionCommand: Command
+  (# clip: ^GroupClipping;
+     getName::
+       (#
+       do 'New Group' -> name[];
+       #);
+     apply::
+       (#
+       enter clip[]
+       do clip.insert;
+       #);
+     redo::
+       (#
+       do clip.insert;
+       #);
+     undo::
+       (#
+       do clip.remove;
+       #);
+  #);
+GroupRemovalCommand: Command
+  (# clip: ^GroupClipping;
+     getName::
+       (#
+       do 'Delete Group' -> name[];
+       #);
+     prepare:
+       (#
+       enter clip[]
+       do
+       #);
+     apply::
+       (#
+       do clip.remove;
+       #);
+     redo::
+       (#
+       do clip.remove;
+       #);
+     undo::
+       (#
+       do clip.insert;
+       #);
+  #);
+
+CreateGroup:
+  (# context: ^CPNPage;
+  enter context[]
+  <<SLOT CreateGroup:DoPart>>
+  #);
+CreateGlobalGroup:
+  (# context: ^CPNet;
+     theCPNPage: ^CPNPage;
+  enter (context[], theCPNPage[])
+  <<SLOT CreateGlobalGroup:DoPart>>
+  #);
+CloneGroup:
+  (# target: ^Group;
+     
+  enter target[]
+  do (# context: ^CPNPage;
+        new: ^Group;
+        clip: ^GroupClipping;
+        com: ^GroupInsertionCommand;
+     do target.getCPNPage -> context[];
+        target.clone -> new[];
+        context.getNewGroupName -> new.name;
+        
+        &GroupClipping[] -> clip[];
+        (context[], new[]) -> clip.prepare;
+        
+        &GroupInsertionCommand[] -> com[];
+        clip[] -> com.apply;
+        ((new.getCPNPage).net[],com[]) -> registerCommand;
+     #);
+  #);
+MakeDeleteGroupCommand:
+  (# target: ^Group;
+     com: ^GroupRemovalCommand;
+  enter target[]
+  do (# context: ^CPNPage;
+        clip: ^GroupClipping;
+     do target.getCPNPage -> context[];
+        &GroupClipping[] -> clip[];
+        (context[], target[]) -> clip.prepare;
+        
+        &GroupRemovalCommand[] -> com[];
+        clip[] -> com.prepare;
+     #);
+  exit com[]
+  #);
+DeleteGroup:
+  (# target: ^Group;     
+     theCPNPage: ^CPNPage;
+  enter (target[], theCPNPage[])
+  <<SLOT DeleteGroup:DoPart>>  
+  #);
+
+SimpleNewGroupInstrument: FigureTInstrument
+  (# TargetType:: CpnSheet;
+     FigureT:: NewGroupFigure;
+     
+     apply::
+       (# 
+       do target.content.thePage[] -> CreateGroup;
+          finish;
+       #);
+     init:: (# do 'new_group' -> helpname[]; #);
+     ToolTip:: (# do NamesGroupNew -> getGlobalNames -> theTip[]; #);
+  #);
+SimpleNewGroupTabInstrument: FigureTInstrument
+  (# TargetType:: GroupTab;
+     apply::
+       (# 
+       do target.getCPNPage -> creategroup;
+       #);
+     init::< (# do 'new_group' -> helpname[]; #);
+     ToolTip:: (# do NamesGroupNew -> getGlobalNames -> theTip[]; #);
+  #);
+CreateGlobalGroupInstrument: Instrument
+  (# TargetType:: GroupTab;
+     apply:: (# <<SLOT CreateGlobalGroupInstrumentApply:DoPart>> #);
+  #);
+SimpleCloneGroupInstrument: FigureTInstrument
+  (# TargetType:: GroupTab;
+     FigureT:: CloneGroupFigure;
+     relevant::
+       (#
+       do not (target.getGroup).IsGlobal -> value;
+       #);
+     apply::
+       (#
+       do target.getGroup -> CloneGroup;
+       #);
+     ToolTip::
+       (# 
+       do NamesGroupClone -> getGlobalNames -> theTip[];
+       #);
+     
+     init::<
+       (# 
+       do 'clone_group' -> helpname[];
+       #);
+  #);
+SimpleDeleteGroupInstrument: FigureTInstrument
+  (# TargetType:: GroupTab;
+     relevant::
+       (#
+       do not (target.getGroup).all -> value;
+       #);
+     apply::
+       (#
+       do target.father[] -> qua
+          (# as:: CPNSheet;
+          do (target.getGroup, thisObj.content.thePage[]) -> DeleteGroup;
+          #);
+       #);
+     ToolTip::
+       (# 
+       do NamesGroupDelete -> getGlobalNames -> theTip[];
+       #);
+     
+     init::<
+       (# 
+       do 'delete_group' -> helpname[];
+       #);
+  #);

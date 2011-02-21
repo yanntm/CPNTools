@@ -1,0 +1,831 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../cpnet';
+INCLUDE '../../cpntools/cpnworkspace';
+INCLUDE '~beta/containers/arrayContainer';
+
+-- NodePrivate:Descriptor --
+(# arcs: @ArcList;
+   usesDeclarations: @DeclarationIDDictionary;
+   init:
+     (# 
+     do arcs.init;
+        usesDeclarations.init;
+     #);
+   width,height: @real;
+#)
+
+-- NodeWidthSet: doPart --
+do (if theWidth <> private.width then
+       theWidth -> private.width;
+   if);
+   
+-- NodeWidthGet: doPart --
+do private.width -> theWidth;
+   
+-- nodeHeightSet: doPart --
+do (if theHeight <> private.height then
+       theHeight -> private.height;
+   if);
+   
+-- nodeHeightGet: doPart --
+do private.height -> theHeight;
+
+-- NodeGetNameWithNoWS:DoPart --
+do (# pre: @pcre;
+   do '\n' -> pre;
+      theName.copy -> name[];
+      loop:
+        (# ok: @boolean;
+        do (name[], '_') -> pre.replace -> (ok, name[]);
+           (if ok then restart loop; if);
+        #);
+   #);
+   
+-- NodeAddArc:DoPart --
+do theArc[] -> private.arcs.append;
+   theArc[] -> attach;
+   inner;
+   (*** onSemanticChanged; ***)
+   
+-- NodeRemoveArc:DoPart --
+do 
+   theArc[] -> private.arcs.at -> private.arcs.delete;
+   theArc[] -> detach;
+   inner;
+   (*** onSemanticChanged; ***)
+   
+-- NodeScanArcs:doPart --
+do private.arcs.scan
+     (# 
+     do current[] -> This(scanArcs).current[];
+        INNER scanArcs;
+     #);
+   
+-- NodeHasArcs:DoPart --
+do not private.arcs.empty -> value;
+   
+-- NodeScanNodeInstances:DoPart --
+do (if this(Node)## <= CPNNode## then
+       (if this(Node)## = Place## then
+           this(Node)[] -> qua
+           (# as:: Place;
+           do thisObj.scanInstances
+              (# 
+              do current[] -> this(scanNodeInstances).current[];
+                 inner scanNodeInstances;
+              #);
+           #);
+        else
+           this(Node)[] -> qua
+           (# as:: Transition;
+           do thisObj.scanInstances
+              (# 
+              do current[] -> this(scanNodeInstances).current[];
+                 inner scanNodeInstances;
+              #);
+           #);       
+       if);
+   if);
+   
+-- NodeScanSurroundingNodes:DoPart --
+do (if this(Node)## = Place## then
+       this(Node)[] -> qua
+       (# as:: Place;
+       do thisObj.scanSurroundingTransitions
+          (# 
+          do current[] -> this(scanSurroundingNodes).current[];
+             inner scanSurroundingNodes;
+          #);
+       #);
+    else
+       this(Node)[] -> qua
+       (# as:: Transition;
+       do thisObj.scanSurroundingPlaces
+          (# 
+          do current[] -> this(scanSurroundingNodes).current[];
+             inner scanSurroundingNodes;
+          #);
+       #);
+   if);
+   
+-- NodeSetColor: doPart --
+do (* FIXME: This looks ugly when coloring nodes *)
+   &PageElementList[] -> theList[];
+   (getInscriptions).scan (# do current[] -> theList.append; #);
+   theList.scan
+     (#
+     do newColor[] -> current.SetColor;
+     #);
+   INNER;
+
+-- Nodedelete: doPart --
+do uses.scan
+     (#
+     do THIS(Node)[] -> current.removeUsedByNode;
+     #);
+   uses.clear;
+   INNER;
+
+-- NodeClone: doPart --
+do INNER;
+   (if theName[] = none then &Text[] -> theName[]; if);
+   theName.copy -> new.theName[];
+   x -> new.x;
+   y -> new.y;
+   width -> new.width;
+   height -> new.height;
+   bold -> new.bold;
+   lineColor[] -> new.lineColor[];
+   fillColor[] -> new.fillColor[];
+   textColor[] -> new.textColor[];
+   fillpattern.copy -> new.fillpattern[];
+   linetype.copy -> new.linetype[];
+   strokeWidth -> new.strokeWidth;
+
+   (if new.getTextItem <> none then
+       new.thename[] -> (new.getTextItem).content[];
+   if);
+
+-- NodeonSemanticChanged: doPart --
+do INNER;
+   (any_status,unchecked) -> changeStatus;
+   (getCPNPage).semanticChanged;   
+   scanNodeInstances
+   (# 
+   do current.scanMonitors (# do current.semanticChanged; #);
+   #);
+   
+-- NodenameChanged: doPart --
+do (# thePlace: ^Place;
+      foundAnother: @boolean;
+   do (if (checkedName[] <> NONE) and (not ('' -> checkedName.equal)) then
+          (if namestatus = checked then
+              (* This node was checked having this name.
+               * If there are more nodes with this name,
+               * we can now mark one of them as being correct.
+               *)
+              false -> foundAnother;
+              L: (#
+                 do (getCPNPage).scanNodes
+		      (# 
+		      do (if (current.namestatus = incorrect) AND
+                             (current.checkedName[] -> checkedName.equal) then
+                             (incorrect,checked) -> current.changeNameStatus;
+                             current.changed;
+                             true -> foundAnother;
+                             leave L;
+                         if);
+		      #);
+                 #);
+              (if not foundAnother then
+                  checkedName[] -> table.delete;
+              if);
+          if);
+      if);
+      (if this(Node)## <= Place## then
+          this(Node)[] -> thePlace[];
+          thePlace.semanticChangedOnPlaceSubtree;  
+      if);
+      (any_status,unchecked) -> changeNameStatus;
+      SemanticChanged;
+   #);
+   
+-- NodeClearDependencies:DoPart --
+do uses.scan
+   (# 
+   do THIS(Node)[] -> current.removeUsedByNode;
+   #);
+   uses.clear;
+   
+-- NodeStatusMonitor: doPart --
+do (# old: @Integer;
+   do status -> old;
+      INNER statusMonitor;
+      (if old <> status then changed; if);
+   #);
+
+-- NodeChangeStatus: doPart --
+do (if debugging then
+       '%s.changeStatus(%s, %s) Status = %s; Name = "%s" ' -> debugCheckerLoop (# do THIS(Node)[] -> getPatternName -> s; from -> statusToString->s; to -> statusToString->s; status -> statusToString->s; theName[] -> s; #);
+   if);
+   
+   (if (status = from) or (from = any_status) then
+       status -> old_status;
+       to -> status;
+       (if namestatus <> incorrect then
+           (old_status, status)
+             -> (getCPNPage).nodeChangedStatus;
+       if);
+       (* If status is not incorrect, we should remove any errors
+       * on the node. *)
+       (if (status <> incorrect) and
+           (old_status = incorrect) then
+           removeError;
+       if);       
+       changed;
+       INNER;       
+   if);
+   
+-- NodeNameStatus:DoPart --
+do (* (newStatus,status) -> changeNameStatus; *)
+   newStatus -> status;
+   
+-- NodeChangeNameStatus: doPart --
+do (* name status should only be one of the two values: incorret and checked *)
+   (if (namestatus = from) or (from = any_status) then
+(*        '%s: %s -> %s '->debugtemp(# do tostring->s;from->statusToString->s;to->statusToString->s;#); *)
+       (if (from = incorrect) or (to = incorrect) or
+           ((from = any_status) and (namestatus = incorrect)) then 
+(*            '%s: %s -> %s (%s) '->debugtemp(# do tostring->s;from->statusToString->s;to->statusToString->s;status->statusToString->s;#); *)
+           (if (from = any_status) or (from = checked) or (from = incorrect) then
+               (nameError, status) -> (getCPNPage).nodeChangedStatus;
+            else               
+               (status, nameError) -> (getCPNPage).nodeChangedStatus;
+           if);
+(*            (getCPNPage).nodesStatusToString->debugtemp; *)
+       if);
+       to -> namestatus;   
+   if);
+
+-- NodeonSyntaxError: doPart --
+do statusMonitor
+   (# oldStatus: @integer;
+   do (if (status = checking) or (status = compiling) then
+          THIS(Node)[] -> (getCPNPage).net.theGlobals.addUsedByNode;
+          (any_status, incorrect) -> changeStatus;
+      if);
+   #);
+   (if debugging then
+       'cpnet.bet: Node.onSyntaxError: Error = "' -> debugCPNet;
+       error[] -> debugCPNet;
+       '"\n' -> debugCPNet;
+   if);
+   INNER;
+
+-- NodegetAnchors: doPart --
+do width / 2 + 4 -> a;
+   height / 2 + 4 -> b;
+   (x, y) -> MakePoint -> anchors.append;
+   (x + a, y) -> MakePoint -> anchors.append;
+   (x, y - b) -> MakePoint -> anchors.append;
+   (x - a, y) -> MakePoint -> anchors.append;
+   (x, y + b) -> MakePoint -> anchors.append;
+   INNER;
+
+-- NodemakeShape: doPart --
+do fillColor[] -> theStyle.fill[];
+   INNER;
+
+-- NodepresentAnchors: doPart --
+do (# anchors: ^PointList;
+   do getAnchors -> anchors[];
+      anchors.scan
+        (# handle: ^Rect;
+        do &Rect[] -> handle[];
+           handle.init;
+           current.x - presentation.x -> handle.x;
+           current.y - presentation.y -> handle.y;
+           4 -> handle.width;
+           4 -> handle.height;
+           green[] -> &FillStyle -> handle.theStyle[];
+           handle[] -> presentation.add;
+        #);
+   #);
+
+-- NodemakeLabel: doPart --
+do &TextItem[] -> theTextItem[];
+   theTextItem.init;
+   INNER;
+   theName[] -> theTextItem.content[];
+   theName[] -> arial.measureText -> (w, h);
+   x - w / 2 -> theTextItem.x;
+   y - h / 2 + arial.ascent (*** - arial.descent ***) -> theTextItem.y;
+   (if debugging then
+       'NodemakeLabel' -> debugclone;
+   if);
+
+-- Nodeprint: doPart --
+do makeShape -> theItem.add;
+   makeLabel -> theItem.add;
+   INNER;
+
+-- Nodeupdate: doPart --
+do (# ii: @integer;
+   do makeShape -> presentation.add;
+      (if label[] = NONE then
+          &TextItem[] -> label[];
+          label.init;
+          true -> label.center;
+          theName[] -> label.content[];
+      if);
+      TextColor[] -> StrokeStyle -> label.theStyle[];
+      THIS(Node)[] -> label.owner[];
+      label.content[] -> arial.measureText -> (w, h);
+      - w / 2 -> ii -> label.x;
+      - h / 2 + arial.ascent (*** - arial.descent  ***) -> ii -> label.y;
+      label[] -> presentation.add;
+      INNER update;
+   #);
+   INNER;
+
+-- Nodeinit: doPart --
+do private.init;
+   20 -> width;
+   20 -> height;
+   INNER;
+
+-- nodeintersect: doPart --
+do (x, y) -> MakePoint -> p[];
+   position -> MakePoint -> q[];
+   INNER;
+
+-- NodeBounds: doPart --
+do x - width / 2 -> xmin;
+   x + width / 2 -> xmax;
+   y - height / 2 -> ymin;
+   y + height / 2 -> ymax;
+
+-- NodegetTextItem: doPart --
+do (if presentation[] <> NONE then
+       search: presentation.children.scan
+         (#
+         do (if current## <= TextItem## then
+                current[] -> theTextItem[];
+                leave search;
+            if);
+         #);
+   if);
+
+-- NodeonChanged: doPart --
+do ('source[] <> NONE', source[] <> NONE) -> assert (# #);
+   (# theInscription: ^Inscription;
+      theHierarchyInfo: ^HierarchyInfo;
+   do (if source[] = THIS(Node)[] then (* we move this node *)
+           formatRegions;
+      if);
+      (if source## <= Inscription## then (* we move the inscription *)
+          source[] -> theInscription[];
+          theInscription.x - x -> theInscription.dx;
+          theInscription.y - y -> theInscription.dy;
+      if);
+      (if source## <= HierarchyInfo## then (* we move the hierarchyinfo *)
+          source[] -> theHierarchyInfo[];
+          theHierarchyInfo.x - x -> theHierarchyInfo.dx;
+          theHierarchyInfo.y - y -> theHierarchyInfo.dy;
+      if);
+   #);
+   INNER;
+
+-- NodeonAdded: doPart --
+do 'Nodeonadded: should never be called ' -> debugtemp;
+     (# current: ^Place;
+     do current.changed;
+     #);
+(*   (# theInscription: ^Inscription;*)
+(*      theHierarchyInfo: ^HierarchyInfo;*)
+(*   do (if source## <= Inscription## then*)
+(*          source[] -> theInscription[];*)
+(*          theInscription.x - x -> theInscription.dx;*)
+(*          theInscription.y - y -> theInscription.dy;*)
+(*      if);*)
+(*      (if source## <= HierarchyInfo## then*)
+(*          source[] -> theHierarchyInfo[];*)
+(*          theHierarchyInfo.x - x -> theHierarchyInfo.dx;*)
+(*          theHierarchyInfo.y - y -> theHierarchyInfo.dy;*)
+(*      if);*)
+(*   #);*)
+   INNER;
+
+-- NodeformatInscriptions: doPart --
+do (# anchors: ^PointList;
+      pos: ^Point2d;
+   do getAnchors -> anchors[];
+      (getInscriptions).scan
+      (# 
+      do (if current.snap_id <> 0 then
+             current.snap_id -> anchors.get -> pos[];
+             (pos.x, pos.y) -> current.position;
+          else
+             (x + current.dx, y + current.dy) -> current.position;
+         if);
+      #);
+   #);
+
+-- NodeformatHierarchyInfos: doPart --
+do (# anchors: ^PointList;
+      pos: ^Point2d;
+   do getAnchors -> anchors[];
+      (getHierarchyinfos).scan
+      (# 
+      do (if current.snap_id <> 0 then
+             current.snap_id -> anchors.get -> pos[];
+             (pos.x, pos.y) -> current.position;
+          else
+             (x + current.dx, y + current.dy) -> current.position;
+         if);
+      #);
+   #);
+
+-- NodeSnapCollectSnapList:doPart -- 
+do (if snaplist[]=NONE then
+       &PointList[] -> snaplist[];
+    else
+       snaplist.clear;
+   if);
+   (if debugging and not snaplist.empty then 
+       'node.collectSnapList: snaplist still has elements(should be empty)' -> debugcpnet;
+   if);
+   INNER;
+
+
+-- Nodesnap: doPart --
+do (if NOT excludeBendpoints then
+       (# 
+       do collectSnapList;
+          snaplist.scan
+          (#
+          do (if ((x - current.x) -> fabs) < xDistance then
+                 current.x -> newx;
+                 ((x - current.x) -> fabs) -> xDistance;
+                 true -> snappedx;
+             if);
+             (if ((y - current.y) -> fabs) < yDistance then
+                 current.y -> newy;
+                 ((y - current.y) -> fabs) -> yDistance;
+                 true -> snappedy;
+             if);
+          #);
+          INNER snap;
+       #);
+   if);
+
+
+-- NodeGetCurrentHighlight:doPart --
+do INNER;
+   (if currentHighlight[] = NONE then
+       (if (namestatus = incorrect) and
+           (status <> incorrect) and (status <> isEnabled) then
+           nameerror_color -> currentHighlight[];
+        else
+           status -> statusToColor -> currentHighlight[];
+       if);
+   if);
+   
+-- NodeGetStyle: doPart --
+do ('color',getColor) -> style.put;
+   ('width',width) -> style.putReal;
+   ('height',height) -> style.putReal;
+   ('fill',filled) -> style.putBoolean;
+   ('lineWidth',strokewidth) -> style.putReal;
+   
+-- NodeSetStyle: doPart --
+do (# newColor: ^Color;
+      newWidth,newHeight,newLineWidth: ^RealObject;
+      newFill: ^BooleanObject;
+   do 'color' -> style.get -> newColor[];
+      (if newColor[] <> NONE then
+          newColor[] -> setColor;
+      if);
+      'width' -> style.get -> newWidth[];
+      (if newWidth[] <> NONE then
+          newWidth -> width;
+      if);
+      'height' -> style.get -> newHeight[];
+      (if newHeight[] <> NONE then
+          newHeight -> height;
+      if);
+      'fill' -> style.get -> newFill[];
+      (if newFill[] <> NONE then
+          newFill -> setFill;
+      if);
+      'lineWidth' -> style.get -> newLineWidth[];
+      (if newLineWidth[] <> NONE then
+          newLineWidth -> strokewidth;
+      if);
+      changed;
+   #);
+   
+--- NodeLayoutAttachmentPoints: doPart --
+do (# d: (# exit ArcDistance #);
+      
+      ArcArrayElement:
+        (# theArc: ^Arc;
+           dist: @real;
+           handled: @boolean;
+        #);
+      ArcArray: ArrayContainer
+        (# Element:: ArcArrayElement;
+           less::
+             (#
+             do (if (left[] <> NONE) and (right[] <> NONE) then
+                    (if (left.theArc.getBends).empty and (right.theArc.getBends).empty and (right.theArc[] -> left.theArc.isParallelWith) then
+                        (left.theArc[], right.theArc[]) -> isArcLeftOfParallelArc -> value;
+                     else
+                        left.dist < right.dist -> value;
+                    if);
+                if);
+             #);
+           append:
+             (# elm: ^Element;
+             enter elm[]
+             do (if size = capacity then
+                    capacityExtend;
+                if);
+                (elm[],size+1) -> put;
+             #);
+        #);
+      
+      layoutArcsInRegion:
+        (# 
+           border: ^GeomLine;
+        enter border[]
+        do (# setIncidentPointOnArcs:
+                (# arcs: ^ArcArray;
+                enter arcs[]
+                do (# normalizedBorderVector: ^Point2d;
+                   do (border.vector).normalize -> normalizedBorderVector[];
+                      normalizedBorderVector.negate -> normalizedBorderVector[];
+                      arcs.scan
+                      (# incidentPoint: ^Point2d;
+                      do current.dist -> normalizedBorderVector.scale -> border.a.add -> incidentPoint[];
+                         (current.theArc[],incidentPoint[]) -> setIncidentPoint;
+                      #);
+                   #);
+                #);
+              layoutSnappedArcs:
+                (# arcs: ^ArcArray;
+                   spaceUsed: @real;
+                enter arcs[]
+                do (# handledArcs: @NotifierHashTable;
+                      centerPosition: @real;
+                   do handledArcs.init;
+                      (border.vector).norm / 2 -> centerPosition;
+                      arcs.scan
+                      (# elm: ^ArcArrayElement;
+                         spaceUsedThisTime: @real;
+                         parallelArcs: @ArcArray;
+                      do parallelArcs.clear;
+                         current[] -> elm[];
+                         (if not (elm.theArc[] -> handledArcs.has) then
+                             (elm.theArc.countSiblings - 1) * d -> spaceUsedThisTime;
+                             arcs.scan
+                             (#
+                             do (if (current.theArc.getBends).empty and (elm.theArc.getBends).empty and (current.theArc[] -> elm.theArc.isParallelWith) then
+                                    current[] -> parallelArcs.append;
+                                    current.theArc[] -> handledArcs.insert;
+                                if);
+                             #);
+                             (if spaceUsedThisTime > (border.vector).norm then
+                                 (parallelArcs[], 0,(border.vector).norm, 1, parallelArcs.size) -> distributePoints;
+                                 (border.vector).norm -> spaceUsedThisTime;
+                             if);
+                             (parallelArcs[],centerPosition - spaceUsedThisTime/2,centerPosition + spaceUsedThisTime/2, 1, parallelArcs.size) -> distributePoints;
+                             (if spaceUsedThisTime > spaceUsed then
+                                 spaceUsedThisTime -> spaceUsed;
+                             if);                         
+                         if);
+                      #);
+                   #);
+                exit spaceUsed
+                #);
+              distributePoints:
+                (# min,max: @real;
+                   first,last: @integer;
+                   arcs: ^ArcArray;
+                   distributeRecursive:
+                     (# (* distributeRecursive calculates the distribution of points in
+                         * the case that the points can be positioned with distance at least
+                         * d between them.
+                         * first,last is the first and last points to be distributed.
+                         * min,max denotes the interval in which the points must be distributed.
+                         * remaining denotes the number of points to be distributed. *)
+                        first,last: @integer;
+                        min,max: @real;
+                     enter (min,max,first,last)
+                     do (# current: @integer;
+                           skipped: @integer;
+                           missingSpace: @real;
+                           lastThisTime: @integer;
+                           
+                           remaining:
+                             (#
+                             exit last - first + 1
+                             #);
+                           (* First make sure that min <= all points <= max *)
+                        do (if remaining > 0 then
+                               first -> current;
+                               loop:
+                                 (# 
+                                 do (if (current -> arcs.get).dist < min then
+                                        min -> (current -> arcs.get).dist
+                                    if);
+                                    (if (current -> arcs.get).dist > max then 
+                                        max -> (current -> arcs.get).dist;
+                                    if);
+                                    (if current = last then
+                                        leave loop;
+                                     else
+                                        current+1 -> current;
+                                        restart loop;
+                                    if);
+                                 #);
+                               (* Find the points to modify in this recursive call *)
+                               last -> current;
+                               0 -> skipped;
+                               loop:
+                                 (#
+                                 do (remaining - 1 - skipped) * d - ((current -> arcs.get).dist - (first -> arcs.get).dist) -> missingSpace;
+                                    (if missingSpace >= 0 then
+                                        leave loop;
+                                     else
+                                        skipped + 1 -> skipped;
+                                        current-1 -> current;
+                                        restart loop;
+                                    if);
+                                 #);
+                               current -> lastThisTime;
+                               (* Find position of first point *)
+                               (if true
+                                // (first -> arcs.get).dist - missingSpace/2 < min then
+                                   min -> (first -> arcs.get).dist;
+                                // (first -> arcs.get).dist - missingSpace/2 + (remaining - skipped - 1) * d > max then
+                                   max - (remaining - skipped - 1) * d -> (first -> arcs.get).dist;
+                                else
+                                   (first -> arcs.get).dist - missingSpace/2 -> (first -> arcs.get).dist;
+                               if);
+                               (* Position the points *)
+                               first -> current;
+                               loop:
+                                 (# 
+                                 do (if current = lastThisTime then
+                                        leave loop;
+                                    if);
+                                    (current -> arcs.get).dist + d -> (current+1 -> arcs.get).dist;
+                                    current+1 -> current;
+                                    restart loop;
+                                 #);
+                               (if skipped > 0 then
+                                   ((lastThisTime -> arcs.get).dist + d,max,lastThisTime+1,last) -> distributeRecursive;
+                               if);
+                           if);
+                        #);
+                     #);
+                   
+                enter (arcs[],min,max,first,last)
+                do (# 
+                   do (if not arcs.empty then
+                          (* First it is checked if there is not enough space to distribute the points
+                           * with at least distance d between them. If this is the case, the points
+                           * is simply distributed with equal distance. *)
+                          (if max - min < (arcs.size-1) * d then
+                              (# newD: @real;
+                                 value: @real;
+                              do  min -> value;
+                                 (max - min) / (arcs.size - 1) -> newD;
+                                 arcs.scan
+                                 (#
+                                 do value -> current.dist;
+                                    value + newD -> value;
+                                 #);
+                              #);
+                           else
+                              (min,max,1,arcs.size) -> distributeRecursive;
+                          if);
+                      if);
+                   #);
+                #);
+              arcsOnLeft, snappedArcs, arcsOnRight: @ArcArray;
+              spaceUsedForSnappedArcs: @real;
+              centerPosition: @real;
+              
+           do arcsOnLeft.init;
+              snappedArcs.init;
+              arcsOnRight.init;
+              (border.vector).norm/2 -> centerPosition;
+              scanArcs
+              (# lineFromSourceToCenter: ^GeomLine;
+                 intersection: ^Point2d;
+                 elm: ^ArcArrayElement;
+                 vectorToSource: ^Point2d;
+                 dotProduct: @real;
+              do (current[] -> getSourcePoint,centerOfNode[]) -> createFiniteLine -> lineFromSourceToCenter[];
+                 lineFromSourceToCenter[] -> border.intersect -> intersection[];
+                 (if intersection[] <> NONE then
+                     centerOfNode[] -> (current[] -> getSourcePoint).sub -> vectorToSource[];
+                     (vectorToSource[] -> (border.vector).dot) -> dotProduct;
+                     &ArcArrayElement[] -> elm[];
+                     (if true 
+                      // dotProduct > 0 then 
+                         elm[] -> arcsOnLeft.append;
+                      // dotProduct = 0 then
+                         elm[] -> snappedArcs.append;
+                      // dotProduct < 0 then
+                         elm[] -> arcsOnRight.append;
+                     if);
+                     current[] -> elm.theArc[];
+                     (intersection[] -> border.a.sub).norm -> elm.dist;
+                 if);
+              #);
+              
+              (if false then
+                  (for i: snappedArcs.size repeat
+                       i -> snappedArcs.get -> arcsOnLeft.append;
+                  for);
+                  (for i: arcsOnRight.size repeat
+                       i -> arcsOnRight.get -> arcsOnLeft.append;
+                  for);
+                  arcsOnLeft.size -> arcsOnLeft.quickSort;
+                  (arcsOnLeft[],0,(border.vector).norm,1,arcsOnLeft.size) -> distributePoints;
+                  arcsOnLeft[] -> setIncidentPointOnArcs;
+               else
+                  arcsOnLeft.size -> arcsOnLeft.quickSort;
+                  snappedArcs.size -> snappedArcs.quickSort;
+                  arcsOnRight.size -> arcsOnRight.quickSort;
+                  (if snappedArcs.empty then
+                      (for i: arcsOnRight.size repeat
+                           i -> arcsOnRight.get -> arcsOnLeft.append;
+                      for);
+                      arcsOnLeft.size -> arcsOnLeft.quickSort;
+                      (arcsOnLeft[],0,(border.vector).norm,1,arcsOnLeft.size) -> distributePoints;
+                   else
+                      snappedArcs[] -> layoutSnappedArcs -> spaceUsedForSnappedArcs;
+                      (arcsOnLeft[],0,centerPosition - spaceUsedForSnappedArcs/2-d,1,arcsOnLeft.size) -> distributePoints;
+                      (arcsOnRight[],centerPosition + spaceUsedForSnappedArcs/2+d,(border.vector).norm,1,arcsOnRight.size) -> distributePoints;
+                  if);
+                  arcsOnLeft[] -> setIncidentPointOnArcs;
+                  (if not snappedArcs.empty then
+                      snappedArcs[] -> setIncidentPointOnArcs;
+                      arcsOnRight[] -> setIncidentPointOnArcs;
+                  if);
+              if);
+              
+           #);
+        #);
+      
+      nwDir, neDir, swDir, seDir: @Point2d;
+      nwPos,nePos,swPos,sePos: ^Point2d;
+      pos: @Point2d;
+      nBorder, sBorder, eBorder, wBorder: ^GeomLine;
+      centerOfNode: @Point2d;        
+      square8: @real;
+      
+   do position -> centerOfNode.XY;
+      'Laying out attachment points. Node center: (%d,%d)' -> debugAttachmentPoints
+      (#
+      do centerOfNode.x -> d;
+         centerOfNode.y -> d;
+      #);
+      (if this(Node)## <= Transition## then
+          (width/2,height/2) -> seDir.XY;
+          (width/2,-height/2) -> neDir.XY;
+          (-width/2,height/2) -> swDir.XY;
+          (-width/2,-height/2) -> nwDir.XY;
+       else
+          8 -> sqrt -> square8;
+          (width/square8,height/square8) -> seDir.XY;
+          (width/square8,-height/square8) -> neDir.XY;
+          (-width/square8,height/square8) -> swDir.XY;
+          (-width/square8,-height/square8) -> nwDir.XY;
+      if);
+      position -> pos.XY;
+      pos[] -> neDir.add -> nePos[];
+      pos[] -> seDir.add -> sePos[];
+      pos[] -> nwDir.add -> nwPos[];
+      pos[] -> swDir.add -> swPos[];
+      (nwPos[],nePos[]) -> createFiniteLine -> nBorder[];
+      (nePos[],sePos[]) -> createFiniteLine -> eBorder[];
+      (sePos[],swPos[]) -> createFiniteLine -> sBorder[];
+      (swPos[],nwPos[]) -> createFiniteLine -> wBorder[];
+      nBorder[] -> layoutArcsInRegion;
+      eBorder[] -> layoutArcsInRegion;
+      sBorder[] -> layoutArcsInRegion;
+      wBorder[] -> layoutArcsInRegion;
+      scanArcs 
+      (# 
+      do current.update; 
+      #);
+   #);

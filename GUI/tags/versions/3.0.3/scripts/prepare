@@ -1,0 +1,251 @@
+#!/bin/bash
+# This is the major version. The minor version is stored in /cygdrive/c/.minor
+MAJOR="1.1"
+DBPASSWD="Cpn=Tool=Bugs"
+CPN2000=/cygdrive/c/cpn2000
+POSTWIMP=/cygdrive/c/beta/postwimp
+XML=/cygdrive/c/beta/xml
+USER=pern
+REMOTE=fresh-horse.daimi.au.dk
+if [ "$1" == "release" ]; then
+	MINOR=$2
+else
+	MINOR=$[`cat /cygdrive/c/.minor`+1]
+	echo $MINOR > /cygdrive/c/.minor
+fi
+TAG="v$(echo $MAJOR.$MINOR | sed -e "s/[.]/_/g")"
+# prepares the source for distribution
+echo Preparing for distribution
+if [ "$1" != "release" ]; then	
+        cd $XML
+	cvs -q upd -dP | grep ^C
+	cvs -q tag -RF $TAG | grep ^C
+	cd $POSTWIMP
+	cvs -q upd -dP | grep ^C
+	cvs -q tag -RF $TAG | grep ^C
+	cd $CPN2000
+	rm -Rf cpnsim/
+	rm -Rf xsl/executable/
+	rm cpntools/debug.bet
+	rm cpntools/resources/help-resources.bet
+	cvs -Q upd -dP | grep ^C
+	cvs -q tag -RF $TAG | grep ^C
+	cd cpntools	
+else
+        cd $CPN2000/cpntools
+fi
+
+rm -f *.cpn
+find $CPN2000/cpntools/Sample\ Nets/ -name 'cpntools.dump' -exec rm {} \;
+find $CPN2000 -name '#*' -exec rm {} \;
+find $CPN2000 -name '*~' -exec rm {} \;
+
+# this turns off all debug information and surveillance functions
+echo Turning off surveillance and debug information
+cat debug.bet | sed -e "s/^[ ]*debugging.*/debugging:(# exit false #);/" | sed -e "s/^[ ]*gimmesurveillance.*/gimmesurveillance: (# exit false #);/" > debug.bet.new
+rm debug.bet
+mv debug.bet.new debug.bet
+# add neat build information
+BUILD=`date '+%B %Y'`
+echo "Adding version information ($MAJOR.$MINOR - $BUILD)"
+if [ "$1" == "release" ]; then
+    cat debug.bet | sed -e "s/^[ ]*version.*/version: (# exit '$MAJOR.$MINOR' #);/" -e "s/^[ ]*titlebar.*/titlebar: (# exit '(Version $MAJOR.$MINOR - $BUILD)' #);/" > debug.bet.new
+else
+    cat debug.bet | sed -e "s/^[ ]*version.*/version: (# exit '$MAJOR.$MINOR' #);/" -e "s/^[ ]*titlebar.*/titlebar: (# exit '(Internal version $MAJOR.$MINOR - $BUILD)' #);/" > debug.bet.new
+fi
+rm debug.bet
+mv debug.bet.new debug.bet
+# add version information
+#  echo "Adding version information ($MAJOR.$MINOR)"
+# cat debug.bet | sed -e "s/^[ ]*version.*/version: (# exit '$MAJOR.$MINOR' #);/" > debug.bet.new
+# rm debug.bet
+# mv debug.bet.new debug.bet
+# is this a release?
+if [ "$1" == "release" -o "$1" == "narko" ]; then
+	echo Preparing for external $1
+	cat debug.bet | sed -e "s/^[ ]*internal.*/internal: (# exit false #);/" > debug.bet.new
+	rm debug.bet
+	mv debug.bet.new debug.bet
+else
+	echo Preparing for internal release
+fi
+if [ "$1" != "release" ]; then
+        WHERE="/devel"
+fi
+# use local help files
+echo Setting up to use local help files
+cd $CPN2000/cpntools/resources/
+cat help-resources.bet | sed -e "s/[ ]*theHelpGlobalizer.*/theHelpGlobalizer: HelpGlobalizer2 (# #);/" > help-resources.bet.new
+rm help-resources.bet
+mv help-resources.bet.new help-resources.bet
+# start building
+echo Compiling
+cd $CPN2000/cpntools/
+beta -qw --mute -s 10 11 12 cpntools
+beta -qw --mute -s 10 11 12 mouseconfig
+# build help
+echo Building local help
+uniqueHelp=/tmp/help-$$-$(date +%s)
+ssh -x $REMOTE "mkdir $uniqueHelp; chmod og-wrx $uniqueHelp; cd $uniqueHelp; cvs -Q -d /users/beta/.CVSHOME/ co cpn2000/scripts/converthelp > /dev/null; mv cpn2000/scripts/converthelp .; rm -Rf cpn2000; chmod u+x converthelp; ./converthelp; rm converthelp; mv $uniqueHelp/* ~/; rm -Rf $uniqueHelp"
+cd $CPN2000/cpntools
+scp cleo:~/help.tar.gz .
+gunzip help.tar.gz
+tar -xvf help.tar | grep -v ^help/
+rm help.tar
+if [ -e help/wget.log ]; then
+    mv help/wget.log ../scripts
+fi
+#cd $CPN2000/scripts/
+#. ./converthelp
+
+# Build distribution
+echo Copying files
+cd /cygdrive/c/Dist
+mkdir makehere
+cd makehere
+# CPNTools package
+mkdir CPNTools
+cd CPNTools
+cp -p $CPN2000/cpntools/cpntools.exe .
+cp -Rp $CPN2000/cpntools/Language/ .
+cp -Rp $CPN2000/cpntools/images/ .
+cp -p $CPN2000/scripts/*.url .
+cp -p $CPN2000/cpntools/config.xml .
+cp -p $CPN2000/cpntools/mouseconfig.exe .
+rm -Rf Language/CVS
+rm -Rf images/CVS
+cd ..
+# fonts package
+mkdir fonts
+cd fonts
+cp -Rp $CPN2000/fonts/ .
+rm -Rf fonts/CVS
+cd ..
+# cpnsim package
+mkdir cpnsim
+cd cpnsim
+cp -Rp $CPN2000/cpntools/cpnsim/ .
+find . -name CVS -type d|xargs rm -Rf
+rm -f  cpnsim/cpn.ML.x86-linux
+rm -f  cpnsim/run.x86-linux
+rm -f  cpnsim/cpnmld
+cd ..
+# converter package
+mkdir converter
+cd converter
+cp -Rp $CPN2000/xsl/executable/ converter
+rm -Rf converter/CVS
+cd ..
+# help package
+mkdir help
+cd help
+cp -Rp $CPN2000/cpntools/help/ .
+cd ..
+# Samples package
+mkdir Samples
+mkdir Samples/Samples
+cd Samples/Samples
+#cp -p $CPN2000/cpntools/hier.cpn .
+cp -Rp $CPN2000/cpntools/Sample\ Nets/* .
+find . -name CVS -type d|xargs rm -Rf
+cd ../..
+# Utils package
+mkdir Utils
+mkdir Utils/Utils
+cd Utils/Utils
+cp -p $CPN2000/scripts/cardinfo.exe .
+cp -p $CPN2000/scripts/REG.EXE .
+cd ../..
+# MouseDriver package
+mkdir MouseDriver/
+mkdir "MouseDriver/Mouse driver"
+cd "MouseDriver/Mouse driver"
+cp -Rp $CPN2000/usb-driver/driver/* .
+rm -Rf CVS
+cd ../..
+# Templates package
+mkdir Templates
+mkdir Templates/Templates
+cd Templates/Templates
+cp -Rp $CPN2000/cpntools/templates/* .
+rm -Rf CVS
+cd ../..
+
+cd /cygdrive/c/Dist/makehere
+if [ "$1" == "release" ]; then
+	$CPN2000/scripts/copynew release makehere
+else
+	$CPN2000/scripts/copynew internal makehere
+fi
+
+# Create image
+echo Creating new image
+cd /cygdrive/c/Program\ Files/CreateInstall\ Pro/
+./ci.exe Projects/CPN\ Tools.g
+chmod a-x,u+w /cygdrive/c/Dist/Disk1/*
+chmod a+x /cygdrive/c/Dist/Disk1/*.exe
+# # Create update.ini
+echo Creating update.ini
+if [ "$1" != "release" ]; then
+	UPDINT="internal/"
+else
+	UPDINT=""
+fi
+cd /cygdrive/c/Dist/makehere
+cp $CPN2000/scripts/update.ini .
+for file in *; do
+	if [ -d "$file" ]; then
+		echo -ne " - $file"
+		$CPN2000/scripts/createupd2 "$file" "$file" "." "$UPDINT"
+		CURRENT="$( cat update.ini | grep -B 10000 "^#$file" | wc -l )"
+		head -n $[ $CURRENT - 1 ] update.ini > tmp
+		cat "$file/header" >> tmp
+		cat "$file/footer" >> footer
+		grep -A 10000 "^#$file" update.ini | tail -n +2 >> tmp
+		mv tmp update.ini
+		rm "$file/header" "$file/footer"
+	fi
+done
+cat update.ini footer > /cygdrive/c/Dist/Disk1/update.ini
+rm update.ini footer
+
+# # And release it
+NEW_IMAGE=$USER@$REMOTE:/users/cpntools/data/versions/win2k$WHERE/cpntools_$MAJOR.$MINOR.exe
+echo Copying image to $NEW_IMAGE
+scp -q /cygdrive/c/Dist/Disk1/setup.exe $NEW_IMAGE
+if [ "$1" == "release" ]; then
+	rm -Rf //dodeca/cpntools/public_html/bin/update/*
+	cp -R /cygdrive/c/Dist/Disk1/update.ini /cygdrive/c/Dist/makehere/*/* //dodeca/cpntools/public_html/bin/update
+#else
+	#not important: rm -Rf //dodeca/cpntools/public_html/bin/update/internal/*
+	#cp -R /cygdrive/c/Dist/Disk1/update.ini /cygdrive/c/Dist/makehere/*/* //dodeca/cpntools/public_html/bin/update/internal
+fi
+# Update license database (to allow download)
+echo "Updating databases"
+if [ "$1" == "release" ]; then
+	echo "INSERT INTO version VALUES(0,'CPN Tools $MAJOR.$MINOR',0,'/users/cpntools/data/versions/win2k/cpntools_$MAJOR.$MINOR.exe',0)" | ssh mysql "mysql -u cpntools -h localhost --password=$DBPASSWD cpntools"
+else
+	echo "INSERT INTO version VALUES(0,'CPN Tools $MAJOR.$MINOR development',0,'/users/cpntools/data/versions/win2k/devel/cpntools_$MAJOR.$MINOR.exe',1)" | ssh mysql "mysql -u cpntools -h localhost --password=$DBPASSWD cpntools"
+fi
+# Update bug-database (to allow bug-reports)
+if [ "$1" != "release" ]; then
+	MAX=$(echo "SELECT MAX(BID) FROM Build" | ssh mysql "mysql -s -u cpntoolsbugs -h localhost --password=$DBPASSWD cpntoolsbugs")
+	echo "UPDATE Build SET BText='$MAJOR.$MINOR' WHERE BID=$MAX" | ssh mysql "mysql -u cpntoolsbugs -h localhost --password=$DBPASSWD cpntoolsbugs"
+	echo "INSERT INTO Build(BText) VALUES('Next version')" | ssh mysql "mysql -u cpntoolsbugs -h localhost --password=$DBPASSWD cpntoolsbugs"
+fi
+
+# restore CVS version of debug.bet and help-resources.bet
+echo Restoring old version
+if [ "$1" != "release" ]; then
+	cd /cygdrive/c/Dist
+	rm -Rf internal
+	mv makehere internal
+	cd $CPN2000/cpntools/
+	rm -Rf help
+	rm debug.bet
+	cd $CPN2000/cpntools/resources/
+	rm help-resources.bet
+	cd $CPN2000
+	cvs -Q upd -dP | grep ^C
+fi
+echo Done

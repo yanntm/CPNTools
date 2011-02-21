@@ -1,0 +1,589 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '~beta/postwimp/workspace';
+INCLUDE '../../cpnet/cpnet';
+INCLUDE '../instruments/cpnoption';
+
+BODY 'private/cpnbinderbody';
+
+-- Workspacelib: attributes --
+HighlightableSheetList: List (# Element:: HighlightableSheet #);
+CPNSheetList: List (# Element:: CPNSheet #);
+
+HighlightableSheet: StandardSheet
+  (# ContentType::< Highlightable;
+     errorlayer: ^Layer;
+     init::<
+       (#
+       do &SheetLayer[] -> errorlayer[];
+          errorlayer.init;
+          not (THIS(HighlightableSheet)## <= TextSheet##) -> errorlayer.clipping;
+          errorlayer[] -> add;
+          INNER;
+       #);
+     setTabColor: (# <<SLOT HighlightableSheetSetTabColor:doPart>> #);
+     contentChanged:: (# <<SLOT HighlightableSheetContentChanged:doPart>> #);
+     errorset: @List
+       (# element:: Highlightable;
+       #);
+     
+     addError:<
+       (# source: ^Highlightable;
+       enter source[]
+       do (if not (source[] -> errorset.has) then
+              source[] -> errorset.append;
+              INNER;
+              source.qerror[] -> errorlayer.show;
+          if);
+       #);
+     removeError:
+       (# pos: ^errorset.theCellType;
+          source: ^Highlightable;
+       enter source[]
+       do source[] -> errorset.at -> pos[];
+          (if pos[] <> NONE then
+              search: errorlayer.content.scan
+                (# currentMessage: ^MessageBubble;
+                do (if current## <= MessageBubble## then
+                       current[] -> currentMessage[];
+                       (if currentMessage.owner[] = source[] then
+                           currentMessage[] -> errorlayer.hide;
+                           leave search;
+                       if);
+                   if);
+                #);
+              pos[] -> errorset.delete;
+           else
+              (if source## <= Declaration## then
+                  (* Since errors from Declarations will be linked to the Decl
+                   * objects, which are changed before we get here, we asume
+                   * that if the source is a Declaration we can remove all
+                   * error messages. This must be changed if we are to support
+                   * sheets with multiple declarations. *)
+                  errorlayer.content.scan
+                  (# currentMessage: ^MessageBubble;
+                  do (if current## <= MessageBubble## then
+                         current[] -> currentMessage[];
+                         currentMessage[] -> errorlayer.hide;
+                     if);
+                  #);
+                  errorset.clear;
+              if);
+          if);
+       #);
+     calculateZoomFactor:
+       (# factor: @RealObject;
+          xfactor, yfactor: @real;
+          xmin, xmax, ymin, ymax: @integer;
+       do
+          bounds -> (xmin, xmax, ymin, ymax);
+          theHeight/(ymax-ymin+30)->yfactor;(*Offset added for nicer look*)
+          theWidth/(xmax-xmin+30)->xfactor;
+          (if xfactor<yfactor then 
+              xfactor->factor;
+           else 
+              yfactor->factor;
+          if);
+       exit factor
+       #);
+     centerContent:<
+       (# 
+       do INNER;
+       #);
+     
+     sheetAir:<
+       (# air: @integer;
+       do INNER;
+       exit air
+       #);
+     
+     calculateInitialSize:
+       (# xmin, xmax, ymin, ymax: @real;
+          maxBinderHeight: (# exit (THIS(World).height*3/4) #);
+          maxBinderWidth: (# exit (THIS(World).width*3/4) #);
+       do bounds -> (xmin, xmax, ymin, ymax);
+          (if ymax - ymin < maxBinderHeight then
+              (if ymax - ymin > 100 then
+                  (ymax - ymin) + sheetAir -> theHeight;
+               else
+                  200 -> theHeight;
+              if);
+           else
+              maxBinderHeight -> theHeight;
+          if);
+          (if xmax - xmin < maxBinderWidth then
+              (if xmax - xmin > 200 then
+                  (xmax - xmin) + sheetAir -> theWidth;
+               else
+                  300 -> theWidth;
+              if);
+           else
+              maxBinderWidth -> theWidth;
+          if);
+       #);
+     
+     computeInitialPan:<
+       (# 
+       do calculateInitialSize;
+          INNER;
+          changed;
+       #);
+     
+     getCPNet:<
+       (# theNet: ^CPNet;
+       do INNER;
+       exit theNet[]
+       #);
+  #);
+
+CpnTab: SheetTab
+  (# SheetType:: CpnSheet; 
+     theSheet: ^CpnSheet;
+     editable::
+       (#
+       do true -> isEditable;
+       #);
+     onChanged::
+       (#
+       do (if (theSheet[] <> NONE) and (theSheet.content[] <> NONE) then
+              theSheet.content.changed;
+          if);
+       #);
+     onTextUpdated::
+       (# 
+       do (if (theSheet[] <> NONE) and (theSheet.content[] <> NONE) then
+              theSheet.content.thePage.nameChanged;
+          if);
+       #);
+     onFocusLost::
+       (# 
+       do (if (theSheet[] <> NONE) and (theSheet.content[] <> NONE) then
+              theSheet.content.thePage.nameChanged;
+          if); 
+       #);
+  #);
+
+CpnSheet: HighlightableSheet
+  (# <<SLOT CPNSheetLib: Attributes>>;
+     ContentType:: PageInstance;
+     TopTabType:: CPNTab;
+     TabType:: GroupTab;
+     SimulationLayer: SheetLayer (# #);
+     simlayer: ^Layer;
+     guidelinelayer: ^Layer;
+     FatherType:: Folder;
+     shouldBeInMainLayer:: 
+       (# 
+       do not (source## <= guideline##) -> value;
+       #);     
+     init:: (# <<SLOT CPNSheetInit:doPart>> #);
+     
+     bounds::<
+       (# 
+       do (# txmin, txmax, tymin, tymax: @real;
+             boing: @boolean;
+             scanElements:
+               (# current: ^ContentItem;
+               do mainlayer.content.scan
+                  (#
+                  do current[] -> THIS(scanElements).current[];
+                     INNER scanElements;
+                  #);
+                  simlayer.content.scan
+                  (#
+                  do current[] -> THIS(scanElements).current[];
+                     INNER scanElements;
+                  #);
+               #);
+          do content.thepage.bounds -> (xmin,xmax,ymin,ymax);
+             scanElements
+             (# 
+             do true -> boing;
+                current.present;
+                current.presentation.bounds -> (txmin, txmax, tymin, tymax);
+                (if (txmin<>0) AND (txmax<>0) AND (tymin<>0) AND (tymax<>0)  then
+                    (if txmin < xmin then
+                        txmin -> xmin;
+                    if);
+                    (if txmax > xmax then
+                        txmax -> xmax;
+                    if);
+                    (if tymin < ymin then
+                        tymin -> ymin;
+                    if);
+                    (if tymax > ymax then
+                        tymax -> ymax;
+                    if);
+                if);
+             #);
+             (if not boing then
+                 0 -> xmax -> ymax -> xmin -> ymin;
+             if);
+          #);
+       #);
+     sheetAir::
+       (# 
+       do 100 -> air;
+       #);
+     
+     computeInitialPan::
+       (# xmin, xmax, ymin, ymax: @real;
+          ii: @integer;
+       do bounds -> (xmin, xmax, ymin, ymax);
+          -xmin -> panx; 
+          panx - (xmax - xmin) div 2 -> panx;
+          - (ymin + ymax) div  2 -> pany;
+          (if (xmax - xmin <= 0) and (ymax - ymin <= 0) then
+              600 -> theWidth;
+              480 -> theHeight;
+          if);
+          panx -> ii -> panx;
+          pany -> ii -> pany;
+          (panx, pany) -> pan;
+       #);
+     
+     (*Pans so the content is centered*)
+     centerContent::
+       (#  xmin, xmax, ymin, ymax: @real;
+          z: @real;
+          ii: @integer;
+       do bounds -> (xmin, xmax, ymin, ymax);
+          THIS(CPNSheet).theZoom->z;
+          (xmin*z, xmax*z, ymin*z, ymax*z) -> (xmin, xmax, ymin, ymax); 
+          -xmin -> panx; 
+          panx - (xmax - xmin) div 2 -> panx;
+          - (ymin + ymax) div  2 -> pany;
+          panx -> ii -> panx;
+          pany -> ii -> pany;
+          (panx, pany) -> pan;
+          changed;
+       #);
+
+     show:: (# <<SLOT CPNSheetShow:doPart>> #);
+     hide:: (# <<SLOT CPNSheetHide:doPart>> #);     
+     onTestAdd:: (# <<SLOT CPNSheetOnTestAdd:DoPart>> #);
+     onTestRemove:: (# <<SLOT CPNSheetOnTestRemove:DoPart>> #);       
+     setContent:: (# <<SLOT CPNSheetSetContent:doPart>> #);
+     onChanged:: (# <<SLOT CPNSheetOnChanged:doPart>> #);
+     onRemoved:: (# <<SLOT CPNSheetOnRemoved:doPart>> #);
+     updatePageTab: (# <<SLOT CPNSheetUpdatePageTab:doPart>> #);
+     getCPNet::
+       (#
+       do content.thePage.net[] -> theNet[];
+       #);
+  #);
+CPNBinder: Folder 
+  (# theNet: ^CPNet;
+     
+     canAdd::
+       (# theHighlightableSheet: ^HighlightableSheet;
+       do (if theSheet## <= HighlightableSheet## then
+              theSheet[] -> theHighlightableSheet[];
+              (if theHighlightableSheet.getCPNet = theNet[] then
+                  true -> canAdd;
+               else
+                  false -> canAdd;
+              if);
+           else
+              (if notIsToolBinder then
+                  false -> canAdd;
+              if);
+          if);
+       #);
+     
+     add::
+       (# theHighlightableSheet: ^HighlightableSheet;
+       do (if elm## <= HighlightableSheet## then
+              elm[] -> theHighlightableSheet[];
+              (if theNet[] = none then
+                  theHighlightableSheet.getCPNet -> theNet[];
+              if);
+          if);
+       #);
+     
+     scanHighlightableSheets:
+       (# current: ^HighlightableSheet;
+       <<SLOT CPNBinderScanHighlightableSheets:DoPart>>
+       #);
+     scanTextSheets:
+       (# current: ^TextSheet;
+       <<SLOT CPNBinderScanTextSheets:DoPart>>          
+       #);
+     scanCPNSheets:
+       (# current: ^CPNSheet;
+       <<SLOT CPNBinderScanCPNSheets:DoPart>>
+       #);
+     
+     onSheetRaised::
+       (#
+       <<SLOT CPNBinderOnSheetRaised: doPart>>
+       #);
+          
+     notIsToolBinder:
+       (# value: @boolean;
+       do false -> value;
+          checkContainsHighlightableSheet: scanHighlightableSheets
+            (# 
+            do true -> value;
+               leave checkContainsHighlightableSheet;
+            #);
+       exit value
+       #);
+     
+  #);
+TextAdapter: ContentItem
+  (# contentType:< Notifier;
+     content: ^contentType;
+     theTextItem: ^TextItem;
+     data: ^Text;
+     allowReturn:: (# do true -> value #);
+     
+     update::
+       (#
+       do theTextItem[] -> presentation.add;
+       #);
+     getTextItem::
+       (#
+       do THIS(TextAdapter).theTextItem[] -> theTextItem[];
+       #);
+     bounds::
+       (#
+       do (if theTextItem[] <> NONE then
+              theTextItem.bounds -> (xmin, xmax, ymin, ymax);
+          if);
+       #);
+     onSemanticChanged::<
+       (# 
+       do (if not theTextItem.editActive then
+              theTextItem.content.clear;
+              (* Furtherbindings are supposed to set 
+               * theTextItem.content[] based on content. *)
+              INNER;
+              update;
+          if);
+       #);
+     init::<
+       (# 
+       enter content[]
+       do &TextItem[] -> theTextItem[];
+          theTextItem.init;
+          &Text[] -> data[];
+          (* Furtherbindings are supposed to set 
+           * data[] based on content. *)
+          INNER;
+          data[] -> theTextItem.content[];
+          THIS(TextAdapter)[] -> content.attach;
+       #);
+  #);
+
+DeclarationTextAdapter: TextAdapter
+  (# contentType:: Declaration;
+     sheet: ^TextSheet;
+     allowCtrlReturn:: TrueObject;
+     next::< (# <<SLOT DeclarationTextAdapterNext:DoPart>> #);       
+     forceNext::<
+       (# theBinder: ^Folder;
+          newDecl: ^Declaration;
+          theFather: ^Declaration;
+          newSheet: ^TextSheet;
+       <<SLOT DeclarationTextAdapterForceNext:doPart>>
+       #);
+     
+     onTextUpdated::
+       (#
+       do data[] -> content.parse;
+       #);
+     onSemanticChanged::
+       (# 
+       do theTextItem.content[] -> content.print;
+       #);
+     init:: 
+       (# 
+       do data[] -> content.print; 
+       #);
+  #);
+
+TextTab: SheetTab
+  (# 
+     init::
+       (#
+       do 0.5->blueish.lighten->original[]->tabColor;
+       #);
+  #);
+
+DeclTextTab: TextTab (# (* Empty sub-pattern, to restrict target of TextTabMenu *) #);
+MonitorSheet: TextSheet(# (* Just as above...*) #);
+TextSheet: HighlightableSheet
+  (# ContentType:: Declaration;
+     FatherType:: CPNBinder;
+     TopTabType:: DeclTextTab;
+     adapter: ^DeclarationTextAdapter;
+     
+     sheetAir::
+       (# 
+       do 20 -> air;
+       #);
+     
+     (*Does not _center_ content but pans it to something nice looking*)
+     centerContent::
+       (# defaultTextHeight:
+            (# w,h: @integer;
+            do 'foo' -> arial.measureText -> (w,h);
+            exit h
+            #);
+       do (panx,defaultTextHeight*theZoom) -> pan;
+          changed;
+       #);
+     
+     bounds::<
+       (# 
+       do 
+          adapter.bounds -> (xmin, xmax, ymin, ymax);
+       #);
+     
+     setContent::
+       (# 
+       do &DeclarationTextAdapter[] -> adapter[];
+          content[] -> adapter.init;
+          adapter[] -> mainLayer.show;
+          THIS(TextSheet)[] -> content.attach;
+          THIS(TextSheet)[] -> adapter.sheet[];
+          computeInitialPan;
+       #);
+
+     init::
+       (#
+       do LeftJustify -> mainLayer.verticalAnchor;
+          TopJustify -> mainLayer.horizontalAnchor;
+          (7, 20) -> pan;
+	  0.5->blueish.lighten->theSheetColor[];
+       #);
+     secondary: ^Text;
+     onSemanticChanged::
+       (# 
+       do content.mldecl[] -> contentChanged;
+          changed;
+       #);
+     onChanged::
+       (# 
+       do (if content[] <> NONE then
+              (if toptab[] <> NONE then
+                  content.shortname -> toptab.label[];
+                  (if secondary[] <> none then
+                      secondary[] -> toptab.secondary[];
+                  if);
+              if);
+	      content.mldecl[] -> contentChanged;
+              (if adapter[] <> NONE then 
+                  adapter.semanticChanged;
+              if);
+          if);
+       #);
+     addError::
+       (# 
+       do (* FIXME: Something to place the source.qerror more approprietely *)
+       #);
+     getCPNet::
+       (#
+       do content.getCPNet -> theNet[];
+       #);
+  #);
+
+MLCodeOptionTextAdapter: TextAdapter
+  (# contentType:: MLCodeOption;
+     
+     onTextUpdated::
+       (# 
+       do content.theValue[] -> data[];
+       #);
+     
+     onSemanticChanged::
+       (# 
+       do content.theValue[] -> theTextItem.content[];
+       #);
+     
+     init::
+       (# 
+       do content.theValue[] -> data[];
+       #);
+  #);
+
+MLCodeOptionSheet: StandardSheet
+  (# ContentType:: MLCodeOption;
+     TopTabType:: TextTab;
+     adapter: ^MLCodeOptionTextAdapter;
+     
+     computeInitialPan:
+       (# xmin, xmax, ymin, ymax: @real;
+          ii: @integer;
+       do adapter.bounds -> (xmin, xmax, ymin, ymax);
+          (if ymax - ymin < 500 then
+              (if ymax - ymin > 100 then
+                  (ymax - ymin) + 100 -> theHeight;
+               else
+                  200 -> theHeight;
+              if);
+           else
+              600 -> theHeight;
+          if);
+          (if xmax - xmin < 700 then
+              (if xmax - xmin > 200 then
+                  (xmax - xmin) + 100 -> theWidth;
+               else
+                  300 -> theWidth;
+              if);
+           else
+              800 -> theWidth;
+          if);
+          changed;
+       #);
+
+     setContent::
+       (# 
+       do &MLCodeOptionTextAdapter[] -> adapter[];
+          content[] -> adapter.init;
+          adapter[] -> mainLayer.show;
+          THIS(MLCodeOptionSheet)[] -> content.attach;
+          computeInitialPan;
+       #);
+     
+     init::
+       (# 
+       do LeftJustify -> mainLayer.verticalAnchor;
+          TopJustify -> mainLayer.horizontalAnchor;
+          (7, 20) -> pan;
+	  0.5->blueish.lighten->sheetColor;
+       #);
+     
+     onChanged::
+       (# 
+       do (if content[] <> NONE then
+              (if toptab[] <> NONE then
+                  content.shortname -> toptab.label[];
+              if)
+          if);
+       #);
+  #);
