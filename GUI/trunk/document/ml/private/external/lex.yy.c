@@ -732,14 +732,6 @@ void resetBuffer ();
 #define COMMENT 13
 #define MLCOMMENT 14
 
-#ifndef YY_NO_UNISTD_H
-/* Special case for "unistd.h", since it is non-ANSI. We include it way
- * down here because we want the user's section 1 to have been scanned first.
- * The user has a chance to override it with an option.
- */
-#include <unistd.h>
-#endif
-
 #ifndef YY_EXTRA_TYPE
 #define YY_EXTRA_TYPE void *
 #endif
@@ -912,7 +904,7 @@ YY_DECL
     
 #line 54 "mlparse.l"
 
-#line 916 "lex.yy.c"
+#line 908 "lex.yy.c"
 
 	if ( !(yy_init) )
 		{
@@ -1528,7 +1520,7 @@ YY_RULE_SETUP
 #line 198 "mlparse.l"
 ECHO;
 	YY_BREAK
-#line 1532 "lex.yy.c"
+#line 1524 "lex.yy.c"
 case YY_STATE_EOF(INITIAL):
 case YY_STATE_EOF(MLSEMI):
 case YY_STATE_EOF(MLSEMICONTENTS):

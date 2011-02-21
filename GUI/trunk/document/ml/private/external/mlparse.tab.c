@@ -1,9 +1,10 @@
-/* A Bison parser, made by GNU Bison 2.4.2.  */
+
+/* A Bison parser, made by GNU Bison 2.4.1.  */
 
 /* Skeleton implementation for Bison's Yacc-like parsers in C
    
-      Copyright (C) 1984, 1989-1990, 2000-2006, 2009-2010 Free Software
-   Foundation, Inc.
+      Copyright (C) 1984, 1989, 1990, 2000, 2001, 2002, 2003, 2004, 2005, 2006
+   Free Software Foundation, Inc.
    
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -45,7 +46,7 @@
 #define YYBISON 1
 
 /* Bison version.  */
-#define YYBISON_VERSION "2.4.2"
+#define YYBISON_VERSION "2.4.1"
 
 /* Skeleton name.  */
 #define YYSKELETON_NAME "yacc.c"
@@ -98,7 +99,7 @@ extern FILE *yyout;
 
 
 /* Line 189 of yacc.c  */
-#line 102 "mlparse.tab.c"
+#line 103 "mlparse.tab.c"
 
 /* Enabling traces.  */
 #ifndef YYDEBUG
@@ -172,7 +173,7 @@ typedef union YYSTYPE
 
 
 /* Line 214 of yacc.c  */
-#line 176 "mlparse.tab.c"
+#line 177 "mlparse.tab.c"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
@@ -184,7 +185,7 @@ typedef union YYSTYPE
 
 
 /* Line 264 of yacc.c  */
-#line 188 "mlparse.tab.c"
+#line 189 "mlparse.tab.c"
 
 #ifdef short
 # undef short
@@ -234,7 +235,7 @@ typedef short int yytype_int16;
 #define YYSIZE_MAXIMUM ((YYSIZE_T) -1)
 
 #ifndef YY_
-# if defined YYENABLE_NLS && YYENABLE_NLS
+# if YYENABLE_NLS
 #  if ENABLE_NLS
 #   include <libintl.h> /* INFRINGES ON USER NAME SPACE */
 #   define YY_(msgid) dgettext ("bison-runtime", msgid)
@@ -766,18 +767,9 @@ static const yytype_uint8 yystos[] =
 
 /* Like YYERROR except do call yyerror.  This remains here temporarily
    to ease the transition to the new meaning of YYERROR, for GCC.
-   Once GCC version 2 has supplanted version 1, this can go.  However,
-   YYFAIL appears to be in use.  Nevertheless, it is formally deprecated
-   in Bison 2.4.2's NEWS entry, where a plan to phase it out is
-   discussed.  */
+   Once GCC version 2 has supplanted version 1, this can go.  */
 
 #define YYFAIL		goto yyerrlab
-#if defined YYFAIL
-  /* This is here to suppress warnings from the GCC cpp's
-     -Wunused-macros.  Normally we don't worry about that warning, but
-     some users do, and we want to make it easy for users to remove
-     YYFAIL uses, which will produce warnings from Bison 2.5.  */
-#endif
 
 #define YYRECOVERING()  (!!yyerrstatus)
 
@@ -834,7 +826,7 @@ while (YYID (0))
    we won't break user code: when these are the locations we know.  */
 
 #ifndef YY_LOCATION_PRINT
-# if defined YYLTYPE_IS_TRIVIAL && YYLTYPE_IS_TRIVIAL
+# if YYLTYPE_IS_TRIVIAL
 #  define YY_LOCATION_PRINT(File, Loc)			\
      fprintf (File, "%d.%d-%d.%d",			\
 	      (Loc).first_line, (Loc).first_column,	\
@@ -1573,245 +1565,245 @@ yyreduce:
     {
         case 2:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 68 "mlparse.y"
     { ;}
     break;
 
   case 4:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 73 "mlparse.y"
     { ;}
     break;
 
   case 5:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 75 "mlparse.y"
     { ;}
     break;
 
   case 6:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 78 "mlparse.y"
     { starttag("var", 1); yybegin(12); ;}
     break;
 
   case 7:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 78 "mlparse.y"
     { starttag("type", 1); ;}
     break;
 
   case 8:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 78 "mlparse.y"
     { closetag(); ;}
     break;
 
   case 9:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 78 "mlparse.y"
     { yybegin(0); ;}
     break;
 
   case 10:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 79 "mlparse.y"
     { closetag(); ;}
     break;
 
   case 11:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 80 "mlparse.y"
     { starttag("msvar", 1); yybegin(12); ;}
     break;
 
   case 12:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 80 "mlparse.y"
     { starttag("type", 1); ;}
     break;
 
   case 13:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 80 "mlparse.y"
     { closetag(); ;}
     break;
 
   case 14:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 80 "mlparse.y"
     { yybegin(0); ;}
     break;
 
   case 15:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 81 "mlparse.y"
     { closetag(); ;}
     break;
 
   case 16:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 82 "mlparse.y"
     { starttag("globref", 1); yybegin(12); ;}
     break;
 
   case 17:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 82 "mlparse.y"
     { yybegin(0); ;}
     break;
 
   case 18:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 83 "mlparse.y"
     { closetag(); ;}
     break;
 
   case 19:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 84 "mlparse.y"
     { starttag("use", 1); yybegin(12); ;}
     break;
 
   case 20:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 84 "mlparse.y"
     { yybegin(0); ;}
     break;
 
   case 21:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 85 "mlparse.y"
     { closetag(); ;}
     break;
 
   case 22:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 86 "mlparse.y"
     { starttag("color", 1); yybegin(12); ;}
     break;
 
   case 23:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 86 "mlparse.y"
     { yybegin(0); ;}
     break;
 
   case 24:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 87 "mlparse.y"
     { closetag(); ;}
     break;
 
   case 25:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 88 "mlparse.y"
     { starttag("invariant", 1); yybegin(12); ;}
     break;
 
   case 26:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 88 "mlparse.y"
     { starttag("type", 1); ;}
     break;
 
   case 27:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 88 "mlparse.y"
     { closetag(); ;}
     break;
 
   case 28:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 88 "mlparse.y"
     { yybegin(0); ;}
     break;
 
   case 29:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 89 "mlparse.y"
     { starttag("channel", 1); yybegin(12); ;}
     break;
 
   case 30:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 89 "mlparse.y"
     { yybegin(0); ;}
     break;
 
   case 31:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 90 "mlparse.y"
     { closetag(); ;}
     break;
 
   case 33:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 95 "mlparse.y"
     { ;}
     break;
 
   case 34:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 97 "mlparse.y"
     { starttag("msvarhack", 1); closetag(); ;}
     break;
 
   case 35:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 101 "mlparse.y"
     { ;}
     break;
 
   case 36:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 103 "mlparse.y"
     { ;}
     break;
 
   case 37:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 106 "mlparse.y"
     { resetBuffer(); yybegin(1); ;}
     break;
 
   case 38:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 107 "mlparse.y"
     { starttag("ml", 0);
            escape((yyvsp[(2) - (2)].string));
@@ -1820,14 +1812,14 @@ yyreduce:
 
   case 39:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 112 "mlparse.y"
     { resetBuffer(); yybegin(4); ;}
     break;
 
   case 40:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 113 "mlparse.y"
     { starttag("ml", 0);
              escape((yyvsp[(2) - (2)].string));
@@ -1836,14 +1828,14 @@ yyreduce:
 
   case 41:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 118 "mlparse.y"
     { resetBuffer(); yybegin(8); ;}
     break;
 
   case 42:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 119 "mlparse.y"
     { starttag("ml", 0);
           escape((yyvsp[(2) - (2)].string));
@@ -1852,7 +1844,7 @@ yyreduce:
 
   case 43:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 125 "mlparse.y"
     { starttag("ml", 0);
            escape((yyvsp[(1) - (1)].string));
@@ -1861,533 +1853,533 @@ yyreduce:
 
   case 44:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 130 "mlparse.y"
     { yybegin(7); ;}
     break;
 
   case 45:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 131 "mlparse.y"
     { starttag("id", 0); fprintf(yyout, (yyvsp[(2) - (2)].string)); closetag(); ;}
     break;
 
   case 46:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 134 "mlparse.y"
     { yybegin(7); ;}
     break;
 
   case 47:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 135 "mlparse.y"
     { starttag("name", 0); fprintf(yyout, (yyvsp[(2) - (2)].string)); closetag(); ;}
     break;
 
   case 48:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 138 "mlparse.y"
     { starttag("unit", 1); ;}
     break;
 
   case 49:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 139 "mlparse.y"
     { closetag(); ;}
     break;
 
   case 50:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 140 "mlparse.y"
     { starttag("bool", 1); ;}
     break;
 
   case 51:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 141 "mlparse.y"
     { closetag(); ;}
     break;
 
   case 52:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 142 "mlparse.y"
     { starttag("int", 1); ;}
     break;
 
   case 53:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 143 "mlparse.y"
     { closetag(); ;}
     break;
 
   case 54:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 144 "mlparse.y"
     { starttag("real", 1); ;}
     break;
 
   case 55:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 145 "mlparse.y"
     { closetag(); ;}
     break;
 
   case 56:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 146 "mlparse.y"
     { starttag("string", 1); ;}
     break;
 
   case 57:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 147 "mlparse.y"
     { closetag(); ;}
     break;
 
   case 58:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 148 "mlparse.y"
     { starttag("enum", 1); ;}
     break;
 
   case 59:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 149 "mlparse.y"
     { closetag(); ;}
     break;
 
   case 60:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 150 "mlparse.y"
     { starttag("index", 1); ;}
     break;
 
   case 61:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 151 "mlparse.y"
     { closetag(); ;}
     break;
 
   case 62:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 152 "mlparse.y"
     { starttag("product", 1); ;}
     break;
 
   case 63:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 153 "mlparse.y"
     { closetag(); ;}
     break;
 
   case 64:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 154 "mlparse.y"
     { starttag("record", 1); ;}
     break;
 
   case 65:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 155 "mlparse.y"
     { closetag(); ;}
     break;
 
   case 66:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 156 "mlparse.y"
     { starttag("list", 1); ;}
     break;
 
   case 67:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 157 "mlparse.y"
     { closetag(); ;}
     break;
 
   case 68:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 158 "mlparse.y"
     { starttag("union", 1); ;}
     break;
 
   case 69:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 159 "mlparse.y"
     { closetag(); ;}
     break;
 
   case 70:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 160 "mlparse.y"
     { starttag("subset", 1); ;}
     break;
 
   case 71:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 161 "mlparse.y"
     { closetag(); ;}
     break;
 
   case 72:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 162 "mlparse.y"
     { starttag("alias", 1); ;}
     break;
 
   case 73:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 163 "mlparse.y"
     { closetag(); ;}
     break;
 
   case 74:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 167 "mlparse.y"
     { ;}
     break;
 
   case 75:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 168 "mlparse.y"
     { starttag("with", 1); ;}
     break;
 
   case 76:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 169 "mlparse.y"
     { closetag(); ;}
     break;
 
   case 77:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 173 "mlparse.y"
     { ;}
     break;
 
   case 78:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 174 "mlparse.y"
     { starttag("with", 1); ;}
     break;
 
   case 79:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 175 "mlparse.y"
     { closetag(); ;}
     break;
 
   case 80:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 179 "mlparse.y"
     { ;}
     break;
 
   case 81:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 180 "mlparse.y"
     { starttag("with", 1); ;}
     break;
 
   case 82:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 181 "mlparse.y"
     { closetag(); ;}
     break;
 
   case 83:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 185 "mlparse.y"
     { ;}
     break;
 
   case 84:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 186 "mlparse.y"
     { starttag("with", 1); ;}
     break;
 
   case 85:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 187 "mlparse.y"
     { closetag(); ;}
     break;
 
   case 86:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 191 "mlparse.y"
     { ;}
     break;
 
   case 87:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 192 "mlparse.y"
     { starttag("with", 1); ;}
     break;
 
   case 88:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 195 "mlparse.y"
     { in_stringwithopt = 1; ;}
     break;
 
   case 89:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 195 "mlparse.y"
     { in_stringwithopt = 0; ;}
     break;
 
   case 90:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 197 "mlparse.y"
     { closetag(); ;}
     break;
 
   case 91:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 201 "mlparse.y"
     { ;}
     break;
 
   case 92:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 202 "mlparse.y"
     { starttag("and", 1); ;}
     break;
 
   case 93:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 203 "mlparse.y"
     { closetag(); ;}
     break;
 
   case 94:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 207 "mlparse.y"
     { ;}
     break;
 
   case 95:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 209 "mlparse.y"
     { ;}
     break;
 
   case 96:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 213 "mlparse.y"
     { ;}
     break;
 
   case 97:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 215 "mlparse.y"
     { ;}
     break;
 
   case 98:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 219 "mlparse.y"
     { ;}
     break;
 
   case 99:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 221 "mlparse.y"
     { ;}
     break;
 
   case 100:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 224 "mlparse.y"
     { starttag("recordfield", 1); ;}
     break;
 
   case 101:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 225 "mlparse.y"
     { closetag(); ;}
     break;
 
   case 102:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 229 "mlparse.y"
     { ;}
     break;
 
   case 103:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 230 "mlparse.y"
     { starttag("with", 1); ;}
     break;
 
   case 104:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 231 "mlparse.y"
     { closetag(); ;}
     break;
 
   case 105:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 234 "mlparse.y"
     { starttag("unionfield", 1); ;}
     break;
 
   case 106:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 235 "mlparse.y"
     { closetag(); ;}
     break;
 
   case 107:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 236 "mlparse.y"
     { starttag("unionfield", 1); ;}
     break;
 
   case 108:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 237 "mlparse.y"
     { closetag(); ;}
     break;
 
   case 109:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 241 "mlparse.y"
     { ;}
     break;
 
   case 110:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 242 "mlparse.y"
     { starttag("type", 1); ;}
     break;
 
   case 111:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 243 "mlparse.y"
     { closetag(); ;}
     break;
 
   case 112:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 246 "mlparse.y"
     { starttag("by", 1); ;}
     break;
 
   case 113:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 247 "mlparse.y"
     { closetag(); ;}
     break;
 
   case 114:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 248 "mlparse.y"
     { starttag("with", 1); ;}
     break;
 
   case 115:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 249 "mlparse.y"
     { closetag(); ;}
     break;
 
   case 121:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 259 "mlparse.y"
     { starttag("declare", 1); ;}
     break;
 
   case 122:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 260 "mlparse.y"
     { closetag(); ;}
     break;
 
   case 123:
 
-/* Line 1464 of yacc.c  */
+/* Line 1455 of yacc.c  */
 #line 264 "mlparse.y"
     { starttag("timed", 0); closetag(); ;}
     break;
 
 
 
-/* Line 1464 of yacc.c  */
-#line 2391 "mlparse.tab.c"
+/* Line 1455 of yacc.c  */
+#line 2383 "mlparse.tab.c"
       default: break;
     }
   YY_SYMBOL_PRINT ("-> $$ =", yyr1[yyn], &yyval, &yyloc);
@@ -2598,7 +2590,7 @@ yyreturn:
 
 
 
-/* Line 1684 of yacc.c  */
+/* Line 1675 of yacc.c  */
 #line 267 "mlparse.y"
 
 int

@@ -27,7 +27,7 @@
 all: lex.yy.c mlparse.tab.c mlparse.tab.h
 
 lex.yy.c: mlparse.l mlparse.tab.h
-	flex mlparse.l
+	flex --nounistd mlparse.l
 
 mlparse.tab.c mlparse.tab.h: mlparse.y
 	bison -d mlparse.y
