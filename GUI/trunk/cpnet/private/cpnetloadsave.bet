@@ -306,7 +306,7 @@ save:
           tmpFile.openWrite;
           
           '<?xml version="1.0" encoding="iso-8859-1"?>' -> tmpFile.putline;
-          '<!DOCTYPE workspaceElements PUBLIC "-//CPN//DTD CPNXML 1.0//EN" "http://www.daimi.au.dk/~cpntools/bin/DTD/6/cpn.dtd">' -> tmpFile.putline;
+          '<!DOCTYPE workspaceElements PUBLIC "-//CPN//DTD CPNXML 1.0//EN" "http://cpntools.org/DTD/6/cpn.dtd">' -> tmpFile.putline;
           
           (* Write the XML tree *)
           (rootElm[], tmpfile[]) -> theXML.print;
