@@ -230,7 +230,7 @@ fun HomeSpace' CPN'NodeList
 fun HomePredicate CPN'Predicate
  =
 let
-   fun CPN'ContainsNoSatisfying CPN'scc = not (List.null (PredNodes(SccToNodes CPN'scc, fn CPN'scc => not (CPN'Predicate CPN'scc), 1)))
+   fun CPN'ContainsNoSatisfying CPN'scc = List.null (PredNodes(SccToNodes CPN'scc, CPN'Predicate, 1))
 in
    List.null (PredSccs (PredAllSccs SccTerminal, CPN'ContainsNoSatisfying, 1))
 end
