@@ -134,6 +134,7 @@ do (# theInstance: ^PageInstance;
               (target.getTransition).id[] 
                 -> theInstance.lookupTransitionInstance
                 -> theTransitionInstance[];
+              (if theTransitionInstance[] <> NONE then
               scan: theTransitionInstance.theSubpageInstance.scanSubpageInstanceTree
                 (# 
                 do current.hasEnabledTransitions -> value;
@@ -141,6 +142,7 @@ do (# theInstance: ^PageInstance;
                        leave scan
                    if);
                 #);
+              if);
           if);
        else
           false -> value;
