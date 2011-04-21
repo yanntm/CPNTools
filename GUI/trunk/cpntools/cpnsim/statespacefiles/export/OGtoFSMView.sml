@@ -103,7 +103,7 @@ fun createFSMViewFile (CPN'filename: string,
 
 	(* Quick and dirty dump of all nodes 
 	 * Does not work if there are unconnected nodes *)
-	val allNodes = Misc.sort Int.< (EvalAllNodes (fn i => i))
+	val allNodes = Misc.sort Int.< (EvalAllNodes (fn CPN'i => CPN'i))
 
 	val _ =  EvalNodes (allNodes, outputStmt o genNodeStmt)
 

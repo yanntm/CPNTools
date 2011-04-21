@@ -2725,8 +2725,8 @@ WorkspaceLoader: SimpleLoader
 
                   'x' -> current.lookupInt -> x;
                   'y' -> current.lookupInt -> y;
-                  (if x < 0 then 0 -> x; if);
-                  (if y < 19 then 19 -> y; if); (* magical values meaning window is maximized on XP *)
+                  (if x < -30000 then 0 -> x; if);
+                  (if y < -30000 then 19 -> y; if); (* magical values meaning window is maximized on XP *)
                   (x, y) -> obj.widget.position;
                #);   
             // 'binders' -> current.tag.equalNCS then
