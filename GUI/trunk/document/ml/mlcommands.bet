@@ -239,6 +239,8 @@ MLSetSimulationOptions: CPNMLCommand
      reportBindings: @Boolean;
      showMarkings: @Boolean;
      showEnablings: @Boolean;
+     fair_be: @Boolean;
+     global_fairness: @Boolean;
      untilStep: ^Text;
      addStep: ^Text;
      untilTime: ^Text;
@@ -257,7 +259,9 @@ MLSetSimulationOptions: CPNMLCommand
           reportTransitions->bis.PutBool;
           reportBindings->bis.PutBool;
           showMarkings->bis.PutBool;
-          showEnablings->bis.PutBool;
+	    showEnablings->bis.PutBool;
+	    fair_be -> bis.putBool;
+	    global_fairness -> bis.putBool;
           untilStep[]->bis.PutString;
           addStep[]->bis.PutString;
           untilTime[]->bis.PutString;
@@ -277,7 +281,7 @@ MLSetSimulationOptions: CPNMLCommand
        #);
      
   enter (pauseBefore, pauseAfter, pauseShow, reportTransitions, reportBindings, showMarkings, showEnablings, 
-     untilStep[], addStep[], untilTime[], addTime[], pauseContinue[], reportFunction[])
+     untilStep[], addStep[], untilTime[], addTime[], pauseContinue[], reportFunction[], fair_be, global_fairness)
   #);
 
 MLSetInitialState: CPNMLCommand
