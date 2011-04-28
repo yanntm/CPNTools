@@ -552,6 +552,8 @@ CPNet: Highlightable
 	   report_binds: @boolean;
 	   show_marking: @boolean;
 	   show_enabling: @boolean;
+	   fair_be: @boolean;
+	   global_fairness: @boolean;
 	   until_step: ^text;
 	   add_step: ^text;
 	   until_time: ^text;
@@ -600,6 +602,11 @@ CPNet: Highlightable
      setReportOptions:
        (#
        enter (simulationOptions.report_trans, simulationOptions.report_binds)
+       do setSimulationOptions;
+       #);
+     setFairnessOptions:
+       (#
+       enter (simulationOptions.fair_be, simulationOptions.global_fairness)
        do setSimulationOptions;
        #);
      knownFusionSets: @FusionSetIDDictionary;

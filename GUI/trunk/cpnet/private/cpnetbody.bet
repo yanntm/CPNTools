@@ -375,7 +375,9 @@ do (ML[],
    simulationOptions.until_time[],
    simulationOptions.add_time[],
    simulationOptions.pause_cont[],
-   simulationOptions.report_func[]) -> MLsetSimulationOptions;
+   simulationOptions.report_func[],
+   simulationOptions.fair_be,
+   simulationOptions.global_fairness) -> MLsetSimulationOptions;
    
 -- CPNetonRemoved: doPart --
 do (# asNotifier: ^Notifier;
