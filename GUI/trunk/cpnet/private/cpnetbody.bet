@@ -1694,14 +1694,13 @@ do (# thePort: @integer;
 	   &BooleanOption (# dname:: (# do NamesFairBE-> getGlobalNames -> value[]; #); #)[] -> private.fairBEOption[] -> op[];
          'fair_be' -> op.name;
          op.init;
-         &falseObject[] -> op.value;
          op[] -> options.add;
          this(CPNet)[] -> op.attach;
           
          &BooleanOption (# dname:: (# do NamesGlobalFairness -> getGlobalNames -> value[]; #); #)[] -> private.globalFairnessOption[] -> op[];
          'global_fairness' -> op.name;
          op.init;
-         &falseObject[] -> op.value;
+	   &falseObject[] -> private.fairBEOption.value;
          op[] -> options.add;
          this(CPNet)[] -> op.attach;
            
@@ -1821,13 +1820,18 @@ do (if source## <= FolderPathOption## then
                     if);
                 if); 
 		    // source[] = private.fairBEOption[] then
+		    (if private.globalFairnessOption[] <> NONE then
 		    (if not (private.fairBEOption.value) then
 		    	&falseObject[] -> private.globalFairnessOption.value;
 		    if);
 		    (private.fairBEOption.value, private.globalFairnessOption.value) -> setFairnessOption;
+		    if)
 		    // source[] = private.globalFairnessOption[] then
+		    (if private.fairBEOption[] <> NONE then
 		    (if (private.globalFairnessOption.theValue) then
 		       &trueObject[] -> private.fairBEOption.value;
+		    if);
+		    (private.fairBEOption.value, private.globalFairnessOption.value) -> setFairnessOption;
 		    if);
      else
                 (if 'rep' -> ((1,3) -> thisObj.theName.sub).equal then
