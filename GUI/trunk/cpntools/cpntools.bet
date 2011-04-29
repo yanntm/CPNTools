@@ -761,13 +761,13 @@ CpnWorkSpace
              ('fair_be', 'fair_be') -> options.setAddOptionWithDefault
              (# OptionType::BooleanOption
                   (# dname:: (# do 'Binding Element Fairness' -> value[]; #); 
-                     onChanged:: (# <<SLOT befairnessschanged: doPart>> #); 
+                     onChanged:: (# <<SLOT befairnesschanged: doPart>> #); 
                   #); 
              #);
              ('global_fairness', 'global_fairness') -> options.setAddOptionWithDefault
              (# OptionType::BooleanOption
                   (# dname:: (# do 'Global BE Fairness' -> value[]; #); 
-                     onChanged:: (# <<SLOT globalfairnessschanged: doPart>> #); 
+                     onChanged:: (# <<SLOT globalfairnesschanged: doPart>> #); 
                   #); 
              #);
 	          
