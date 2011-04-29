@@ -758,18 +758,6 @@ CpnWorkSpace
                   (# dname:: (# do 'Simulation Report' -> value[]; #); 
                   #); 
              #);
-             ('fair_be', 'fair_be') -> options.setAddOptionWithDefault
-             (# OptionType::BooleanOption
-                  (# dname:: (# do 'Binding Element Fairness' -> value[]; #); 
-                     onChanged:: (# <<SLOT befairnesschanged: doPart>> #); 
-                  #); 
-             #);
-             ('global_fairness', 'global_fairness') -> options.setAddOptionWithDefault
-             (# OptionType::BooleanOption
-                  (# dname:: (# do 'Global BE Fairness' -> value[]; #); 
-                     onChanged:: (# <<SLOT globalfairnesschanged: doPart>> #); 
-                  #); 
-             #);
 	          
 	     &OptionList[] -> imageOptions[];
     	     imageOptions.init;

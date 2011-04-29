@@ -39,32 +39,6 @@ do (# option: ^BooleanOption;
 	if);
    #);
 
--- befairnesschanged: doPart --
-do (# option: ^BooleanOption;
-   do 'global_fairness' -> (getGlobalOptions).find -> option[];
-      (if option[] <> NONE then
-          theIndex.theIndexNodes.scan
-          (#
-          do (if current## <= theIndex.NetNode## then
-	           (theValue, (option.theValue)) -> (current[]->QUA(# as:: theIndex.NetNode; #)).net.setFairnessOption;
-             if);
-          #);
-	if);
-   #);
-
--- globalfairnesschanged: doPart --
-do (# option: ^BooleanOption;
-   do 'fair_be' -> (getGlobalOptions).find -> option[];
-      (if option[] <> NONE then
-          theIndex.theIndexNodes.scan
-          (#
-          do (if current## <= theIndex.NetNode## then
-	           ((option.theValue), theValue) -> (current[]->QUA(# as:: theIndex.NetNode; #)).net.setFairnessOption;
-             if);
-          #);
-	if);
-   #);
-
 -- savebindingschanged: doPart --
 do (#
    option: ^BooleanOption;
