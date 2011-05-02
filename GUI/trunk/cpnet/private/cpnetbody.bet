@@ -1611,7 +1611,9 @@ do (# thePort: @integer;
           else
          'cpnsim/cpn.ML' -> relativeFile -> cygwinify -> temp[] -> temp2[];
              ('localhost', 2098, 'cpn2000', '', './',temp[],(this(CPNet).private.timestampOption.theValue), true) -> initML;
-         if);
+		 if);
+		 'Setting real timestamp: ' -> puttext;
+		 (this(CPNet).private.timestampOption.theValue) -> putbool;
          (if this(CPNet).private.timestampOption.theValue then
             'real' -> this(CPNet).private.currentTimeType[];
          else
