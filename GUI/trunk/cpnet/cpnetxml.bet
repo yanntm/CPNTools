@@ -1502,7 +1502,8 @@ CPNetLoader: Loader
                elmName:: (# do 'cpnsheet' -> value[]; #);
                load::
                  (#
-                 do 'instance' -> elm.lookupText -> lookupObject -> obj.setContent;
+                 do 
+                    'instance' -> elm.lookupText -> lookupObject -> obj.setContent;
                     obj.content.thepage.showallerrormsg;
                     &Task
                     (#
