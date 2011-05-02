@@ -62,10 +62,6 @@ do &CPNet[] -> net[];
         option.theValue -> net.simulationOptions.report_binds;
         'save_report' -> (getGlobalOptions).find -> option[];
         option.theValue -> net.simulationOptions.report_trans;
-        'fair_be' -> (getGlobalOptions).find -> option[];
-        option.theValue -> net.simulationOptions.fair_be;
-        'global_fairness' -> (getGlobalOptions).find -> option[];
-	  option.theValue -> net.simulationOptions.global_fairness;
      #);
    
    filename[] -> entry.path;
