@@ -164,6 +164,30 @@ do (# sheetPage: ^PageInstance;
             #);
             'Entering state space tool' -> fixedStatus.running;
             fixedStatus.start;
+            (if ('ASAP' -> options.lookupBoolean) then
+                    'structure CPN\'ASAP = CPN\'ASAP(structure CPN\'InstTable = CPN\'InstTable)' -> sheetPage.thePage.net.ML.evaluate
+                    (#
+                       onMLException::
+                         (# 
+                         do MLErrorEnteringStateSpace -> getGlobalNames -> error_msg[];
+                            error_msg.newline;
+                            message[] -> error_msg.putline;
+                            error_msg[] -> status.error;
+                            leave L;
+                         #)
+                    #);
+                    'structure ASAP = CPN\'ASAP.Build(structure CPNToolsState = CPNToolsState structure CPNToolsEvent = CPNToolsEvent val CPNToolsHashFunction = CPNToolsHashFunction)' -> sheetPage.thePage.net.ML.evaluate
+                    (#
+                       onMLException::
+                         (# 
+                         do MLErrorEnteringStateSpace -> getGlobalNames -> error_msg[];
+                            error_msg.newline;
+                            message[] -> error_msg.putline;
+                            error_msg[] -> status.error;
+                            leave L;
+                         #)
+                    #);
+	     else
             (# mes: ^Text;
             do (for i: 8 repeat
                     EnteringStateSpaceMessage -> getGlobalNames -> mes[];
@@ -191,6 +215,7 @@ do (# sheetPage: ^PageInstance;
                     #);
                for);
             #);
+	    if);
             true -> sheetPage.thePage.net.statespaceEntered;
             StateSpaceEnteredMessage -> getGlobalNames -> status.message;
          #);      

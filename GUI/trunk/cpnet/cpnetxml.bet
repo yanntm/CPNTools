@@ -1569,7 +1569,18 @@ CPNetLoader: Loader
                         leave tryLoad;
                     if);
                  #);
-            do obj.init;
+            do obj.preinit;
+
+               elm.scanElements
+               (#
+               do (if 'options' -> current.tag.equalNCS then
+                      (current[],obj.options[]) -> OptionsLoader;
+                  if);
+               #);
+               
+               checkError;
+               
+               obj.init;
                
                elm.scanElements
                (#
@@ -1646,15 +1657,6 @@ CPNetLoader: Loader
                (# 
                do (if 'monitorblock' -> current.tag.equalNCS then
                       (current[], none) -> MonitorBlockLoader.load;
-                  if);
-               #);
-               
-               checkError;
-               
-               elm.scanElements
-               (#
-               do (if 'options' -> current.tag.equalNCS then
-                      (current[],obj.options[]) -> OptionsLoader;
                   if);
                #);
                

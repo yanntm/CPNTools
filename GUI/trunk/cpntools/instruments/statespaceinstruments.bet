@@ -65,6 +65,7 @@ EnterStateSpaceInstrument: CPNInstrument
        (#
        do 'enter_state_space'->helpname[];
           ('ogpath','enterss.ogpath') -> options.setAddOptionWithDefault(# OptionType:: FilePathOption(# dname::(# do 'State-space tool location' -> value[]; #); #); #);
+          ('ASAP','enterss.asap') -> options.setAddOptionWithDefault(# OptionType:: BooleanOption; #);
        #);
 
      ToolTip::

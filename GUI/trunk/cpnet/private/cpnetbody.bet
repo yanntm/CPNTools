@@ -279,6 +279,7 @@ do check:
    lastSavedVersion: @integer;
    lastAutosavedVersion: @integer;
    currentVersion: @integer;
+   preinited: @boolean;
    monitorOrderChanged, modelDirChanged, simreportOptionsChanged, repreportOptionsChanged:@boolean;
    outputDir: ^Text;
    outputOption: ^FolderPathOption;
@@ -1557,70 +1558,22 @@ do theFusionSet.id[] -> private.theFusionSets.disassociate;
 
 
       
--- CPNetinit: doPart --
-do (# thePort: @integer;
-      theImage: ^Text;
-      theHost: ^Text;
-   do private.init;
-      
+-- CPNetpreinit: doPart --
+do (if not private.preinited then
+      private.init;
       (if theGlobalMonitor[] = none then
           &MonitorBlock[] -> theGlobalMonitor[];
           (this(CPNet)[], NamesGlobalMonitorName -> getGlobalNames) -> theGlobalMonitor.init;
       if);
       this(CPNet)[] -> theGlobalMonitor.attach;
-      
+
       (* When checknames is true it is checked that page, transition
        * and page names are unique (for places and transitions unique
        * on their page) and ML-identifiers. *)
       true -> checknames;
       (*elements.init;*)
-      (if image[] <> NONE then
-          image[] -> theImage[];
-       else
-          'cpn.ML' -> theImage[]; 
-      if);
-      
-      
-      (if host[] <> NONE then
-          host[] -> thehost[];
-       else
-      'ariel.daimi.au.dk' -> thehost[];
-      if);
-      (if port <> 0 then
-          port -> thePort;
-       else
-          3010 -> thePort;
-      if);
-      
-      MLcheckerThread[] -> fork;
-      &|System
-      (# temp,temp2:^text;
-     theCpnWorkSpace: ^CpnWorkspace;
-     remote: ^BooleanOption;
-     host, runtime, image: ^text;
-     port: ^IntegerObject;
-      do 
-         THIS(Workspace)[] -> theCpnWorkspace[]; 
-         'remote' -> (theCpnWorkSpace.getGlobalOptions).find -> remote[];
-         (if remote.theValue then
-         ('host' -> (theCpnWorkSpace.getGlobalOptions).find).theValue[] -> host[];
-         ('port' -> (theCpnWorkSpace.getGlobalOptions).find).theValue[] -> port[];
-         ('runtime' -> (theCpnWorkSpace.getGlobalOptions).find).theValue[] -> runtime[];
-         ('  Image path' -> (theCpnWorkSpace.getGlobalOptions).find).theValue[] -> image[];
-         (host[], port, 'cpn2000', '', runtime[],image[],(this(CPNet).private.timestampOption.theValue), false) -> initML;
-          else
-         'cpnsim/cpn.ML' -> relativeFile -> cygwinify -> temp[] -> temp2[];
-             ('localhost', 2098, 'cpn2000', '', './',temp[],(this(CPNet).private.timestampOption.theValue), true) -> initML;
-		 if);
-         (if this(CPNet).private.timestampOption.theValue then
-            'real' -> this(CPNet).private.currentTimeType[];
-         else
-            'intinf' -> this(CPNet).private.currentTimeType[];
-         if);
-         MLcheckerThread.resume;
-      #)[] -> fork;
-      
-      (# addCommonOptions:
+
+       (# addCommonOptions:
            (# optionToAddTo: ^OptionList;
            enter optionToAddTo[]
            do ('Average','avg',&FalseObject[]) -> createBooleanOption -> optionToAddTo.add;
@@ -1668,7 +1621,7 @@ do (# thePort: @integer;
               this(CPNet)[] -> theOption.attach;
            exit theOption[]
            #);
-         op: ^Option;
+         op, op2: ^Option;
          performanceOptions: ^OptionList;
          simoptions: ^OptionList;
          timedSimOptions: ^OptionList;
@@ -1691,12 +1644,12 @@ do (# thePort: @integer;
          op[] -> options.add;
          this(CPNet)[] -> op.attach;
          
-	   &BooleanOption (# dname:: (# do NamesFairBE-> getGlobalNames -> value[]; #); #)[] -> private.fairBEOption[] -> op[];
-         'fair_be' -> op.name;
-         op.init;
-         &falseObject[] -> op.thevalue[];
-         op[] -> options.add;
-         this(CPNet)[] -> op.attach;
+	   &BooleanOption (# dname:: (# do NamesFairBE-> getGlobalNames -> value[]; #); #)[] -> private.fairBEOption[] -> op2[];
+         'fair_be' -> op2.name;
+         op2.init;
+         &falseObject[] -> op2.thevalue[];
+         op2[] -> options.add;
+         this(CPNet)[] -> op2.attach;
           
          &BooleanOption (# dname:: (# do NamesGlobalFairness -> getGlobalNames -> value[]; #); #)[] -> private.globalFairnessOption[] -> op[];
          'global_fairness' -> op.name;
@@ -1704,6 +1657,9 @@ do (# thePort: @integer;
          &falseObject[] -> op.thevalue[];
          op[] -> options.add;
          this(CPNet)[] -> op.attach;
+
+         &trueObject[] -> op.value;
+         &falseObject[] -> op2.value;
          
          &FolderPathOption (# dname:: (# do NamesOutputDirectory -> getGlobalNames -> value[]; #); #)[] -> private.outputOption[] -> op[];
          'outputdirectory' -> op.name;
@@ -1772,6 +1728,63 @@ do (# thePort: @integer;
          
 
       #);
+   true -> private.preinited;
+   if);
+
+-- CPNetinit: doPart --
+do (# thePort: @integer;
+      theImage: ^Text;
+      theHost: ^Text;
+   do preinit;
+      
+      (if image[] <> NONE then
+          image[] -> theImage[];
+       else
+          'cpn.ML' -> theImage[]; 
+      if);
+      
+      
+      (if host[] <> NONE then
+          host[] -> thehost[];
+       else
+      'ariel.daimi.au.dk' -> thehost[];
+      if);
+      (if port <> 0 then
+          port -> thePort;
+       else
+          3010 -> thePort;
+      if);
+      
+      MLcheckerThread[] -> fork;
+      &|System
+      (# temp,temp2:^text;
+     theCpnWorkSpace: ^CpnWorkspace;
+     remote: ^BooleanOption;
+     host, runtime, image: ^text;
+     port: ^IntegerObject;
+      do 
+         THIS(Workspace)[] -> theCpnWorkspace[]; 
+         'remote' -> (theCpnWorkSpace.getGlobalOptions).find -> remote[];
+         (if remote.theValue then
+         ('host' -> (theCpnWorkSpace.getGlobalOptions).find).theValue[] -> host[];
+         ('port' -> (theCpnWorkSpace.getGlobalOptions).find).theValue[] -> port[];
+         ('runtime' -> (theCpnWorkSpace.getGlobalOptions).find).theValue[] -> runtime[];
+         ('  Image path' -> (theCpnWorkSpace.getGlobalOptions).find).theValue[] -> image[];
+         (host[], port, 'cpn2000', '', runtime[],image[],(this(CPNet).private.timestampOption.theValue), false) -> initML;
+          else
+1 -> sleep;
+         'cpnsim/cpn.ML' -> relativeFile -> cygwinify -> temp[] -> temp2[];
+             ('localhost', 2098, 'cpn2000', '', './',temp[],(this(CPNet).private.timestampOption.theValue), true) -> initML;
+		 if);
+         (if this(CPNet).private.timestampOption.theValue then
+            'real' -> this(CPNet).private.currentTimeType[];
+         else
+            'intinf' -> this(CPNet).private.currentTimeType[];
+         if);
+         MLcheckerThread.resume;
+	 (private.fairBEOption.thevalue, private.globalFairnessOption.thevalue) -> setFairnessOption;
+      #)[] -> fork;
+      
    #);
    
 -- CPNNetstatusMonitor: doPart --
@@ -1821,14 +1834,14 @@ do (if source## <= FolderPathOption## then
                     if);
                 if); 
 		    // source[] = private.fairBEOption[] then
-		    (if private.globalFairnessOption[] <> NONE then
+		    (if (private.globalFairnessOption[] <> NONE) and ML.initialized then
 		    (if not (private.fairBEOption.thevalue) then
 		    	&falseObject[] -> private.globalFairnessOption.value;
 		    if);
 		    (private.fairBEOption.thevalue, private.globalFairnessOption.thevalue) -> setFairnessOption;
 		    if)
 		    // source[] = private.globalFairnessOption[] then
-		    (if private.fairBEOption[] <> NONE then
+		    (if (private.fairBEOption[] <> NONE) and ML.initialized then
 		    (if (private.globalFairnessOption.theValue) then
 		       &trueObject[] -> private.fairBEOption.value;
 		    if);
