@@ -88,6 +88,10 @@ declaration : tVAR { starttag("var", 1); yybegin(12); } idlist ':' { starttag("t
             | tINVARIANT { starttag("invariant", 1); yybegin(12); } name ':' { starttag("type", 1); } id { closetag(); } ';' { yybegin(0); }
             | tCHANNEL { starttag("channel", 1); yybegin(12); } name ':' id ';' { yybegin(0); }
               { closetag(); }
+		  | 'britney' ';' 
+         { starttag("ml", 0);
+           fprintf(yyout, "val answer = 42");
+           closetag(); }
 	    | mldecl
 ;
 
