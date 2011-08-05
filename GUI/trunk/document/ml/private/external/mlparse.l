@@ -192,7 +192,7 @@ britney			return tBRITNEY;
 <MLDECL>.					addtoBuffer(yytext);
 <MLDECL>\n					{ lineno++; addtoBuffer(yytext); }
 <MLDECL>"\""[^"\""]*"\"" 			addtoBuffer(yytext);
-<MLDECL>"var"|"msvar"|"colset"|"color"|"globref"|"use"|"invariant" 	{ yyless(0); BEGIN(0); yylval.string = buffer; return tMLDECL; }
+<MLDECL>"var"|"msvar"|"colset"|"color"|"globref"|"use"|"invariant"|"sort"|"britney" 	{ yyless(0); BEGIN(0); yylval.string = buffer; return tMLDECL; }
 <MLDECL>[_a-zA-Z][_a-zA-Z0-9']*                 addtoBuffer(yytext);
 <MLDECL><<EOF>>					{ BEGIN(0); addtoBuffer(yytext); yylval.string = buffer; return tMLDECL; }
 <*>.                            return tERROR;
