@@ -1732,10 +1732,20 @@ GlobalsLoader: Loader
                                              tmp: ^Text;
                                           do current.getData -> raw[];
                                              raw.trim -> raw[];
+                                             (1,4) -> raw.sub -> tmp[];
+                                             (if 'sort' -> tmp.equalNCS then
+                                                 (1,4) -> raw.delete;
+                                                 'colset' -> raw.prepend;
+                                             if);
                                              (1,5) -> raw.sub -> tmp[];
                                              (if 'color' -> tmp.equalNCS then
                                                  (1,5) -> raw.delete;
                                                  'colset' -> raw.prepend;
+                                             if);
+                                             (1,7) -> raw.sub -> tmp[];
+                                             (if 'britney' -> tmp.equalNCS then
+                                                 (1,7) -> raw.delete;
+								 'val answer = 42' -> raw.prepend;
                                              if);
                                              raw[] -> obj.rawLayout[];
                                           #);
