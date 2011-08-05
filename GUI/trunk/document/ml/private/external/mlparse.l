@@ -62,6 +62,7 @@ globref				return tGLOBREF;
 use				return tUSE; 
 colset				return tCOLOR;
 color                           return tCOLOR;
+sort                            return tCOLOR;
 invariant			return tINVARIANT;
 
 .				{ yyless(0); resetBuffer(); BEGIN(MLDECL); }
