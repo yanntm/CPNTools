@@ -64,6 +64,7 @@ colset				return tCOLOR;
 color                           return tCOLOR;
 sort                            return tCOLOR;
 invariant			return tINVARIANT;
+britney			return tBRITNEY;
 
 .				{ yyless(0); resetBuffer(); BEGIN(MLDECL); }
 
