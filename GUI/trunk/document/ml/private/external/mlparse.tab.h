@@ -47,31 +47,30 @@
      tMS = 263,
      tINVARIANT = 264,
      tCHANNEL = 265,
-     tBRITNEY = 266,
-     tERROR = 267,
-     tDOTDOT = 268,
-     tWITH = 269,
-     tDECLARE = 270,
-     tTIMED = 271,
-     tUNIT = 272,
-     tINT = 273,
-     tBOOL = 274,
-     tREAL = 275,
-     tSTRING = 276,
-     tINDEX = 277,
-     tPRODUCT = 278,
-     tRECORD = 279,
-     tLIST = 280,
-     tUNION = 281,
-     tSUBSET = 282,
-     tAND = 283,
-     tBY = 284,
-     tHACK = 285,
-     tMLSEMI = 286,
-     tMLDOTDOT = 287,
-     tMLDECL = 288,
-     tMLCOL = 289,
-     tID = 290
+     tERROR = 266,
+     tDOTDOT = 267,
+     tWITH = 268,
+     tDECLARE = 269,
+     tTIMED = 270,
+     tUNIT = 271,
+     tINT = 272,
+     tBOOL = 273,
+     tREAL = 274,
+     tSTRING = 275,
+     tINDEX = 276,
+     tPRODUCT = 277,
+     tRECORD = 278,
+     tLIST = 279,
+     tUNION = 280,
+     tSUBSET = 281,
+     tAND = 282,
+     tBY = 283,
+     tHACK = 284,
+     tMLSEMI = 285,
+     tMLDOTDOT = 286,
+     tMLDECL = 287,
+     tMLCOL = 288,
+     tID = 289
    };
 #endif
 /* Tokens.  */
@@ -83,31 +82,30 @@
 #define tMS 263
 #define tINVARIANT 264
 #define tCHANNEL 265
-#define tBRITNEY 266
-#define tERROR 267
-#define tDOTDOT 268
-#define tWITH 269
-#define tDECLARE 270
-#define tTIMED 271
-#define tUNIT 272
-#define tINT 273
-#define tBOOL 274
-#define tREAL 275
-#define tSTRING 276
-#define tINDEX 277
-#define tPRODUCT 278
-#define tRECORD 279
-#define tLIST 280
-#define tUNION 281
-#define tSUBSET 282
-#define tAND 283
-#define tBY 284
-#define tHACK 285
-#define tMLSEMI 286
-#define tMLDOTDOT 287
-#define tMLDECL 288
-#define tMLCOL 289
-#define tID 290
+#define tERROR 266
+#define tDOTDOT 267
+#define tWITH 268
+#define tDECLARE 269
+#define tTIMED 270
+#define tUNIT 271
+#define tINT 272
+#define tBOOL 273
+#define tREAL 274
+#define tSTRING 275
+#define tINDEX 276
+#define tPRODUCT 277
+#define tRECORD 278
+#define tLIST 279
+#define tUNION 280
+#define tSUBSET 281
+#define tAND 282
+#define tBY 283
+#define tHACK 284
+#define tMLSEMI 285
+#define tMLDOTDOT 286
+#define tMLDECL 287
+#define tMLCOL 288
+#define tID 289
 
 
 
@@ -117,7 +115,7 @@ typedef union YYSTYPE
 #line 56 "mlparse.y"
 { char *string; }
 /* Line 1529 of yacc.c.  */
-#line 121 "mlparse.tab.h"
+#line 119 "mlparse.tab.h"
 	YYSTYPE;
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
 # define YYSTYPE_IS_DECLARED 1

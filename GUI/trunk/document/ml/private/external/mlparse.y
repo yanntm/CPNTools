@@ -55,7 +55,7 @@ extern FILE *yyout;
 
 %union { char *string; }
 
-%token tVAR tMSVAR tGLOBREF tUSE tCOLOR tMS tINVARIANT tCHANNEL tBRITNEY
+%token tVAR tMSVAR tGLOBREF tUSE tCOLOR tMS tINVARIANT tCHANNEL
 %token tERROR tDOTDOT 
 %token tWITH tDECLARE tTIMED tUNIT tINT tBOOL
 %token tREAL tSTRING tINDEX tPRODUCT tRECORD tLIST
@@ -88,8 +88,6 @@ declaration : tVAR { starttag("var", 1); yybegin(12); } idlist ':' { starttag("t
             | tINVARIANT { starttag("invariant", 1); yybegin(12); } name ':' { starttag("type", 1); } id { closetag(); } ';' { yybegin(0); }
             | tCHANNEL { starttag("channel", 1); yybegin(12); } name ':' id ';' { yybegin(0); }
               { closetag(); }
-		  | tBRITNEY { starttag("ml", 0); fprintf(yyout, "val answer = 42"); closetag(); } ';' { yybegin(0); }
-         
 	    | mldecl
 ;
 
