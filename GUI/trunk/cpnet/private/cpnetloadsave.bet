@@ -1542,6 +1542,14 @@ do (if isBlock  then
            (6,input.length) -> input.sub -> input[];
            'colset' -> input.prepend;
        if);
+       (if 'sort' -> ((1,4) -> input.sub).equal then
+           (5,input.length) -> input.sub -> input[];
+           'colset' -> input.prepend;
+       if);
+       (if 'britney' -> ((1,7) -> input.sub).equal then
+           (8,input.length) -> input.sub -> input[];
+           'val answer = 42' -> input.prepend;
+       if);
        
        input[]->MLParse->(string[], error);
        (if error then

@@ -348,6 +348,14 @@ do (# (* Algoritme: Antallet af ws beregnes i pretty printet (der er ingen comme
           (6,postText.length) -> postText.sub -> postText[];
           'colset' -> postText.prepend;
       if);
+      (if 'sort' -> ((1,4) -> postText.sub).equal then
+          (5,postText.length) -> postText.sub -> postText[];
+          'colset' -> postText.prepend;
+      if);
+      (if 'britney' -> ((1,7) -> postText.sub).equal then
+          (8,postText.length) -> postText.sub -> postText[];
+          'val answer = 42' -> postText.prepend;
+      if);
    #);
 
 --DeclarationChangeDecl:doPart--
