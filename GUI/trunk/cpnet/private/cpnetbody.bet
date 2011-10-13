@@ -1658,7 +1658,7 @@ do (if not private.preinited then
          op[] -> options.add;
          this(CPNet)[] -> op.attach;
 
-         &trueObject[] -> op.value;
+         &falseObject[] -> op.value;
          &falseObject[] -> op2.value;
          
          &FolderPathOption (# dname:: (# do NamesOutputDirectory -> getGlobalNames -> value[]; #); #)[] -> private.outputOption[] -> op[];
