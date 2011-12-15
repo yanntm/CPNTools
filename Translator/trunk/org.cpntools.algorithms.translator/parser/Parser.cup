@@ -1,0 +1,193 @@
+package org.cpntools.algorithms.translator;
+
+import java.util.List;
+import java.util.ArrayList;
+import org.cpntools.algorithms.translator.ast.*;
+
+parser code {:
+	/**
+	 * @see java_cup.runtime.lr_parser#report_error(java.lang.String, java.lang.Object)
+	 */
+	public void report_error(String message, Object info) { /* Ignore simple error */
+	}
+
+	/**
+	 * @see java_cup.runtime.lr_parser#report_fatal_error(java.lang.String, java.lang.Object)
+	 */
+	public void report_fatal_error(String message, Object info) throws Exception {
+		StringBuilder m = new StringBuilder("Error");
+
+		if (info instanceof java_cup.runtime.Symbol) {
+			java_cup.runtime.Symbol s = ((java_cup.runtime.Symbol) info);
+
+			if (s.left >= 0) {
+				m.append(" in line "+(s.left+1));
+				if (s.right >= 0)
+					m.append(", column "+(s.right+1));
+			}
+		}
+
+		m.append(" : "+message);
+
+		throw new SyntaxParserException(m.toString());
+    }
+    
+:};
+
+/* ------------Declaration of Terminals and Non Terminals Section----------- */
+
+terminal BOOL, INT, DOT, NOT, LOCK, UNLOCK, WHILE, ENDWHILE, DO, FOR, ENDFOR, ALL, PROC, ENDPROC, IS, IN, IF, ELSE, ENDIF, THEN, REPEAT, UNTIL, RETURN, LPAREN, RPAREN, ASSIGN, PARALLEL, COMMA, NEWLINE;
+
+terminal String ID, CHAR;
+non terminal Program program;
+non terminal TopLevel toplevel;
+non terminal List<TopLevel> toplevels;
+non terminal Procedure procedure;
+non terminal Statement statement;
+non terminal List<Statement> statements;
+non terminal Invocation invocation;
+non terminal List<Invocation> invocations;
+non terminal Declaration parameter;
+non terminal List<Declaration> parameters;
+non terminal List<Expression> values;
+non terminal Expression expression;
+non terminal String whatever;
+non terminal String type;
+
+precedence left DOT;
+
+/* -------------Precedence and Associatively of Terminals Section----------- */
+
+
+/* ----------------------------Grammar Section-------------------- */
+
+	program		::= toplevels:t
+					{: RESULT = new Program(t); :}
+				;
+	
+	toplevels	::= toplevel:t toplevels:s
+					{: RESULT = s; if (t != null) s.add(t); :}
+				| /* */
+					{: RESULT = new ArrayList<TopLevel>(); :}
+				;
+				
+	toplevel	::= procedure:p
+					{: RESULT = p; :}
+				| statement:s
+					{: RESULT = s;  if (s!= null) s.setPosition(sleft, sright); :}
+				| invocations:i NEWLINE
+					{: RESULT = new Launch(i); :}
+				;
+				
+	procedure	::= PROC ID:name LPAREN parameters:p RPAREN IS NEWLINE statements:s ENDPROC NEWLINE
+					{: RESULT = new Procedure(name, p, s); :}
+				;
+				
+	parameter	::= ID:type ID:name
+					{: RESULT = new Declaration(type, name); :}
+				| ID:name
+					{: RESULT = new Declaration(name); :}
+				;
+				
+	parameters	::= parameter:p COMMA parameters:pp
+					{: RESULT = pp; pp.add(p); :}
+				| parameter:p
+					{: RESULT = new ArrayList<Declaration>(); RESULT.add(p); :}
+				| /* */
+					{: RESULT = new ArrayList<Declaration>(); :}
+				;
+				
+	statement	::= type:type ID:name NEWLINE
+					{: RESULT = new Declaration(type, name); :}
+				| ID:name ASSIGN expression:w NEWLINE
+					{: RESULT = new Assignment(name, w); :}
+				| IF expression:w THEN NEWLINE statements:s ENDIF NEWLINE
+					{: RESULT = new IfElse(w, s, new ArrayList<Statement>()); :}
+				| IF expression:w THEN NEWLINE statements:s1 ELSE NEWLINE statements:s2 ENDIF NEWLINE
+					{: RESULT = new IfElse(w, s1, s2); :}
+				| WHILE expression:w DO NEWLINE statements:s ENDWHILE NEWLINE
+					{: RESULT = new While(w, s); :}
+				| FOR ALL ID:i IN expression:w DO NEWLINE statements:s ENDFOR NEWLINE
+					{: RESULT = new ForAll(w, i, s); :}
+				| REPEAT NEWLINE statements:s UNTIL expression:w NEWLINE
+					{: RESULT = new Repeat(s, w); :}
+				| LOCK ID:l NEWLINE statements:s UNLOCK NEWLINE
+					{: RESULT = new Lock(l, s); :}
+				| RETURN expression:i NEWLINE
+					{: RESULT = new Return(i); :}
+				| invocation:i NEWLINE
+					{: RESULT = i; :}
+				| ID:name DOT invocation:i
+					{: RESULT = new MethodInvocation(new Variable(name), i); :}
+				| invocation:i1 DOT invocation:i2
+					{: RESULT = new MethodInvocation(i1, i2); :}
+				| NEWLINE
+				;
+				
+	type		::= ID:i
+					{: RESULT = i; :}
+				| BOOL
+					{: RESULT = "BOOL"; :}
+				| INT
+					{: RESULT = "INT"; :}
+				;
+				
+	statements	::= statement:s statements:ss
+					{: RESULT = ss; if (s != null) ss.add(s);  if (s != null) s.setPosition(sleft, sright); :}
+				| statement:s
+					{: RESULT = new ArrayList<Statement>(); if (s != null) RESULT.add(s); if (s != null) s.setPosition(sleft, sright); :}
+				;
+	
+	expression	::= invocation:i
+					{: RESULT = i; :}
+				| LPAREN expression:e RPAREN
+					{: RESULT = e; :}
+				| NOT expression:e
+					{: RESULT = new Not(e); :}
+				| ID:name
+					{: RESULT = new Variable(name); :}
+				| expression:e DOT invocation:i
+					{: RESULT = new MethodInvocation(e, i); :}
+				| ID:i whatever:w
+					{: RESULT = new Whatever(i + w); :}
+				| CHAR:i whatever:w
+					{: RESULT = new Whatever(i + w); :}
+				| CHAR:i
+					{: RESULT = new Whatever(i); :}
+				;
+						
+	invocation	::= ID:name LPAREN values:v RPAREN
+					{: RESULT = new Invocation(name, v); :}
+				| ID:name LPAREN RPAREN
+					{: RESULT = new Invocation(name, new ArrayList<Expression>()); :}
+				;
+	
+	invocations	::= invocation:i PARALLEL invocations:ii
+					{: RESULT = ii; ii.add(i); :}
+				| invocation:i1 PARALLEL invocation:i2
+					{: RESULT = new ArrayList<Invocation>(); RESULT.add(i2); RESULT.add(i1); :}
+				;		
+	
+	values 		::= expression:v COMMA values:vv
+					{: RESULT = vv; vv.add(v); :}
+				| expression:v
+					{: RESULT = new ArrayList<Expression>(); RESULT.add(v); :}
+				;
+				
+	whatever	::= ID:i whatever:w
+					{: RESULT = i + w; :}
+				| CHAR:c whatever:w
+					{: RESULT = c + w; :}
+				//| LPAREN whatever:w
+				//	{: RESULT = "(" + w; :}
+				//| RPAREN whatever:w
+				//	{: RESULT = ")" + w; :}
+				| ID:i
+					{: RESULT = i; :}
+				| CHAR:c
+					{: RESULT = c; :}
+				//| LPAREN
+				//	{: RESULT = "("; :}
+				//| RPAREN
+				//	{: RESULT = "("; :}
+				; 
