@@ -125,6 +125,7 @@ do (if not Private.initialized then
             
             &|Private.ReceiverThread[]->Fork;
             true->Private.initialized;
+	    private.lock.V;
          #);
    if);
    
@@ -151,9 +152,11 @@ do (if Private.initialized then
    
 --- MLComExecute:DoPart ---
 do (if (command[] <> NONE) and (Private.initialized) then
+       private.lock.P;
        ExecuteScope: 
          (# 
-         do THIS(MLCom)[]->command.Private.currentMLCom[];
+         do 
+            THIS(MLCom)[]->command.Private.currentMLCom[];
             &onError[]->command.Private.errorHandler[];
             command[]->Private.currentCommand[];
             (waitForEver, command.Send)->Private.dmo.Put
@@ -162,6 +165,7 @@ do (if (command[] <> NONE) and (Private.initialized) then
             NONE->command.Private.errorHandler[];
             NONE->command.Private.currentMLCom[];
          #);
+       private.lock.V;
        (if clearDmoEval then
            EvaluateSequence:
              (# data: @MLData;
@@ -320,6 +324,7 @@ do private.njsmld.forceTimeout;
         Terminate;
      #);
    currentCommand: ^MLCommand;
+   lock: @semaphore;
    
    Terminate:
      (# data: @MLData;
