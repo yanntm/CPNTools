@@ -45,7 +45,7 @@ public class DeclarationSubset extends AbstractGrader {
 		final int count = baseDecl.size();
 		baseDecl.removeAll(modelDecl);
 		if (!baseDecl.isEmpty()) { return new Message(getMinPoints(),
-		        "Some declarations were removed from the oroginal model " + baseDecl); }
+		        "Some declarations were removed from the original model " + baseDecl); }
 		if (count == modelDecl.size()) { return new Message(getMaxPoints(), "Declarations were preserved."); }
 		if (subset) { return new Message(getMaxPoints(),
 		        "Declarations were preserved and new ones were added (that is ok)."); }

@@ -8,7 +8,6 @@ import java.util.HashSet;
 import java.util.List;
 
 import javax.swing.JOptionPane;
-import javax.swing.ProgressMonitor;
 
 import org.cpntools.accesscpn.model.PetriNet;
 import org.cpntools.accesscpn.model.importer.DOMParser;
@@ -51,8 +50,6 @@ public class Grader {
 					return arg1.endsWith("cpn");
 				}
 			});
-			final ProgressMonitor progressMonitor = new ProgressMonitor(null, "Checking assignments", "Loading", 0,
-			        files.length + 5 * setup.getStudentIds().size());
 
 			final List<PetriNet> models = new ArrayList<PetriNet>();
 			int progress = 0;
@@ -64,7 +61,6 @@ public class Grader {
 					failed.append(file.getAbsolutePath());
 					failed.append('\n');
 				}
-				progressMonitor.setProgress(++progress);
 			}
 			if (failed.length() != 0) {
 				if (JOptionPane.showConfirmDialog(null, "The following files failed loading:\n" + failed,
@@ -73,7 +69,7 @@ public class Grader {
 
 			final Tester tester = new Tester(suite, setup.getStudentIds(), petriNet, new File(setup.getModels(),
 			        "outputs"));
-			final ResultDialog resultDialog = new ResultDialog(tester);
+			final ResultDialog resultDialog = new ResultDialog(tester, files.length);
 
 			final HashSet<StudentID> unused = new HashSet<StudentID>(setup.getStudentIds());
 			for (final File f : files) {
@@ -99,10 +95,15 @@ public class Grader {
 				} catch (final Exception e) {
 					resultDialog.addError(f, "Error loading model! " + e.getMessage());
 				}
+				resultDialog.setProgress(++progress);
+				if (resultDialog.isCancelled()) {
+					break;
+				}
 			}
 			for (final StudentID sid : unused) {
 				resultDialog.addError(sid);
 			}
+			resultDialog.update(null, "Done.");
 			resultDialog.setModal(true);
 
 // int lazies = 0;
