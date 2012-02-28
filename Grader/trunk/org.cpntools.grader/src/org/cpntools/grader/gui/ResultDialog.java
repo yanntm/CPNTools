@@ -4,6 +4,8 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.File;
 import java.util.Collections;
 import java.util.List;
@@ -11,13 +13,18 @@ import java.util.Map.Entry;
 import java.util.Observable;
 import java.util.Observer;
 
+import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JDialog;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.ListSelectionModel;
+import javax.swing.SwingConstants;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 
@@ -25,6 +32,7 @@ import org.cpntools.grader.model.Grader;
 import org.cpntools.grader.model.Message;
 import org.cpntools.grader.model.StudentID;
 import org.cpntools.grader.tester.Report;
+import org.cpntools.grader.utils.TextUtils;
 
 /**
  * @author michael
@@ -39,12 +47,18 @@ public class ResultDialog extends JDialog implements Observer {
      */
 	private static final long serialVersionUID = 1533651130078221593L;
 	protected static final Color COLOR_ERROR = new Color(255, 127, 127);
+	static final Color ERROR_DARKER = COLOR_ERROR.darker();
 	protected static final Color COLOR_WARN = new Color(255, 255, 127);
+	static final Color WARN_DARKER = COLOR_WARN.darker();
 	protected static final Color COLOR_OK = new Color(127, 255, 127);
+	static final Color OK_DARKER = COLOR_OK.darker();
 	private final DefaultTableModel tableModel;
 	private final JTextArea log;
+	private JProgressBar progressBar;
+	boolean cancelled = false;
+	JPanel cancelArea;
 
-	public ResultDialog(final Observable o) {
+	public ResultDialog(final Observable o, final int count) {
 		setTitle("Results");
 		setLayout(new BorderLayout());
 		log = new JTextArea();
@@ -55,7 +69,7 @@ public class ResultDialog extends JDialog implements Observer {
 			/**
              * 
              */
-            private static final long serialVersionUID = 1400957256710108015L;
+			private static final long serialVersionUID = 1400957256710108015L;
 
 			@Override
 			public Component getTableCellRendererComponent(final JTable table, final Object errors,
@@ -65,29 +79,43 @@ public class ResultDialog extends JDialog implements Observer {
 					final Component component = super.getTableCellRendererComponent(table, c.size(), isSelected,
 					        hasFocus, row, column);
 					if (c.isEmpty()) {
-						component.setBackground(COLOR_OK);
+						component.setBackground(isSelected ? OK_DARKER : COLOR_OK);
 					} else {
-						component.setBackground(COLOR_ERROR);
+						component.setBackground(isSelected ? ERROR_DARKER : COLOR_ERROR);
 					}
 					component.setForeground(Color.BLACK);
 					if (component instanceof JComponent) {
-						final JComponent jcomponent = (JComponent) component;
-						final StringBuilder sb = new StringBuilder();
-						for (final Object o : c) {
-							sb.append("\n");
-							sb.append(o);
+						if (component instanceof JLabel) {
+							final JLabel label = (JLabel) component;
+							label.setHorizontalAlignment(SwingConstants.RIGHT);
 						}
-						jcomponent.setToolTipText(sb.toString().trim());
+						final JComponent jcomponent = (JComponent) component;
+						final StringBuilder sb = new StringBuilder("<html><ul>");
+						for (final Object o : c) {
+							sb.append("<li>");
+							sb.append(TextUtils.stringToHTMLString(o.toString()));
+							sb.append("</li>");
+						}
+						sb.append("</ul></html>");
+						if (!c.isEmpty()) {
+							jcomponent.setToolTipText(sb.toString());
+						} else {
+							jcomponent.setToolTipText("");
+						}
 					}
 					return component;
 				} else {
 					final Component component = super.getTableCellRendererComponent(table, errors, isSelected,
 					        hasFocus, row, column);
-					component.setBackground(COLOR_WARN);
+					component.setBackground(isSelected ? WARN_DARKER : COLOR_WARN);
 					component.setForeground(Color.BLACK);
 					if (component instanceof JComponent) {
 						final JComponent jcomponent = (JComponent) component;
-						jcomponent.setToolTipText("Student has not submitted anything!");
+						if (component instanceof JLabel) {
+							final JLabel label = (JLabel) component;
+							label.setHorizontalAlignment(SwingConstants.RIGHT);
+						}
+						jcomponent.setToolTipText("<html><ul><li>Student has not submitted anything!</li></ul></html>");
 					}
 					return component;
 				}
@@ -97,7 +125,7 @@ public class ResultDialog extends JDialog implements Observer {
 			/**
              * 
              */
-            private static final long serialVersionUID = -2292823405484419642L;
+			private static final long serialVersionUID = -2292823405484419642L;
 
 			@Override
 			public Component getTableCellRendererComponent(final JTable table, final Object o,
@@ -106,22 +134,50 @@ public class ResultDialog extends JDialog implements Observer {
 					final Report r = (Report) o;
 					final Component component = super.getTableCellRendererComponent(table, r.getResult(), isSelected,
 					        hasFocus, row, column);
+					if (r.getResult() < 0) {
+						component.setBackground(isSelected ? ERROR_DARKER : COLOR_ERROR);
+						component.setForeground(Color.BLACK);
+					} else if (r.getResult() > 0) {
+						component.setBackground(isSelected ? OK_DARKER : COLOR_OK);
+						component.setForeground(Color.BLACK);
+					} else if (!isSelected) {
+						component.setBackground(Color.WHITE);
+					}
 					if (component instanceof JComponent) {
+						if (component instanceof JLabel) {
+							final JLabel label = (JLabel) component;
+							label.setHorizontalAlignment(SwingConstants.RIGHT);
+						}
 						final JComponent jcomponent = (JComponent) component;
 						final StringBuilder sb = new StringBuilder();
+						sb.append("<html><table><tr><th>Points</th><th>Reason</th></tr>");
+						boolean nonEmpty = false;
 						for (final Entry<Grader, Message> e : r.getReports()) {
-							sb.append("\n");
+							sb.append("<tr><td align=\"right\">");
 							sb.append(e.getValue().getPoints());
-							sb.append(": ");
+							sb.append("</td><td>");
 							sb.append(e.getValue().getMessage());
+							sb.append("</td></tr>");
+							nonEmpty = true;
 						}
-						jcomponent.setToolTipText(sb.toString().trim());
+						sb.append("</table></html>");
+						if (nonEmpty) {
+							jcomponent.setToolTipText(sb.toString().trim());
+						} else {
+							jcomponent.setToolTipText("");
+						}
 					}
 					return component;
 				} else {
 					final Component component = super.getTableCellRendererComponent(table, o, isSelected, hasFocus,
 					        row, column);
+					component.setBackground(isSelected ? WARN_DARKER : COLOR_WARN);
+					component.setForeground(Color.BLACK);
 					if (component instanceof JComponent) {
+						if (component instanceof JLabel) {
+							final JLabel label = (JLabel) component;
+							label.setHorizontalAlignment(SwingConstants.RIGHT);
+						}
 						final JComponent jcomponent = (JComponent) component;
 						jcomponent.setToolTipText("");
 					}
@@ -132,13 +188,36 @@ public class ResultDialog extends JDialog implements Observer {
 		table.setAutoCreateRowSorter(true);
 		table.setFillsViewportHeight(true);
 		table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-		add(new JSplitPane(JSplitPane.VERTICAL_SPLIT, new JScrollPane(table), new JScrollPane(log)),
-		        BorderLayout.CENTER);
-		log.setMinimumSize(new Dimension(400, 150));
-		table.setMinimumSize(new Dimension(400, 300));
+
+		final JPanel logArea = new JPanel(new BorderLayout());
+		logArea.add(new JScrollPane(log));
+		progressBar = new JProgressBar(0, count);
+		progressBar.setStringPainted(true);
+		cancelArea = new JPanel(new BorderLayout());
+		logArea.add(cancelArea, BorderLayout.SOUTH);
+		cancelArea.add(progressBar);
+		final JButton cancelButton = new JButton("Cancel");
+		cancelButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(final ActionEvent arg0) {
+				cancelArea.setVisible(false);
+				cancelled = true;
+			}
+		});
+		cancelArea.add(cancelButton, BorderLayout.EAST);
+		logArea.setMinimumSize(new Dimension(600, 150));
+		table.setMinimumSize(new Dimension(600, 300));
+		add(new JSplitPane(JSplitPane.VERTICAL_SPLIT, new JScrollPane(table), logArea), BorderLayout.CENTER);
 		pack();
 		o.addObserver(this);
 		setVisible(true);
+	}
+
+	public void setProgress(final int progress) {
+		progressBar.setValue(progress);
+		if (progressBar.getValue() == progressBar.getMaximum()) {
+			cancelArea.setVisible(false);
+		}
 	}
 
 	public void addReport(final File f, final Report r) {
@@ -161,5 +240,9 @@ public class ResultDialog extends JDialog implements Observer {
 			log.setCaretPosition(log.getText().length());
 		}
 
+	}
+
+	public boolean isCancelled() {
+		return cancelled;
 	}
 }

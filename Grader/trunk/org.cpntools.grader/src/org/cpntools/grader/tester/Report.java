@@ -12,7 +12,7 @@ import org.cpntools.grader.model.Grader;
 import org.cpntools.grader.model.Message;
 import org.cpntools.grader.model.StudentID;
 
-public class Report {
+public class Report implements Comparable<Report> {
 	protected final Map<Grader, Message> reports = new HashMap<Grader, Message>();
 	protected final List<String> errors = new ArrayList<String>();
 	private final List<String> errors_u = Collections.unmodifiableList(errors);
@@ -55,5 +55,10 @@ public class Report {
 	@Override
 	public String toString() {
 		return sid.toString();
+	}
+
+	@Override
+	public int compareTo(final Report o) {
+		return Double.compare(getResult(), o.getResult());
 	}
 }
