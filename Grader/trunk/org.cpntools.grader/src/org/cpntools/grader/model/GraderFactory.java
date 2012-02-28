@@ -14,6 +14,11 @@ public class GraderFactory {
 	 */
 	public static final GraderFactory INSTANCE = new GraderFactory();
 
+	static {
+		INSTANCE.register(NameCategorizer.INSTANCE);
+		INSTANCE.register(SignatureGrader.INSTANCE);
+	}
+
 	/**
 	 * @param g
 	 */
