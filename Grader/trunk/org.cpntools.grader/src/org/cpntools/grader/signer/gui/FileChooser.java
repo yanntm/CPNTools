@@ -13,6 +13,10 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 
 public class FileChooser extends JPanel {
+	/**
+     * 
+     */
+    private static final long serialVersionUID = 1021409666534371348L;
 	final JTextField fileName;
 
 	public FileChooser(final String labelText, final boolean load) {
@@ -22,6 +26,7 @@ public class FileChooser extends JPanel {
 	/**
 	 * @param labelText
 	 * @param file
+	 * @param load
 	 */
 	public FileChooser(final String labelText, final boolean file, final boolean load) {
 		super(new BorderLayout());

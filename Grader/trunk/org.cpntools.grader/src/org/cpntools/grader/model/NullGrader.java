@@ -26,7 +26,8 @@ public class NullGrader extends AbstractGrader {
 	 *      org.cpntools.accesscpn.model.PetriNet, org.cpntools.accesscpn.engine.highlevel.HighLevelSimulator)
 	 */
 	@Override
-	public Message grade(final StudentID id, final PetriNet model, final HighLevelSimulator simulator) {
+	public Message grade(final StudentID id, final PetriNet base, final PetriNet model,
+	        final HighLevelSimulator simulator) {
 		return Message.NULL;
 	}
 }

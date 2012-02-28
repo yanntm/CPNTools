@@ -23,6 +23,8 @@ import org.eclipse.emf.ecore.util.EcoreUtil;
 public class Signer {
 	/**
 	 * @param model
+	 * @param secret
+	 * @param studentId
 	 * @return
 	 */
 	static public PetriNet sign(final PetriNetImpl model, final String secret, final StudentID studentId) {

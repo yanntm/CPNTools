@@ -60,11 +60,11 @@ public class Tester extends Observable {
 		notify("Categorizing");
 		final List<Report> result = new ArrayList<Report>();
 		for (final StudentID sid : ids) {
-			final Message message = suite.getMatcher().grade(sid, model, simulator);
-			if (message.getPoints() > 0) {
+			final Message message = suite.getMatcher().grade(sid, base, model, simulator);
+			if (message.getPoints() > suite.getMatcher().getMinPoints()) {
 				notify("Model matches " + sid);
 				final Report report = new Report(sid);
-				report.addReport(suite.getMatcher(), new Message(0.0, message.getMessage()));
+				report.addReport(suite.getMatcher(), message);
 				result.add(report);
 			}
 		}
@@ -76,7 +76,7 @@ public class Tester extends Observable {
 		notify("Grading");
 		for (final Report r : result) {
 			for (final Grader grader : suite.getGraders()) {
-				final Message message = grader.grade(r.getStudentId(), model, simulator);
+				final Message message = grader.grade(r.getStudentId(), base, model, simulator);
 				r.addReport(grader, message);
 			}
 		}

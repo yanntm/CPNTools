@@ -52,6 +52,11 @@ public class ResultDialog extends JDialog implements Observer {
 		tableModel = new DefaultTableModel(new Object[] { FILE, STUDENT_ID, SCORE, ERRORS }, 0);
 		final JTable table = new JTable(tableModel);
 		table.getColumn(ERRORS).setCellRenderer(new DefaultTableCellRenderer() {
+			/**
+             * 
+             */
+            private static final long serialVersionUID = 1400957256710108015L;
+
 			@Override
 			public Component getTableCellRendererComponent(final JTable table, final Object errors,
 			        final boolean isSelected, final boolean hasFocus, final int row, final int column) {
@@ -89,6 +94,11 @@ public class ResultDialog extends JDialog implements Observer {
 			}
 		});
 		table.getColumn(SCORE).setCellRenderer(new DefaultTableCellRenderer() {
+			/**
+             * 
+             */
+            private static final long serialVersionUID = -2292823405484419642L;
+
 			@Override
 			public Component getTableCellRendererComponent(final JTable table, final Object o,
 			        final boolean isSelected, final boolean hasFocus, final int row, final int column) {
