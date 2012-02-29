@@ -90,13 +90,19 @@ public class ResultDialog extends JDialog implements Observer {
 							label.setHorizontalAlignment(SwingConstants.RIGHT);
 						}
 						final JComponent jcomponent = (JComponent) component;
-						final StringBuilder sb = new StringBuilder("<html><ul>");
+						final StringBuilder sb = new StringBuilder();
+						sb.append("<html><table><tbody>");
+						final boolean odd = true;
 						for (final Object o : c) {
-							sb.append("<li>");
+							sb.append("<tr");
+							if (!odd) {
+								sb.append(" bgcolor=\"#9f9f7f\"");
+							}
+							sb.append("><td>");
 							sb.append(TextUtils.stringToHTMLString(o.toString()));
-							sb.append("</li>");
+							sb.append("</td></tr>");
 						}
-						sb.append("</ul></html>");
+						sb.append("</tbody></table></html>");
 						if (!c.isEmpty()) {
 							jcomponent.setToolTipText(sb.toString());
 						} else {
@@ -115,7 +121,8 @@ public class ResultDialog extends JDialog implements Observer {
 							final JLabel label = (JLabel) component;
 							label.setHorizontalAlignment(SwingConstants.RIGHT);
 						}
-						jcomponent.setToolTipText("<html><ul><li>Student has not submitted anything!</li></ul></html>");
+						jcomponent
+						        .setToolTipText("<html><table><tbody><tr><td>Student has not submitted anything!</td></tr></tbody></table></html>");
 					}
 					return component;
 				}
@@ -150,17 +157,23 @@ public class ResultDialog extends JDialog implements Observer {
 						}
 						final JComponent jcomponent = (JComponent) component;
 						final StringBuilder sb = new StringBuilder();
-						sb.append("<html><table><tr><th>Points</th><th>Reason</th></tr>");
+						sb.append("<html><table><thead><tr><th>Points</th><th>Reason</th></tr></thead><tbody>");
 						boolean nonEmpty = false;
+						boolean odd = true;
 						for (final Entry<Grader, Message> e : r.getReports()) {
-							sb.append("<tr><td align=\"right\">");
+							sb.append("<tr");
+							if (!odd) {
+								sb.append(" bgcolor=\"#9f9f7f\"");
+							}
+							odd = !odd;
+							sb.append("><td align=\"right\">");
 							sb.append(e.getValue().getPoints());
 							sb.append("</td><td>");
 							sb.append(e.getValue().getMessage());
 							sb.append("</td></tr>");
 							nonEmpty = true;
 						}
-						sb.append("</table></html>");
+						sb.append("</tbody></table></html>");
 						if (nonEmpty) {
 							jcomponent.setToolTipText(sb.toString().trim());
 						} else {
