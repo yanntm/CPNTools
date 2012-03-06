@@ -7,7 +7,7 @@ public class SimpleTestSuite extends TestSuite {
 		super(new SignatureGrader(-1.0, threshold, secret));
 		graders.add(new NameCategorizer(-0.1));
 		graders.add(new DeclarationSubset(-0.5, true, 0.0));
-		graders.add(new InterfacePreservation(-0.5, 0.0, true, false, Collections.singletonList("New Page"),
-		        Collections.<String> emptyList()));
+		graders.add(new InterfacePreservation(-0.5, -0.2, true, false, Collections.singletonList("System"), Collections
+		        .<String> emptyList()));
 	}
 }
