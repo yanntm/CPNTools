@@ -36,7 +36,7 @@ public class Grader {
 				return;
 			}
 
-			final SimpleTestSuite suite = new SimpleTestSuite(250, setup.getSecret());
+			final SimpleTestSuite suite = new SimpleTestSuite(50, setup.getSecret());
 
 			if (!setup.getModels().isDirectory()) {
 				JOptionPane.showMessageDialog(null, "Model directory is not a directory!", "Invalid Model Directory",

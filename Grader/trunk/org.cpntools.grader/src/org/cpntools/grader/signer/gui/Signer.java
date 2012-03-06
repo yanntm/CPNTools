@@ -128,6 +128,7 @@ public class Signer extends JDialog {
 				max = Math.max(threshold, max);
 				total++;
 			} catch (final Exception e) {
+				e.printStackTrace();
 				if (JOptionPane.showConfirmDialog(null,
 				        "Generation failed for Student ID `" + sid + "':\n" + e.getMessage()
 				                + "\n\nContinue generation?", "Error Generating Signed Model",
@@ -139,6 +140,7 @@ public class Signer extends JDialog {
 				break;
 			}
 		}
+
 		progressMonitor.close();
 		JOptionPane.showMessageDialog(null, "Generation of " + total + " model" + (total == 1 ? "" : "s")
 		        + " completed.\nThreshold for signatures: " + min + " - " + max, "Generation Complete",
