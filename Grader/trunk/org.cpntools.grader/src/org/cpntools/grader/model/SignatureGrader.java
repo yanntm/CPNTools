@@ -14,15 +14,16 @@ public class SignatureGrader extends AbstractGrader {
 	public static Grader INSTANCE = new SignatureGrader(0, Integer.MAX_VALUE, "##");
 
 	private final int threshold;
-	private final String secret;
+	private String secret;
 
 	protected SignatureGrader(final double maxPoints, final int threshold, final String secret) {
 		super(maxPoints);
 		this.threshold = threshold;
-		this.secret = secret != null ? secret : "";
+		setSecret(secret);
 	}
 
-	Pattern p = Pattern.compile("^threshold=([1-9][0-9]*)(, *secret=([^,]))?$", Pattern.CASE_INSENSITIVE);
+	Pattern p = Pattern.compile("^signature, *threshold=([1-9][0-9]*)(, *secret=([^,]))?$", Pattern.CASE_INSENSITIVE
+	        | Pattern.DOTALL);
 
 	/**
 	 * @see org.cpntools.grader.model.Grader#configure(double, java.lang.String)
@@ -41,8 +42,22 @@ public class SignatureGrader extends AbstractGrader {
 	@Override
 	public Message grade(final StudentID id, final PetriNet base, final PetriNet model,
 	        final HighLevelSimulator simulator) {
-		final int match = Signer.checkSignature(model, secret, id);
+		final int match = Signer.checkSignature(model, getSecret(), id);
 		if (match >= threshold) { return new Message(getMaxPoints(), "Matched with " + match + " >= " + threshold); }
 		return new Message(getMinPoints(), "Did not match with " + match + " < " + threshold);
+	}
+
+	/**
+	 * @param secret
+	 */
+	public void setSecret(final String secret) {
+		this.secret = secret == null ? "" : secret;
+	}
+
+	/**
+	 * @return
+	 */
+	public String getSecret() {
+		return secret;
 	}
 }

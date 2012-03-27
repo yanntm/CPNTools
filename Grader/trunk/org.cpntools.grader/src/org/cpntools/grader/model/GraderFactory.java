@@ -3,6 +3,8 @@ package org.cpntools.grader.model;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.cpntools.grader.model.btl.BTLGrader;
+
 /**
  * @author michael
  */
@@ -17,6 +19,9 @@ public class GraderFactory {
 	static {
 		INSTANCE.register(NameCategorizer.INSTANCE);
 		INSTANCE.register(SignatureGrader.INSTANCE);
+		INSTANCE.register(DeclarationSubset.INSTANCE);
+		INSTANCE.register(InterfacePreservation.INSTANCE);
+		INSTANCE.register(BTLGrader.INSTANCE);
 	}
 
 	/**

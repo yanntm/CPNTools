@@ -1,0 +1,167 @@
+package org.cpntools.grader.model.btl.parser;
+
+import org.cpntools.grader.model.btl.model.*;
+
+parser code {:
+	/**
+	 * @see java_cup.runtime.lr_parser#report_error(java.lang.String, java.lang.Object)
+	 */
+	public void report_error(String message, Object info) { /* Ignore simple error */
+	}
+
+	/**
+	 * @see java_cup.runtime.lr_parser#report_fatal_error(java.lang.String, java.lang.Object)
+	 */
+	public void report_fatal_error(String message, Object info) throws Exception {
+		StringBuilder m = new StringBuilder("Error");
+
+		if (info instanceof java_cup.runtime.Symbol) {
+			java_cup.runtime.Symbol s = ((java_cup.runtime.Symbol) info);
+
+			if (s.left >= 0) {
+				m.append(" in line "+(s.left+1));
+				if (s.right >= 0)
+					m.append(", column "+(s.right+1));
+			}
+		}
+
+		m.append(" : "+message);
+
+		throw new SyntaxParserException(m.toString());
+    }
+:};
+
+/* ------------Declaration of Terminals and Non Terminals Section----------- */
+
+terminal LPAREN, RPAREN, LPAREN2, RPAREN2, LPAREN3, RPAREN3, BAR, NEXT, GUARD, STEP, GUARDSTEP, NOT, STAR, TRUE, FALSE, MINUS, PLUS, AND, LESS, GREATER, LEQ, GEQ, EQUAL, DOT, FINALLY, FINALLYGUARD;
+
+terminal String ID;
+terminal Integer NUMBER;
+non terminal Guide guide;
+non terminal Condition condition;
+non terminal Integer number;
+non terminal Simple simple;
+non terminal String name;
+non terminal IExpression iexpression;
+non terminal BExpression bexpression;
+
+/* -------------Precedence and Associatively of Terminals Section----------- */
+
+precedence right RPAREN;
+precedence right NEXT, STEP;
+precedence right GUARD, GUARDSTEP;
+precedence left DOT;
+precedence nonassoc LESS, GREATER, LEQ, GEQ;
+precedence nonassoc EQUAL;
+precedence left STAR;
+precedence left MINUS, PLUS;
+precedence left AND, BAR;
+precedence right NOT;
+
+/* ----------------------------Grammar Section-------------------- */
+
+	guide		::=	
+					  simple:s
+						{: RESULT = s; :}
+					| LPAREN3 condition:c RPAREN3
+						{: RESULT = new ConditionGuide(c); :}
+					| LPAREN guide:g RPAREN
+						{: RESULT = g; :}
+					| number:n STAR guide:g
+						{: RESULT = new Times(n, g); :}
+					| STAR simple:s
+						{: RESULT = new Repeat(s); :}
+					| guide:g1 GUARD guide:g2
+						{: RESULT = new Guard(g1, g2); :}
+					| guide:g1 NEXT guide:g2
+						{: RESULT = new And(g1, new Guard(g1, g2)); :}
+					| guide:g1 GUARDSTEP guide:g2
+						{: RESULT = new Guard(g1, new Guard(new Repeat(new True()), g2)); :}
+					| guide:g1 STEP guide:g2
+						{: RESULT = new And(g1, new Guard(g1, new Guard(new Repeat(new True()), g2))); :}
+					| guide:g1 AND guide:g2
+						{: RESULT = new And(g1, g2); :}
+					| guide:g1 FINALLYGUARD LPAREN3 condition:c RPAREN3
+						{: RESULT = new Finally(g1, c); :}
+					| guide:g1 FINALLY LPAREN3 condition:c RPAREN3
+						{: RESULT = new And(g1, new Finally(g1, c)); :}
+					| NEXT guide:g
+						{: RESULT = new Guard(new True(), g); :}
+					| STEP guide:g
+						{: RESULT = new Guard(new Repeat(new True()), g); :}
+					| FINALLY LPAREN3 condition:c RPAREN3
+						{: RESULT = new Finally(new True(), c); :}
+					;
+					
+    condition	::=	  //LPAREN condition:c RPAREN
+    					//{: RESULT = a; :}
+    				| guide:g
+    					{: RESULT = g; :}
+    				| bexpression:e
+    					{: RESULT = e; :}
+    				;
+    				
+    bexpression	::=	  iexpression:e1 LESS iexpression:e2
+    					{: RESULT = new Less(e1, e2); :}
+    				| iexpression:e1 LEQ iexpression:e2
+    					{: RESULT = new LessEqual(e1, e2); :}
+    				| iexpression:e1 GREATER iexpression:e2
+    					{: RESULT = new Less(e2, e1); :}
+    				| iexpression:e1 GEQ iexpression:e2
+    					{: RESULT = new LessEqual(e2, e1); :}
+    				| iexpression:e1 EQUAL iexpression:e2
+    					{: RESULT = new Equal(e1, e2); :}
+    				| bexpression:b1 AND bexpression:b2
+    					{: RESULT = new LogicalAnd(b1, b2); :}
+    				| bexpression:b1 BAR bexpression:b2
+    					{: RESULT = new LogicalOr(b1, b2); :}
+    				| NOT bexpression:b
+    					{: RESULT = new LogicalNot(b); :}
+    				| LPAREN bexpression:b RPAREN
+    					{: RESULT = b; :}
+    				;
+    				
+    iexpression	::=	  BAR name:n BAR
+    					{: RESULT = new Place(n); :}
+    				| iexpression:e1 PLUS iexpression:e2
+    					{: RESULT = new Plus(e1, e2); :}
+    				| iexpression:e1 MINUS iexpression:e2
+    					{: RESULT = new Minus(e1, e2); :}
+    				| iexpression:e1 STAR iexpression:e2
+    					{: RESULT = new Multiplication(e1, e2); :}
+    				| number:n
+    					{: RESULT = new Constant(n); :}
+    				| LPAREN iexpression:e RPAREN
+    					{: RESULT = e; :}
+    				;
+    				
+    simple 		::=	
+    				  name:n
+    					{: RESULT = new Transition(n); :}
+    				| name:n LPAREN2 RPAREN2
+    					{: RESULT = new Transition(n); :}
+    				| TRUE
+    					{: RESULT = new True(); :}
+    				| FALSE
+    					{: RESULT = new Not(new True()); :}
+    				| NOT simple:s
+    					{: RESULT = new Not(s); :}
+    				| simple:s1 AND simple:s2
+    					{: RESULT = new SimpleAnd(s1, s2); :}
+    				| simple:s1 BAR simple:s2
+    					{: RESULT = new SimpleOr(s1, s2); :}
+    				| LPAREN simple:s RPAREN
+    					{: RESULT = s; :}
+    				;
+    				
+    name		::=
+    				  ID:i
+    				  	{: RESULT = i.trim(); :}
+    				| name:n DOT ID:i
+    					{: RESULT = n + "." + i.trim(); :}
+    				;
+
+	number		::=  
+					| NUMBER:a
+						{: RESULT = a; :}
+					;

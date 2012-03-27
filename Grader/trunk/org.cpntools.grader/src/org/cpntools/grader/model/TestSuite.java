@@ -11,7 +11,7 @@ public class TestSuite {
 	protected final List<Grader> graders = new ArrayList<Grader>();
 	private final List<Grader> graders_u = Collections.unmodifiableList(graders);
 
-	private final Grader matcher;
+	protected final Grader matcher;
 
 	public TestSuite(final Grader matcher) {
 		this.matcher = matcher;

@@ -66,6 +66,8 @@ public class SetupDialog extends JDialog {
 	protected final List<StudentID> ids = new ArrayList<StudentID>();
 	private final List<StudentID> ids_u = Collections.unmodifiableList(ids);
 
+	private final JPanel files;
+
 	public SetupDialog() {
 		setModal(true);
 		setTitle("Setup Grading");
@@ -86,11 +88,11 @@ public class SetupDialog extends JDialog {
 		getRootPane().setDefaultButton(okButton);
 		add(buttons, BorderLayout.SOUTH);
 
-		final JPanel files = new JPanel(new BorderLayout());
+		files = new JPanel(new BorderLayout());
 		final FileChooser baseModel = new FileChooser("Base model", true);
-		files.add(baseModel, BorderLayout.NORTH);
-		final FileChooser outputDir = new FileChooser("Model directory", false, true);
-		files.add(outputDir, BorderLayout.SOUTH);
+		getFiles().add(baseModel, BorderLayout.NORTH);
+		final FileChooser outputDir = new FileChooser("Model directory", true, false);
+		getFiles().add(outputDir, BorderLayout.CENTER);
 
 		final JPanel secret = new JPanel(new BorderLayout());
 		final JLabel secretLabel = new JLabel("Secret");
@@ -100,7 +102,7 @@ public class SetupDialog extends JDialog {
 		secretLabel.setLabelFor(secretField);
 
 		final JPanel top = new JPanel(new BorderLayout());
-		top.add(files, BorderLayout.SOUTH);
+		top.add(getFiles(), BorderLayout.SOUTH);
 		top.add(secret, BorderLayout.NORTH);
 		add(top, BorderLayout.NORTH);
 
@@ -127,6 +129,9 @@ public class SetupDialog extends JDialog {
 		});
 		setMinimumSize(new Dimension(400, 300));
 		pack();
-		setVisible(true);
 	}
+
+	public JPanel getFiles() {
+	    return files;
+    }
 }
