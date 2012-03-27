@@ -116,7 +116,6 @@ public class BTLGrader extends AbstractGrader {
 		} else {
 			m = new Message(getMinPoints(), getName() + " failed every time.");
 		}
-		m.addDetail(new Detail("Formula for " + getName(), "Input formula:\n" + unparsed, "Parsed formula:\n" + guide));
 		for (final Detail d : details) {
 			m.addDetail(d);
 		}
@@ -145,7 +144,7 @@ public class BTLGrader extends AbstractGrader {
 				}
 			}
 			return new Detail("Simulation Not Terminating", "The simulation was running for " + maxSteps
-			        + " and was expected to terminate before", "Executed Trace:\n" + toString(bindings),
+			        + " steps and was expected to terminate before", "Executed Trace:\n" + toString(bindings),
 			        "Initial Formula:\n" + unparsed, "Parsed Formula:\n" + guide, "Formula at error:\n" + toSatisfy,
 			        "Marking at error:\n" + simulator.getMarking(false));
 		} catch (final Exception e) {

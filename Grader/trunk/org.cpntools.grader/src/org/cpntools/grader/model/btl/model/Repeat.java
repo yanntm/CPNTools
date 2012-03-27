@@ -58,7 +58,7 @@ public class Repeat implements Guide {
 	public Set<Instance<org.cpntools.accesscpn.model.Transition>> force(
 	        final Set<Instance<org.cpntools.accesscpn.model.Transition>> candidates, final PetriNet model,
 	        final NameHelper names) {
-		return s.force(candidates, model, names);
+		return candidates;
 	}
 
 	@Override

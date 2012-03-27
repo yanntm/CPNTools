@@ -78,6 +78,7 @@ public class Finally implements Guide {
 	@Override
 	public Guide progress(final Instance<Transition> ti, final PetriNet model, final HighLevelSimulator simulator,
 	        final NameHelper names) {
+		if (condition == null) { return this; }
 		final Guide newc = condition.progress(ti, model, simulator, names);
 		if (newc == condition) { return this; }
 		return new Finally(newc, constraint);
