@@ -2,7 +2,6 @@ package org.cpntools.grader.tester;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Observable;
 
@@ -41,7 +40,7 @@ public class Tester extends Observable {
 
 	public List<Report> test(final PetriNet model) throws Exception {
 		notify("Checking " + model.getName().getText());
-		final HighLevelSimulator simulator = HighLevelSimulator.getHighLevelSimulator();
+		HighLevelSimulator simulator = HighLevelSimulator.getHighLevelSimulator();
 		final Checker checker = new Checker(model, new File(output, model.getName().getText()), simulator);
 		try {
 			// Explicitly ignore localcheck here!
@@ -55,7 +54,7 @@ public class Tester extends Observable {
 		} catch (final ErrorInitializingSMLInterface _) {
 		} catch (final Exception e) {
 			notify("Error checking model " + e.getMessage());
-			return Collections.emptyList();
+			simulator = null;
 		}
 		notify("Categorizing");
 		final List<Report> result = new ArrayList<Report>();
@@ -73,11 +72,26 @@ public class Tester extends Observable {
 				report.addError("This model matches multiple students");
 			}
 		}
+		if (result.size() == 0) {
+			final String id = model.getName().getText().trim();
+			notify("Model doesn't match anybody - using generated id `generated_" + id + "'");
+			final StudentID sid = new StudentID("generated_" + id);
+			final Report report = new Report(sid);
+			report.addReport(suite.getMatcher(), suite.getMatcher().grade(sid, base, model, simulator));
+			result.add(report);
+		}
 		notify("Grading");
 		for (final Report r : result) {
+			if (simulator == null) {
+				r.addError("Could not syntax check model; simulation based tests will fail.");
+			}
 			for (final Grader grader : suite.getGraders()) {
-				final Message message = grader.grade(r.getStudentId(), base, model, simulator);
-				r.addReport(grader, message);
+				try {
+					final Message message = grader.grade(r.getStudentId(), base, model, simulator);
+					r.addReport(grader, message);
+				} catch (final Exception e) {
+					r.addError("Grader " + grader.getClass().getCanonicalName() + " failed with exception " + e);
+				}
 			}
 		}
 		return result;

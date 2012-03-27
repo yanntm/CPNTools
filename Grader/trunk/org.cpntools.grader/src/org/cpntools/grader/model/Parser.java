@@ -85,6 +85,9 @@ public class Parser {
 			} else {
 				if (!comment.matcher(line).matches() && !line.trim().isEmpty()) { throw new ParserException(lineNumber,
 				        "I do not understand this line", line); }
+				line = reader.readLine();
+				lineNumber = lineNumber++;
+
 			}
 		}
 

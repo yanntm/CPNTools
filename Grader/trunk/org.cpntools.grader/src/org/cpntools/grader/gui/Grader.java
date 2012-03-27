@@ -1,5 +1,6 @@
 package org.cpntools.grader.gui;
 
+import java.awt.BorderLayout;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FilenameFilter;
@@ -11,8 +12,10 @@ import javax.swing.JOptionPane;
 
 import org.cpntools.accesscpn.model.PetriNet;
 import org.cpntools.accesscpn.model.importer.DOMParser;
-import org.cpntools.grader.model.SimpleTestSuite;
+import org.cpntools.grader.model.ConfigurationTestSuite;
 import org.cpntools.grader.model.StudentID;
+import org.cpntools.grader.model.TestSuite;
+import org.cpntools.grader.signer.gui.FileChooser;
 import org.cpntools.grader.tester.Report;
 import org.cpntools.grader.tester.Tester;
 
@@ -26,7 +29,22 @@ public class Grader {
 	 */
 	public static void main(final String[] args) {
 		final SetupDialog setup = new SetupDialog();
+		final FileChooser configuration = new FileChooser("Configuration", true);
+		setup.getFiles().add(configuration, BorderLayout.SOUTH);
+		setup.setVisible(true);
+
 		if (setup.getBase() != null) {
+
+			TestSuite suite;
+			try {
+				suite = new ConfigurationTestSuite(configuration.getSelected(), setup.getSecret());
+			} catch (final Exception e) {
+				JOptionPane.showMessageDialog(null, "Error loading configuration!", "Error Loading",
+				        JOptionPane.ERROR_MESSAGE);
+				e.printStackTrace();
+				return;
+			}
+
 			PetriNet petriNet;
 			try {
 				petriNet = DOMParser.parse(new FileInputStream(setup.getBase()), "base");
@@ -35,8 +53,6 @@ public class Grader {
 				        JOptionPane.ERROR_MESSAGE);
 				return;
 			}
-
-			final SimpleTestSuite suite = new SimpleTestSuite(50, setup.getSecret());
 
 			if (!setup.getModels().isDirectory()) {
 				JOptionPane.showMessageDialog(null, "Model directory is not a directory!", "Invalid Model Directory",
@@ -78,21 +94,25 @@ public class Grader {
 					final PetriNet net = DOMParser.parse(new FileInputStream(f), f.getName().replace("[.]cpn$", ""));
 					try {
 						final List<Report> test = tester.test(net);
-						if (test.isEmpty()) {
-							resultDialog.addError(f, "Model does not seem to belong to anybody!");
-						}
 						for (final Report r : test) {
 							if (unused.remove(r.getStudentId())) {
 								resultDialog.addReport(f, r);
 							} else {
-								r.addError("User has submitted another model as well!");
-								resultDialog.addReport(f, r);
+								if (r.getStudentId().getId().startsWith("generated_")) {
+									r.addError("Model does not seem to belong to anybody; generated id has been used!");
+									resultDialog.addReport(f, r);
+								} else {
+									r.addError("User has submitted another model as well!");
+									resultDialog.addReport(f, r);
+								}
 							}
 						}
 					} catch (final Exception e2) {
+						e2.printStackTrace();
 						resultDialog.addError(f, "Error testing model! " + e2.getMessage());
 					}
 				} catch (final Exception e) {
+					e.printStackTrace();
 					resultDialog.addError(f, "Error loading model! " + e.getMessage());
 				}
 				resultDialog.setProgress(++progress);

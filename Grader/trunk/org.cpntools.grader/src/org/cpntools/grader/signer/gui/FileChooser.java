@@ -16,11 +16,12 @@ public class FileChooser extends JPanel {
 	/**
      * 
      */
-    private static final long serialVersionUID = 1021409666534371348L;
+	private static final long serialVersionUID = 1021409666534371348L;
 	final JTextField fileName;
+	private final JButton browse;
 
 	public FileChooser(final String labelText, final boolean load) {
-		this(labelText, true, load);
+		this(labelText, load, true);
 	}
 
 	/**
@@ -28,18 +29,19 @@ public class FileChooser extends JPanel {
 	 * @param file
 	 * @param load
 	 */
-	public FileChooser(final String labelText, final boolean file, final boolean load) {
+	public FileChooser(final String labelText, final boolean load, final boolean file) {
 		super(new BorderLayout());
 		final JLabel label = new JLabel(labelText);
 		add(label, BorderLayout.WEST);
 		fileName = new JTextField();
 		label.setLabelFor(fileName);
 		add(fileName, BorderLayout.CENTER);
-		final JButton browse = new JButton("Browse...");
+		browse = new JButton("Browse...");
 		add(browse, BorderLayout.EAST);
 		browse.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(final ActionEvent arg0) {
+				System.setProperty("apple.awt.fileDialogForDirectories", "" + !file);
 				final FileDialog fileDialog = new FileDialog((Dialog) null);
 				if (load) {
 					fileDialog.setMode(FileDialog.LOAD);
@@ -61,13 +63,14 @@ public class FileChooser extends JPanel {
 // fileName.setText(fileDialog.getDirectory());
 // }
 // }
-				if (file) {
-					fileName.setText(new File(fileDialog.getDirectory(), fileDialog.getFile()).getAbsolutePath());
-				} else {
-					fileName.setText(fileDialog.getDirectory());
-				}
+				fileName.setText(new File(fileDialog.getDirectory(), fileDialog.getFile()).getAbsolutePath());
+				System.setProperty("apple.awt.fileDialogForDirectories", "false");
 			}
 		});
+	}
+
+	public void openDialog() {
+		browse.doClick();
 	}
 
 	/**
