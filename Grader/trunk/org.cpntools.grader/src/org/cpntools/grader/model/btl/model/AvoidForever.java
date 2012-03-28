@@ -55,7 +55,7 @@ public class AvoidForever implements Guide {
 		try {
 			final Guide newc = condition.progress(ti, model, simulator, names);
 			if (newc == null) { return Failure.INSTANCE; }
-			if (newc == Failure.INSTANCE) { return null; }
+			if (newc == Failure.INSTANCE) { return this; }
 			if (newc == condition) { return this; }
 			return new AvoidForever(newc);
 		} catch (final Exception e) {
