@@ -7,9 +7,8 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
@@ -17,7 +16,6 @@ import java.util.Map.Entry;
 import java.util.Observable;
 import java.util.Observer;
 
-import javax.imageio.ImageIO;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JDialog;
@@ -40,6 +38,9 @@ import org.cpntools.grader.model.StudentID;
 import org.cpntools.grader.signer.gui.FileChooser;
 import org.cpntools.grader.tester.Report;
 import org.cpntools.grader.utils.TextUtils;
+import org.xhtmlrenderer.pdf.ITextRenderer;
+
+import com.lowagie.text.DocumentException;
 
 /**
  * @author michael
@@ -253,7 +254,10 @@ public class ResultDialog extends JDialog implements Observer {
 				fileChooser.openDialog();
 				final File directory = fileChooser.getSelected();
 				try {
-					final BufferedWriter error = new BufferedWriter(new FileWriter(new File(directory, "errors.html")));
+					final StringBuilder error = new StringBuilder();
+					final ITextRenderer errorRenderer = new ITextRenderer();
+					final ImageUserAgent errorAgent = new ImageUserAgent(errorRenderer.getOutputDevice());
+					errorRenderer.getSharedContext().setUserAgentCallback(errorAgent);
 					error.append("<html><head><title>Errors</title><head><body>");
 					for (final int row : table.getSelectedRows()) {
 						Report r;
@@ -262,10 +266,15 @@ public class ResultDialog extends JDialog implements Observer {
 						} catch (final ClassCastException _) {
 							r = null;
 						}
-						BufferedWriter writer = error;
+						StringBuilder writer = error;
+						ITextRenderer renderer = errorRenderer;
+						ImageUserAgent agent = errorAgent;
 						if (r != null) {
-							writer = new BufferedWriter(new FileWriter(new File(directory, "S" + r.getStudentId()
-							        + "_report.html")));
+							renderer = new ITextRenderer();
+							agent = new ImageUserAgent(renderer.getOutputDevice());
+							renderer.getSharedContext().setUserAgentCallback(agent);
+							writer = new StringBuilder();
+
 							writer.append("<html><head><title>Rating for ");
 							writer.append(r.getStudentId().toString());
 							writer.append("</title></head><body><h1>Rating for ");
@@ -278,7 +287,7 @@ public class ResultDialog extends JDialog implements Observer {
 
 							final StringBuilder details = new StringBuilder();
 							writer.append("<h2>Points: ");
-							writer.append("" + r.getResult());
+							writer.append(String.format("%.2f", r.getResult()));
 							writer.append("</h2><table rules=\"groups\">");
 							writer.append("<thead><tr><th>Point range</th><th>Points</th><th>Reason</th><th>Grader</th></tr></thead><tbody>");
 							boolean odd = true;
@@ -323,7 +332,8 @@ public class ResultDialog extends JDialog implements Observer {
 									if (d.getImage() != null) {
 										final String name = "S" + r.getStudentId() + "_image" + image++ + ".png";
 										try {
-											ImageIO.write(d.getImage(), "png", new File(directory, name));
+											agent.register(name, d.getImage());
+											// ImageIO.write(d.getImage(), "png", new File(directory, name));
 											details.append("<p><img width=\"100%\" src=\"");
 											details.append(name);
 											details.append("\" /></p>");
@@ -362,12 +372,29 @@ public class ResultDialog extends JDialog implements Observer {
 						}
 
 						if (writer != error) {
+							writer.append("</body>");
 							writer.append("</html>");
-							writer.close();
+							renderer.setDocumentFromString(writer.toString());
+							renderer.layout();
+							final FileOutputStream os = new FileOutputStream(new File(directory, "S" + r.getStudentId()
+							        + "_report.pdf"));
+							try {
+								renderer.createPDF(os);
+							} catch (final DocumentException e) {
+							}
+							os.close();
 						}
 					}
+					error.append("</body>");
 					error.append("</html>");
-					error.close();
+					errorRenderer.setDocumentFromString(error.toString());
+					errorRenderer.layout();
+					final FileOutputStream os = new FileOutputStream(new File(directory, "errors.pdf"));
+					try {
+						errorRenderer.createPDF(os);
+					} catch (final DocumentException e) {
+					}
+					os.close();
 				} catch (final IOException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
