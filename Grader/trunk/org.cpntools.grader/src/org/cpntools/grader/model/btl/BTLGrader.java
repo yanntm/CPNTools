@@ -147,13 +147,14 @@ public class BTLGrader extends AbstractGrader {
 			final List<Binding> bindings = new ArrayList<Binding>();
 			for (int i = 0; maxSteps < 0 || i < maxSteps; i++) {
 				final List<Instance<? extends Transition>> enabled = simulator.isEnabled(allTransitionInstances);
-				if (enabled.isEmpty()) { return null; // FIXME We should check if any obligations are left
-				}
 				final Set<Instance<Transition>> allowed = toSatisfy.force(new HashSet(enabled), model, names);
-				if (allowed.isEmpty()) { return new Detail("No Allowed Transtions for " + getName(),
-				        "Enabled Transitions:\n" + toString(enabled), "Executed Trace:\n" + toString(bindings),
-				        "Initial Formula:\n" + unparsed, "Parsed Formula:\n" + guide,
-				        "Formula at error:\n" + toSatisfy, "Marking at error:\n" + simulator.getMarking(false)); }
+				if (allowed.isEmpty()) {
+					if (toSatisfy.canTerminate(model, simulator, names)) { return null; }
+					return new Detail("No Allowed Transtions for " + getName(), "Enabled Transitions:\n"
+					        + toString(enabled), "Executed Trace:\n" + toString(bindings), "Initial Formula:\n"
+					        + unparsed, "Parsed Formula:\n" + guide, "Formula at error:\n" + toSatisfy,
+					        "Marking at error:\n" + simulator.getMarking(false));
+				}
 				final Binding binding = simulator.executeAndGet(new ArrayList<Instance<Transition>>(allowed));
 				bindings.add(binding);
 				toSatisfy = toSatisfy.progress(binding.getTransitionInstance(), model, simulator, names);

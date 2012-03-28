@@ -55,4 +55,5 @@ public class Constant extends IExpression {
 	public int evaluate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names) {
 		return value;
 	}
+
 }

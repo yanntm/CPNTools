@@ -91,4 +91,9 @@ public class SimpleOr extends Simple {
 		return new SimpleOr(news1, news2);
 	}
 
+	@Override
+	public boolean canTerminate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names) {
+		return s1.canTerminate(model, simulator, names) || s2.canTerminate(model, simulator, names);
+	}
+
 }

@@ -71,4 +71,9 @@ public class Repeat implements Guide {
 		return new And(news, new Guard(news, this));
 	}
 
+	@Override
+	public boolean canTerminate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names) {
+		return true;
+	}
+
 }

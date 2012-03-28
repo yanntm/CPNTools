@@ -83,4 +83,10 @@ public class Times implements Guide {
 		}
 		return new And(newg, new Guard(newg, new Times(count - 1, g)));
 	}
+
+	@Override
+	public boolean canTerminate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names) {
+		if (count == 0) { return true; }
+		return g.canTerminate(model, simulator, names);
+	}
 }

@@ -54,4 +54,9 @@ public class Future implements Guide {
 		if (newc == constraint) { return this; }
 		return newc;
 	}
+
+	@Override
+	public boolean canTerminate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names) {
+		return constraint.canTerminate(model, simulator, names);
+	}
 }

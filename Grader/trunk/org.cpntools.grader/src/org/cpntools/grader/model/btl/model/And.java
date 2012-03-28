@@ -101,4 +101,9 @@ public class And implements Guide {
 		return new And(newg1, newg2);
 	}
 
+	@Override
+	public boolean canTerminate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names) {
+		return g1.canTerminate(model, simulator, names) && g1.canTerminate(model, simulator, names);
+	}
+
 }

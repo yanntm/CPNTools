@@ -95,4 +95,10 @@ public class Guard implements Guide {
 		}
 	}
 
+	@Override
+	public boolean canTerminate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names) {
+		if (condition.canTerminate(model, simulator, names)) { return constraint.canTerminate(model, simulator, names); }
+		return true;
+	}
+
 }
