@@ -114,7 +114,7 @@ public class ResultDialog extends JDialog implements Observer {
 						for (final Object o : c) {
 							sb.append("<tr");
 							if (!odd) {
-								sb.append(" bgcolor=\"#9f9f7f\"");
+								sb.append(" color=\"#9f9f7f\"");
 							}
 							sb.append("><td>");
 							sb.append(TextUtils.stringToHTMLString("" + o));
@@ -258,7 +258,7 @@ public class ResultDialog extends JDialog implements Observer {
 					final ITextRenderer errorRenderer = new ITextRenderer();
 					final ImageUserAgent errorAgent = new ImageUserAgent(errorRenderer.getOutputDevice());
 					errorRenderer.getSharedContext().setUserAgentCallback(errorAgent);
-					error.append("<html><head><title>Errors</title><head><body>");
+					error.append("<html><head><title>Errors</title></head><body>");
 					for (final int row : table.getSelectedRows()) {
 						Report r;
 						try {
@@ -288,14 +288,14 @@ public class ResultDialog extends JDialog implements Observer {
 							final StringBuilder details = new StringBuilder();
 							writer.append("<h2>Points: ");
 							writer.append(String.format("%.2f", r.getResult()));
-							writer.append("</h2><table rules=\"groups\">");
-							writer.append("<thead><tr><th>Point range</th><th>Points</th><th>Reason</th><th>Grader</th></tr></thead><tbody>");
+							writer.append("</h2><table style=\"border-top: 3px solid black; border-bottom: 3px solid black\">");
+							writer.append("<thead><tr><th>Point range</th><th>Points</th><th>Reason</th><th>Grader</th></tr></thead><tbody style=\"border-top: 2px solid black\">");
 							boolean odd = true;
 							int image = 0;
 							for (final Entry<Grader, Message> e : r.getReports()) {
 								writer.append("<tr");
 								if (!odd) {
-									writer.append(" bgcolor=\"#cfcfcf\"");
+									writer.append(" style=\"background-color: #cfcfcf\"");
 								}
 								odd = !odd;
 								writer.append("><td align=\"center\">");
@@ -313,7 +313,7 @@ public class ResultDialog extends JDialog implements Observer {
 								writer.append("</span></td><td>");
 								writer.append(TextUtils.stringToHTMLString(e.getValue().getMessage()));
 								writer.append("</td><td><pre>");
-								writer.append(TextUtils.stringToHTMLString(e.getKey().getClass().getCanonicalName()));
+								writer.append(TextUtils.stringToHTMLString(e.getKey().getClass().getSimpleName()));
 								writer.append("</pre></td></tr>");
 
 								for (final Detail d : e.getValue().getDetails()) {
