@@ -3,6 +3,7 @@ package org.cpntools.grader.model.btl.model;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.cpntools.accesscpn.engine.highlevel.HighLevelSimulator;
 import org.cpntools.accesscpn.engine.highlevel.instance.Instance;
 import org.cpntools.accesscpn.model.PetriNet;
 import org.cpntools.grader.model.NameHelper;
@@ -62,4 +63,13 @@ public class Not extends Simple {
 		set.removeAll(child.force(candidates, model, names));
 		return set;
 	}
+
+	@Override
+	public Simple progress(final Instance<org.cpntools.accesscpn.model.Transition> transition, final PetriNet model,
+	        final HighLevelSimulator simulator, final NameHelper names) {
+		final Simple newchild = child.progress(transition, model, simulator, names);
+		if (newchild == null) { return Failure.INSTANCE; }
+		return null;
+	}
+
 }

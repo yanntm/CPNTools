@@ -1,6 +1,5 @@
 package org.cpntools.grader.model.btl.model;
 
-import java.util.Collections;
 import java.util.Set;
 
 import org.cpntools.accesscpn.engine.highlevel.HighLevelSimulator;
@@ -11,7 +10,10 @@ import org.cpntools.grader.model.NameHelper;
 /**
  * @author michael
  */
-public class Transition extends Simple {
+public class SetMarking implements Guide {
+	private final String name;
+	private final String value;
+
 	/**
 	 * @see java.lang.Object#hashCode()
 	 */
@@ -20,6 +22,7 @@ public class Transition extends Simple {
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + (name == null ? 0 : name.hashCode());
+		result = prime * result + (value == null ? 0 : value.hashCode());
 		return result;
 	}
 
@@ -30,17 +33,19 @@ public class Transition extends Simple {
 	public boolean equals(final Object obj) {
 		if (this == obj) { return true; }
 		if (obj == null) { return false; }
-		if (!(obj instanceof Transition)) { return false; }
-		final Transition other = (Transition) obj;
+		if (!(obj instanceof SetMarking)) { return false; }
+		final SetMarking other = (SetMarking) obj;
 		if (name == null) {
 			if (other.name != null) { return false; }
 		} else if (!name.equals(other.name)) { return false; }
+		if (value == null) {
+			if (other.value != null) { return false; }
+		} else if (!value.equals(other.value)) { return false; }
 		return true;
 	}
 
-	private final String name;
-
-	public Transition(final String name) {
+	public SetMarking(final String name, final String value) {
+		this.value = value;
 		this.name = NameHelper.cleanup(name);
 
 	}
@@ -51,22 +56,23 @@ public class Transition extends Simple {
 
 	@Override
 	public String toString() {
-		return name;
+		return name + " := \"" + value.replaceAll("\"", "\\\\\"") + "\"";
 	}
 
 	@Override
 	public Set<Instance<org.cpntools.accesscpn.model.Transition>> force(
 	        final Set<Instance<org.cpntools.accesscpn.model.Transition>> candidates, final PetriNet model,
 	        final NameHelper names) {
-		final Instance<org.cpntools.accesscpn.model.Transition> ti = names.getTransitionInstance(name);
-		if (candidates.contains(ti)) { return Collections.singleton(ti); }
-		return Collections.emptySet();
+		return candidates;
 	}
 
 	@Override
-	public Simple progress(final Instance<org.cpntools.accesscpn.model.Transition> ti, final PetriNet model,
-	        final HighLevelSimulator simulator, final NameHelper names) {
-		if (ti.equals(names.getTransitionInstance(name))) { return null; }
-		return Failure.INSTANCE;
+	public Guide progress(final Instance<org.cpntools.accesscpn.model.Transition> ti, final PetriNet model,
+	        final HighLevelSimulator simulator, final NameHelper names) throws Unconsumed {
+		throw new Unconsumed();
+	}
+
+	public String getValue() {
+		return value;
 	}
 }

@@ -63,8 +63,9 @@ public class ConditionGuide implements Guide {
 
 	@Override
 	public Guide progress(final Instance<Transition> ti, final PetriNet model, final HighLevelSimulator simulator,
-	        final NameHelper names) {
+	        final NameHelper names) throws Unconsumed {
 		final Condition newc = c.progress(ti, model, simulator, names);
+		if (newc == Failure.INSTANCE) { return Failure.INSTANCE; }
 		if (newc == c) { return this; }
 		if (newc == null) { return null; }
 		return new ConditionGuide(newc);

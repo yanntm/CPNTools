@@ -2,13 +2,16 @@ package org.cpntools.grader.model.btl.model;
 
 import java.util.Set;
 
+import org.cpntools.accesscpn.engine.highlevel.HighLevelSimulator;
 import org.cpntools.accesscpn.engine.highlevel.instance.Instance;
 import org.cpntools.accesscpn.model.PetriNet;
 import org.cpntools.grader.model.NameHelper;
 
 public final class True extends Simple {
-	public True() {
+	public static final True INSTANCE = new True();
 
+	private True() {
+		// Singleton
 	}
 
 	@Override
@@ -32,4 +35,11 @@ public final class True extends Simple {
 	public int hashCode() {
 		return 7;
 	}
+
+	@Override
+	public Simple progress(final Instance<org.cpntools.accesscpn.model.Transition> transition, final PetriNet model,
+	        final HighLevelSimulator simulator, final NameHelper names) {
+		return null;
+	}
+
 }

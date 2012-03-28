@@ -1,5 +1,6 @@
 package org.cpntools.grader.model.btl.model;
 
+import java.util.HashSet;
 import java.util.Set;
 
 import org.cpntools.accesscpn.engine.highlevel.HighLevelSimulator;
@@ -11,47 +12,15 @@ import org.cpntools.grader.model.NameHelper;
 /**
  * @author michael
  */
-public class Guard implements Guide {
-	/**
-	 * @see java.lang.Object#hashCode()
-	 */
-	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + (condition == null ? 0 : condition.hashCode());
-		result = prime * result + (constraint == null ? 0 : constraint.hashCode());
-		return result;
-	}
-
-	/**
-	 * @see java.lang.Object#equals(java.lang.Object)
-	 */
-	@Override
-	public boolean equals(final Object obj) {
-		if (this == obj) { return true; }
-		if (obj == null) { return false; }
-		if (!(obj instanceof Guard)) { return false; }
-		final Guard other = (Guard) obj;
-		if (condition == null) {
-			if (other.condition != null) { return false; }
-		} else if (!condition.equals(other.condition)) { return false; }
-		if (constraint == null) {
-			if (other.constraint != null) { return false; }
-		} else if (!constraint.equals(other.constraint)) { return false; }
-		return true;
-	}
-
+public class Avoid implements Guide {
 	private final Guide condition;
-	private final Guide constraint;
 
 	/**
 	 * @param condition
 	 * @param constraint
 	 */
-	public Guard(final Guide condition, final Guide constraint) {
+	public Avoid(final Guide condition) {
 		this.condition = condition;
-		this.constraint = constraint;
 
 	}
 
@@ -59,20 +28,19 @@ public class Guard implements Guide {
 		return condition;
 	}
 
-	public Guide getConstraint() {
-		return constraint;
-	}
-
 	@Override
 	public String toString() {
-		return "(" + condition + ") => (" + constraint + ")";
+		return "(" + condition + ") => failure";
 	}
 
 	@Override
 	public Set<Instance<org.cpntools.accesscpn.model.Transition>> force(
 	        final Set<Instance<org.cpntools.accesscpn.model.Transition>> candidates, final PetriNet model,
 	        final NameHelper names) {
-		return candidates;
+		final Set<Instance<org.cpntools.accesscpn.model.Transition>> result = new HashSet<Instance<Transition>>(
+		        candidates);
+		result.removeAll(condition.force(candidates, model, names));
+		return result;
 	}
 
 	/**
@@ -86,12 +54,12 @@ public class Guard implements Guide {
 	        final NameHelper names) throws Unconsumed {
 		try {
 			final Guide newc = condition.progress(ti, model, simulator, names);
-			if (newc == null) { return constraint; }
+			if (newc == null) { return Failure.INSTANCE; }
 			if (newc == Failure.INSTANCE) { return null; }
 			if (newc == condition) { return this; }
-			return new Guard(newc, constraint);
+			return new Avoid(newc);
 		} catch (final Exception e) {
-			return constraint.progress(ti, model, simulator, names);
+			return Failure.INSTANCE;
 		}
 	}
 

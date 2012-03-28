@@ -1,6 +1,7 @@
 package org.cpntools.grader.model.btl.parser;
 
 import org.cpntools.grader.model.btl.model.*;
+import java.io.IOException; 
 
 parser code {:
 	/**
@@ -33,11 +34,12 @@ parser code {:
 
 /* ------------Declaration of Terminals and Non Terminals Section----------- */
 
-terminal LPAREN, RPAREN, LPAREN2, RPAREN2, LPAREN3, RPAREN3, BAR, NEXT, GUARD, STEP, GUARDSTEP, NOT, STAR, TRUE, FALSE, MINUS, PLUS, AND, LESS, GREATER, LEQ, GEQ, EQUAL, DOT, FINALLY, FINALLYGUARD;
+terminal LPAREN, RPAREN, LPAREN2, RPAREN2, LPAREN3, RPAREN3, BAR, NEXT, GUARD, STEP, GUARDSTEP, NOT, STAR, TRUE, FALSE, FAILURE, MINUS, PLUS, AND, TIME, ASSIGN, ADD, LESS, GREATER, LEQ, GEQ, EQUAL, DOT, FINALLY, FINALLYGUARD;
 
 terminal String ID;
 terminal Integer NUMBER;
 non terminal Guide guide;
+non terminal Guide parenstep;
 non terminal Condition condition;
 non terminal Integer number;
 non terminal Simple simple;
@@ -47,7 +49,7 @@ non terminal BExpression bexpression;
 
 /* -------------Precedence and Associatively of Terminals Section----------- */
 
-precedence right RPAREN;
+precedence right RPAREN, FAILURE;
 precedence right NEXT, STEP;
 precedence right GUARD, GUARDSTEP;
 precedence left DOT;
@@ -71,14 +73,29 @@ precedence right NOT;
 						{: RESULT = new Times(n, g); :}
 					| STAR simple:s
 						{: RESULT = new Repeat(s); :}
+					| guide:g GUARD FAILURE
+						{:
+							if (g instanceof Simple) {
+								RESULT = new Avoid(g);
+							} else if (g instanceof Future) {
+								Future f = (Future) g;
+								if (f.getConstraint() instanceof Simple) {
+									RESULT = new AvoidForever(f.getConstraint());
+								} else {
+									throw new IOException("Guarded failure may only use simple guided expressions at line " + gleft + ", position " + gright);
+								}
+							} else {
+								throw new IOException("Guarded failure may only use simple guided expressions at line " + gleft + ", position " + gright);
+							}
+						:}
 					| guide:g1 GUARD guide:g2
 						{: RESULT = new Guard(g1, g2); :}
 					| guide:g1 NEXT guide:g2
 						{: RESULT = new And(g1, new Guard(g1, g2)); :}
 					| guide:g1 GUARDSTEP guide:g2
-						{: RESULT = new Guard(g1, new Guard(new Repeat(new True()), g2)); :}
+						{: RESULT = new Guard(g1, new Future(g2)); :}
 					| guide:g1 STEP guide:g2
-						{: RESULT = new And(g1, new Guard(g1, new Guard(new Repeat(new True()), g2))); :}
+						{: RESULT = new And(g1, new Guard(g1, new Future(g2))); :}
 					| guide:g1 AND guide:g2
 						{: RESULT = new And(g1, g2); :}
 					| guide:g1 FINALLYGUARD LPAREN3 condition:c RPAREN3
@@ -86,11 +103,19 @@ precedence right NOT;
 					| guide:g1 FINALLY LPAREN3 condition:c RPAREN3
 						{: RESULT = new And(g1, new Finally(g1, c)); :}
 					| NEXT guide:g
-						{: RESULT = new Guard(new True(), g); :}
+						{: RESULT = new Guard(True.INSTANCE, g); :}
 					| STEP guide:g
-						{: RESULT = new Guard(new Repeat(new True()), g); :}
+						{: RESULT = new Future(g); :}
+					| parenstep:p
+						{: RESULT = new Future(p); :}
+					| name:n ASSIGN ID:i
+						{: RESULT = new SetMarking(n, i); :}
 					| FINALLY LPAREN3 condition:c RPAREN3
-						{: RESULT = new Finally(new True(), c); :}
+						{: RESULT = new Finally(null, c); :}
+					;
+					
+	parenstep	::= LPAREN STEP guide:g RPAREN
+						{: RESULT = g; :}
 					;
 					
     condition	::=	  //LPAREN condition:c RPAREN
@@ -129,6 +154,8 @@ precedence right NOT;
     					{: RESULT = new Minus(e1, e2); :}
     				| iexpression:e1 STAR iexpression:e2
     					{: RESULT = new Multiplication(e1, e2); :}
+    				| TIME
+    					{: RESULT = Time.INSTANCE; :}
     				| number:n
     					{: RESULT = new Constant(n); :}
     				| LPAREN iexpression:e RPAREN
@@ -141,9 +168,9 @@ precedence right NOT;
     				| name:n LPAREN2 RPAREN2
     					{: RESULT = new Transition(n); :}
     				| TRUE
-    					{: RESULT = new True(); :}
+    					{: RESULT = True.INSTANCE; :}
     				| FALSE
-    					{: RESULT = new Not(new True()); :}
+    					{: RESULT = new Not(True.INSTANCE); :}
     				| NOT simple:s
     					{: RESULT = new Not(s); :}
     				| simple:s1 AND simple:s2

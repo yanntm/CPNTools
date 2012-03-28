@@ -63,10 +63,11 @@ public class Repeat implements Guide {
 
 	@Override
 	public Guide progress(final Instance<Transition> ti, final PetriNet model, final HighLevelSimulator simulator,
-	        final NameHelper names) {
+	        final NameHelper names) throws Unconsumed {
 		final Guide news = s.progress(ti, model, simulator, names);
 		if (s == news) { return this; }
 		if (news == null) { return this; }
+		if (news == Failure.INSTANCE) { throw new Unconsumed(); }
 		return new And(news, new Guard(news, this));
 	}
 

@@ -10,6 +10,6 @@ import org.cpntools.grader.model.NameHelper;
  */
 public interface Guide extends Condition {
 	Guide progress(Instance<org.cpntools.accesscpn.model.Transition> ti, PetriNet model, HighLevelSimulator simulator,
-	        NameHelper names);
+	        NameHelper names) throws Unconsumed;
 
 }
