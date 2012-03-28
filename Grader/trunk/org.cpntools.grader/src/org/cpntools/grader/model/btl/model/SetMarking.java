@@ -1,5 +1,6 @@
 package org.cpntools.grader.model.btl.model;
 
+import java.io.IOException;
 import java.util.Set;
 
 import org.cpntools.accesscpn.engine.highlevel.HighLevelSimulator;
@@ -69,6 +70,10 @@ public class SetMarking implements Guide {
 	@Override
 	public Guide progress(final Instance<org.cpntools.accesscpn.model.Transition> ti, final PetriNet model,
 	        final HighLevelSimulator simulator, final NameHelper names) throws Unconsumed {
+		try {
+			simulator.setMarking(names.getPlaceInstance(name), value);
+		} catch (final IOException e) {
+		}
 		throw new Unconsumed();
 	}
 

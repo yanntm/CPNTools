@@ -32,12 +32,16 @@ import org.cpntools.accesscpn.model.TransitionNode;
  * @author michael
  */
 public class NameHelper {
-	private final Map<String, Instance<Node>> nodeNames;
-	private final Map<String, String> nodeShortcuts;
+	private final Map<String, Instance<PlaceNode>> placeNames;
+	private final Map<String, Instance<Transition>> transitionNames;
+	private final Map<String, String> placeShortcuts, transitionShortcuts;
 
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public NameHelper(final PetriNet petriNet) {
-		nodeNames = extractNodeNames(petriNet);
-		nodeShortcuts = extractNodeShortcuts(petriNet);
+		placeNames = (Map) extractNodeNames(petriNet, PlaceNode.class);
+		placeShortcuts = extractNodeShortcuts(petriNet, PlaceNode.class);
+		transitionNames = (Map) extractNodeNames(petriNet, Transition.class);
+		transitionShortcuts = extractNodeShortcuts(petriNet, Transition.class);
 	}
 
 	public static List<String> cleanup(final List<String> strings) {
@@ -158,13 +162,13 @@ public class NameHelper {
 		return names;
 	}
 
-	public static Map<String, Instance<Node>> extractNodeNames(final PetriNet model) {
+	public static Map<String, Instance<Node>> extractNodeNames(final PetriNet model, final Class<? extends Node> clazz) {
 		final ModelInstance modelInstance = (ModelInstance) ModelInstanceAdapterFactory.getInstance().adapt(model,
 		        ModelInstance.class);
 		final Map<String, Instance<Node>> names = new HashMap<String, Instance<Node>>();
 		for (final Page p : model.getPage()) {
 			for (final Object o : p.getObject()) {
-				if (o instanceof Node) {
+				if (clazz.isAssignableFrom(o.getClass())) {
 					final Node n = (Node) o;
 					for (final Instance<Node> ni : modelInstance.getAllInstances(n)) {
 						final String name = cleanup(ni.toString());
@@ -176,13 +180,13 @@ public class NameHelper {
 		return names;
 	}
 
-	public static Map<String, String> extractNodeShortcuts(final PetriNet model) {
+	public static Map<String, String> extractNodeShortcuts(final PetriNet model, final Class<? extends Node> clazz) {
 		final ModelInstance modelInstance = (ModelInstance) ModelInstanceAdapterFactory.getInstance().adapt(model,
 		        ModelInstance.class);
 		final Map<String, String> result = new HashMap<String, String>();
 		for (final Page p : new PageSorter(model.getPage())) {
 			for (final Object o : p.getObject()) {
-				if (o instanceof Node) {
+				if (clazz.isAssignableFrom(o.getClass())) {
 					final Node n = (Node) o;
 					for (final Instance<Node> ni : modelInstance.getAllInstances(n)) {
 						final String name = cleanup(ni.toString());
@@ -231,22 +235,16 @@ public class NameHelper {
 	 * @param name
 	 * @return
 	 */
-	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public Instance<PlaceNode> getPlaceInstance(final String name) {
-		final String realName = nodeShortcuts.get(name);
-		final Instance<Node> ni = nodeNames.get(realName);
-		final PlaceNode p = (PlaceNode) ni.getNode();
-		assert p != null;
-		return (Instance) ni;
+		final String realName = placeShortcuts.get(name);
+		final Instance<PlaceNode> ni = placeNames.get(realName);
+		return ni;
 	}
 
-	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public Instance<Transition> getTransitionInstance(final String name) {
-		final String realName = nodeShortcuts.get(name);
-		final Instance<Node> ni = nodeNames.get(realName);
-		final Transition p = (Transition) ni.getNode();
-		assert p != null;
-		return (Instance) ni;
+		final String realName = transitionShortcuts.get(name);
+		final Instance<Transition> ni = transitionNames.get(realName);
+		return ni;
 
 	}
 

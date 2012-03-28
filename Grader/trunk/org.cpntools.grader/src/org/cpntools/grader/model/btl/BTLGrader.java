@@ -149,7 +149,7 @@ public class BTLGrader extends AbstractGrader {
 				final List<Instance<? extends Transition>> enabled = simulator.isEnabled(allTransitionInstances);
 				if (enabled.isEmpty()) { return null; // FIXME We should check if any obligations are left
 				}
-				final Set<Instance<Transition>> allowed = guide.force(new HashSet(enabled), model, names);
+				final Set<Instance<Transition>> allowed = toSatisfy.force(new HashSet(enabled), model, names);
 				if (allowed.isEmpty()) { return new Detail("No Allowed Transtions for " + getName(),
 				        "Enabled Transitions:\n" + toString(enabled), "Executed Trace:\n" + toString(bindings),
 				        "Initial Formula:\n" + unparsed, "Parsed Formula:\n" + guide,
