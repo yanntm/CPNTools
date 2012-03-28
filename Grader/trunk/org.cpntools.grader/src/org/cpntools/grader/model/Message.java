@@ -1,16 +1,15 @@
 package org.cpntools.grader.model;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.Collection;
+import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * @author michael
  */
 public class Message {
 	public static final Message NULL = new Message(0.0, "Null Message");
-	protected final List<Detail> details = new ArrayList<Detail>();
-	private final List<Detail> u_details = Collections.unmodifiableList(details);
+	protected final Map<String, Detail> details = new TreeMap<String, Detail>();
 
 	public Message(final double points, final String message, final Detail... details) {
 		this.points = points;
@@ -37,7 +36,7 @@ public class Message {
 
 	public void addDetail(final Detail d) {
 		if (d != null) {
-			details.add(d);
+			details.put(d.getHeader(), d);
 		}
 	}
 
@@ -45,7 +44,7 @@ public class Message {
 		return points;
 	}
 
-	public List<Detail> getDetails() {
-		return u_details;
+	public Collection<Detail> getDetails() {
+		return details.values();
 	}
 }

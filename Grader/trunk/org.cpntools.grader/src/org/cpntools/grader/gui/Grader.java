@@ -5,8 +5,10 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FilenameFilter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 
 import javax.swing.JOptionPane;
 
@@ -88,6 +90,8 @@ public class Grader {
 			final ResultDialog resultDialog = new ResultDialog(tester, files.length);
 
 			final HashSet<StudentID> unused = new HashSet<StudentID>(setup.getStudentIds());
+			final Map<StudentID, Report> old = new HashMap<StudentID, Report>();
+			final Map<StudentID, File> oldfiles = new HashMap<StudentID, File>();
 			for (final File f : files) {
 				resultDialog.update(null, "Loading " + f);
 				try {
@@ -97,12 +101,18 @@ public class Grader {
 						for (final Report r : test) {
 							if (unused.remove(r.getStudentId())) {
 								resultDialog.addReport(f, r);
+								old.put(r.getStudentId(), r);
+								oldfiles.put(r.getStudentId(), f);
 							} else {
 								if (r.getStudentId().getId().startsWith("generated_")) {
 									r.addError("Model does not seem to belong to anybody; generated id has been used!");
 									resultDialog.addReport(f, r);
 								} else {
-									r.addError("User has submitted another model as well!");
+									final Report or = old.remove(r.getStudentId());
+									markCheater(f, r);
+									if (or != null) {
+										markCheater(oldfiles.get(or.getStudentId()), or);
+									}
 									resultDialog.addReport(f, r);
 								}
 							}
@@ -171,5 +181,11 @@ public class Grader {
 
 		}
 // System.exit(0);
+	}
+
+	private static void markCheater(final File f, final Report r) {
+		r.setStudentId(new StudentID("cheating_" + r.getStudentId().getId() + "_impersonating_"
+		        + f.getName().replaceAll("[.]cpn$", "")));
+		r.addError("User has submitted another model as well!  Likely cheating is taking place.");
 	}
 }
