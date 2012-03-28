@@ -92,4 +92,10 @@ public class Finally implements Guide {
 		}
 	}
 
+	@Override
+	public boolean canTerminate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names) {
+		if (condition == null) { return constraint.canTerminate(model, simulator, names); }
+		return true;
+	}
+
 }

@@ -69,4 +69,9 @@ public class Transition extends Simple {
 		if (ti.equals(names.getTransitionInstance(name))) { return null; }
 		return Failure.INSTANCE;
 	}
+
+	@Override
+	public boolean canTerminate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names) {
+		return false;
+	}
 }

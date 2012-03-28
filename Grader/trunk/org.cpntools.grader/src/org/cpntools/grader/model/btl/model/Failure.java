@@ -43,4 +43,9 @@ public final class Failure extends Simple {
 		return INSTANCE;
 	}
 
+	@Override
+	public boolean canTerminate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names) {
+		return false;
+	}
+
 }

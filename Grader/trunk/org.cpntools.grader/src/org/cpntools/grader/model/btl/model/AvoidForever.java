@@ -63,4 +63,9 @@ public class AvoidForever implements Guide {
 		}
 	}
 
+	@Override
+	public boolean canTerminate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names) {
+		return true;
+	}
+
 }

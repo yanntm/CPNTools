@@ -72,4 +72,9 @@ public class Not extends Simple {
 		return null;
 	}
 
+	@Override
+	public boolean canTerminate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names) {
+		return !child.canTerminate(model, simulator, names);
+	}
+
 }

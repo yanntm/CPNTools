@@ -42,4 +42,9 @@ public final class True extends Simple {
 		return null;
 	}
 
+	@Override
+	public boolean canTerminate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names) {
+		return false; // a true step means any step (just not empty step)
+	}
+
 }

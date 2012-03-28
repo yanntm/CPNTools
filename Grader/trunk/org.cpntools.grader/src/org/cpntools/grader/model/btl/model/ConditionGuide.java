@@ -71,4 +71,9 @@ public class ConditionGuide implements Guide {
 		return new ConditionGuide(newc);
 	}
 
+	@Override
+	public boolean canTerminate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names) {
+		return c.canTerminate(model, simulator, names);
+	}
+
 }

@@ -27,4 +27,8 @@ public abstract class BExpression extends Expression {
 		return Failure.INSTANCE;
 	}
 
+	@Override
+	public boolean canTerminate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names) {
+		return evaluate(model, simulator, names);
+	}
 }

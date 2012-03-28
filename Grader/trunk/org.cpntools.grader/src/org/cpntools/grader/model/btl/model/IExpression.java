@@ -26,4 +26,9 @@ public abstract class IExpression extends Expression {
 		throw new UnsupportedOperationException("You should never call progress on IExpressions");
 	}
 
+	@Override
+	public boolean canTerminate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names) {
+		throw new UnsupportedOperationException("You should never call canTerminate on IExpressions");
+	}
+
 }
