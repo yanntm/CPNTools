@@ -1,8 +1,8 @@
 package org.cpntools.grader.model;
 
 import java.awt.Graphics;
+import java.awt.Image;
 import java.awt.image.BufferedImage;
-import java.awt.image.RenderedImage;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -13,7 +13,7 @@ public class Detail {
 	private final String header;
 	protected final List<String> strings = new ArrayList<String>();
 	private final List<String> u_strings = Collections.unmodifiableList(strings);
-	private final RenderedImage image;
+	private final Image image;
 
 	public Detail(final String header, final Iterable<String> details) {
 		this.header = header;
@@ -55,7 +55,7 @@ public class Detail {
 		return u_strings;
 	}
 
-	public RenderedImage getImage() {
+	public Image getImage() {
 		return image;
 	}
 }
