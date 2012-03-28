@@ -37,4 +37,14 @@ public abstract class AbstractGrader implements Grader {
 		return 0.0;
 	}
 
+	public int compareTo(final Grader g) {
+		int result;
+		result = Double.valueOf(getMinPoints()).compareTo(Double.valueOf(g.getMinPoints()));
+		if (result != 0) { return result; }
+		result = Double.valueOf(g.getMaxPoints()).compareTo(Double.valueOf(getMaxPoints()));
+		if (result != 0) { return result; }
+		result = getClass().getCanonicalName().compareTo(g.getClass().getCanonicalName());
+		if (result != 0) { return result; }
+		return hashCode() - g.hashCode();
+	}
 }

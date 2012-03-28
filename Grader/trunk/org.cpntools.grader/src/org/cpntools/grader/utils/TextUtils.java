@@ -15,7 +15,8 @@ public class TextUtils {
 			if (c == ' ') {
 				if (lastWasBlankChar) {
 					lastWasBlankChar = false;
-					sb.append("&nbsp;");
+// sb.append("&nbsp;");
+					sb.append(' ');
 				} else {
 					lastWasBlankChar = true;
 					sb.append(' ');

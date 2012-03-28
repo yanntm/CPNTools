@@ -2,21 +2,21 @@ package org.cpntools.grader.tester;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.TreeMap;
 
 import org.cpntools.grader.model.Grader;
 import org.cpntools.grader.model.Message;
 import org.cpntools.grader.model.StudentID;
 
 public class Report implements Comparable<Report> {
-	protected final Map<Grader, Message> reports = new HashMap<Grader, Message>();
+	protected final Map<Grader, Message> reports = new TreeMap<Grader, Message>();
 	protected final List<String> errors = new ArrayList<String>();
 	private final List<String> errors_u = Collections.unmodifiableList(errors);
-	protected final StudentID sid;
+	protected StudentID sid;
 	private double total = 0.0;
 
 	/**
@@ -25,6 +25,10 @@ public class Report implements Comparable<Report> {
 	public Report(final StudentID sid) {
 		this.sid = sid;
 
+	}
+
+	public void setStudentId(final StudentID sid) {
+		this.sid = sid;
 	}
 
 	public StudentID getStudentId() {

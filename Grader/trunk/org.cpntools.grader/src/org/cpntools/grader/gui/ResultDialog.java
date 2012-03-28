@@ -269,6 +269,7 @@ public class ResultDialog extends JDialog implements Observer {
 						StringBuilder writer = error;
 						ITextRenderer renderer = errorRenderer;
 						ImageUserAgent agent = errorAgent;
+						final StringBuilder details = new StringBuilder();
 						if (r != null) {
 							renderer = new ITextRenderer();
 							agent = new ImageUserAgent(renderer.getOutputDevice());
@@ -285,12 +286,11 @@ public class ResultDialog extends JDialog implements Observer {
 							writer.append("" + tableModel.getValueAt(row, 0));
 							writer.append("</h3>");
 
-							final StringBuilder details = new StringBuilder();
 							writer.append("<h2>Points: ");
 							writer.append(String.format("%.2f", r.getResult()));
 							writer.append("</h2><table style=\"border-top: 3px solid black; border-bottom: 3px solid black\">");
 							writer.append("<thead><tr><th>Point range</th><th>Points</th><th>Reason</th><th>Grader</th></tr></thead><tbody style=\"border-top: 2px solid black\">");
-							boolean odd = true;
+							boolean odd = false;
 							int image = 0;
 							for (final Entry<Grader, Message> e : r.getReports()) {
 								writer.append("<tr");
@@ -299,8 +299,8 @@ public class ResultDialog extends JDialog implements Observer {
 								}
 								odd = !odd;
 								writer.append("><td align=\"center\">");
-								writer.append("" + e.getKey().getMinPoints());
-								writer.append(" - " + e.getKey().getMaxPoints());
+								writer.append(String.format("%.2f", e.getKey().getMinPoints()));
+								writer.append(String.format(" - %.2f", e.getKey().getMaxPoints()));
 								writer.append("</td><td align=\"right\"><span style=\"color: ");
 								if (e.getValue().getPoints() == e.getKey().getMinPoints()) {
 									writer.append("red");
@@ -309,7 +309,7 @@ public class ResultDialog extends JDialog implements Observer {
 								} else {
 									writer.append("yellow");
 								}
-								writer.append("\">" + e.getValue().getPoints());
+								writer.append("\">" + String.format("%.2f", e.getValue().getPoints()));
 								writer.append("</span></td><td>");
 								writer.append(TextUtils.stringToHTMLString(e.getValue().getMessage()));
 								writer.append("</td><td><pre>");
@@ -320,7 +320,7 @@ public class ResultDialog extends JDialog implements Observer {
 									details.append("<h3>");
 									details.append(d.getHeader());
 									details.append(" - ");
-									details.append(e.getKey().getClass().getCanonicalName());
+									details.append(e.getKey().getClass().getSimpleName());
 									details.append("</h3>");
 									details.append("<ul>");
 									for (final String s : d.getStrings()) {
@@ -344,7 +344,6 @@ public class ResultDialog extends JDialog implements Observer {
 								}
 							}
 							writer.append("</tbody></table>");
-							writer.append(details.toString());
 						}
 
 						final List<?> errors = (List<?>) tableModel.getValueAt(row, 3);
@@ -352,16 +351,18 @@ public class ResultDialog extends JDialog implements Observer {
 							writer.append("<h2>Errors");
 							if (r == null) {
 								writer.append(" for ");
-								writer.append("" + tableModel.getValueAt(row, 1));
-								writer.append(" / " + tableModel.getValueAt(row, 0));
+								writer.append(""
+								        + TextUtils.stringToHTMLString(tableModel.getValueAt(row, 1).toString()));
+								writer.append(" / "
+								        + TextUtils.stringToHTMLString(tableModel.getValueAt(row, 0).toString()));
 							}
 							writer.append("</h2><table>");
-							writer.append("<thead><tbody>");
+							writer.append("<tbody>");
 							boolean odd = true;
 							for (final Object e : errors) {
 								writer.append("<tr");
 								if (!odd) {
-									writer.append(" bgcolor=\"#cfcfcf\"");
+									writer.append(" style=\"background-color: #cfcfcf\"");
 								}
 								odd = !odd;
 								writer.append("><td>");
@@ -371,6 +372,7 @@ public class ResultDialog extends JDialog implements Observer {
 							writer.append("</tbody></table>");
 						}
 
+						writer.append(details.toString());
 						if (writer != error) {
 							writer.append("</body>");
 							writer.append("</html>");
