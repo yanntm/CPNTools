@@ -65,12 +65,16 @@ CommentContent          = ( [^*] | \*+ [^/*] )*
 	">"					{ return symbol(GREATER); }
 	"<="					{ return symbol(LEQ); }
 	">="					{ return symbol(GEQ); }
+	":="					{ return symbol(ASSIGN); }
+	"+="					{ return symbol(ADD); }
 	"="					{ return symbol(EQUAL); }
 	"=="					{ return symbol(EQUAL); }
 	"true"				{ return symbol(TRUE); }
 	"false"				{ return symbol(FALSE); }
+	"failure"				{ return symbol(FAILURE); }
+	"time"				{ return symbol(TIME); }
 	[1-9][0-9]*|0			{ return symbol(NUMBER, Integer.valueOf(yytext())); }
-	[\"][^\"]*[\"]			{ String result = yytext(); return symbol(ID, result.substring(1, result.length() - 1)); } 
+	[\"][^\"]*(\\[\"][^\"]*)*[\"]	{ String result = yytext(); return symbol(ID, result.substring(1, result.length() - 1).replaceAll("\\\\\"", "\"")); } 
 	[a-zA-Z_][a-zA-Z0-9_]*		{ return symbol(ID, yytext()); }
 	"."					{ return symbol(DOT); }
 

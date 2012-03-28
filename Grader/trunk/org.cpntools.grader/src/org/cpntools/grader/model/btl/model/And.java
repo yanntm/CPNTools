@@ -77,11 +77,26 @@ public class And implements Guide {
 
 	@Override
 	public Guide progress(final Instance<Transition> ti, final PetriNet model, final HighLevelSimulator simulator,
-	        final NameHelper names) {
-		final Guide newg1 = g1.progress(ti, model, simulator, names);
-		final Guide newg2 = g2.progress(ti, model, simulator, names);
+	        final NameHelper names) throws Unconsumed {
+		Guide newg1;
+		boolean unconsumed = false;
+		try {
+			newg1 = g1.progress(ti, model, simulator, names);
+		} catch (final Unconsumed e) {
+			unconsumed = true;
+			newg1 = null;
+		}
+		Guide newg2;
+		try {
+			newg2 = g2.progress(ti, model, simulator, names);
+		} catch (final Unconsumed e) {
+			newg2 = null;
+			if (unconsumed) { throw e; }
+		}
 		if (newg1 == null) { return newg2; }
 		if (newg2 == null) { return newg1; }
+		if (newg1 == Failure.INSTANCE) { return Failure.INSTANCE; }
+		if (newg2 == Failure.INSTANCE) { return Failure.INSTANCE; }
 		if (newg1 == g1 && newg2 == g2) { return this; }
 		return new And(newg1, newg2);
 	}

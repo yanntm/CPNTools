@@ -11,6 +11,7 @@ import java.util.regex.Pattern;
 import org.cpntools.accesscpn.engine.highlevel.HighLevelSimulator;
 import org.cpntools.accesscpn.engine.highlevel.instance.Binding;
 import org.cpntools.accesscpn.engine.highlevel.instance.Instance;
+import org.cpntools.accesscpn.engine.highlevel.instance.State;
 import org.cpntools.accesscpn.engine.highlevel.instance.adapter.ModelInstance;
 import org.cpntools.accesscpn.engine.highlevel.instance.adapter.ModelInstanceAdapterFactory;
 import org.cpntools.accesscpn.model.PetriNet;
@@ -27,7 +28,7 @@ import org.cpntools.grader.model.btl.model.True;
 import org.cpntools.grader.model.btl.parser.CupParser;
 
 public class BTLGrader extends AbstractGrader {
-	public static final Grader INSTANCE = new BTLGrader(0, 0, 0, 0, "", "<null>", new True());
+	public static final Grader INSTANCE = new BTLGrader(0, 0, 0, 0, "", "<null>", True.INSTANCE);
 
 	private final Guide guide;
 	private final int repeats;
@@ -98,23 +99,38 @@ public class BTLGrader extends AbstractGrader {
 		final List<Instance<Transition>> allTransitionInstances = modelInstance.getModelData()
 		        .getAllTransitionInstances();
 		int error = 0;
+		final Set<State> markings = new HashSet<State>();
 		for (int i = 0; i < repeats; i++) {
 			final Detail d = grade(model, simulator, names, allTransitionInstances);
 			if (d != null) {
 				error++;
 				details.add(d);
+			} else {
+				try {
+					markings.add(simulator.getMarking());
+				} catch (final Exception e) {
+				}
 			}
 		}
-		if (error == 0) { return new Message(getMaxPoints(), getName() + " was executed successfully " + repeats
-		        + " time" + (repeats == 1 ? "" : "s")); }
 		Message m;
-		if (repeats - error >= threshold) {
+		if (error == 0) {
+			m = new Message(getMaxPoints(), getName() + " was executed successfully " + repeats + " time"
+			        + (repeats == 1 ? "" : "s"));
+		} else if (repeats - error >= threshold) {
 			m = new Message(getMaxPoints(), getName() + " failed " + error + " time" + (error == 1 ? "" : "s")
 			        + ", but this is under the threshold");
 		} else if (repeats > error) {
 			m = new Message(getMinPoints(), getName() + " failed " + error + " time" + (error == 1 ? "" : "s"));
 		} else {
 			m = new Message(getMinPoints(), getName() + " failed every time.");
+		}
+		if (!markings.isEmpty()) {
+			final String[] markingDescriptors = new String[markings.size()];
+			int i = 0;
+			for (final State s : markings) {
+				markingDescriptors[i++] = s.toString();
+			}
+			m.addDetail(new Detail("Final Markings for " + getName(), markingDescriptors));
 		}
 		for (final Detail d : details) {
 			m.addDetail(d);
@@ -139,14 +155,15 @@ public class BTLGrader extends AbstractGrader {
 				        "Initial Formula:\n" + unparsed, "Parsed Formula:\n" + guide,
 				        "Formula at error:\n" + toSatisfy, "Marking at error:\n" + simulator.getMarking(false)); }
 				final Binding binding = simulator.executeAndGet(new ArrayList<Instance<Transition>>(allowed));
+				bindings.add(binding);
 				toSatisfy = toSatisfy.progress(binding.getTransitionInstance(), model, simulator, names);
 				if (toSatisfy == null) { return null; // Nothing left to satisfy
 				}
 			}
 			return new Detail("Simulation Not Terminating", "The simulation was running for " + maxSteps
-			        + " steps and was expected to terminate before", "Executed Trace:\n" + toString(bindings),
-			        "Initial Formula:\n" + unparsed, "Parsed Formula:\n" + guide, "Formula at error:\n" + toSatisfy,
-			        "Marking at error:\n" + simulator.getMarking(false));
+			        + " steps and was expected to terminate before", "Initial Formula:\n" + unparsed,
+			        "Parsed Formula:\n" + guide, "Formula at error:\n" + toSatisfy, "Marking at error:\n"
+			                + simulator.getMarking(false));
 		} catch (final Exception e) {
 			return new Detail("Running " + getName() + " failed", e.toString());
 		}

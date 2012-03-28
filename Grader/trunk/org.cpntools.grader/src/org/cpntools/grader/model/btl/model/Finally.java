@@ -77,11 +77,19 @@ public class Finally implements Guide {
 
 	@Override
 	public Guide progress(final Instance<Transition> ti, final PetriNet model, final HighLevelSimulator simulator,
-	        final NameHelper names) {
+	        final NameHelper names) throws Unconsumed {
 		if (condition == null) { return this; }
-		final Guide newc = condition.progress(ti, model, simulator, names);
-		if (newc == condition) { return this; }
-		return new Finally(newc, constraint);
+		try {
+			Guide newc;
+			newc = condition.progress(ti, model, simulator, names);
+			if (newc == condition) { return this; }
+			if (newc == Failure.INSTANCE) { return null; }
+			return new Finally(newc, constraint);
+		} catch (final Unconsumed e) {
+			final Condition newc = constraint.progress(ti, model, simulator, names);
+			if (newc instanceof Guide) { return (Guide) newc; }
+			return new ConditionGuide(newc);
+		}
 	}
 
 }

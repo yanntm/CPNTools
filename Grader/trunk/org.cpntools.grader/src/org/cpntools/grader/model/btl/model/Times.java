@@ -70,9 +70,12 @@ public class Times implements Guide {
 
 	@Override
 	public Guide progress(final Instance<Transition> ti, final PetriNet model, final HighLevelSimulator simulator,
-	        final NameHelper names) {
-		final Guide newg = g.progress(ti, model, simulator, names);
+	        final NameHelper names) throws Unconsumed {
+		Guide newg;
+		newg = g.progress(ti, model, simulator, names); // We propagate because is is not consumed once, it won't be
+// later
 		if (g == newg) { return this; }
+		if (newg == Failure.INSTANCE) { return Failure.INSTANCE; }
 		if (count == 1) { return newg; }
 		if (newg == null) {
 			if (count == 2) { return g; }

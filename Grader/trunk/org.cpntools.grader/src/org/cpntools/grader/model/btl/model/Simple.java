@@ -9,10 +9,7 @@ import org.cpntools.grader.model.NameHelper;
  * @author michael
  */
 public abstract class Simple implements Guide {
-	@Override
-	public Simple progress(final Instance<org.cpntools.accesscpn.model.Transition> transition, final PetriNet model,
-	        final HighLevelSimulator simulator, final NameHelper names) {
-		return null; // Simple are always reduced if legal (as we assume they are due to force)
-	}
+	public abstract Simple progress(Instance<org.cpntools.accesscpn.model.Transition> ti, PetriNet model,
+	        HighLevelSimulator simulator, NameHelper names);
 
 }

@@ -15,6 +15,6 @@ public interface Condition {
 	        Set<Instance<org.cpntools.accesscpn.model.Transition>> candidates, PetriNet model, NameHelper names);
 
 	Condition progress(Instance<org.cpntools.accesscpn.model.Transition> ti, PetriNet model,
-	        HighLevelSimulator simulator, NameHelper names);
+	        HighLevelSimulator simulator, NameHelper names) throws Unconsumed;
 
 }

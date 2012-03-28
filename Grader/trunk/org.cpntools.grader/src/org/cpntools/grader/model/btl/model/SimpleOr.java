@@ -3,6 +3,7 @@ package org.cpntools.grader.model.btl.model;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.cpntools.accesscpn.engine.highlevel.HighLevelSimulator;
 import org.cpntools.accesscpn.engine.highlevel.instance.Instance;
 import org.cpntools.accesscpn.model.PetriNet;
 import org.cpntools.grader.model.NameHelper;
@@ -75,6 +76,19 @@ public class SimpleOr extends Simple {
 		set.addAll(s1.force(candidates, model, names));
 		set.addAll(s2.force(candidates, model, names));
 		return set;
+	}
+
+	@Override
+	public Simple progress(final Instance<org.cpntools.accesscpn.model.Transition> transition, final PetriNet model,
+	        final HighLevelSimulator simulator, final NameHelper names) {
+		final Simple news1 = s1.progress(transition, model, simulator, names);
+		final Simple news2 = s2.progress(transition, model, simulator, names);
+		if (news1 == null) { return null; }
+		if (news2 == null) { return null; }
+		if (news1 == Failure.INSTANCE) { return news2; }
+		if (news2 == Failure.INSTANCE) { return news1; }
+		if (news1 == s1 && news2 == s2) { return this; }
+		return new SimpleOr(news1, news2);
 	}
 
 }
