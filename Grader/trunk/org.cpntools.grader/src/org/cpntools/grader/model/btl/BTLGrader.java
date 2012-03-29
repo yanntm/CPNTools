@@ -23,6 +23,7 @@ import org.cpntools.grader.model.Message;
 import org.cpntools.grader.model.NameHelper;
 import org.cpntools.grader.model.StudentID;
 import org.cpntools.grader.model.btl.model.Condition;
+import org.cpntools.grader.model.btl.model.Failure;
 import org.cpntools.grader.model.btl.model.Guide;
 import org.cpntools.grader.model.btl.model.True;
 import org.cpntools.grader.model.btl.parser.CupParser;
@@ -158,6 +159,10 @@ public class BTLGrader extends AbstractGrader {
 				final Binding binding = simulator.executeAndGet(new ArrayList<Instance<Transition>>(allowed));
 				bindings.add(binding);
 				toSatisfy = toSatisfy.progress(binding.getTransitionInstance(), model, simulator, names);
+				if (toSatisfy == Failure.INSTANCE) { return new Detail("Assertion Failed", "Enabled Transitions:\n"
+				        + toString(enabled), "Executed Trace:\n" + toString(bindings), "Initial Formula:\n" + unparsed,
+				        "Parsed Formula:\n" + guide, "Formula at error:\n" + toSatisfy, "Marking at error:\n"
+				                + simulator.getMarking(false)); }
 				if (toSatisfy == null) { return null; // Nothing left to satisfy
 				}
 			}
