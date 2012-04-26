@@ -3,7 +3,9 @@ package org.cpntools.grader.gui;
 import java.awt.BorderLayout;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FilenameFilter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -15,6 +17,7 @@ import javax.swing.JOptionPane;
 import org.cpntools.accesscpn.model.PetriNet;
 import org.cpntools.accesscpn.model.importer.DOMParser;
 import org.cpntools.grader.model.ConfigurationTestSuite;
+import org.cpntools.grader.model.ParserException;
 import org.cpntools.grader.model.StudentID;
 import org.cpntools.grader.model.TestSuite;
 import org.cpntools.grader.signer.gui.FileChooser;
@@ -40,9 +43,20 @@ public class Grader {
 			TestSuite suite;
 			try {
 				suite = new ConfigurationTestSuite(configuration.getSelected(), setup.getSecret());
-			} catch (final Exception e) {
-				JOptionPane.showMessageDialog(null, "Error loading configuration!", "Error Loading",
-				        JOptionPane.ERROR_MESSAGE);
+			} catch (final ParserException e) {
+				JOptionPane.showMessageDialog(null, e.getMessage() + ":\n" + e.getLine()
+				        + (e.getCause() == null ? "" : "\nCaused by:\n" + e.getCause()),
+				        "Error loading configuration!", JOptionPane.ERROR_MESSAGE);
+				e.printStackTrace();
+				return;
+			} catch (final FileNotFoundException e) {
+				JOptionPane.showMessageDialog(null, "Configuration file not found!\n" + e,
+				        "Error loading configuration!", JOptionPane.ERROR_MESSAGE);
+				e.printStackTrace();
+				return;
+			} catch (final IOException e) {
+				JOptionPane.showMessageDialog(null, "Reading configuration file failed!\n" + e,
+				        "Error loading configuration!", JOptionPane.ERROR_MESSAGE);
 				e.printStackTrace();
 				return;
 			}
@@ -97,7 +111,7 @@ public class Grader {
 				try {
 					final PetriNet net = DOMParser.parse(new FileInputStream(f), f.getName().replace("[.]cpn$", ""));
 					try {
-						final List<Report> test = tester.test(net);
+						final List<Report> test = tester.test(net, setup.getModels());
 						for (final Report r : test) {
 							if (unused.remove(r.getStudentId())) {
 								resultDialog.addReport(f, r);

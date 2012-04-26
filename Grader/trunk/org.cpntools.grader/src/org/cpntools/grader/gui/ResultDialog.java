@@ -325,7 +325,14 @@ public class ResultDialog extends JDialog implements Observer {
 									details.append("<ul>");
 									for (final String s : d.getStrings()) {
 										details.append("<li>");
-										details.append(TextUtils.stringToHTMLString(s).replaceAll("\n", "<br />"));
+										if (s.toLowerCase().indexOf("<html>") >= 0) {
+											details.append(s.replaceFirst("^.*<[hH][tT][mM][lL][^>]*>", "")
+											        .replaceFirst("</[hH][tT][mM][lM]>.*$", "")
+											        .replaceFirst("^.*<[bB][oO][dD][yY][^>]*>", "")
+											        .replaceFirst("</[bB][oO][dD][yY]>.*$", ""));
+										} else {
+											details.append(TextUtils.stringToHTMLString(s).replaceAll("\n", "<br />"));
+										}
 										details.append("</li>");
 									}
 									details.append("</ul>");
@@ -376,7 +383,11 @@ public class ResultDialog extends JDialog implements Observer {
 						if (writer != error) {
 							writer.append("</body>");
 							writer.append("</html>");
-							renderer.setDocumentFromString(writer.toString());
+							try {
+								renderer.setDocumentFromString(writer.toString());
+							} catch (final Exception _) {
+								System.err.println(writer.toString());
+							}
 							renderer.layout();
 							final FileOutputStream os = new FileOutputStream(new File(directory, "S" + r.getStudentId()
 							        + "_report.pdf"));
