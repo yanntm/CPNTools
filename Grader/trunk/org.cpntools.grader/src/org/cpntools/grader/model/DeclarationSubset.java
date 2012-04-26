@@ -1,7 +1,12 @@
 package org.cpntools.grader.model;
 
+import java.util.BitSet;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -9,6 +14,7 @@ import org.cpntools.accesscpn.engine.highlevel.HighLevelSimulator;
 import org.cpntools.accesscpn.model.HLDeclaration;
 import org.cpntools.accesscpn.model.PetriNet;
 import org.cpntools.accesscpn.model.declaration.GlobalReferenceDeclaration;
+import org.cpntools.accesscpn.model.declaration.VariableDeclaration;
 
 public class DeclarationSubset extends AbstractGrader {
 	public static final Grader INSTANCE = new DeclarationSubset(0, false, 0, false);
@@ -79,10 +85,84 @@ public class DeclarationSubset extends AbstractGrader {
 			if (globref && d.getStructure() instanceof GlobalReferenceDeclaration) {
 				final GlobalReferenceDeclaration globref = (GlobalReferenceDeclaration) d.getStructure();
 				declarations.put("globref " + globref.getName().trim(), d.asString().trim());
+			} else if (d.getStructure() instanceof VariableDeclaration) {
+				final VariableDeclaration var = (VariableDeclaration) d.getStructure();
+				for (final Set<String> subset : new PowerSet<String>(new TreeSet<String>(var.getVariables()))) {
+					declarations.put("var " + subset + ": " + var.getTypeName(), d.asString().trim());
+				}
 			} else {
 				declarations.put(d.asString().trim().replaceAll("[ \t\n]+", " "), d.asString().trim());
 			}
 		}
 		return declarations;
+	}
+
+	/**
+	 * @author michael
+	 * @param <E>
+	 */
+	private static final class PowerSet<E> implements Iterator<Set<E>>, Iterable<Set<E>> {
+		private Object[] arr = null;
+		private BitSet bset = null;
+
+		/**
+		 * @param set
+		 */
+		public PowerSet(final Set<E> set) {
+			arr = set.toArray();
+			bset = new BitSet(arr.length + 1);
+		}
+
+		/**
+		 * @see java.util.Iterator#hasNext()
+		 */
+		@Override
+		public boolean hasNext() {
+			return !bset.get(arr.length);
+		}
+
+		/**
+		 * @see java.util.Iterator#next()
+		 */
+		@SuppressWarnings("unchecked")
+		@Override
+		public Set<E> next() {
+			final Set<E> returnSet = new TreeSet<E>();
+			for (int i = 0; i < arr.length; i++) {
+				if (bset.get(i)) {
+					returnSet.add((E) arr[i]);
+				}
+			}
+			for (int i = 0; i < bset.size(); i++) {
+				if (!bset.get(i)) {
+					bset.set(i);
+					break;
+				} else {
+					bset.clear(i);
+				}
+			}
+
+			return returnSet;
+		}
+
+		/**
+		 * @see java.util.Iterator#remove()
+		 */
+		@Override
+		public void remove() {
+			throw new UnsupportedOperationException("Not Supported!");
+		}
+
+		/**
+		 * @see java.lang.Iterable#iterator()
+		 */
+		@Override
+		public Iterator<Set<E>> iterator() {
+			return this;
+		}
+	}
+
+	private void addSubsets(final Map<String, String> declarations, final String typeName, final SortedSet<String> names) {
+
 	}
 }

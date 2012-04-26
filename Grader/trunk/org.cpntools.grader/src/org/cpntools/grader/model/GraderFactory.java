@@ -22,6 +22,7 @@ public class GraderFactory {
 		INSTANCE.register(DeclarationSubset.INSTANCE);
 		INSTANCE.register(InterfacePreservation.INSTANCE);
 		INSTANCE.register(BTLGrader.INSTANCE);
+		INSTANCE.register(MonitoringGrader.INSTANCE);
 	}
 
 	/**
@@ -35,8 +36,9 @@ public class GraderFactory {
 	 * @param points
 	 * @param configuration
 	 * @return
+	 * @throws Exception
 	 */
-	public Grader getGrader(final double points, final String configuration) {
+	public Grader getGrader(final double points, final String configuration) throws Exception {
 		for (final Grader g : graders) {
 			final Grader result = g.configure(points, configuration);
 			if (result != null) { return result; }

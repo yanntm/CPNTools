@@ -13,8 +13,8 @@ public class ParserException extends Exception {
 	 * @param string
 	 * @param line
 	 */
-	public ParserException(final int lineNumber, final String string, final String line) {
-		super("Error on line " + lineNumber + ": " + string);
+	public ParserException(final int lineNumber, final String string, final String line, final Exception e) {
+		super("Error on line " + lineNumber + ": " + string, e);
 		this.lineNumber = lineNumber;
 		this.line = line;
 	}

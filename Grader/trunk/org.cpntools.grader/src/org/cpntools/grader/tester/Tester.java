@@ -38,29 +38,14 @@ public class Tester extends Observable {
 		notifyObservers(message);
 	}
 
-	public List<Report> test(final PetriNet model) throws Exception {
-		notify("Checking " + model.getName().getText());
-		HighLevelSimulator simulator = HighLevelSimulator.getHighLevelSimulator();
-		final Checker checker = new Checker(model, new File(output, model.getName().getText()), simulator);
-		try {
-			// Explicitly ignore localcheck here!
-			checker.checkInitializing();
-			checker.checkDeclarations();
-			checker.generateSerializers();
-			checker.checkPages();
-			checker.generateInstances();
-			checker.initialiseSimulationScheduler();
-			checker.checkMonitors();
-		} catch (final ErrorInitializingSMLInterface _) {
-		} catch (final Exception e) {
-			notify("Error checking model " + e.getMessage());
-			simulator = null;
-		}
+	public List<Report> test(final PetriNet model, final File modelPath) throws Exception {
 		notify("Categorizing");
+		StudentID studentid = null;
 		final List<Report> result = new ArrayList<Report>();
 		for (final StudentID sid : ids) {
-			final Message message = suite.getMatcher().grade(sid, base, model, simulator);
+			final Message message = suite.getMatcher().grade(sid, base, model, null);
 			if (message.getPoints() > suite.getMatcher().getMinPoints()) {
+				studentid = sid;
 				notify("Model matches " + sid);
 				final Report report = new Report(sid);
 				report.addReport(suite.getMatcher(), message);
@@ -76,10 +61,31 @@ public class Tester extends Observable {
 			final String id = model.getName().getText().trim();
 			notify("Model doesn't match anybody - using generated id `generated_" + id + "'");
 			final StudentID sid = new StudentID("generated_" + id);
+			studentid = sid;
 			final Report report = new Report(sid);
-			report.addReport(suite.getMatcher(), suite.getMatcher().grade(sid, base, model, simulator));
+			report.addReport(suite.getMatcher(), suite.getMatcher().grade(sid, base, model, null));
 			result.add(report);
 		}
+
+		notify("Checking " + model.getName().getText());
+		HighLevelSimulator simulator = HighLevelSimulator.getHighLevelSimulator();
+		final Checker checker = new Checker(model, new File(output, model.getName().getText()), simulator);
+		try {
+			// Explicitly ignore localcheck here!
+			checker.checkInitializing(modelPath.getAbsolutePath().toString(), new File(new File(modelPath, "simout"),
+			        studentid.toString()).getAbsolutePath().toString().replaceFirst("[.][cC][pP][nN]$", ""));
+			checker.checkDeclarations();
+			checker.generateSerializers();
+			checker.checkPages();
+			checker.checkMonitors();
+			checker.generateInstances();
+			checker.initialiseSimulationScheduler();
+		} catch (final ErrorInitializingSMLInterface _) {
+		} catch (final Exception e) {
+			notify("Error checking model " + e.getMessage());
+			simulator = null;
+		}
+
 		notify("Grading");
 		for (final Report r : result) {
 			if (simulator == null) {

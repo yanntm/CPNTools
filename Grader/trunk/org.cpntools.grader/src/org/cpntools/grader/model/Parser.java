@@ -36,7 +36,7 @@ public class Parser {
 				line = reader.readLine();
 				lineNumber++;
 			} else {
-				throw new ParserException(-1, "Did not find a `" + section + "' section in the input", null);
+				throw new ParserException(-1, "Did not find a `" + section + "' section in the input", null, null);
 			}
 		}
 
@@ -56,7 +56,7 @@ public class Parser {
 
 				// Include next line if this ends on \ or if next starts with +
 				line = reader.readLine();
-				lineNumber = lineNumber++;
+				lineNumber++;
 				Matcher m2 = line == null ? null : nextLine.matcher(line);
 				boolean backslash = configuration.endsWith("\\");
 				boolean matches = m2 == null ? false : m2.matches() && m2.group(1) != null;
@@ -74,17 +74,23 @@ public class Parser {
 					matches = m2 == null ? false : m2.matches() && m2.group(1) != null;
 				}
 
-				final Grader grader = factory.getGrader(points, configuration);
-				if (grader != null) {
+				Grader grader = null;
+				Exception exception = null;
+				try {
+					grader = factory.getGrader(points, configuration);
+				} catch (final Exception e) {
+					exception = e;
+				}
+				if (grader != null && grader != NullGrader.INSTANCE) {
 					result.add(grader);
 				} else {
 					throw new ParserException(firstLineNumber, "Found no matching grader for this line"
 					        + (lineNumber - firstLineNumber > 2 ? " (and the " + (lineNumber - firstLineNumber - 1)
-					                + " following line(s))" : ""), firstLine);
+					                + " following line(s))" : ""), firstLine, exception);
 				}
 			} else {
 				if (!comment.matcher(line).matches() && !line.trim().isEmpty()) { throw new ParserException(lineNumber,
-				        "I do not understand this line", line); }
+				        "I do not understand this line", line, null); }
 				line = reader.readLine();
 				lineNumber = lineNumber++;
 

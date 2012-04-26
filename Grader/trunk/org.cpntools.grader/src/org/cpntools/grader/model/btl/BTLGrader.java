@@ -58,7 +58,7 @@ public class BTLGrader extends AbstractGrader {
 
 	@SuppressWarnings("hiding")
 	@Override
-	public Grader configure(final double maxPoints, final String configuration) {
+	public Grader configure(final double maxPoints, final String configuration) throws Exception {
 		final Matcher m = p.matcher(configuration);
 		if (m.matches()) {
 			int repeats = 1;
@@ -78,14 +78,9 @@ public class BTLGrader extends AbstractGrader {
 			if (m.group(8) != null && !"".equals(m.group(8))) {
 				name = m.group(8).trim();
 			}
-			try {
-				final Guide guide = CupParser.parse(unparsed);
-				if (guide != null) { return new BTLGrader(maxPoints, repeats, maxSteps, threshold, name,
-				        unparsed.trim(), guide); }
-			} catch (final Exception e) {
-				System.err.println("Could not parse guide: " + unparsed);
-				e.printStackTrace();
-			}
+			final Guide guide = CupParser.parse(unparsed);
+			if (guide != null) { return new BTLGrader(maxPoints, repeats, maxSteps, threshold, name, unparsed.trim(),
+			        guide); }
 		}
 		return null;
 	}
