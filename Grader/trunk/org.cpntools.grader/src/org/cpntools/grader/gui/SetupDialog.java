@@ -6,6 +6,7 @@ import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.io.FilenameFilter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -91,7 +92,26 @@ public class SetupDialog extends JDialog {
 		files = new JPanel(new BorderLayout());
 		final FileChooser baseModel = new FileChooser("Base model", true);
 		getFiles().add(baseModel, BorderLayout.NORTH);
-		final FileChooser outputDir = new FileChooser("Model directory", true, false);
+		final FileChooser outputDir = new FileChooser("Model directory", true, false) {
+			@Override
+			protected void updated() {
+				if (baseModel.getSelected().getName().equals("")) {
+					final File base = new File(getSelected(), "base");
+					if (base.exists() && base.isDirectory()) {
+						for (final File f : base.listFiles(new FilenameFilter() {
+							@Override
+							public boolean accept(final File arg0, final String arg1) {
+								return arg1.endsWith(".cpn");
+							}
+
+						})) {
+							baseModel.setSelected(f);
+						}
+					}
+				}
+				SetupDialog.this.update(getSelected());
+			}
+		};
 		getFiles().add(outputDir, BorderLayout.CENTER);
 
 		final JPanel secret = new JPanel(new BorderLayout());
@@ -131,7 +151,11 @@ public class SetupDialog extends JDialog {
 		pack();
 	}
 
+	protected void update(final File selected) {
+
+	}
+
 	public JPanel getFiles() {
-	    return files;
-    }
+		return files;
+	}
 }

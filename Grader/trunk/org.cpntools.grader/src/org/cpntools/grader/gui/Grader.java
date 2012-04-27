@@ -33,8 +33,23 @@ public class Grader {
 	 * @param args
 	 */
 	public static void main(final String[] args) {
-		final SetupDialog setup = new SetupDialog();
 		final FileChooser configuration = new FileChooser("Configuration", true);
+		final SetupDialog setup = new SetupDialog() {
+			@Override
+			protected void update(final File outputDir) {
+				if (configuration.getSelected().getName().equals("")) {
+					for (final File f : outputDir.listFiles(new FilenameFilter() {
+						@Override
+						public boolean accept(final File arg0, final String arg1) {
+							return arg1.endsWith(".cfg");
+						}
+
+					})) {
+						configuration.setSelected(f);
+					}
+				}
+			}
+		};
 		setup.getFiles().add(configuration, BorderLayout.SOUTH);
 		setup.setVisible(true);
 
