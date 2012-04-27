@@ -66,7 +66,7 @@ public class MonitoringGrader extends AbstractGrader {
 			if (m.group(8) != null) {
 				String params = m.group(8);
 				do {
-					final Matcher m2 = p.matcher(m.group(8));
+					final Matcher m2 = this.params.matcher(params);
 					if (m2.matches() && m2.group(1) != null && m2.group(2) != null) {
 						final String name = m2.group(1);
 						final List<String> values = new ArrayList<String>();
@@ -134,10 +134,10 @@ public class MonitoringGrader extends AbstractGrader {
 		} while (repsDir.exists() && repsDir.isDirectory());
 		repsDir = new File(simulator.getOutputDir(), "reps_" + --number);
 		return new Detail[] {
-		        new Detail("Monitoring Results", extractAndCleanTable(new Scanner(new File(repsDir,
+		        new Detail("Monitoring Results " + values, extractAndCleanTable(new Scanner(new File(repsDir,
 		                "PerfReportIID.html")).useDelimiter("\\Z").next(), values)),
-		        new Detail("Replication Report", cleanText(new Scanner(new File(repsDir, "replication_report.txt"))
-		                .useDelimiter("\\Z").next(), values)) };
+		        new Detail("Replication Report" + values, cleanText(new Scanner(new File(repsDir,
+		                "replication_report.txt")).useDelimiter("\\Z").next(), values)) };
 	}
 
 	private String cleanText(final String next, final Map<String, String> values) {
@@ -156,22 +156,59 @@ public class MonitoringGrader extends AbstractGrader {
 	}
 
 	private String extractAndCleanTable(final String next, final Map<String, String> values) {
-		String text = next.replaceFirst("([\\r\\n]|.*?)*?<table[^>]*>", "");
-		text = text.replaceFirst("</table>([\\n\\r]|.*?)*$", "");
+		String text = next.replaceFirst("([\\r\\n]|.*?)*?<table[^>]*>", "<table>");
+		text = text.replaceAll("<table[^>]*>",
+		        "<font size=\"-2\"><table style=\"border-top: 3px solid black; border-bottom: 3px solid black\">");
+		text = text.replaceAll("</table>", "</table></font>");
+		text = text.replaceAll("_", " ");
+		text = text.replaceFirst("<p><hr>([\\n\\r]|.*?)*$", "");
 		text = text.replaceAll("<tr>[\\n\\r\\t ]*<tr>", "<tr>");
-		text = "<table style=\"border-top: 3px solid black; border-bottom: 3px solid black\">" + text + "</table>";
+		text = text.replaceAll("<tr>([\\r\\n]|[^<]*)*<th[^>]*>Statistics</th>([\\r\\n]|[^<]*)*</tr>", "");
+
+		text = text.replaceAll("<th> *Name *</th>", "<th>Monitor</th><th>Name</th>");
+		text = text.replaceAll("<th>", "<th align=\"center\">");
+		text = text.replaceAll(
+		        "<tr>([\\r\\n]|[^<]*)*<th colspan=\"[^>]*>([^<]*)</th>([\\n\\r]|[^<]*)*</tr>([\\r\\n]|[^<]*)*<tr>",
+		        "<tr><th rowspan=\"5\">$2</th>");
+		text = text.replaceAll("iid", "");
+		text = text.replaceAll("<td>([0-9 .]*)</td>", "<td align=\"right\">$1</td>");
+
+		final StringBuilder table = new StringBuilder();
+		boolean odd = true;
+		for (final String token : text
+		        .split("(?=(?!^)(<table|<tr))(?<!(<table|<tr))|(?!(<table|<tr))(?<=(<table|<tr))")) {
+			table.append(token);
+			if (token.startsWith("<tr")) {
+				if (!odd) {
+					table.append(" style=\"background-color: #cfcfcf;\"");
+				}
+				odd = !odd;
+			} else if ("<table".equals(token)) {
+				odd = true;
+			}
+		}
 
 		final StringBuilder sb = new StringBuilder("<html>");
-		sb.append("<h4>Parameters</h4><dl>");
-		for (final Entry<String, String> e : values.entrySet()) {
-			sb.append("<dt>");
-			sb.append(e.getKey());
-			sb.append("</dt><dd>");
-			sb.append(e.getValue());
-			sb.append("</dd>");
+		if (!parameters.isEmpty()) {
+			odd = true;
+			sb.append("<table style=\"border-top: 3px solid black; border-bottom: 3px solid black\">");
+			sb.append("<tr><th>Parameter</th><th>Value</th></tr>");
+			for (final Entry<String, String> e : values.entrySet()) {
+				if (odd) {
+					sb.append("<tr style=\"background-color: #cfcfcf\"><td>");
+				} else {
+					sb.append("<tr><td>");
+				}
+				odd = !odd;
+				sb.append(e.getKey());
+				sb.append("</td><td align=\"right\">");
+				sb.append(e.getValue());
+				sb.append("</td></tr>");
+			}
+			sb.append("</table>");
+			sb.append("<p></p>");
 		}
-		sb.append("</dl>");
-		sb.append(text);
+		sb.append(table);
 		sb.append("</html>");
 		return sb.toString();
 	}

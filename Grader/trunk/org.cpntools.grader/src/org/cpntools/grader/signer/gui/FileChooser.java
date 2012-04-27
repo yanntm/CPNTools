@@ -65,8 +65,13 @@ public class FileChooser extends JPanel {
 // }
 				fileName.setText(new File(fileDialog.getDirectory(), fileDialog.getFile()).getAbsolutePath());
 				System.setProperty("apple.awt.fileDialogForDirectories", "false");
+				updated();
 			}
 		});
+	}
+
+	protected void updated() {
+
 	}
 
 	public void openDialog() {
@@ -78,5 +83,9 @@ public class FileChooser extends JPanel {
 	 */
 	public File getSelected() {
 		return new File(fileName.getText());
+	}
+
+	public void setSelected(final File file) {
+		fileName.setText(file.getAbsolutePath());
 	}
 }
