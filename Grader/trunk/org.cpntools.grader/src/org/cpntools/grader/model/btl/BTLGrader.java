@@ -98,13 +98,18 @@ public class BTLGrader extends AbstractGrader {
 		        .getAllTransitionInstances();
 		int error = 0;
 		final Set<State> markings = new HashSet<State>();
+		final EnablingControl ec = (EnablingControl) EnablingControlAdapterFactory.getInstance().adapt(model,
+		        EnablingControl.class);
 		for (int i = 0; i < repeats; i++) {
-			final Detail d = grade(model, simulator, names, allTransitionInstances);
+			final Detail d = grade(model, simulator, names, allTransitionInstances, ec);
 			if (d != null) {
 				error++;
 				details.add(d);
 			} else {
 				try {
+					for (final Instance<Transition> ti : allTransitionInstances) {
+						ec.disable(ti);
+					}
 					markings.add(simulator.getMarking());
 				} catch (final Exception e) {
 				}
@@ -138,11 +143,9 @@ public class BTLGrader extends AbstractGrader {
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	private Detail grade(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
-	        final List<Instance<Transition>> allTransitionInstances) {
+	        final List<Instance<Transition>> allTransitionInstances, final EnablingControl ec) {
 		try {
 			simulator.initialState();
-			final EnablingControl ec = (EnablingControl) EnablingControlAdapterFactory.getInstance().adapt(model,
-			        EnablingControl.class);
 			Condition toSatisfy = guide;
 			final List<Binding> bindings = new ArrayList<Binding>();
 			for (int i = 0; maxSteps < 0 || i < maxSteps; i++) {
