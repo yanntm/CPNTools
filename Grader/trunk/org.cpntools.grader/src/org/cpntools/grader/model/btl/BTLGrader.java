@@ -27,6 +27,8 @@ import org.cpntools.grader.model.btl.model.Failure;
 import org.cpntools.grader.model.btl.model.Guide;
 import org.cpntools.grader.model.btl.model.True;
 import org.cpntools.grader.model.btl.parser.CupParser;
+import org.cpntools.grader.tester.EnablingControl;
+import org.cpntools.grader.tester.EnablingControlAdapterFactory;
 
 public class BTLGrader extends AbstractGrader {
 	public static final Grader INSTANCE = new BTLGrader(0, 0, 0, 0, "", "<null>", True.INSTANCE);
@@ -139,11 +141,36 @@ public class BTLGrader extends AbstractGrader {
 	        final List<Instance<Transition>> allTransitionInstances) {
 		try {
 			simulator.initialState();
+			final EnablingControl ec = (EnablingControl) EnablingControlAdapterFactory.getInstance().adapt(model,
+			        EnablingControl.class);
 			Condition toSatisfy = guide;
 			final List<Binding> bindings = new ArrayList<Binding>();
 			for (int i = 0; maxSteps < 0 || i < maxSteps; i++) {
-				final List<Instance<? extends Transition>> enabled = simulator.isEnabled(allTransitionInstances);
-				final Set<Instance<Transition>> allowed = toSatisfy.force(new HashSet(enabled), model, names);
+				for (final Instance<Transition> ti : allTransitionInstances) {
+					ec.enable(ti);
+				}
+				List<Instance<? extends Transition>> enabled = simulator.isEnabled(allTransitionInstances);
+				while (enabled.isEmpty() && simulator.increaseTime() == null) {
+					enabled = simulator.isEnabled(allTransitionInstances);
+				}
+				Set<Instance<Transition>> allowed = toSatisfy.force(new HashSet(enabled), model, names);
+				boolean changed = true;
+				while (allowed.isEmpty() && changed) {
+					changed = false;
+					for (final Instance<Transition> ti : allTransitionInstances) {
+						if (enabled.contains(ti)) {
+							ec.disable(ti);
+						} else {
+							ec.enable(ti);
+						}
+					}
+					enabled = simulator.isEnabled(allTransitionInstances);
+					while (enabled.isEmpty() && simulator.increaseTime() == null) {
+						changed = true;
+						enabled = simulator.isEnabled(allTransitionInstances);
+					}
+					allowed = toSatisfy.force(new HashSet(enabled), model, names);
+				}
 				if (allowed.isEmpty()) {
 					if (toSatisfy.canTerminate(model, simulator, names)) { return null; }
 					return new Detail("No Allowed Transtions for " + getName(), "Enabled Transitions:\n"

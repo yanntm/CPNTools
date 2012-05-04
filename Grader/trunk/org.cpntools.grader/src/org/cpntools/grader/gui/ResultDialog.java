@@ -258,7 +258,7 @@ public class ResultDialog extends JDialog implements Observer {
 					final ITextRenderer errorRenderer = new ITextRenderer();
 					final ImageUserAgent errorAgent = new ImageUserAgent(errorRenderer.getOutputDevice());
 					errorRenderer.getSharedContext().setUserAgentCallback(errorAgent);
-					error.append("<html><head><title>Errors</title></head><body>");
+					error.append("<html><head><title>Errors</title><style type=\"text/css\">tr.topBorder td, tr.topBorder th { border-top: 1px solid black; }</style></head><body>");
 					for (final int row : table.getSelectedRows()) {
 						Report r;
 						try {
@@ -278,7 +278,7 @@ public class ResultDialog extends JDialog implements Observer {
 
 							writer.append("<html><head><title>Rating for ");
 							writer.append(r.getStudentId().toString());
-							writer.append("</title></head><body><h1>Rating for ");
+							writer.append("</title><style type=\"text/css\">table { border-collapse: collapse; }\nth, td { padding-left: 3px; padding-right: 3px; }\ntr.topBorder td, tr.topBorder th { border-top: 1px solid black; }</style></head><body><h1>Rating for ");
 							writer.append(r.getStudentId().toString());
 							writer.append("</h1>");
 
@@ -292,8 +292,13 @@ public class ResultDialog extends JDialog implements Observer {
 							writer.append("<thead><tr><th>Point range</th><th>Points</th><th>Reason</th><th>Grader</th></tr></thead><tbody style=\"border-top: 2px solid black\">");
 							boolean odd = false;
 							int image = 0;
+							boolean first = true;
 							for (final Entry<Grader, Message> e : r.getReports()) {
 								writer.append("<tr");
+								if (first) {
+									writer.append(" class=\"topBorder\"");
+									first = false;
+								}
 								if (!odd) {
 									writer.append(" style=\"background-color: #cfcfcf\"");
 								}

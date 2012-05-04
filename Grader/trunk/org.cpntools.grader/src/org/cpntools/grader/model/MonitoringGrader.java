@@ -169,8 +169,9 @@ public class MonitoringGrader extends AbstractGrader {
 		text = text.replaceAll("<th>", "<th align=\"center\">");
 		text = text.replaceAll(
 		        "<tr>([\\r\\n]|[^<]*)*<th colspan=\"[^>]*>([^<]*)</th>([\\n\\r]|[^<]*)*</tr>([\\r\\n]|[^<]*)*<tr>",
-		        "<tr><th rowspan=\"5\">$2</th>");
+		        "<tr class=\"topBorder\"><th rowspan=\"5\">$2</th>");
 		text = text.replaceAll("iid", "");
+		text = text.replaceAll("Half Length", "CI");
 		text = text.replaceAll("<td>([0-9 .]*)</td>", "<td align=\"right\">$1</td>");
 
 		final StringBuilder table = new StringBuilder();

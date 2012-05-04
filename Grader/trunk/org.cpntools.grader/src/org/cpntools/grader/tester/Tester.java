@@ -67,16 +67,22 @@ public class Tester extends Observable {
 			result.add(report);
 		}
 
+		notify("Adding enabling control to " + model.getName().getText());
+		EnablingControlAdapterFactory.instance.adapt(model, EnablingControl.class);
 		notify("Checking " + model.getName().getText());
 		HighLevelSimulator simulator = HighLevelSimulator.getHighLevelSimulator();
+// simulator.getSimulator().addObserver(new PacketPrinter(simulator));
 		final Checker checker = new Checker(model, new File(output, model.getName().getText()), simulator);
 		try {
 			// Explicitly ignore localcheck here!
-			checker.checkInitializing(modelPath.getAbsolutePath().toString(), new File(new File(modelPath, "simout"),
-			        studentid.toString()).getAbsolutePath().toString().replaceFirst("[.][cC][pP][nN]$", ""));
+			checker.checkInitializing(
+			        modelPath.getAbsolutePath(),
+			        new File(new File(modelPath, "simout"), studentid.toString()).getAbsolutePath().replaceFirst(
+			                "[.][cC][pP][nN]$", ""));
 			checker.checkDeclarations();
 			checker.generateSerializers();
 			checker.checkPages();
+			simulator.setConfidenceIntervals(95);
 			checker.checkMonitors();
 			checker.generateInstances();
 			checker.initialiseSimulationScheduler();
