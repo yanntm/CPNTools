@@ -70,26 +70,11 @@ public class Tester extends Observable {
 		notify("Adding enabling control to " + model.getName().getText());
 		EnablingControlAdapterFactory.instance.adapt(model, EnablingControl.class);
 		notify("Checking " + model.getName().getText());
-		HighLevelSimulator simulator = HighLevelSimulator.getHighLevelSimulator();
-// simulator.getSimulator().addObserver(new PacketPrinter(simulator));
-		final Checker checker = new Checker(model, new File(output, model.getName().getText()), simulator);
+		final HighLevelSimulator simulator = null;
 		try {
-			// Explicitly ignore localcheck here!
-			checker.checkInitializing(
-			        modelPath.getAbsolutePath(),
-			        new File(new File(modelPath, "simout"), studentid.toString()).getAbsolutePath().replaceFirst(
-			                "[.][cC][pP][nN]$", ""));
-			checker.checkDeclarations();
-			checker.generateSerializers();
-			checker.checkPages();
-			simulator.setConfidenceIntervals(95);
-			checker.checkMonitors();
-			checker.generateInstances();
-			checker.initialiseSimulationScheduler();
-		} catch (final ErrorInitializingSMLInterface _) {
+			checkModel(model, output, modelPath, studentid);
 		} catch (final Exception e) {
 			notify("Error checking model " + e.getMessage());
-			simulator = null;
 		}
 
 		notify("Grading");
@@ -107,5 +92,28 @@ public class Tester extends Observable {
 			}
 		}
 		return result;
+	}
+
+	public static HighLevelSimulator checkModel(final PetriNet model, final File output, final File modelPath,
+	        final StudentID studentid) throws Exception {
+		final HighLevelSimulator simulator = HighLevelSimulator.getHighLevelSimulator();
+// simulator.getSimulator().addObserver(new PacketPrinter(simulator));
+		final Checker checker = new Checker(model, new File(output, model.getName().getText()), simulator);
+		try {
+			// Explicitly ignore localcheck here!
+			checker.checkInitializing(
+			        modelPath.getAbsolutePath(),
+			        new File(new File(modelPath, "simout"), studentid.toString()).getAbsolutePath().replaceFirst(
+			                "[.][cC][pP][nN]$", ""));
+			checker.checkDeclarations();
+			checker.generateSerializers();
+			checker.checkPages();
+			simulator.setConfidenceIntervals(95);
+			checker.checkMonitors();
+			checker.generateInstances();
+			checker.initialiseSimulationScheduler();
+		} catch (final ErrorInitializingSMLInterface _) {
+		}
+		return simulator;
 	}
 }

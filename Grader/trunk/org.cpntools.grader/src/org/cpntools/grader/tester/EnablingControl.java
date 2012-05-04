@@ -24,7 +24,7 @@ import org.cpntools.accesscpn.model.Page;
 import org.cpntools.accesscpn.model.Place;
 import org.cpntools.accesscpn.model.Sort;
 import org.cpntools.accesscpn.model.Transition;
-import org.cpntools.accesscpn.model.cpntypes.CPNBool;
+import org.cpntools.accesscpn.model.cpntypes.CPNUnit;
 import org.cpntools.accesscpn.model.cpntypes.CpntypesFactory;
 import org.cpntools.accesscpn.model.declaration.DeclarationFactory;
 import org.cpntools.accesscpn.model.declaration.TypeDeclaration;
@@ -65,14 +65,14 @@ public class EnablingControl extends PetriNetDataAdapter {
 
 	public void enable(final Instance<Transition> ti) {
 		if (disabled.contains(ti)) {
-			setMarking(ti, "true");
+			setMarking(ti, "()");
 			disabled.remove(ti);
 		}
 	}
 
 	public void disable(final Instance<Transition> ti) {
 		if (!disabled.contains(ti)) {
-			setMarking(ti, "false");
+			setMarking(ti, "");
 			disabled.add(ti);
 		}
 	}
@@ -111,7 +111,7 @@ public class EnablingControl extends PetriNetDataAdapter {
 		arc.setTarget(place);
 		arc.setKind(HLArcType.TEST);
 		final HLAnnotation expr = ModelFactory.INSTANCE.createHLAnnotation();
-		expr.setText("true");
+		expr.setText("()");
 		arc.setHlinscription(expr);
 		arc.setPage(p);
 	}
@@ -122,7 +122,7 @@ public class EnablingControl extends PetriNetDataAdapter {
 		final HLMarking initmark = ModelFactory.INSTANCE.createHLMarking();
 		name.setText("Enabling Control " + id);
 		type.setText(ENABLING_CONTROL);
-		initmark.setText("true");
+		initmark.setText("()");
 		final Place place = ModelFactory.INSTANCE.createPlace();
 		place.setId("enabling" + id);
 		place.setName(name);
@@ -134,7 +134,7 @@ public class EnablingControl extends PetriNetDataAdapter {
 
 	public void addTypeDeclaration() {
 		final TypeDeclaration color = DeclarationFactory.INSTANCE.createTypeDeclaration();
-		final CPNBool bool = CpntypesFactory.INSTANCE.createCPNBool();
+		final CPNUnit bool = CpntypesFactory.INSTANCE.createCPNUnit();
 		color.setSort(bool);
 		color.setTypeName(ENABLING_CONTROL);
 		final HLDeclaration decl = ModelFactory.INSTANCE.createHLDeclaration();
