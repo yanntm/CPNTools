@@ -6,6 +6,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -80,7 +81,7 @@ public class DeclarationSubset extends AbstractGrader {
 	}
 
 	private Map<String, String> getDeclarations(final PetriNet model) {
-		final Map<String, String> declarations = new HashMap<String, String>();
+		final Map<String, String> declarations = new TreeMap<String, String>();
 		for (final HLDeclaration d : model.declaration()) {
 			if (globref && d.getStructure() instanceof GlobalReferenceDeclaration) {
 				final GlobalReferenceDeclaration globref = (GlobalReferenceDeclaration) d.getStructure();
