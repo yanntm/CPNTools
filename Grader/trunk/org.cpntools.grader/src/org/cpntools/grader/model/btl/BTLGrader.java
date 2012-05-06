@@ -1,5 +1,6 @@
 package org.cpntools.grader.model.btl;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -149,31 +150,9 @@ public class BTLGrader extends AbstractGrader {
 			Condition toSatisfy = guide;
 			final List<Binding> bindings = new ArrayList<Binding>();
 			for (int i = 0; maxSteps < 0 || i < maxSteps; i++) {
-				for (final Instance<Transition> ti : allTransitionInstances) {
-					ec.enable(ti);
-				}
-				List<Instance<? extends Transition>> enabled = simulator.isEnabled(allTransitionInstances);
-				while (enabled.isEmpty() && simulator.increaseTime() == null) {
-					enabled = simulator.isEnabled(allTransitionInstances);
-				}
-				Set<Instance<Transition>> allowed = toSatisfy.force(new HashSet(enabled), model, names);
-				boolean changed = true;
-				while (allowed.isEmpty() && changed) {
-					changed = false;
-					for (final Instance<Transition> ti : allTransitionInstances) {
-						if (enabled.contains(ti)) {
-							ec.disable(ti);
-						} else {
-							ec.enable(ti);
-						}
-					}
-					enabled = simulator.isEnabled(allTransitionInstances);
-					while (enabled.isEmpty() && simulator.increaseTime() == null) {
-						changed = true;
-						enabled = simulator.isEnabled(allTransitionInstances);
-					}
-					allowed = toSatisfy.force(new HashSet(enabled), model, names);
-				}
+				final Set<Instance<Transition>> allowed = new HashSet<Instance<Transition>>();
+				final List<Instance<? extends Transition>> enabled = getEnabledAndAllowed(model, simulator, names,
+				        allTransitionInstances, ec, toSatisfy, allowed);
 				if (allowed.isEmpty()) {
 					if (toSatisfy.canTerminate(model, simulator, names)) { return null; }
 					return new Detail("No Allowed Transtions for " + getName(), "Enabled Transitions:\n"
@@ -198,6 +177,45 @@ public class BTLGrader extends AbstractGrader {
 		} catch (final Exception e) {
 			return new Detail("Running " + getName() + " failed", e.toString());
 		}
+	}
+
+	public static List<Instance<? extends Transition>> getEnabledAndAllowed(final PetriNet model,
+	        final HighLevelSimulator simulator, final NameHelper names,
+	        final List<Instance<Transition>> allTransitionInstances, final EnablingControl ec,
+	        final Condition toSatisfy, final Set<Instance<Transition>> allowed) throws IOException {
+		List<Instance<? extends Transition>> enabled = getEnabled(simulator, allTransitionInstances, ec);
+		while (enabled.isEmpty() && simulator.increaseTime() == null) {
+			enabled = simulator.isEnabled(allTransitionInstances);
+		}
+		allowed.addAll(toSatisfy.force(new HashSet(enabled), model, names));
+		boolean changed = true;
+		while (allowed.isEmpty() && changed) {
+			changed = false;
+			for (final Instance<Transition> ti : allTransitionInstances) {
+				if (enabled.contains(ti)) {
+					ec.disable(ti);
+				} else {
+					ec.enable(ti);
+				}
+			}
+			enabled = simulator.isEnabled(allTransitionInstances);
+			while (enabled.isEmpty() && simulator.increaseTime() == null) {
+				changed = true;
+				enabled = simulator.isEnabled(allTransitionInstances);
+			}
+			allowed.clear();
+			allowed.addAll(toSatisfy.force(new HashSet(enabled), model, names));
+		}
+		return enabled;
+	}
+
+	public static List<Instance<? extends Transition>> getEnabled(final HighLevelSimulator simulator,
+	        final List<Instance<Transition>> allTransitionInstances, final EnablingControl ec) throws IOException {
+		for (final Instance<Transition> ti : allTransitionInstances) {
+			ec.enable(ti);
+		}
+		final List<Instance<? extends Transition>> enabled = simulator.isEnabled(allTransitionInstances);
+		return enabled;
 	}
 
 	private String toString(final Collection<?> stuff) {
