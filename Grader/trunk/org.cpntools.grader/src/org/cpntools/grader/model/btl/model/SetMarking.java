@@ -1,12 +1,12 @@
 package org.cpntools.grader.model.btl.model;
 
-import java.io.IOException;
 import java.util.Collections;
 import java.util.Set;
 
 import org.cpntools.accesscpn.engine.highlevel.HighLevelSimulator;
 import org.cpntools.accesscpn.engine.highlevel.instance.Instance;
 import org.cpntools.accesscpn.model.PetriNet;
+import org.cpntools.accesscpn.model.PlaceNode;
 import org.cpntools.grader.model.NameHelper;
 
 /**
@@ -92,8 +92,13 @@ public class SetMarking implements Guide {
 	@Override
 	public void prestep(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names) {
 		try {
-			simulator.setMarking(names.getPlaceInstance(name), value);
-		} catch (final IOException e) {
+			final Instance<PlaceNode> place = names.getPlaceInstance(name);
+			if (place != null) {
+				simulator.setMarking(place, value);
+			} else {
+				simulator.evaluate(name + " := (" + value + ");");
+			}
+		} catch (final Exception e) {
 		}
 	}
 
