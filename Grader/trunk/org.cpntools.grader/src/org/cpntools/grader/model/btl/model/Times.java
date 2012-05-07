@@ -89,4 +89,9 @@ public class Times implements Guide {
 		if (count == 0) { return true; }
 		return g.canTerminate(model, simulator, names);
 	}
+
+	@Override
+	public Set<String> getAtomic() {
+		return g.getAtomic();
+	}
 }

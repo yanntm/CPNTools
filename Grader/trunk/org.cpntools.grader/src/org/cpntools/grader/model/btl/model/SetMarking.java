@@ -1,6 +1,7 @@
 package org.cpntools.grader.model.btl.model;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.Set;
 
 import org.cpntools.accesscpn.engine.highlevel.HighLevelSimulator;
@@ -12,6 +13,7 @@ import org.cpntools.grader.model.NameHelper;
  * @author michael
  */
 public class SetMarking implements Guide {
+
 	private final String name;
 	private final String value;
 
@@ -85,4 +87,10 @@ public class SetMarking implements Guide {
 	public boolean canTerminate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names) {
 		return true;
 	}
+
+	@Override
+	public Set<String> getAtomic() {
+		return Collections.emptySet();
+	}
+
 }

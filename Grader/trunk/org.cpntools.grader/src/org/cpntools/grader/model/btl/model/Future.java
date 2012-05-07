@@ -59,4 +59,10 @@ public class Future implements Guide {
 	public boolean canTerminate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names) {
 		return constraint.canTerminate(model, simulator, names);
 	}
+
+	@Override
+	public Set<String> getAtomic() {
+		return constraint.getAtomic();
+	}
+
 }

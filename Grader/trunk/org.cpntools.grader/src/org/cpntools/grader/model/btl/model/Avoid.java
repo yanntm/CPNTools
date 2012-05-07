@@ -68,4 +68,9 @@ public class Avoid implements Guide {
 		return true;
 	}
 
+	@Override
+	public Set<String> getAtomic() {
+		return condition.getAtomic();
+	}
+
 }

@@ -1,5 +1,8 @@
 package org.cpntools.grader.model.btl.model;
 
+import java.util.Collections;
+import java.util.Set;
+
 import org.cpntools.accesscpn.engine.highlevel.HighLevelSimulator;
 import org.cpntools.accesscpn.model.PetriNet;
 import org.cpntools.grader.model.NameHelper;
@@ -28,5 +31,10 @@ public class Time extends IExpression {
 		} catch (final Exception e) {
 			return Integer.MIN_VALUE;
 		}
+	}
+
+	@Override
+	public Set<String> getAtomic() {
+		return Collections.emptySet();
 	}
 }

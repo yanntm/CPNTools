@@ -1,5 +1,6 @@
 package org.cpntools.grader.model.btl.model;
 
+import java.util.Collections;
 import java.util.Set;
 
 import org.cpntools.accesscpn.engine.highlevel.HighLevelSimulator;
@@ -45,6 +46,11 @@ public final class True extends Simple {
 	@Override
 	public boolean canTerminate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names) {
 		return false; // a true step means any step (just not empty step)
+	}
+
+	@Override
+	public Set<String> getAtomic() {
+		return Collections.emptySet();
 	}
 
 }

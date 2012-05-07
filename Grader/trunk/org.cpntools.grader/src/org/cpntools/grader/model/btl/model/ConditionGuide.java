@@ -76,4 +76,9 @@ public class ConditionGuide implements Guide {
 		return c.canTerminate(model, simulator, names);
 	}
 
+	@Override
+	public Set<String> getAtomic() {
+		return c.getAtomic();
+	}
+
 }

@@ -96,4 +96,12 @@ public class SimpleOr extends Simple {
 		return s1.canTerminate(model, simulator, names) || s2.canTerminate(model, simulator, names);
 	}
 
+	@Override
+	public Set<String> getAtomic() {
+		final Set<String> result = new HashSet<String>();
+		result.addAll(s1.getAtomic());
+		result.addAll(s2.getAtomic());
+		return result;
+	}
+
 }

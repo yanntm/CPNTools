@@ -76,4 +76,9 @@ public class Repeat implements Guide {
 		return true;
 	}
 
+	@Override
+	public Set<String> getAtomic() {
+		return s.getAtomic();
+	}
+
 }

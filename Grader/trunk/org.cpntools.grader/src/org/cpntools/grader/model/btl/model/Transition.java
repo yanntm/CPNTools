@@ -74,4 +74,10 @@ public class Transition extends Simple {
 	public boolean canTerminate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names) {
 		return false;
 	}
+
+	@Override
+	public Set<String> getAtomic() {
+		return Collections.singleton(name);
+	}
+
 }

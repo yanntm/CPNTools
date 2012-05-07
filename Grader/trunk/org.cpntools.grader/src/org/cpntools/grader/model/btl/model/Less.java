@@ -1,5 +1,8 @@
 package org.cpntools.grader.model.btl.model;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import org.cpntools.accesscpn.engine.highlevel.HighLevelSimulator;
 import org.cpntools.accesscpn.model.PetriNet;
 import org.cpntools.grader.model.NameHelper;
@@ -67,6 +70,14 @@ public class Less extends BExpression {
 	@Override
 	public boolean evaluate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names) {
 		return e1.evaluate(model, simulator, names) < e2.evaluate(model, simulator, names);
+	}
+
+	@Override
+	public Set<String> getAtomic() {
+		final Set<String> result = new HashSet<String>();
+		result.addAll(e1.getAtomic());
+		result.addAll(e2.getAtomic());
+		return result;
 	}
 
 }
