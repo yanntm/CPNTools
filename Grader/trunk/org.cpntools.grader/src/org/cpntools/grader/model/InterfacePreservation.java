@@ -197,19 +197,13 @@ public class InterfacePreservation extends AbstractGrader {
 	}
 
 	private Map<String, HasId> compare(final Page page1, final Page page2) {
-		final Map<String, HasId> nodes1 = NameHelper.getNodes(page1, initmark);
-		final Map<String, HasId> nodes2 = NameHelper.getNodes(page2, initmark);
-
 		final EnablingControl baseec = (EnablingControl) EnablingControlAdapterFactory.getInstance().adapt(
 		        page1.getPetriNet(), EnablingControl.class);
 		final EnablingControl modelec = (EnablingControl) EnablingControlAdapterFactory.getInstance().adapt(
 		        page2.getPetriNet(), EnablingControl.class);
-		for (final String key : NameHelper.getNodes(baseec.getPlaces(page1), initmark).keySet()) {
-			nodes1.remove(key);
-		}
-		for (final String key : NameHelper.getNodes(modelec.getPlaces(page2), initmark).keySet()) {
-			nodes2.remove(key);
-		}
+
+		final Map<String, HasId> nodes1 = NameHelper.getNodes(page1, baseec.getPlaces(page1), initmark);
+		final Map<String, HasId> nodes2 = NameHelper.getNodes(page2, modelec.getPlaces(page2), initmark);
 
 		final Set<String> keys = new HashSet<String>(nodes1.keySet());
 		for (final String key : nodes2.keySet()) {

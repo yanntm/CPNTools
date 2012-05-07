@@ -109,7 +109,9 @@ public class Finally implements Guide {
 
 	@Override
 	public void prestep(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names) {
-		condition.prestep(model, simulator, names);
+		if (condition != null) {
+			condition.prestep(model, simulator, names);
+		}
 	}
 
 }

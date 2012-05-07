@@ -175,6 +175,7 @@ public class BTLGrader extends AbstractGrader {
 			        "Parsed Formula:\n" + guide, "Formula at error:\n" + toSatisfy, "Marking at error:\n"
 			                + simulator.getMarking(false));
 		} catch (final Exception e) {
+			e.printStackTrace();
 			return new Detail("Running " + getName() + " failed", e.toString());
 		}
 	}

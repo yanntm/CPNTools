@@ -61,26 +61,34 @@ public class NameHelper {
 		return name;
 	}
 
-	public static Map<String, HasId> getNodes(final Page page, final boolean initmark) {
-		final Map<String, HasId> result = getNodes(page.getObject(), initmark);
+	public static Map<String, HasId> getNodes(final Page page, final Collection<? extends Object> collection,
+	        final boolean initmark) {
+		final Set<String> ignore = new HashSet<String>();
+		for (final Object p : collection) {
+			ignore.add(p.getId());
+		}
+		final Map<String, HasId> result = getNodes(page.getObject(), ignore, initmark);
 		for (final Arc a : page.getArc()) {
-			final StringBuilder sb = new StringBuilder();
-			sb.append("Source: " + getText(a.getSource().getName()));
-			sb.append("Target: " + getText(a.getTarget().getName()));
-			sb.append("Expression: " + getText(a.getHlinscription()));
-			if (a.getKind() == HLArcType.TEST) {
-				sb.append("Double Arc\n");
+			if (!ignore.contains(a.getSource().getId()) && !ignore.contains(a.getTarget().getId())) {
+				final StringBuilder sb = new StringBuilder();
+				sb.append("Source: " + getText(a.getSource().getName()));
+				sb.append("Target: " + getText(a.getTarget().getName()));
+				sb.append("Expression: " + getText(a.getHlinscription()));
+				if (a.getKind() == HLArcType.TEST) {
+					sb.append("Double Arc\n");
+				}
+				result.put(sb.toString(), a);
 			}
-			result.put(sb.toString(), a);
 		}
 		return result;
 	}
 
-	public static Map<String, HasId> getNodes(final Collection<? extends Object> list, final boolean initmark) {
+	public static Map<String, HasId> getNodes(final Collection<? extends Object> list, final Set<String> ignore,
+	        final boolean initmark) {
 		final Map<String, HasId> result = new HashMap<String, HasId>();
 		for (final org.cpntools.accesscpn.model.Object o : list) {
 			final StringBuilder sb = new StringBuilder();
-			if (o instanceof Node) {
+			if (o instanceof Node && !ignore.contains(o.getId())) {
 				final Node n = (Node) o;
 				if (n instanceof PlaceNode) {
 					final PlaceNode pn = (PlaceNode) n;

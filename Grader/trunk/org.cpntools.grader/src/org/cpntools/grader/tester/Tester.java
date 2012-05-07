@@ -70,11 +70,12 @@ public class Tester extends Observable {
 		notify("Adding enabling control to " + model.getName().getText());
 		EnablingControlAdapterFactory.instance.adapt(model, EnablingControl.class);
 		notify("Checking " + model.getName().getText());
-		final HighLevelSimulator simulator = null;
+		HighLevelSimulator simulator = null;
 		try {
-			checkModel(model, output, modelPath, studentid);
+			simulator = checkModel(model, output, modelPath, studentid);
 		} catch (final Exception e) {
 			notify("Error checking model " + e.getMessage());
+			e.printStackTrace();
 		}
 
 		notify("Grading");
@@ -88,6 +89,7 @@ public class Tester extends Observable {
 					r.addReport(grader, message);
 				} catch (final Exception e) {
 					r.addError("Grader " + grader.getClass().getCanonicalName() + " failed with exception " + e);
+					e.printStackTrace();
 				}
 			}
 		}
@@ -108,8 +110,8 @@ public class Tester extends Observable {
 			checker.checkDeclarations();
 			checker.generateSerializers();
 			checker.checkPages();
-			simulator.setConfidenceIntervals(95);
 			checker.checkMonitors();
+			simulator.setConfidenceIntervals(95);
 			checker.generateInstances();
 			checker.initialiseSimulationScheduler();
 		} catch (final ErrorInitializingSMLInterface _) {
