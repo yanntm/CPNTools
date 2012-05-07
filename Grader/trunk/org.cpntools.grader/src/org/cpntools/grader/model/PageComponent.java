@@ -92,6 +92,7 @@ public class PageComponent extends JComponent {
 	private void paint(final Graphics2D g2d, final Arc a) {
 		final Shape tshape = shapes.get(a.getPlaceNode());
 		final Shape sshape = shapes.get(a.getOtherEnd(a.getPlaceNode()));
+		if (tshape == null || sshape == null) { return; }
 		final Rectangle tbounds = tshape.getBounds();
 		final Rectangle sbounds = sshape.getBounds();
 		final Point2D t = new Point2D.Double(tbounds.getCenterX(), tbounds.getCenterY());
