@@ -48,4 +48,9 @@ public final class Failure extends Simple {
 		return false;
 	}
 
+	@Override
+	public Set<String> getAtomic() {
+		return Collections.emptySet();
+	}
+
 }

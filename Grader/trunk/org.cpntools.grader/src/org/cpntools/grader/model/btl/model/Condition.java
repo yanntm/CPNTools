@@ -18,4 +18,9 @@ public interface Condition {
 	        HighLevelSimulator simulator, NameHelper names) throws Unconsumed;
 
 	boolean canTerminate(PetriNet model, HighLevelSimulator simulator, NameHelper names);
+
+	/**
+	 * @return
+	 */
+	Set<String> getAtomic();
 }

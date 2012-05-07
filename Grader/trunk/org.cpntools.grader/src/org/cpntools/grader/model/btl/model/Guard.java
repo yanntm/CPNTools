@@ -1,5 +1,6 @@
 package org.cpntools.grader.model.btl.model;
 
+import java.util.HashSet;
 import java.util.Set;
 
 import org.cpntools.accesscpn.engine.highlevel.HighLevelSimulator;
@@ -99,6 +100,14 @@ public class Guard implements Guide {
 	public boolean canTerminate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names) {
 		if (condition.canTerminate(model, simulator, names)) { return constraint.canTerminate(model, simulator, names); }
 		return true;
+	}
+
+	@Override
+	public Set<String> getAtomic() {
+		final Set<String> result = new HashSet<String>();
+		result.addAll(condition.getAtomic());
+		result.addAll(constraint.getAtomic());
+		return result;
 	}
 
 }

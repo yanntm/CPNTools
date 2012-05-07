@@ -1,5 +1,8 @@
 package org.cpntools.grader.model.btl.model;
 
+import java.util.Collections;
+import java.util.Set;
+
 import org.cpntools.accesscpn.engine.highlevel.HighLevelSimulator;
 import org.cpntools.accesscpn.model.PetriNet;
 import org.cpntools.grader.model.NameHelper;
@@ -54,6 +57,11 @@ public class Constant extends IExpression {
 	@Override
 	public int evaluate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names) {
 		return value;
+	}
+
+	@Override
+	public Set<String> getAtomic() {
+		return Collections.emptySet();
 	}
 
 }

@@ -106,4 +106,12 @@ public class And implements Guide {
 		return g1.canTerminate(model, simulator, names) && g2.canTerminate(model, simulator, names);
 	}
 
+	@Override
+	public Set<String> getAtomic() {
+		final Set<String> result = new HashSet<String>();
+		result.addAll(g1.getAtomic());
+		result.addAll(g2.getAtomic());
+		return result;
+	}
+
 }

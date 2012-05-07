@@ -1,5 +1,7 @@
 package org.cpntools.grader.model.btl.model;
 
+import java.util.Set;
+
 import org.cpntools.accesscpn.engine.highlevel.HighLevelSimulator;
 import org.cpntools.accesscpn.model.PetriNet;
 import org.cpntools.grader.model.NameHelper;
@@ -56,5 +58,10 @@ public class LogicalNot extends BExpression {
 	@Override
 	public boolean evaluate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names) {
 		return !b.evaluate(model, simulator, names);
+	}
+
+	@Override
+	public Set<String> getAtomic() {
+		return b.getAtomic();
 	}
 }

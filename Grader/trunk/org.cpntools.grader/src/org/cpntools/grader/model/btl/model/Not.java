@@ -77,4 +77,9 @@ public class Not extends Simple {
 		return !child.canTerminate(model, simulator, names);
 	}
 
+	@Override
+	public Set<String> getAtomic() {
+		return child.getAtomic();
+	}
+
 }
