@@ -114,4 +114,10 @@ public class And implements Guide {
 		return result;
 	}
 
+	@Override
+	public void prestep(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names) {
+		g1.prestep(model, simulator, names);
+		g2.prestep(model, simulator, names);
+	}
+
 }

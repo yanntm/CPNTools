@@ -81,4 +81,9 @@ public class ConditionGuide implements Guide {
 		return c.getAtomic();
 	}
 
+	@Override
+	public void prestep(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names) {
+		c.prestep(model, simulator, names);
+	}
+
 }

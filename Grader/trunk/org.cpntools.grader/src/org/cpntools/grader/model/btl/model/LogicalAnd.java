@@ -80,4 +80,10 @@ public class LogicalAnd extends BExpression {
 		return result;
 	}
 
+	@Override
+	public void prestep(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names) {
+		b1.prestep(model, simulator, names);
+		b2.prestep(model, simulator, names);
+	}
+
 }

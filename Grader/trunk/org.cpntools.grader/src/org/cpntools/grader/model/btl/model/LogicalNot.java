@@ -64,4 +64,10 @@ public class LogicalNot extends BExpression {
 	public Set<String> getAtomic() {
 		return b.getAtomic();
 	}
+
+	@Override
+	public void prestep(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names) {
+
+	}
+
 }

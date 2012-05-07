@@ -70,4 +70,9 @@ public class Place extends IExpression {
 		return Collections.emptySet();
 	}
 
+	@Override
+	public void prestep(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names) {
+
+	}
+
 }

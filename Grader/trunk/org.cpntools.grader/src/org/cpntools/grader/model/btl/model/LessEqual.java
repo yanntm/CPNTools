@@ -80,4 +80,10 @@ public class LessEqual extends BExpression {
 		return result;
 	}
 
+	@Override
+	public void prestep(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names) {
+		e1.prestep(model, simulator, names);
+		e2.prestep(model, simulator, names);
+	}
+
 }

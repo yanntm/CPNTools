@@ -103,4 +103,10 @@ public class SimpleAnd extends Simple {
 		return result;
 	}
 
+	@Override
+	public void prestep(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names) {
+		s1.prestep(model, simulator, names);
+		s2.prestep(model, simulator, names);
+	}
+
 }

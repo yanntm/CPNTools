@@ -73,4 +73,9 @@ public class Avoid implements Guide {
 		return condition.getAtomic();
 	}
 
+	@Override
+	public void prestep(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names) {
+		condition.prestep(model, simulator, names);
+	}
+
 }

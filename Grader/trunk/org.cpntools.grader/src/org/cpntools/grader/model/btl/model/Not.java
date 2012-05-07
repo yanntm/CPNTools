@@ -82,4 +82,9 @@ public class Not extends Simple {
 		return child.getAtomic();
 	}
 
+	@Override
+	public void prestep(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names) {
+
+	}
+
 }
