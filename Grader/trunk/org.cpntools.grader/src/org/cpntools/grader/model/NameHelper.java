@@ -20,6 +20,7 @@ import org.cpntools.accesscpn.model.Arc;
 import org.cpntools.accesscpn.model.HLArcType;
 import org.cpntools.accesscpn.model.HasId;
 import org.cpntools.accesscpn.model.Node;
+import org.cpntools.accesscpn.model.Object;
 import org.cpntools.accesscpn.model.Page;
 import org.cpntools.accesscpn.model.PetriNet;
 import org.cpntools.accesscpn.model.Place;
@@ -61,8 +62,23 @@ public class NameHelper {
 	}
 
 	public static Map<String, HasId> getNodes(final Page page, final boolean initmark) {
+		final Map<String, HasId> result = getNodes(page.getObject(), initmark);
+		for (final Arc a : page.getArc()) {
+			final StringBuilder sb = new StringBuilder();
+			sb.append("Source: " + getText(a.getSource().getName()));
+			sb.append("Target: " + getText(a.getTarget().getName()));
+			sb.append("Expression: " + getText(a.getHlinscription()));
+			if (a.getKind() == HLArcType.TEST) {
+				sb.append("Double Arc\n");
+			}
+			result.put(sb.toString(), a);
+		}
+		return result;
+	}
+
+	public static Map<String, HasId> getNodes(final List<? extends Object> list, final boolean initmark) {
 		final Map<String, HasId> result = new HashMap<String, HasId>();
-		for (final org.cpntools.accesscpn.model.Object o : page.getObject()) {
+		for (final org.cpntools.accesscpn.model.Object o : list) {
 			final StringBuilder sb = new StringBuilder();
 			if (o instanceof Node) {
 				final Node n = (Node) o;
@@ -106,16 +122,6 @@ public class NameHelper {
 				sb.append("Name: " + getText(n.getName()));
 			}
 			result.put(sb.toString(), o);
-		}
-		for (final Arc a : page.getArc()) {
-			final StringBuilder sb = new StringBuilder();
-			sb.append("Source: " + getText(a.getSource().getName()));
-			sb.append("Target: " + getText(a.getTarget().getName()));
-			sb.append("Expression: " + getText(a.getHlinscription()));
-			if (a.getKind() == HLArcType.TEST) {
-				sb.append("Double Arc\n");
-			}
-			result.put(sb.toString(), a);
 		}
 		return result;
 	}

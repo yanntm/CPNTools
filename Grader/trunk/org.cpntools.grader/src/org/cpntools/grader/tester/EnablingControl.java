@@ -55,6 +55,23 @@ public class EnablingControl extends PetriNetDataAdapter {
 		}
 	}
 
+	public Collection<Instance<Place>> getPlaces(final Instance<Page> pi) {
+		final Set<Instance<Place>> result = new HashSet<Instance<Place>>();
+		for (final Transition t : pi.getNode().transition()) {
+			result.add(InstanceFactory.INSTANCE.createInstance(enablingPlaces.get(t), pi.getTransitionPath()));
+		}
+		return result;
+	}
+
+	public Collection<Place> getPlaces(final Page p) {
+		final Set<Place> result = new HashSet<Place>();
+		for (final Transition t : p.transition()) {
+			result.add(enablingPlaces.get(t));
+		}
+		return result;
+
+	}
+
 	private Collection<Transition> list(final Iterable<Transition> transition) {
 		final ArrayList<Transition> result = new ArrayList<Transition>();
 		for (final Transition t : transition) {

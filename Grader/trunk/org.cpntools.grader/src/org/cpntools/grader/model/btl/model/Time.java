@@ -27,10 +27,19 @@ public class Time extends IExpression {
 	@Override
 	public int evaluate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names) {
 		try {
-			return Integer.parseInt(simulator.getTime());
+			final String time = simulator.getTime();
+			try {
+				return Integer.parseInt(time);
+			} catch (final Exception e1) {
+				try {
+					return (int) Math.round(Double.parseDouble(time));
+				} catch (final Exception e2) {
+				}
+			}
 		} catch (final Exception e) {
-			return Integer.MIN_VALUE;
+
 		}
+		return Integer.MIN_VALUE;
 	}
 
 	@Override
