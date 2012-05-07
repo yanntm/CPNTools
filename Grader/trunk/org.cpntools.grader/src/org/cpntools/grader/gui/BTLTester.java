@@ -429,6 +429,7 @@ public class BTLTester extends JDialog {
 			final Guide parsed = CupParser.parse(initFormula.getText());
 			parsedFormula.setText(parsed.toString());
 			currentFormula.setText(parsed.toString());
+			current = parsed;
 			refreshMapping(parsed);
 		} catch (final Exception e) {
 			parsedFormula.setText("Could not parse formula: " + e);
