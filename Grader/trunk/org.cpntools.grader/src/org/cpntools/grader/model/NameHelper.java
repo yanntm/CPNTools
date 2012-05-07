@@ -76,7 +76,7 @@ public class NameHelper {
 		return result;
 	}
 
-	public static Map<String, HasId> getNodes(final List<? extends Object> list, final boolean initmark) {
+	public static Map<String, HasId> getNodes(final Collection<? extends Object> list, final boolean initmark) {
 		final Map<String, HasId> result = new HashMap<String, HasId>();
 		for (final org.cpntools.accesscpn.model.Object o : list) {
 			final StringBuilder sb = new StringBuilder();
