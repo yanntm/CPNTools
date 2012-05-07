@@ -65,4 +65,9 @@ public class Future implements Guide {
 		return constraint.getAtomic();
 	}
 
+	@Override
+	public void prestep(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names) {
+		constraint.prestep(model, simulator, names);
+	}
+
 }

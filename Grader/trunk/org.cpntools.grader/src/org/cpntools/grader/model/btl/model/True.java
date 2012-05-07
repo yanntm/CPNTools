@@ -53,4 +53,9 @@ public final class True extends Simple {
 		return Collections.emptySet();
 	}
 
+	@Override
+	public void prestep(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names) {
+
+	}
+
 }

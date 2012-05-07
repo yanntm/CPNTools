@@ -81,4 +81,9 @@ public class Repeat implements Guide {
 		return s.getAtomic();
 	}
 
+	@Override
+	public void prestep(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names) {
+		s.prestep(model, simulator, names);
+	}
+
 }

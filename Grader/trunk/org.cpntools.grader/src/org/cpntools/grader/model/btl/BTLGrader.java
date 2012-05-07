@@ -183,6 +183,9 @@ public class BTLGrader extends AbstractGrader {
 	        final HighLevelSimulator simulator, final NameHelper names,
 	        final List<Instance<Transition>> allTransitionInstances, final EnablingControl ec,
 	        final Condition toSatisfy, final Set<Instance<Transition>> allowed) throws IOException {
+		if (toSatisfy != null) {
+			toSatisfy.prestep(model, simulator, names);
+		}
 		List<Instance<? extends Transition>> enabled = getEnabled(simulator, allTransitionInstances, ec);
 		while (enabled.isEmpty() && simulator.increaseTime() == null) {
 			enabled = simulator.isEnabled(allTransitionInstances);

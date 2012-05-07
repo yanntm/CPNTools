@@ -72,10 +72,6 @@ public class SetMarking implements Guide {
 	@Override
 	public Guide progress(final Instance<org.cpntools.accesscpn.model.Transition> ti, final PetriNet model,
 	        final HighLevelSimulator simulator, final NameHelper names) throws Unconsumed {
-		try {
-			simulator.setMarking(names.getPlaceInstance(name), value);
-		} catch (final IOException e) {
-		}
 		throw new Unconsumed();
 	}
 
@@ -91,6 +87,14 @@ public class SetMarking implements Guide {
 	@Override
 	public Set<String> getAtomic() {
 		return Collections.emptySet();
+	}
+
+	@Override
+	public void prestep(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names) {
+		try {
+			simulator.setMarking(names.getPlaceInstance(name), value);
+		} catch (final IOException e) {
+		}
 	}
 
 }

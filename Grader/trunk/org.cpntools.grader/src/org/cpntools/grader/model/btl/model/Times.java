@@ -94,4 +94,9 @@ public class Times implements Guide {
 	public Set<String> getAtomic() {
 		return g.getAtomic();
 	}
+
+	@Override
+	public void prestep(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names) {
+		g.prestep(model, simulator, names);
+	}
 }

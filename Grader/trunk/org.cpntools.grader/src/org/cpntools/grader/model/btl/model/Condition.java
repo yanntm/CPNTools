@@ -11,6 +11,8 @@ import org.cpntools.grader.model.NameHelper;
  * @author michael
  */
 public interface Condition {
+	public void prestep(final PetriNet model, HighLevelSimulator simulator, final NameHelper names);
+
 	Set<Instance<org.cpntools.accesscpn.model.Transition>> force(
 	        Set<Instance<org.cpntools.accesscpn.model.Transition>> candidates, PetriNet model, NameHelper names);
 

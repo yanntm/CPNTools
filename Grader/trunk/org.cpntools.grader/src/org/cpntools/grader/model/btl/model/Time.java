@@ -46,4 +46,9 @@ public class Time extends IExpression {
 	public Set<String> getAtomic() {
 		return Collections.emptySet();
 	}
+
+	@Override
+	public void prestep(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names) {
+
+	}
 }

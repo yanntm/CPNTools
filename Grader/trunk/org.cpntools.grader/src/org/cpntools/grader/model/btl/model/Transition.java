@@ -80,4 +80,9 @@ public class Transition extends Simple {
 		return Collections.singleton(name);
 	}
 
+	@Override
+	public void prestep(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names) {
+
+	}
+
 }
