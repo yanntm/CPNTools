@@ -174,6 +174,12 @@ public class MonitoringGrader extends AbstractGrader {
 		text = text.replaceAll("Half Length", "CI");
 		text = text.replaceAll("<td>([0-9 .]*)</td>", "<td align=\"right\">$1</td>");
 
+		String numbers = text;
+		do {
+			text = numbers;
+			numbers = numbers.replaceAll("([0-9])([0-9][0-9][0-9][.,])", "$1,$2");
+		} while (!numbers.equals(text));
+
 		final StringBuilder table = new StringBuilder();
 		boolean odd = true;
 		for (final String token : text
