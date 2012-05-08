@@ -20,6 +20,7 @@ public class Parser {
 
 	public synchronized static List<Grader> parse(final InputStream i, final String section, final GraderFactory factory)
 	        throws IOException, ParserException {
+		i.mark(1000000);
 		final BufferedReader reader = new BufferedReader(new InputStreamReader(i));
 		final List<Grader> result = new ArrayList<Grader>();
 		String line = reader.readLine();

@@ -39,32 +39,37 @@ public class Tester extends Observable {
 	}
 
 	public List<Report> test(final PetriNet model, final File modelPath) throws Exception {
-		notify("Categorizing");
 		StudentID studentid = null;
 		final List<Report> result = new ArrayList<Report>();
-		for (final StudentID sid : ids) {
-			final Message message = suite.getMatcher().grade(sid, base, model, null);
-			if (message.getPoints() > suite.getMatcher().getMinPoints()) {
+		if (ids != null) {
+			notify("Categorizing");
+			for (final StudentID sid : ids) {
+				final Message message = suite.getMatcher().grade(sid, base, model, null);
+				if (message.getPoints() > suite.getMatcher().getMinPoints()) {
+					studentid = sid;
+					notify("Model matches " + sid);
+					final Report report = new Report(sid);
+					report.addReport(suite.getMatcher(), message);
+					result.add(report);
+				}
+			}
+			if (result.size() > 1) {
+				for (final Report report : result) {
+					report.addError("This model matches multiple students");
+				}
+			}
+			if (result.size() == 0) {
+				final String id = model.getName().getText().trim();
+				notify("Model doesn't match anybody - using generated id `generated_" + id + "'");
+				final StudentID sid = new StudentID("generated_" + id);
 				studentid = sid;
-				notify("Model matches " + sid);
 				final Report report = new Report(sid);
-				report.addReport(suite.getMatcher(), message);
+				report.addReport(suite.getMatcher(), suite.getMatcher().grade(sid, base, model, null));
 				result.add(report);
 			}
-		}
-		if (result.size() > 1) {
-			for (final Report report : result) {
-				report.addError("This model matches multiple students");
-			}
-		}
-		if (result.size() == 0) {
-			final String id = model.getName().getText().trim();
-			notify("Model doesn't match anybody - using generated id `generated_" + id + "'");
-			final StudentID sid = new StudentID("generated_" + id);
-			studentid = sid;
-			final Report report = new Report(sid);
-			report.addReport(suite.getMatcher(), suite.getMatcher().grade(sid, base, model, null));
-			result.add(report);
+		} else {
+			studentid = new StudentID(modelPath.getName().replaceAll("[.][cC][pP][nN]$", ""));
+			result.add(new Report(studentid));
 		}
 
 		notify("Adding enabling control to " + model.getName().getText());

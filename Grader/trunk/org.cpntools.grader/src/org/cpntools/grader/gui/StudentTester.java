@@ -3,8 +3,13 @@ package org.cpntools.grader.gui;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.InputStream;
+import java.util.List;
+import java.util.Map.Entry;
 import java.util.Observable;
 import java.util.Observer;
 
@@ -19,17 +24,30 @@ import javax.swing.JTextArea;
 
 import org.cpntools.accesscpn.model.PetriNet;
 import org.cpntools.accesscpn.model.importer.DOMParser;
+import org.cpntools.grader.model.ConfigurationTestSuite;
+import org.cpntools.grader.model.Grader;
+import org.cpntools.grader.model.Message;
+import org.cpntools.grader.model.TestSuite;
+import org.cpntools.grader.tester.Report;
+import org.cpntools.grader.tester.Tester;
 
 /**
  * @author michael
  */
 public class StudentTester extends JDialog implements Observer {
+	private static final int PROGRESS_MAX = 10;
 	private final JTextArea log;
 	private final InputStream baseStream;
 	private final InputStream configStream;
 	private final File model;
 	private PetriNet petriNet;
 	private final JProgressBar progressBar;
+	private TestSuite suite;
+	private int progress = 0;
+	private Tester tester;
+	private final JButton cancelButton;
+	private final JButton exportButton;
+	private List<Report> testResult;
 
 	public StudentTester(final InputStream baseStream, final InputStream configStream, final File model) {
 		this.baseStream = baseStream;
@@ -43,12 +61,28 @@ public class StudentTester extends JDialog implements Observer {
 		final JScrollPane logScroller = new JScrollPane(log);
 		add(logScroller);
 		logScroller.setPreferredSize(new Dimension(500, 250));
-		final JButton cancelButton = new JButton("Cancel");
+		cancelButton = new JButton("Cancel");
+		cancelButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(final ActionEvent arg0) {
+				System.exit(0);
+			}
+		});
+
+		exportButton = new JButton("Export PDF");
+		exportButton.setEnabled(false);
+		exportButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(final ActionEvent arg0) {
+				System.exit(0);
+			}
+		});
 		final JPanel buttons = new JPanel(new FlowLayout(FlowLayout.CENTER));
 		add(buttons, BorderLayout.SOUTH);
+		buttons.add(exportButton);
 		buttons.add(cancelButton);
 
-		progressBar = new JProgressBar(0, 10);
+		progressBar = new JProgressBar(0, PROGRESS_MAX);
 		progressBar.setStringPainted(true);
 		add(progressBar, BorderLayout.NORTH);
 		pack();
@@ -58,17 +92,39 @@ public class StudentTester extends JDialog implements Observer {
 
 	public void setup() {
 		log("Loading base model");
+		PetriNet baseModel;
 		try {
-			petriNet = DOMParser.parse(baseStream, "base model");
+			baseModel = DOMParser.parse(baseStream, "base model");
 		} catch (final Exception e) {
 			JOptionPane
 			        .showMessageDialog(this, "Error loading base model!", "Error Loading", JOptionPane.ERROR_MESSAGE);
 			return;
 		}
-		progressBar.setValue(1);
+		progressBar.setValue(++progress);
+
+		log("Loading your model");
+		try {
+			petriNet = DOMParser.parse(new FileInputStream(model), "student model");
+		} catch (final Exception e) {
+			JOptionPane
+			        .showMessageDialog(this, "Error loading your model!", "Error Loading", JOptionPane.ERROR_MESSAGE);
+			return;
+		}
+		progressBar.setValue(++progress);
 
 		log("Loading configuration file");
+		try {
+			suite = new ConfigurationTestSuite(configStream, "none");
+		} catch (final Exception e) {
+			JOptionPane.showMessageDialog(null, "Reading configuration file failed!\n" + e,
+			        "Error loading configuration!", JOptionPane.ERROR_MESSAGE);
+			return;
+		}
+		progressBar.setValue(++progress);
 
+		tester = new Tester(suite, null, baseModel, new File(model.getParentFile(), "outputs"));
+		tester.addObserver(this);
+		progressBar.setValue(++progress);
 	}
 
 	public static void main(final String... args) {
@@ -99,9 +155,42 @@ public class StudentTester extends JDialog implements Observer {
 				        JOptionPane.ERROR_MESSAGE);
 				System.exit(1);
 			}
-			new StudentTester(baseStream, configStream, load.getSelectedFile());
+			final StudentTester studentTester = new StudentTester(baseStream, configStream, load.getSelectedFile());
+			studentTester.setup();
+			studentTester.runTest();
+			studentTester.finish();
 		} else {
 			System.exit(0);
+		}
+	}
+
+	private void finish() {
+		log("Done!");
+		progressBar.setValue(PROGRESS_MAX);
+		progressBar.setVisible(false);
+		cancelButton.setText("Quit");
+		exportButton.setEnabled(true);
+	}
+
+	private void runTest() {
+		if (tester != null) {
+			progressBar.setIndeterminate(true);
+			try {
+				testResult = tester.test(petriNet, model.getParentFile());
+			} catch (final Exception e) {
+				JOptionPane.showMessageDialog(null, "Grading failed with message: " + e, "Error",
+				        JOptionPane.ERROR_MESSAGE);
+			}
+
+			for (final Report r : testResult) {
+				log("Result: " + r.getResult());
+				for (final Entry<Grader, Message> entry : r.getReports()) {
+					log(entry.getValue().getPoints() + ": " + entry.getValue().getMessage());
+				}
+			}
+
+			progressBar.setIndeterminate(false);
+			progressBar.setValue(progress += 5);
 		}
 	}
 
