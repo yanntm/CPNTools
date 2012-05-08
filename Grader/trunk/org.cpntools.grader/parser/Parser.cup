@@ -88,11 +88,11 @@ precedence right NOT;
 					| guide:g GUARD FAILURE
 						{:
 							if (g instanceof Simple) {
-								RESULT = new Avoid(g);
+								RESULT = new Not((Simple) g);
 							} else if (g instanceof Future) {
 								Future f = (Future) g;
 								if (f.getConstraint() instanceof Simple) {
-									RESULT = new AvoidForever(f.getConstraint());
+									RESULT = new Always(null, new Not((Simple) f.getConstraint()), false);
 								} else {
 									throw new IOException("Guarded failure may only use simple guided expressions at line " + gleft + ", position " + gright);
 								}
