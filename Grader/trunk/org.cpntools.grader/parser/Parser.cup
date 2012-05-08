@@ -79,19 +79,11 @@ precedence right NOT;
 						{: RESULT = new Always(b, null, false); :}
 					| ALWAYS bexpression:b BAR simple:s
 						{: RESULT = new Always(b, s, false); :}
-					| ALWAYS simple:s BAR bexpression:b
-						{: RESULT = new Always(b, s, false); :}
 					| ALWAYS LPAREN bexpression:b BAR simple:s RPAREN
-						{: RESULT = new Always(b, s, false); :}
-					| ALWAYS LPAREN simple:s BAR bexpression:b RPAREN
 						{: RESULT = new Always(b, s, false); :}
 					| ALWAYS bexpression:b AND simple:s
 						{: RESULT = new Always(b, s, true); :}
-					| ALWAYS simple:s AND bexpression:b
-						{: RESULT = new Always(b, s, true); :}
 					| ALWAYS LPAREN bexpression:b AND simple:s RPAREN
-						{: RESULT = new Always(b, s, true); :}
-					| ALWAYS LPAREN simple:s AND bexpression:b RPAREN
 						{: RESULT = new Always(b, s, true); :}
 					| guide:g GUARD FAILURE
 						{:
