@@ -32,7 +32,7 @@ import org.cpntools.grader.tester.EnablingControl;
 import org.cpntools.grader.tester.EnablingControlAdapterFactory;
 
 public class BTLGrader extends AbstractGrader {
-	public static final Grader INSTANCE = new BTLGrader(0, 0, 0, 0, "", "<null>", True.INSTANCE);
+	public static final Grader INSTANCE = new BTLGrader(0, false, 0, 0, 0, "", "<null>", True.INSTANCE);
 
 	private final Guide guide;
 	private final int repeats;
@@ -43,9 +43,12 @@ public class BTLGrader extends AbstractGrader {
 
 	private final String name;
 
-	public BTLGrader(final double maxPoints, final int repeats, final int maxSteps, final int threshold,
-	        final String friendlyName, final String unparsed, final Guide guide) {
+	private final boolean anti;
+
+	public BTLGrader(final double maxPoints, final boolean anti, final int repeats, final int maxSteps,
+	        final int threshold, final String friendlyName, final String unparsed, final Guide guide) {
 		super(maxPoints);
+		this.anti = anti;
 		this.repeats = repeats;
 		this.maxSteps = maxSteps;
 		this.threshold = threshold;
@@ -56,7 +59,7 @@ public class BTLGrader extends AbstractGrader {
 
 	Pattern p = Pattern
 	        .compile(
-	                "^btl(, *repeats? *= *([1-9][0-9]*))?(, *max-?steps? *= *([1-9][0-9]*))?(, *threshold *= *([1-9][0-9]*))?(, *name *= *\"([^\"]*)\")?, *test *=(.*)$",
+	                "^btl(, *anti)?(, *repeats? *= *([1-9][0-9]*))?(, *max-?steps? *= *([1-9][0-9]*))?(, *threshold *= *([1-9][0-9]*))?(, *name *= *\"([^\"]*)\")?, *test *=(.*)$",
 	                Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
 
 	@SuppressWarnings("hiding")
@@ -64,26 +67,30 @@ public class BTLGrader extends AbstractGrader {
 	public Grader configure(final double maxPoints, final String configuration) throws Exception {
 		final Matcher m = p.matcher(configuration);
 		if (m.matches()) {
+			boolean anti = false;
 			int repeats = 1;
 			int maxSteps = 10000;
-			if (m.group(2) != null && !"".equals(m.group(2))) {
-				repeats = Integer.parseInt(m.group(2));
+			if (m.group(1) != null) {
+				anti = true;
 			}
-			if (m.group(4) != null && !"".equals(m.group(4))) {
-				maxSteps = Integer.parseInt(m.group(4));
+			if (m.group(3) != null && !"".equals(m.group(3))) {
+				repeats = Integer.parseInt(m.group(3));
+			}
+			if (m.group(5) != null && !"".equals(m.group(5))) {
+				maxSteps = Integer.parseInt(m.group(5));
 			}
 			int threshold = repeats;
-			if (m.group(6) != null && !"".equals(m.group(6))) {
-				threshold = Integer.parseInt(m.group(6));
+			if (m.group(7) != null && !"".equals(m.group(7))) {
+				threshold = Integer.parseInt(m.group(7));
 			}
-			final String unparsed = m.group(9) == null ? "<null>" : m.group(9).trim();
+			final String unparsed = m.group(10) == null ? "<null>" : m.group(10).trim();
 			String name = unparsed;
-			if (m.group(8) != null && !"".equals(m.group(8))) {
-				name = m.group(8).trim();
+			if (m.group(9) != null && !"".equals(m.group(9))) {
+				name = m.group(9).trim();
 			}
 			final Guide guide = CupParser.parse(unparsed);
-			if (guide != null) { return new BTLGrader(maxPoints, repeats, maxSteps, threshold, name, unparsed.trim(),
-			        guide); }
+			if (guide != null) { return new BTLGrader(maxPoints, anti, repeats, maxSteps, threshold, name,
+			        unparsed.trim(), guide); }
 		}
 		return null;
 	}
@@ -118,26 +125,46 @@ public class BTLGrader extends AbstractGrader {
 		}
 		Message m;
 		if (error == 0) {
-			m = new Message(getMaxPoints(), getName() + " was executed successfully " + repeats + " time"
-			        + (repeats == 1 ? "" : "s"));
+			if (anti) {
+				m = new Message(getMaxPoints(), getName() + " was executed successfully " + repeats + " time"
+				        + (repeats == 1 ? "" : "s") + " (it was expected to fail!)");
+			} else {
+				m = new Message(getMinPoints(), getName() + " was executed successfully " + repeats + " time"
+				        + (repeats == 1 ? "" : "s"));
+			}
 		} else if (repeats - error >= threshold) {
+			if (anti) {
+				m = new Message(getMinPoints(), getName() + " failed " + error + " time" + (error == 1 ? "" : "s")
+				        + ", but this is under the threshold");
+			}
 			m = new Message(getMaxPoints(), getName() + " failed " + error + " time" + (error == 1 ? "" : "s")
 			        + ", but this is under the threshold");
 		} else if (repeats > error) {
-			m = new Message(getMinPoints(), getName() + " failed " + error + " time" + (error == 1 ? "" : "s"));
-		} else {
-			m = new Message(getMinPoints(), getName() + " failed every time.");
-		}
-		if (!markings.isEmpty()) {
-			final String[] markingDescriptors = new String[markings.size()];
-			int i = 0;
-			for (final State s : markings) {
-				markingDescriptors[i++] = s.toString();
+			if (anti) {
+				m = new Message(getMaxPoints(), getName() + " failed " + error + " time"
+				        + (error == 1 ? "" : "s (and this is above the threshold of expected failures)."));
+			} else {
+				m = new Message(getMinPoints(), getName() + " failed " + error + " time" + (error == 1 ? "" : "s"));
 			}
-			m.addDetail(new Detail("Final Markings for " + getName(), markingDescriptors));
+		} else {
+			if (anti) {
+				m = new Message(getMaxPoints(), getName() + " failed every time. This is expected behavior.");
+			} else {
+				m = new Message(getMinPoints(), getName() + " failed every time.");
+			}
 		}
-		for (final Detail d : details) {
-			m.addDetail(d);
+		if (!anti) {
+			if (!markings.isEmpty()) {
+				final String[] markingDescriptors = new String[markings.size()];
+				int i = 0;
+				for (final State s : markings) {
+					markingDescriptors[i++] = s.toString();
+				}
+				m.addDetail(new Detail("Final Markings for " + getName(), markingDescriptors));
+			}
+			for (final Detail d : details) {
+				m.addDetail(d);
+			}
 		}
 		return m;
 	}
