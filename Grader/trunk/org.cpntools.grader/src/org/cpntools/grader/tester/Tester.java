@@ -110,9 +110,10 @@ public class Tester extends Observable {
 			checker.checkDeclarations();
 			checker.generateSerializers();
 			checker.checkPages();
+			checker.generatePlaceInstances();
 			checker.checkMonitors();
 			simulator.setConfidenceIntervals(95);
-			checker.generateInstances();
+			checker.generateNonPlaceInstances();
 			checker.initialiseSimulationScheduler();
 		} catch (final ErrorInitializingSMLInterface _) {
 		}
