@@ -65,7 +65,7 @@ public class SetMarking implements Guide {
 	@Override
 	public Set<Instance<org.cpntools.accesscpn.model.Transition>> force(
 	        final Set<Instance<org.cpntools.accesscpn.model.Transition>> candidates, final PetriNet model,
-	        final NameHelper names) {
+	        final HighLevelSimulator simulator, final NameHelper names) {
 		return candidates;
 	}
 

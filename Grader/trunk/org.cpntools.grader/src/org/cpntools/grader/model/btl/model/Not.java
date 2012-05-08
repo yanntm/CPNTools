@@ -57,10 +57,10 @@ public class Not extends Simple {
 	@Override
 	public Set<Instance<org.cpntools.accesscpn.model.Transition>> force(
 	        final Set<Instance<org.cpntools.accesscpn.model.Transition>> candidates, final PetriNet model,
-	        final NameHelper names) {
+	        final HighLevelSimulator simulator, final NameHelper names) {
 		final HashSet<Instance<org.cpntools.accesscpn.model.Transition>> set = new HashSet<Instance<org.cpntools.accesscpn.model.Transition>>();
 		set.addAll(candidates);
-		set.removeAll(child.force(candidates, model, names));
+		set.removeAll(child.force(candidates, model, simulator, names));
 		return set;
 	}
 

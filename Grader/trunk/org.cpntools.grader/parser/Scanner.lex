@@ -61,6 +61,7 @@ CommentContent          = ( [^*] | \*+ [^/*] )*
 	"-"					{ return symbol(MINUS); }
 	"&&"					{ return symbol(AND); }
 	"&"					{ return symbol(AND); }
+	"@"					{ return symbol(ALWAYS); }
 	"<"					{ return symbol(LESS); }
 	">"					{ return symbol(GREATER); }
 	"<="					{ return symbol(LEQ); }

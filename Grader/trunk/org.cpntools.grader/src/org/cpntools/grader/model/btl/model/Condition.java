@@ -14,7 +14,8 @@ public interface Condition {
 	public void prestep(final PetriNet model, HighLevelSimulator simulator, final NameHelper names);
 
 	Set<Instance<org.cpntools.accesscpn.model.Transition>> force(
-	        Set<Instance<org.cpntools.accesscpn.model.Transition>> candidates, PetriNet model, NameHelper names);
+	        Set<Instance<org.cpntools.accesscpn.model.Transition>> candidates, PetriNet model,
+	        HighLevelSimulator simulator, NameHelper names);
 
 	Condition progress(Instance<org.cpntools.accesscpn.model.Transition> ti, PetriNet model,
 	        HighLevelSimulator simulator, NameHelper names) throws Unconsumed;

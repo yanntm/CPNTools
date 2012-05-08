@@ -64,8 +64,8 @@ public class Times implements Guide {
 	@Override
 	public Set<Instance<org.cpntools.accesscpn.model.Transition>> force(
 	        final Set<Instance<org.cpntools.accesscpn.model.Transition>> candidates, final PetriNet model,
-	        final NameHelper names) {
-		return g.force(candidates, model, names);
+	        final HighLevelSimulator simulator, final NameHelper names) {
+		return g.force(candidates, model, simulator, names);
 	}
 
 	@Override

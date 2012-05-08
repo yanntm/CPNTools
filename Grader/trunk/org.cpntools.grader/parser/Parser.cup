@@ -34,7 +34,7 @@ parser code {:
 
 /* ------------Declaration of Terminals and Non Terminals Section----------- */
 
-terminal LPAREN, RPAREN, LPAREN2, RPAREN2, LPAREN3, RPAREN3, BAR, NEXT, GUARD, STEP, GUARDSTEP, NOT, STAR, TRUE, FALSE, FAILURE, MINUS, PLUS, AND, TIME, ASSIGN, ADD, LESS, GREATER, LEQ, GEQ, EQUAL, DOT, FINALLY, FINALLYGUARD;
+terminal LPAREN, RPAREN, LPAREN2, RPAREN2, LPAREN3, RPAREN3, BAR, NEXT, GUARD, STEP, GUARDSTEP, NOT, STAR, ALWAYS, TRUE, FALSE, FAILURE, MINUS, PLUS, AND, TIME, ASSIGN, ADD, LESS, GREATER, LEQ, GEQ, EQUAL, DOT, FINALLY, FINALLYGUARD;
 
 terminal String ID;
 terminal Integer NUMBER;
@@ -55,7 +55,7 @@ precedence right GUARD, GUARDSTEP;
 precedence left DOT;
 precedence nonassoc LESS, GREATER, LEQ, GEQ;
 precedence nonassoc EQUAL;
-precedence left STAR;
+precedence left STAR, ALWAYS;
 precedence left MINUS, PLUS;
 precedence left AND, BAR;
 precedence right NOT;
@@ -73,6 +73,26 @@ precedence right NOT;
 						{: RESULT = new Times(n, g); :}
 					| STAR simple:s
 						{: RESULT = new Repeat(s); :}
+					| ALWAYS simple:s
+						{: RESULT = new Always(null, s, false); :}
+					| ALWAYS bexpression:b
+						{: RESULT = new Always(b, null, false); :}
+					| ALWAYS bexpression:b BAR simple:s
+						{: RESULT = new Always(b, s, false); :}
+					| ALWAYS simple:s BAR bexpression:b
+						{: RESULT = new Always(b, s, false); :}
+					| ALWAYS LPAREN bexpression:b BAR simple:s RPAREN
+						{: RESULT = new Always(b, s, false); :}
+					| ALWAYS LPAREN simple:s BAR bexpression:b RPAREN
+						{: RESULT = new Always(b, s, false); :}
+					| ALWAYS bexpression:b AND simple:s
+						{: RESULT = new Always(b, s, true); :}
+					| ALWAYS simple:s AND bexpression:b
+						{: RESULT = new Always(b, s, true); :}
+					| ALWAYS LPAREN bexpression:b AND simple:s RPAREN
+						{: RESULT = new Always(b, s, true); :}
+					| ALWAYS LPAREN simple:s AND bexpression:b RPAREN
+						{: RESULT = new Always(b, s, true); :}
 					| guide:g GUARD FAILURE
 						{:
 							if (g instanceof Simple) {
