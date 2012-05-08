@@ -191,7 +191,7 @@ public class BTLGrader extends AbstractGrader {
 		while (enabled.isEmpty() && simulator.increaseTime() == null) {
 			enabled = simulator.isEnabled(allTransitionInstances);
 		}
-		allowed.addAll(toSatisfy.force(new HashSet(enabled), model, names));
+		allowed.addAll(toSatisfy.force(new HashSet(enabled), model, simulator, names));
 		boolean changed = true;
 		while (allowed.isEmpty() && changed) {
 			changed = false;
@@ -208,7 +208,7 @@ public class BTLGrader extends AbstractGrader {
 				enabled = simulator.isEnabled(allTransitionInstances);
 			}
 			allowed.clear();
-			allowed.addAll(toSatisfy.force(new HashSet(enabled), model, names));
+			allowed.addAll(toSatisfy.force(new HashSet(enabled), model, simulator, names));
 		}
 		return enabled;
 	}

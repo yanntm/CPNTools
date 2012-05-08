@@ -57,7 +57,7 @@ public class Transition extends Simple {
 	@Override
 	public Set<Instance<org.cpntools.accesscpn.model.Transition>> force(
 	        final Set<Instance<org.cpntools.accesscpn.model.Transition>> candidates, final PetriNet model,
-	        final NameHelper names) {
+	        final HighLevelSimulator simulator, final NameHelper names) {
 		final Instance<org.cpntools.accesscpn.model.Transition> ti = names.getTransitionInstance(name);
 		if (candidates.contains(ti)) { return Collections.singleton(ti); }
 		return Collections.emptySet();

@@ -71,10 +71,10 @@ public class SimpleOr extends Simple {
 	@Override
 	public Set<Instance<org.cpntools.accesscpn.model.Transition>> force(
 	        final Set<Instance<org.cpntools.accesscpn.model.Transition>> candidates, final PetriNet model,
-	        final NameHelper names) {
+	        final HighLevelSimulator simulator, final NameHelper names) {
 		final HashSet<Instance<org.cpntools.accesscpn.model.Transition>> set = new HashSet<Instance<org.cpntools.accesscpn.model.Transition>>();
-		set.addAll(s1.force(candidates, model, names));
-		set.addAll(s2.force(candidates, model, names));
+		set.addAll(s1.force(candidates, model, simulator, names));
+		set.addAll(s2.force(candidates, model, simulator, names));
 		return set;
 	}
 

@@ -36,10 +36,10 @@ public class Avoid implements Guide {
 	@Override
 	public Set<Instance<org.cpntools.accesscpn.model.Transition>> force(
 	        final Set<Instance<org.cpntools.accesscpn.model.Transition>> candidates, final PetriNet model,
-	        final NameHelper names) {
+	        final HighLevelSimulator simulator, final NameHelper names) {
 		final Set<Instance<org.cpntools.accesscpn.model.Transition>> result = new HashSet<Instance<Transition>>(
 		        candidates);
-		result.removeAll(condition.force(candidates, model, names));
+		result.removeAll(condition.force(candidates, model, simulator, names));
 		return result;
 	}
 

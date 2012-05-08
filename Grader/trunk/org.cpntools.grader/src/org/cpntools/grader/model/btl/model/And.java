@@ -68,10 +68,10 @@ public class And implements Guide {
 	@Override
 	public Set<Instance<org.cpntools.accesscpn.model.Transition>> force(
 	        final Set<Instance<org.cpntools.accesscpn.model.Transition>> candidates, final PetriNet model,
-	        final NameHelper names) {
+	        final HighLevelSimulator simulator, final NameHelper names) {
 		final HashSet<Instance<org.cpntools.accesscpn.model.Transition>> set = new HashSet<Instance<org.cpntools.accesscpn.model.Transition>>();
-		set.addAll(g1.force(candidates, model, names));
-		set.retainAll(g2.force(candidates, model, names));
+		set.addAll(g1.force(candidates, model, simulator, names));
+		set.retainAll(g2.force(candidates, model, simulator, names));
 		return set;
 	}
 
