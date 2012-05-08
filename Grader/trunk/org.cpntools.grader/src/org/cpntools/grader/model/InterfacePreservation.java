@@ -78,7 +78,7 @@ public class InterfacePreservation extends AbstractGrader {
 	public Grader configure(final double maxPoints, final String configuration) {
 		final Matcher m = p.matcher(configuration);
 		if (m.matches()) {
-			double partial = 0.0;
+			double partial = Math.min(0.0, maxPoints);
 			if (m.group(2) != null && m.group(2).length() > 0) {
 				partial = Double.parseDouble(m.group(2));
 			}
