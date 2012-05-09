@@ -16,9 +16,12 @@ import java.util.Map.Entry;
 import java.util.Observable;
 import java.util.Observer;
 
+import javax.swing.BorderFactory;
+import javax.swing.DefaultListModel;
 import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
+import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
@@ -32,6 +35,7 @@ import org.cpntools.grader.model.ConfigurationTestSuite;
 import org.cpntools.grader.model.Grader;
 import org.cpntools.grader.model.Message;
 import org.cpntools.grader.model.TestSuite;
+import org.cpntools.grader.model.btl.BTLGrader;
 import org.cpntools.grader.tester.Report;
 import org.cpntools.grader.tester.Tester;
 
@@ -39,6 +43,21 @@ import org.cpntools.grader.tester.Tester;
  * @author michael
  */
 public class StudentTester extends JDialog implements Observer {
+	public static class TestError {
+
+		private final BTLGrader grader;
+
+		public TestError(final BTLGrader grader) {
+			this.grader = grader;
+		}
+
+		@Override
+		public String toString() {
+			return grader.getName();
+		}
+
+	}
+
 	private static final int PROGRESS_MAX = 10;
 	private final JTextArea log;
 	private final InputStream baseStream;
@@ -52,6 +71,8 @@ public class StudentTester extends JDialog implements Observer {
 	private final JButton cancelButton;
 	private final JButton exportButton;
 	List<Report> testResult;
+	private final JPanel errorPanel;
+	private final DefaultListModel errors;
 
 	public StudentTester(final InputStream baseStream, final InputStream configStream, final File model) {
 		this.baseStream = baseStream;
@@ -115,6 +136,15 @@ public class StudentTester extends JDialog implements Observer {
 		progressBar = new JProgressBar(0, PROGRESS_MAX);
 		progressBar.setStringPainted(true);
 		add(progressBar, BorderLayout.NORTH);
+
+		errorPanel = new JPanel(new BorderLayout());
+		errors = new DefaultListModel();
+		final JList errorList = new JList(errors);
+		final JScrollPane errorScroller = new JScrollPane(errorList);
+		errorScroller.setBorder(BorderFactory.createTitledBorder("Failing Tests"));
+		errorPanel.add(errorScroller, BorderLayout.CENTER);
+		errorPanel.setVisible(false);
+		add(errorPanel, BorderLayout.EAST);
 		pack();
 		setVisible(true);
 
@@ -196,6 +226,20 @@ public class StudentTester extends JDialog implements Observer {
 
 	private void finish() {
 		log("Done!");
+
+		boolean errors = false;
+		for (final Report r : testResult) {
+			for (final Entry<Grader, Message> entry : r.getReports()) {
+				if (entry.getValue().getPoints() < entry.getKey().getMaxPoints()) {
+					if (entry.getKey() instanceof BTLGrader) {
+						this.errors.addElement(new TestError((BTLGrader) entry.getKey()));
+						errors = true;
+					}
+				}
+			}
+		}
+		errorPanel.setVisible(errors);
+
 		progressBar.setValue(PROGRESS_MAX);
 		progressBar.setVisible(false);
 		cancelButton.setText("Quit");
