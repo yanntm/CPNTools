@@ -7,10 +7,14 @@ import java.io.FileNotFoundException;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.swing.JOptionPane;
 
@@ -28,6 +32,28 @@ import org.cpntools.grader.tester.Tester;
  * @author michael
  */
 public class Grader {
+
+	private static final int MAX_THREADS = 8;
+	private static int progress;
+
+	public static class ResultData {
+		private final File file;
+		private final List<Report> result;
+
+		public ResultData(final File f, final List<Report> result) {
+			file = f;
+			this.result = result;
+
+		}
+
+		public File getFile() {
+			return file;
+		}
+
+		public List<Report> getResult() {
+			return result;
+		}
+	}
 
 	/**
 	 * @param args
@@ -99,7 +125,7 @@ public class Grader {
 			});
 
 			final List<PetriNet> models = new ArrayList<PetriNet>();
-			int progress = 0;
+			progress = 0;
 			final StringBuilder failed = new StringBuilder();
 			for (final File file : files) {
 				try {
@@ -121,44 +147,93 @@ public class Grader {
 			final HashSet<StudentID> unused = new HashSet<StudentID>(setup.getStudentIds());
 			final Map<StudentID, Report> old = new HashMap<StudentID, Report>();
 			final Map<StudentID, File> oldfiles = new HashMap<StudentID, File>();
-			for (final File f : files) {
-				resultDialog.update(null, "Loading " + f);
-				try {
-					final PetriNet net = DOMParser.parse(new FileInputStream(f), f.getName().replace("[.]cpn$", ""));
-					try {
-						final List<Report> test = tester.test(net, setup.getModels());
-						for (final Report r : test) {
-							if (unused.remove(r.getStudentId())) {
-								resultDialog.addReport(f, r);
-								old.put(r.getStudentId(), r);
-								oldfiles.put(r.getStudentId(), f);
-							} else {
-								if (r.getStudentId().getId().startsWith("generated_")) {
-									r.addError("Model does not seem to belong to anybody; generated id has been used!");
+			final AtomicInteger running = new AtomicInteger(0);
+			final List<ResultData> result = Collections.synchronizedList(new LinkedList<ResultData>());
+			new Thread("GUI") {
+				@Override
+				public void run() {
+					while (!result.isEmpty() || running.get() >= 0) {
+						if (!result.isEmpty()) {
+							final ResultData resultData = result.remove(0);
+							final List<Report> test = resultData.getResult();
+							final File f = resultData.getFile();
+							for (final Report r : test) {
+								if (unused.remove(r.getStudentId())) {
 									resultDialog.addReport(f, r);
+									old.put(r.getStudentId(), r);
+									oldfiles.put(r.getStudentId(), f);
 								} else {
-									final Report or = old.remove(r.getStudentId());
-									markCheater(f, r);
-									if (or != null) {
-										markCheater(oldfiles.get(or.getStudentId()), or);
+									if (r.getStudentId().getId().startsWith("generated_")) {
+										r.addError("Model does not seem to belong to anybody; generated id has been used!");
+										resultDialog.addReport(f, r);
+									} else {
+										final Report or = old.remove(r.getStudentId());
+										markCheater(f, r);
+										if (or != null) {
+											markCheater(oldfiles.get(or.getStudentId()), or);
+										}
+										resultDialog.addReport(f, r);
 									}
-									resultDialog.addReport(f, r);
 								}
 							}
+						} else {
+							try {
+								sleep(100);
+							} catch (final InterruptedException e) {
+								// Ignore interrupt
+							}
 						}
-					} catch (final Exception e2) {
-						e2.printStackTrace();
-						resultDialog.addError(f, "Error testing model! " + e2.getMessage());
 					}
-				} catch (final Exception e) {
-					e.printStackTrace();
-					resultDialog.addError(f, "Error loading model! " + e.getMessage());
 				}
-				resultDialog.setProgress(++progress);
+			}.start();
+			for (final File f : files) {
 				if (resultDialog.isCancelled()) {
 					break;
 				}
+				while (running.get() >= MAX_THREADS) {
+					if (resultDialog.isCancelled()) {
+						break;
+					}
+					try {
+						Thread.sleep(100);
+					} catch (final InterruptedException e) {
+					}
+				}
+				running.incrementAndGet();
+				new Thread("Worker") {
+					@Override
+					public void run() {
+						final Date d = new Date();
+						resultDialog.update(null, "Loading " + f);
+						try {
+							final PetriNet net = DOMParser.parse(new FileInputStream(f),
+							        f.getName().replace("[.]cpn$", ""));
+							try {
+
+								final List<Report> test = tester.test(net, setup.getModels());
+								result.add(new ResultData(f, test));
+							} catch (final Exception e2) {
+								e2.printStackTrace();
+								resultDialog.addError(f, "Error testing model! " + e2.getMessage());
+							}
+						} catch (final Exception e) {
+							e.printStackTrace();
+							resultDialog.addError(f, "Error loading model! " + e.getMessage());
+						}
+						incrementProgress(resultDialog);
+						final long end = new Date().getTime() - d.getTime();
+						resultDialog.update(null, "Checking took " + end / 1000.0 + " seconds.");
+						running.decrementAndGet();
+					}
+				}.start();
 			}
+			while (running.get() > 0) {
+				try {
+					Thread.sleep(100);
+				} catch (final InterruptedException e) {
+				}
+			}
+			running.decrementAndGet();
 			for (final StudentID sid : unused) {
 				resultDialog.addError(sid);
 			}
@@ -212,7 +287,11 @@ public class Grader {
 // System.exit(0);
 	}
 
-	private static void markCheater(final File f, final Report r) {
+	public static void incrementProgress(final ResultDialog resultDialog) {
+		resultDialog.setProgress(++progress);
+	}
+
+	static void markCheater(final File f, final Report r) {
 		r.setStudentId(new StudentID("cheating_" + r.getStudentId().getId() + "_impersonating_"
 		        + f.getName().replaceAll("[.]cpn$", "")));
 		r.addError("User has submitted another model as well!  Likely cheating is taking place.");

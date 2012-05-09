@@ -126,10 +126,10 @@ public class BTLGrader extends AbstractGrader {
 		Message m;
 		if (error == 0) {
 			if (anti) {
-				m = new Message(getMaxPoints(), getName() + " was executed successfully " + repeats + " time"
+				m = new Message(getMinPoints(), getName() + " was executed successfully " + repeats + " time"
 				        + (repeats == 1 ? "" : "s") + " (it was expected to fail!)");
 			} else {
-				m = new Message(getMinPoints(), getName() + " was executed successfully " + repeats + " time"
+				m = new Message(getMaxPoints(), getName() + " was executed successfully " + repeats + " time"
 				        + (repeats == 1 ? "" : "s"));
 			}
 		} else if (repeats - error >= threshold) {

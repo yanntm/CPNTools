@@ -8,6 +8,9 @@ import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Observable;
@@ -24,6 +27,7 @@ import javax.swing.JTextArea;
 
 import org.cpntools.accesscpn.model.PetriNet;
 import org.cpntools.accesscpn.model.importer.DOMParser;
+import org.cpntools.grader.gui.PDFExport.ReportItem;
 import org.cpntools.grader.model.ConfigurationTestSuite;
 import org.cpntools.grader.model.Grader;
 import org.cpntools.grader.model.Message;
@@ -47,7 +51,7 @@ public class StudentTester extends JDialog implements Observer {
 	private Tester tester;
 	private final JButton cancelButton;
 	private final JButton exportButton;
-	private List<Report> testResult;
+	List<Report> testResult;
 
 	public StudentTester(final InputStream baseStream, final InputStream configStream, final File model) {
 		this.baseStream = baseStream;
@@ -74,7 +78,33 @@ public class StudentTester extends JDialog implements Observer {
 		exportButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(final ActionEvent arg0) {
-				System.exit(0);
+				if (!testResult.isEmpty()) {
+					File output = model;
+					final JFileChooser jFileChooser = new JFileChooser();
+					if (output == null) {
+						if (JFileChooser.APPROVE_OPTION == jFileChooser.showOpenDialog(StudentTester.this)) {
+							output = jFileChooser.getSelectedFile();
+						}
+					}
+					while (output != null && !output.isDirectory()) {
+						output = output.getParentFile();
+					}
+					if (output != null) {
+						final Collection<PDFExport.ReportItem> items = new ArrayList<PDFExport.ReportItem>();
+						for (final Report r : testResult) {
+							items.add(new ReportItem(r, r.getStudentId(), model, Collections.emptyList(), null));
+						}
+						try {
+							PDFExport.exportReports(output, items);
+							JOptionPane.showMessageDialog(StudentTester.this, "Report successfully exported as `"
+							        + new File(output, "S" + testResult.get(0).getStudentId() + ".pdf'"),
+							        "Export Successful", JOptionPane.INFORMATION_MESSAGE);
+						} catch (final Exception e) {
+							JOptionPane.showMessageDialog(StudentTester.this, "Error exporting: " + e,
+							        "Error Exporting", JOptionPane.ERROR_MESSAGE);
+						}
+					}
+				}
 			}
 		});
 		final JPanel buttons = new JPanel(new FlowLayout(FlowLayout.CENTER));
