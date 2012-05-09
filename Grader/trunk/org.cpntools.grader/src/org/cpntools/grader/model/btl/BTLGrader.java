@@ -174,7 +174,7 @@ public class BTLGrader extends AbstractGrader {
 	        final List<Instance<Transition>> allTransitionInstances, final EnablingControl ec) {
 		try {
 			simulator.initialState();
-			Condition toSatisfy = guide;
+			Condition toSatisfy = getGuide();
 			final List<Binding> bindings = new ArrayList<Binding>();
 			for (int i = 0; maxSteps < 0 || i < maxSteps; i++) {
 				final Set<Instance<Transition>> allowed = new HashSet<Instance<Transition>>();
@@ -184,7 +184,7 @@ public class BTLGrader extends AbstractGrader {
 					if (toSatisfy.canTerminate(model, simulator, names)) { return null; }
 					return new Detail("No Allowed Transtions for " + getName(), "Enabled Transitions:\n"
 					        + toString(enabled), "Executed Trace:\n" + toString(bindings), "Initial Formula:\n"
-					        + unparsed, "Parsed Formula:\n" + guide, "Formula at error:\n" + toSatisfy,
+					        + unparsed, "Parsed Formula:\n" + getGuide(), "Formula at error:\n" + toSatisfy,
 					        "Marking at error:\n" + simulator.getMarking(false));
 				}
 				final Binding binding = simulator.executeAndGet(new ArrayList<Instance<Transition>>(allowed));
@@ -192,14 +192,14 @@ public class BTLGrader extends AbstractGrader {
 				toSatisfy = toSatisfy.progress(binding.getTransitionInstance(), model, simulator, names);
 				if (toSatisfy == Failure.INSTANCE) { return new Detail("Assertion Failed", "Enabled Transitions:\n"
 				        + toString(enabled), "Executed Trace:\n" + toString(bindings), "Initial Formula:\n" + unparsed,
-				        "Parsed Formula:\n" + guide, "Formula at error:\n" + toSatisfy, "Marking at error:\n"
+				        "Parsed Formula:\n" + getGuide(), "Formula at error:\n" + toSatisfy, "Marking at error:\n"
 				                + simulator.getMarking(false)); }
 				if (toSatisfy == null) { return null; // Nothing left to satisfy
 				}
 			}
 			return new Detail("Simulation Not Terminating", "The simulation was running for " + maxSteps
 			        + " steps and was expected to terminate before", "Initial Formula:\n" + unparsed,
-			        "Parsed Formula:\n" + guide, "Formula at error:\n" + toSatisfy, "Marking at error:\n"
+			        "Parsed Formula:\n" + getGuide(), "Formula at error:\n" + toSatisfy, "Marking at error:\n"
 			                + simulator.getMarking(false));
 		} catch (final Exception e) {
 			e.printStackTrace();
@@ -266,5 +266,9 @@ public class BTLGrader extends AbstractGrader {
 	public String getName() {
 		return name;
 	}
+
+	public Guide getGuide() {
+	    return guide;
+    }
 
 }

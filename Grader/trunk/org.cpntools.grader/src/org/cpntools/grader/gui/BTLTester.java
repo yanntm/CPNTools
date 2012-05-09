@@ -115,8 +115,13 @@ public class BTLTester extends JDialog {
 
 	public BTLTester(final File selectedFile) throws FileNotFoundException, NetCheckException, SAXException,
 	        IOException, ParserConfigurationException {
-		petriNet = DOMParser.parse(new FileInputStream(selectedFile),
-		        selectedFile.getName().replaceFirst("[.][cC][pP][nN]$", ""));
+		this(DOMParser.parse(new FileInputStream(selectedFile),
+		        selectedFile.getName().replaceFirst("[.][cC][pP][nN]$", "")), selectedFile.getParentFile(), false);
+	}
+
+	public BTLTester(final PetriNet net, final File parentFile, final boolean light) throws FileNotFoundException,
+	        NetCheckException, SAXException, IOException, ParserConfigurationException {
+		petriNet = net;
 		setTitle("BTL Tester - " + petriNet.getName().getText());
 		setLayout(new BorderLayout());
 		final JPanel buttons = new JPanel();
@@ -139,7 +144,9 @@ public class BTLTester extends JDialog {
 			}
 		});
 		refreshButton.setEnabled(false);
-		buttons.add(refreshButton);
+		if (!light) {
+			buttons.add(refreshButton);
+		}
 		final JButton initialButton = new JButton("Initial State");
 		initialButton.addActionListener(new ActionListener() {
 			@Override
@@ -175,7 +182,9 @@ public class BTLTester extends JDialog {
 		transitionMappingScroller.setBorder(BorderFactory.createTitledBorder("Transition Mapping"));
 		final JSplitPane rightTransitions = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
 		rightTransitions.setTopComponent(transitionMappingScroller);
-		top.setRightComponent(rightTransitions);
+		if (!light) {
+			top.setRightComponent(rightTransitions);
+		}
 		rightTransitions.setResizeWeight(0.5);
 
 		trace = new DefaultTableModel(new Object[] { "Time", "Binding Element" }, 0);
@@ -183,13 +192,19 @@ public class BTLTester extends JDialog {
 		traceTable.setEnabled(false);
 		final JScrollPane traceScroller = new JScrollPane(traceTable);
 		traceScroller.setBorder(BorderFactory.createTitledBorder("Execution Trace"));
-		rightTransitions.setBottomComponent(traceScroller);
+		if (!light) {
+			rightTransitions.setBottomComponent(traceScroller);
+		} else {
+			top.setRightComponent(traceScroller);
+		}
 
 		initFormula = new JTextArea(3, 80);
 		final JScrollPane initScroller = new JScrollPane(initFormula);
 		initScroller.setBorder(BorderFactory.createTitledBorder("Initial Formula"));
 		initFormula.setLineWrap(true);
-		formulae.add(initScroller);
+		if (!light) {
+			formulae.add(initScroller);
+		}
 		parsedFormula = new JTextArea(3, 80);
 		final JScrollPane parsedScroller = new JScrollPane(parsedFormula);
 		parsedScroller.setBorder(BorderFactory.createTitledBorder("Parsed Formula"));
@@ -264,8 +279,8 @@ public class BTLTester extends JDialog {
 		pack();
 		setVisible(true);
 		try {
-			simulator = org.cpntools.grader.tester.Tester.checkModel(petriNet, selectedFile.getParentFile(),
-			        selectedFile.getParentFile(), new StudentID("dummy"));
+			simulator = org.cpntools.grader.tester.Tester.checkModel(petriNet, parentFile, parentFile, new StudentID(
+			        "dummy"));
 			checkButton.setEnabled(true);
 			initialButton.setEnabled(true);
 			refreshButton.setEnabled(true);
