@@ -119,6 +119,13 @@ public class BTLTester extends JDialog {
 		        selectedFile.getName().replaceFirst("[.][cC][pP][nN]$", "")), selectedFile.getParentFile(), false);
 	}
 
+	public BTLTester(final PetriNet net, final File parentFile, final Guide g) throws FileNotFoundException,
+	        NetCheckException, SAXException, IOException, ParserConfigurationException {
+		this(net, parentFile, true);
+		setFormula(g);
+		initial();
+	}
+
 	public BTLTester(final PetriNet net, final File parentFile, final boolean light) throws FileNotFoundException,
 	        NetCheckException, SAXException, IOException, ParserConfigurationException {
 		petriNet = net;
@@ -170,7 +177,9 @@ public class BTLTester extends JDialog {
 		final JList transitionList = new JList(transitionListModel);
 		final JScrollPane transitionScroller = new JScrollPane(transitionList);
 		transitionScroller.setBorder(BorderFactory.createTitledBorder("Transitions"));
-		formulaPanel.add(transitionScroller, BorderLayout.EAST);
+		if (!light) {
+			formulaPanel.add(transitionScroller, BorderLayout.EAST);
+		}
 		final JSplitPane modelData = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
 		main.setBottomComponent(formulaPanel);
 		main.setTopComponent(modelData);
@@ -436,6 +445,10 @@ public class BTLTester extends JDialog {
 		} else {
 			currentFormula.setText(current.toString());
 		}
+	}
+
+	public void setFormula(final Guide g) {
+		initFormula.setText(g.toString());
 	}
 
 	private void reparse() {
