@@ -5,6 +5,8 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -53,7 +55,11 @@ public class StudentTester extends JDialog implements Observer {
 
 		@Override
 		public String toString() {
-			return grader.getName();
+			return getGrader().getName();
+		}
+
+		public BTLGrader getGrader() {
+			return grader;
 		}
 
 	}
@@ -140,6 +146,21 @@ public class StudentTester extends JDialog implements Observer {
 		errorPanel = new JPanel(new BorderLayout());
 		errors = new DefaultListModel();
 		final JList errorList = new JList(errors);
+		errorList.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseClicked(final MouseEvent evt) {
+				final JList list = (JList) evt.getSource();
+				if (evt.getClickCount() == 2) { // Double-click
+					final int index = list.locationToIndex(evt.getPoint());
+					final TestError testError = (TestError) errors.get(index);
+					try {
+						new BTLTester(petriNet, model.getParentFile(), testError.getGrader().getGuide());
+					} catch (final Exception e) {
+						e.printStackTrace();
+					}
+				}
+			}
+		});
 		final JScrollPane errorScroller = new JScrollPane(errorList);
 		errorScroller.setBorder(BorderFactory.createTitledBorder("Failing Tests"));
 		errorPanel.add(errorScroller, BorderLayout.CENTER);
