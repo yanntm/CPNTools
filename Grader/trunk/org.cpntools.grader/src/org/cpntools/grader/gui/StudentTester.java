@@ -209,7 +209,7 @@ public class StudentTester extends JDialog implements Observer {
 	}
 
 	public static void main(final String... args) {
-		final InputStream baseStream = getResource("../../../../base.cpn");
+		final InputStream baseStream = getResource("/base.cpn");
 		if (baseStream == null) {
 			JOptionPane
 			        .showMessageDialog(
@@ -218,7 +218,7 @@ public class StudentTester extends JDialog implements Observer {
 			                "Error", JOptionPane.ERROR_MESSAGE);
 			System.exit(1);
 		}
-		final InputStream configStream = getResource("../../../../config.cfg");
+		final InputStream configStream = getResource("/config.cfg");
 		if (configStream == null) {
 			JOptionPane
 			        .showMessageDialog(
@@ -265,6 +265,7 @@ public class StudentTester extends JDialog implements Observer {
 		progressBar.setVisible(false);
 		cancelButton.setText("Quit");
 		exportButton.setEnabled(true);
+		pack();
 	}
 
 	private void runTest() {
@@ -295,6 +296,8 @@ public class StudentTester extends JDialog implements Observer {
 		result = StudentTester.class.getResourceAsStream("../../../.." + resource);
 		if (result != null) { return result; }
 		result = StudentTester.class.getResourceAsStream("../../../../.." + resource);
+		if (result != null) { return result; }
+		result = StudentTester.class.getResourceAsStream("../../../../../bin" + resource);
 		if (result != null) { return result; }
 		return result;
 	}
