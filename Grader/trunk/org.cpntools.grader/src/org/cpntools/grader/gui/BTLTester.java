@@ -112,6 +112,7 @@ public class BTLTester extends JDialog {
 	final DefaultListModel enabled;
 	private final DefaultTableModel trace;
 	private final DefaultTableModel mapping;
+	private Guide init;
 
 	public BTLTester(final File selectedFile) throws FileNotFoundException, NetCheckException, SAXException,
 	        IOException, ParserConfigurationException {
@@ -448,17 +449,25 @@ public class BTLTester extends JDialog {
 	}
 
 	public void setFormula(final Guide g) {
-		initFormula.setText(g.toString());
+		initFormula.setText("");
+		init = g;
+		current = g;
 	}
 
 	private void reparse() {
 		try {
 			currentFormula.setBackground(Color.WHITE);
-			final Guide parsed = CupParser.parse(initFormula.getText());
-			parsedFormula.setText(parsed.toString());
-			currentFormula.setText(parsed.toString());
-			current = parsed;
-			refreshMapping(parsed);
+			if (!"".equals(initFormula.getText()) && init != null) {
+				final Guide parsed = CupParser.parse(initFormula.getText());
+				parsedFormula.setText(parsed.toString());
+				currentFormula.setText(parsed.toString());
+				current = parsed;
+			} else {
+				parsedFormula.setText(init.toString());
+				currentFormula.setText(init.toString());
+				current = init;
+			}
+			refreshMapping(current);
 		} catch (final Exception e) {
 			parsedFormula.setText("Could not parse formula: " + e);
 		}
