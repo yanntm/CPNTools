@@ -154,8 +154,6 @@ public class StudentTester extends JDialog implements Observer {
 					final int index = list.locationToIndex(evt.getPoint());
 					final TestError testError = (TestError) errors.get(index);
 					try {
-						System.out.println(testError.getGrader().getName());
-						System.out.println(testError.getGrader().getName());
 						new BTLTester(petriNet, model.getParentFile(), testError.getGrader().getGuide());
 					} catch (final Exception e) {
 						e.printStackTrace();
@@ -274,7 +272,7 @@ public class StudentTester extends JDialog implements Observer {
 		if (tester != null) {
 			progressBar.setIndeterminate(true);
 			try {
-				testResult = tester.test(petriNet, model);
+				testResult = tester.test(petriNet, model.getParentFile());
 			} catch (final Exception e) {
 				JOptionPane.showMessageDialog(null, "Grading failed with message: " + e, "Error",
 				        JOptionPane.ERROR_MESSAGE);
