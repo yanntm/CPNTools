@@ -68,7 +68,7 @@ public class Tester extends Observable {
 				result.add(report);
 			}
 		} else {
-			studentid = new StudentID(modelPath.getName().replaceAll("[.][cC][pP][nN]$", ""));
+			studentid = new StudentID(model.getName().getText());
 			result.add(new Report(studentid));
 		}
 
