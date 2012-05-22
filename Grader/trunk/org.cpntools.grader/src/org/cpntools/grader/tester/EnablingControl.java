@@ -35,8 +35,51 @@ import org.eclipse.emf.common.notify.Notifier;
  */
 public class EnablingControl extends PetriNetDataAdapter {
 	private static final String ENABLING_CONTROL = "ENABLING_CONTROL";
-	Map<Transition, Place> enablingPlaces = new HashMap<Transition, Place>();
-	Set<Instance<Transition>> disabled = new HashSet<Instance<Transition>>();
+	Map<String, Place> enablingPlaces = new HashMap<String, Place>();
+
+	private final static class HashableInstance {
+		final int i;
+
+		/**
+		 * @see java.lang.Object#hashCode()
+		 */
+		@Override
+		public int hashCode() {
+			return hashCode;
+		}
+
+		/**
+		 * @see java.lang.Object#equals(java.lang.Object)
+		 */
+		@Override
+		public boolean equals(final Object obj) {
+			if (this == obj) { return true; }
+			if (obj == null) { return false; }
+			if (!(obj instanceof HashableInstance)) { return false; }
+			final HashableInstance other = (HashableInstance) obj;
+			if (i != other.i) { return false; }
+			if (id == null) {
+				if (other.id != null) { return false; }
+			} else if (!id.equals(other.id)) { return false; }
+			return true;
+		}
+
+		final String id;
+		private final int hashCode;
+
+		public HashableInstance(final Instance<Transition> ti) {
+			id = ti.getNode().getId();
+			i = ti.getInstanceNumber();
+
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + i;
+			result = prime * result + (id == null ? 0 : id.hashCode());
+			hashCode = result;
+		}
+	};
+
+	Set<HashableInstance> disabled = new HashSet<HashableInstance>();
 
 	@Override
 	public void setTarget(final Notifier target) {
@@ -48,7 +91,7 @@ public class EnablingControl extends PetriNetDataAdapter {
 			for (final Page p : petriNet.getPage()) {
 				for (final Transition t : list(p.transition())) {
 					final Place place = createPlace(id++, p);
-					enablingPlaces.put(t, place);
+					enablingPlaces.put(t.getId(), place);
 					createArc(id++, p, t, place);
 				}
 			}
@@ -58,7 +101,7 @@ public class EnablingControl extends PetriNetDataAdapter {
 	public Collection<Instance<Place>> getPlaces(final Instance<Page> pi) {
 		final Set<Instance<Place>> result = new HashSet<Instance<Place>>();
 		for (final Transition t : pi.getNode().transition()) {
-			result.add(InstanceFactory.INSTANCE.createInstance(enablingPlaces.get(t), pi.getTransitionPath()));
+			result.add(InstanceFactory.INSTANCE.createInstance(enablingPlaces.get(t.getId()), pi.getTransitionPath()));
 		}
 		return result;
 	}
@@ -66,7 +109,7 @@ public class EnablingControl extends PetriNetDataAdapter {
 	public Collection<Place> getPlaces(final Page p) {
 		final Set<Place> result = new HashSet<Place>();
 		for (final Transition t : p.transition()) {
-			result.add(enablingPlaces.get(t));
+			result.add(enablingPlaces.get(t.getId()));
 		}
 		return result;
 
@@ -81,16 +124,18 @@ public class EnablingControl extends PetriNetDataAdapter {
 	}
 
 	public void enable(final Instance<Transition> ti) {
-		if (disabled.contains(ti)) {
+		final HashableInstance hi = new HashableInstance(ti);
+		if (disabled.contains(hi)) {
 			setMarking(ti, "()");
-			disabled.remove(ti);
+			disabled.remove(hi);
 		}
 	}
 
 	public void disable(final Instance<Transition> ti) {
-		if (!disabled.contains(ti)) {
+		final HashableInstance hi = new HashableInstance(ti);
+		if (!disabled.contains(hi)) {
 			setMarking(ti, "");
-			disabled.add(ti);
+			disabled.add(hi);
 		}
 	}
 
@@ -101,6 +146,7 @@ public class EnablingControl extends PetriNetDataAdapter {
 		try {
 			simulator.setMarking(pi, InstanceFactory.INSTANCE.createMarking(marking));
 		} catch (final IOException e) {
+			e.printStackTrace();
 			// Ignore
 		}
 	}
@@ -112,7 +158,7 @@ public class EnablingControl extends PetriNetDataAdapter {
 	}
 
 	public Instance<Place> getPlaceInstance(final Instance<Transition> ti) {
-		final Place p = enablingPlaces.get(ti.getNode());
+		final Place p = enablingPlaces.get(ti.getNode().getId());
 		if (p == null) { return null; }
 		if (ti.getTransitionPath() != null) {
 			return InstanceFactory.INSTANCE.createInstance(p, ti.getInstanceNumber(), ti.getTransitionPath());

@@ -84,7 +84,7 @@ public class StudentTester extends JDialog implements Observer {
 		this.baseStream = baseStream;
 		this.configStream = configStream;
 		this.model = model;
-		setTitle("I Want it That Way Ð " + model.getName().replaceAll("[.][cC][pP][nN]$", ""));
+		setTitle("Grade/CPN Student Tester Ñ " + model.getName().replaceAll("[.][cC][pP][nN]$", ""));
 		setLayout(new BorderLayout());
 
 		log = new JTextArea();
@@ -185,7 +185,7 @@ public class StudentTester extends JDialog implements Observer {
 
 		log("Loading your model");
 		try {
-			petriNet = DOMParser.parse(new FileInputStream(model), "student model");
+			petriNet = DOMParser.parse(new FileInputStream(model), model.getName().replaceAll("[.][cC][pP][nN]$", ""));
 		} catch (final Exception e) {
 			JOptionPane
 			        .showMessageDialog(this, "Error loading your model!", "Error Loading", JOptionPane.ERROR_MESSAGE);
