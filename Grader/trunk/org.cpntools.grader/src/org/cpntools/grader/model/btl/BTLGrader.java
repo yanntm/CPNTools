@@ -173,6 +173,7 @@ public class BTLGrader extends AbstractGrader {
 	private Detail grade(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
 	        final List<Instance<Transition>> allTransitionInstances, final EnablingControl ec) {
 		try {
+			simulator.initialiseSimulationScheduler();
 			simulator.initialState();
 			Condition toSatisfy = getGuide();
 			final List<Binding> bindings = new ArrayList<Binding>();
@@ -207,6 +208,7 @@ public class BTLGrader extends AbstractGrader {
 		}
 	}
 
+	@SuppressWarnings("unchecked")
 	public static List<Instance<? extends Transition>> getEnabledAndAllowed(final PetriNet model,
 	        final HighLevelSimulator simulator, final NameHelper names,
 	        final List<Instance<Transition>> allTransitionInstances, final EnablingControl ec,
@@ -222,6 +224,8 @@ public class BTLGrader extends AbstractGrader {
 		boolean changed = true;
 		while (allowed.isEmpty() && changed) {
 			changed = false;
+			final Set<Instance<? extends Transition>> oldEnabled = new HashSet<Instance<? extends Transition>>();
+			oldEnabled.addAll(enabled);
 			for (final Instance<Transition> ti : allTransitionInstances) {
 				if (enabled.contains(ti)) {
 					ec.disable(ti);
@@ -229,6 +233,11 @@ public class BTLGrader extends AbstractGrader {
 					ec.enable(ti);
 				}
 			}
+			for (final Instance<? extends Transition> ti : enabled) { // It seems the hash function is not correct for
+// instances
+				ec.disable((Instance<Transition>) ti);
+			}
+			simulator.initialiseSimulationScheduler();
 			enabled = simulator.isEnabled(allTransitionInstances);
 			while (enabled.isEmpty() && simulator.increaseTime() == null) {
 				changed = true;
@@ -236,6 +245,9 @@ public class BTLGrader extends AbstractGrader {
 			}
 			allowed.clear();
 			allowed.addAll(toSatisfy.force(new HashSet(enabled), model, simulator, names));
+			oldEnabled.addAll(enabled);
+			enabled.clear();
+			enabled.addAll(oldEnabled);
 		}
 		return enabled;
 	}
@@ -245,6 +257,7 @@ public class BTLGrader extends AbstractGrader {
 		for (final Instance<Transition> ti : allTransitionInstances) {
 			ec.enable(ti);
 		}
+		simulator.initialiseSimulationScheduler();
 		final List<Instance<? extends Transition>> enabled = simulator.isEnabled(allTransitionInstances);
 		return enabled;
 	}
@@ -268,7 +281,7 @@ public class BTLGrader extends AbstractGrader {
 	}
 
 	public Guide getGuide() {
-	    return guide;
-    }
+		return guide;
+	}
 
 }

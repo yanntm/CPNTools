@@ -41,6 +41,7 @@ import org.cpntools.accesscpn.engine.highlevel.instance.Binding;
 import org.cpntools.accesscpn.engine.highlevel.instance.Instance;
 import org.cpntools.accesscpn.engine.highlevel.instance.adapter.ModelInstance;
 import org.cpntools.accesscpn.engine.highlevel.instance.adapter.ModelInstanceAdapterFactory;
+import org.cpntools.accesscpn.engine.highlevel.instance.adapter.SimulatorModelAdapterFactory;
 import org.cpntools.accesscpn.model.PetriNet;
 import org.cpntools.accesscpn.model.Transition;
 import org.cpntools.accesscpn.model.importer.DOMParser;
@@ -289,8 +290,13 @@ public class BTLTester extends JDialog {
 		pack();
 		setVisible(true);
 		try {
-			simulator = org.cpntools.grader.tester.Tester.checkModel(petriNet, parentFile, parentFile, new StudentID(
-			        "dummy"));
+			if (light) {
+				simulator = (HighLevelSimulator) SimulatorModelAdapterFactory.getInstance().adapt(petriNet,
+				        HighLevelSimulator.class);
+			} else {
+				simulator = org.cpntools.grader.tester.Tester.checkModel(petriNet, parentFile, parentFile,
+				        new StudentID("dummy"));
+			}
 			checkButton.setEnabled(true);
 			initialButton.setEnabled(true);
 			refreshButton.setEnabled(true);
@@ -409,8 +415,8 @@ public class BTLTester extends JDialog {
 
 	void refresh() {
 		reparseCurrent();
-		refreshMarking();
 		refreshEnabling();
+		refreshMarking();
 		refreshCurrent();
 	}
 
@@ -457,7 +463,7 @@ public class BTLTester extends JDialog {
 	private void reparse() {
 		try {
 			currentFormula.setBackground(Color.WHITE);
-			if (!"".equals(initFormula.getText()) && init != null) {
+			if (init == null) {
 				final Guide parsed = CupParser.parse(initFormula.getText());
 				parsedFormula.setText(parsed.toString());
 				currentFormula.setText(parsed.toString());
