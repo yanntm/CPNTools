@@ -82,6 +82,7 @@ public class SetupDialog extends JDialog {
 			@Override
 			public void actionPerformed(final ActionEvent e) {
 				SetupDialog.this.setVisible(false);
+				System.exit(0);
 			}
 		});
 		final JButton okButton = new JButton("Ok");

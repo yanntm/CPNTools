@@ -33,7 +33,7 @@ import org.cpntools.grader.tester.Tester;
  */
 public class Grader {
 
-	private static final int MAX_THREADS = 8;
+	private static final int MAX_THREADS = 1;
 	private static int progress;
 
 	public static class ResultData {
@@ -59,6 +59,8 @@ public class Grader {
 	 * @param args
 	 */
 	public static void main(final String[] args) {
+		System.setProperty("apple.laf.useScreenMenuBar", "true");
+		System.setProperty("com.apple.mrj.application.apple.menu.about.name", "Grade/CPN");
 		final FileChooser configuration = new FileChooser("Configuration", true);
 		final SetupDialog setup = new SetupDialog() {
 			@Override
