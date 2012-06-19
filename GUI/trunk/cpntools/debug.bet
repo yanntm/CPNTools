@@ -34,13 +34,13 @@ debugging:(# exit false #);
 
 internal: (# exit false #);
 
-build: (# exit '3.3.0' #);
+build: (# exit '3.4.0' #);
 (* Use to specify build number, please keep as is *)
 
-version: (# exit '3.3.0' #);
+version: (# exit '3.4.0' #);
 (* Use to specify version, please keep as is *)
 
-titlebar: (# exit '(Version 3.3.0, January 2012)' #);
+titlebar: (# exit '(Version 3.4.0, June 2012)' #);
 (* Use to specify version, please keep as is *)
 
 toolname: (# exit 'CPN Tools' #);
@@ -165,6 +165,7 @@ TODO: debugBase (# debugme::falseObject; do 'TODO' ->prefix[]; INNER; #);
 debugSyntaxCheck: debugBase(# debugme::falseObject; do 'SyntaxCheck' -> prefix[]; INNER; #);
 debugAttachmentPoints: debugBase(# debugme::falseObject; do 'AttachmentPoints' -> prefix[]; INNER; #);
 debugCommunication: debugBase(# debugme::falseObject; do 'COMM' -> prefix[]; INNER; #);
+debugUnicode: debugBase(# debugme::falseObject; do 'UTF8' -> prefix[]; INNER; #);
 
 (* Set to false to remove info to user, e.g. usage. Isn't removed by 'debugging' *)
 userinfo: debugInfo (# debugme::trueObject; do 'INFO' -> prefix[]; INNER; #);

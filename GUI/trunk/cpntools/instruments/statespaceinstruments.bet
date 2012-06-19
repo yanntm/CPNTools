@@ -220,7 +220,7 @@ CalcStateSpaceCommand: StateSpaceCommand
                     (if error then
                         leave L;
                     if);
-                    'CalculateOccGraph() handle StopCritSatisfied => (print "Unhandled Exception: StopCritSatisfied\\n"; raise StopCritSatisfied)'
+			  'CalculateOccGraph() handle CPN\'OGNodeSel.StopCritSatisfied => (print "Unhandled Exception: StopCritSatisfied\\n"; raise CPN\'OGNodeSel.StopCritSatisfied) | (CPN\'e as CPN\'Error CPN\'s) => (print CPN\'s; print "\\n"; raise CPN\'e)'
                       -> sheetPage.thePage.net.ML.evaluate
                     (#
                        onMLException::
