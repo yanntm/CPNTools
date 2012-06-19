@@ -592,7 +592,20 @@ PSContext: Context
                                                  yPos -> f;
                                               #);
              '(' -> output.puttext;
-             current.content[] -> output.puttext;
+		 current.content.reset;
+		 current.content.scan
+                 (#
+                 do (if ch
+                     // '(' then
+                        '\\(' -> output.puttext;
+                     // '\\' then
+                        '\\\\' -> output.puttext;
+                     // ')' then
+                        '\\)' -> output.puttext;
+                    else
+                       ch -> output.put;
+                    if);
+                 #);
              ') dup stringwidth pop 2 div neg 0 rmoveto show' -> output.putline;
              (yPos - lineheight) -> yPos;
           #);

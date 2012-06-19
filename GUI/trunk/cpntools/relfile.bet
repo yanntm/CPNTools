@@ -26,6 +26,8 @@
 ORIGIN '~beta/basiclib/betaenv';
 INCLUDE '~beta/basiclib/file';
 INCLUDE '~beta/sysutils/envstring';
+INCLUDE '~beta/comlib/unicodetext';
+INCLUDE 'debug.bet';
 MDBODY nti 'private/relfile_ntibody'
 default 'private/relfile_unixbody';
 
@@ -65,11 +67,50 @@ relativeFile:
   exit	tmp[]
   #);
 
+utf8ify:
+(#
+	input: ^text;
+	wresult: ^wtext;
+	output: @text;
+	enter	input[]
+	do	'Translating `%s\'' -> debugUnicode (# do input[] -> s; #);
+		input[] -> ascii2wText -> wresult[];
+		wresult.reset;
+		wresult.scan (#
+		do	(if true
+			// ch <= 0x7f then
+				ch -> output.put;
+			// ch <= 0x7ff then
+				0xc0 %bor (ch %srl 6) -> output.put;
+				0x80 %bor (ch %band 0x3f) -> output.put;
+			// ch <= 0xffff then
+				0xd0 %bor (ch %srl 12) -> output.put;
+				0x80 %bor ((ch %srl 6) %band 0x3f) -> output.put;
+				0x80 %bor (ch %band 0x3f) -> output.put;
+			(* wchar does not support values > 0xffff so don't care, I suppose *)
+			if);
+		#);
+		(if debugging then
+			'Translated value: `%s\'' -> debugUnicode (# do output[] -> s; #);
+			(# tmp: @text;
+			do	output.reset;
+				output.scan (#
+				do	'\\' -> tmp.puttext;
+					ch -> tmp.putint;
+				#);
+				'Raw value: %s' -> debugUnicode (# do tmp[] -> s; #);
+			#);
+			output.reset;
+		if);
+	exit	output[]
+#);
+
 cygwinify:
 (#
 	name: ^text;
 	tmp: @text;
 	result: @text;
+	utf8: ^text;
 	enter	name[]
 	do	name[] -> tmp.puttext;
 		'\\'->tmp.findAll
@@ -81,9 +122,11 @@ cygwinify:
 			1 -> tmp.inxget -> result.put;
 			'/' -> result.put;
 			(4, tmp.length) -> tmp.sub -> result.puttext;
+			result[] -> ascii2wText;
 		else
 			tmp[] -> result.puttext;
 		if);
-	exit	result[]
+		result[] -> utf8ify -> utf8[]
+	exit	utf8[]
 #);
 
