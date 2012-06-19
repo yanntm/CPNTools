@@ -51,6 +51,7 @@ public class Signer extends JDialog {
 			@Override
 			public void actionPerformed(final ActionEvent e) {
 				Signer.this.setVisible(false);
+				System.exit(0);
 			}
 		});
 		final JButton okButton = new JButton("Ok");
@@ -158,6 +159,8 @@ public class Signer extends JDialog {
 	 * @param args
 	 */
 	public static void main(final String[] args) {
+		System.setProperty("apple.laf.useScreenMenuBar", "true");
+		System.setProperty("com.apple.mrj.application.apple.menu.about.name", "Signer");
 		new Signer().setVisible(true);
 
 	}

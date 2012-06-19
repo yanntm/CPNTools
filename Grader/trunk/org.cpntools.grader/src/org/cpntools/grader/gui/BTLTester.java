@@ -501,10 +501,14 @@ public class BTLTester extends JDialog {
 
 	public static void main(final String... args) throws FileNotFoundException, NetCheckException, SAXException,
 	        IOException, ParserConfigurationException {
+		System.setProperty("apple.laf.useScreenMenuBar", "true");
+		System.setProperty("com.apple.mrj.application.apple.menu.about.name", "BTL Tester");
 		final JFileChooser load = new JFileChooser();
 		final int result = load.showOpenDialog(null);
 		if (result == JFileChooser.APPROVE_OPTION) {
 			new BTLTester(load.getSelectedFile());
+		} else {
+			System.exit(0);
 		}
 	}
 }
