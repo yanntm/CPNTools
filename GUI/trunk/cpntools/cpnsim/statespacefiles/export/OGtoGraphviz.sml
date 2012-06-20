@@ -50,11 +50,11 @@ fun nodeToNodeID (CPN'node : Node) =
  * generate a node statement in the DOT language for Graphviz
  *)
 fun genNodeStmt CPN'node = 
-    "  "^nodeToNodeID(CPN'node)^";\n" 
+    "  "^nodeToNodeID(CPN'node)^" [label=\""^(NodeDescriptor(CPN'node))^"\"];\n" 
 
 
 fun arcToEdgeLabel (CPN'arc: Arc) =
-    "A"^mkst_Arc(CPN'arc)^":"^st_BE(ArcToBE(CPN'arc))
+    "A"^st_Arc(CPN'arc)^":"^st_BE(ArcToBE(CPN'arc))
 
 (* Given a (sourceNode,arc,destNode) tuple from the state space, 
  * generate an edge statement in the DOT language for Graphviz 
@@ -83,7 +83,7 @@ fun checkArcs (CPN'arcs : Arc list) =
     else case List.find (not o CPN'OGUtils.ArcExists) CPN'arcs of
 	     NONE => ()
 	   | SOME CPN'arc => 
-	     raise CPN'Error ("Arc "^mkst_Arc(CPN'arc)^
+	     raise CPN'Error ("Arc "^st_Arc(CPN'arc)^
 			      " does not exist in the state space")
 (* 
  * function createGraphvizFile
@@ -131,7 +131,7 @@ fun CPN'arcPathToEdges [] = [] (* should not happen *)
 	then (CPN'arcToEdge CPN'arc1)::(CPN'arcPathToEdges (CPN'arc2::CPN'rest))
     else raise CPN'Error ("No node between arcs "^
 			  mkst_Node(CPN'arc1)^" and "^
-			  mkst_Node(CPN'arc2)^" in CPN'arcPathToEdges")
+			 mkst_Node(CPN'arc2)^" in CPN'arcPathToEdges")
 	
 (* Duplicates not removed *)
 fun ExportNodes (CPN'filename: string, []) = 
