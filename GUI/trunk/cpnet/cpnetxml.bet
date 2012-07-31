@@ -30,6 +30,7 @@ INCLUDE '../cpntools/cpnworkspace';
 INCLUDE 'private/xmlgetdata';
 INCLUDE '../cpntools/instruments/cpninstrument';
 INCLUDE '../cpntools/resources/texts/texts';
+INCLUDE '~beta/basiclib/regexp';
 
 -- WorkspaceLib: attributes --
 Loader:
@@ -421,6 +422,26 @@ CPNetLoader: Loader
                                              getPlace -> obj.setPlace;
                                           #);
                                      #);
+                                    PlaceKindLoader: @PageElementLoader
+                                     (# Type:: PlaceKind;
+                                        load::
+                                          (#
+                                          do 'type' -> elm.lookuptext -> obj.setCPNML;
+                                             (if ('fifo'->(obj.getCPNML).equalNCS) then
+                                                 'fifo'->obj.setCPNML;
+                                             if);
+                                             (if 'lifo'->(obj.getCPNML).equalNCS then
+                                                 'lifo'->obj.setCPNML;
+                                             if);
+                                             (if 'pqueue'->(obj.getCPNML).equalNCS then
+                                                 'pqueue'->obj.setCPNML;
+                                             if);
+                                             (if 'bounded'->(obj.getCPNML).equalNCS then
+                                                 'bounded'->obj.setCPNML;
+                                             if);
+                                             getPlace -> obj.setPlace;
+                                          #);
+                                     #);
                                    
                                    FusionInfoLoader: @HierarchyInfoLoader
                                      (# Type:: FusionInfo;
@@ -464,6 +485,8 @@ CPNetLoader: Loader
                                           #);
                                        //'port' -> current.tag.equalNCS then
                                           current[] -> PortTypeLoader.load -> obj.setPortType;
+                                       //'kind' -> current.tag.equalNCS then
+                                          current[] -> PlaceKindLoader.load -> obj.setPlaceKind;
                                        // 'fusioninfo' -> current.tag.equalNCS then
                                           current[] -> FusionInfoLoader.load -> obj.setFusionInfo;
                                       if);
@@ -474,7 +497,15 @@ CPNetLoader: Loader
                                    (if obj.getPlaceType = NONE then
                                        PlaceTypeLoader.createDefault;
                                    if);
-                                   
+
+					     (if (obj.getPlaceType = NONE) or
+					         ('UNIT' -> ((obj.getPlaceType).getType).equal) then
+						   0 -> ((obj.getInitMark).getInscription).pos;
+						   '^ *\\([0-9]+\\) *`() *$' -> ((obj.getInitMark).getInscription).regexp_match (#
+							   do ((1 -> regs.start) + 1, 1 -> regs.end) -> ((obj.getInitMark).getInscription).sub -> (obj.getInitMark).setInscription;
+						   #);
+					     if);
+
                                    obj[] -> (getPage).addPlace;
                                    
                                    obj.getInitMark -> snapChild;
@@ -794,6 +825,10 @@ CPNetLoader: Loader
 	                               PtoT->obj.setOrientation;
                                     //'TtoP'->dir.equalNCS then
 	                               TtoP->obj.setOrientation;
+                                    //'inhibitor'->dir.equalNCS then
+	                               Inhibitor->obj.setOrientation;
+                                    //'reset'->dir.equalNCS then
+	                               ResetArc->obj.setOrientation;
                                     else
 	                               (if debugging then
 	                                   'Arc.unPackAttributes: Unknown arc orientation: %s'->debugCPNet
@@ -846,7 +881,21 @@ CPNetLoader: Loader
                                                  idref[] -> lookupObject -> placeEnd[];
                                                  (if placeEnd[] <> NONE then
                                                      placeEnd[] -> obj.setPlaceEnd;
-                                                     obj[] -> placeEnd.addArc;
+								     obj[] -> placeEnd.addArc;
+
+								     (if (placeEnd.getPlaceType = NONE) or
+								         ('UNIT' -> ((placeEnd.getPlaceType).getType).equal) then
+									   0 -> ((obj.getAnnotation).getInscription).pos;
+									   '^ *\\([0-9]+\\) *`() *$' -> ((obj.getAnnotation).getInscription).regexp_match (#
+										   do ((1 -> regs.start) + 1, 1 -> regs.end) -> ((obj.getAnnotation).getInscription).sub -> (obj.getAnnotation).setInscription;
+									   #);
+									   (if '1' -> ((obj.getAnnotation).getInscription).equal then
+										   AnnotationLoader.createDefault;
+									   if);
+									   (if '()' -> ((obj.getAnnotation).getInscription).equal then
+										   AnnotationLoader.createDefault;
+									   if);
+								     if) 
                                                  if);
                                              if);
                                           //'transend'->current.tag.equalNCS then

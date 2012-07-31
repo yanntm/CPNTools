@@ -62,7 +62,6 @@ globref				return tGLOBREF;
 use				return tUSE; 
 colset				return tCOLOR;
 color                           return tCOLOR;
-sort                            return tCOLOR;
 invariant			return tINVARIANT;
 
 .				{ yyless(0); resetBuffer(); BEGIN(MLDECL); }
@@ -191,7 +190,7 @@ invariant			return tINVARIANT;
 <MLDECL>.					addtoBuffer(yytext);
 <MLDECL>\n					{ lineno++; addtoBuffer(yytext); }
 <MLDECL>"\""[^"\""]*"\"" 			addtoBuffer(yytext);
-<MLDECL>"var"|"msvar"|"colset"|"color"|"globref"|"use"|"invariant"|"sort" 	{ yyless(0); BEGIN(0); yylval.string = buffer; return tMLDECL; }
+<MLDECL>"var"|"msvar"|"colset"|"color"|"globref"|"use"|"invariant" 	{ yyless(0); BEGIN(0); yylval.string = buffer; return tMLDECL; }
 <MLDECL>[_a-zA-Z][_a-zA-Z0-9']*                 addtoBuffer(yytext);
 <MLDECL><<EOF>>					{ BEGIN(0); addtoBuffer(yytext); yylval.string = buffer; return tMLDECL; }
 <*>.                            return tERROR;

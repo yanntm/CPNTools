@@ -530,15 +530,15 @@ do (if thePlacemarking[]<>NONE then
    if);
    
 -- PlaceInstanceupdate: doPart --
-do (# highlightshape: ^Ellipse;
+do (# highlightshape: ^Composite;
       showHalo:
         (# theColor: ^Color;
         enter theColor[]
         do (if theColor[] <> NONE then
                (if (thePlace[] <> NONE) then
                    thePlace.makeShape -> highlightshape[];
-                   thePlace.width+thePlace.strokeWidth -> highlightshape.width;
-                   thePlace.height+thePlace.strokeWidth -> highlightshape.height;
+                  (* thePlace.width+thePlace.strokeWidth -> highlightshape.width;
+                   thePlace.height+thePlace.strokeWidth -> highlightshape.height;*)
                    (halo_width,theColor[]) -> &HaloStyle -> highlightshape.theStyle[];
                    IGNORE -> highlightshape.status;
                    highlightshape[] -> presentation.add;
@@ -694,7 +694,7 @@ do (# plist: ^PlaceList;
       (* only when hole port/socket chain is checked *)
       (thePlace.getPlaceType <> none) and
       ((thePageInstance.thePage.net.ML[],theMarking[], 
-      (thePlace.getPlaceType).getInscription) -> MLCheckMarking)
+      (thePlace.getPlaceType).getType) -> MLCheckMarking)
         -> isLegal;  
 
       scanPlaceInstanceGroup

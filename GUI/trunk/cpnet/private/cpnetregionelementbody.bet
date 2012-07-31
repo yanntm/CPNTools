@@ -229,6 +229,70 @@ do (if private.thePlace[] <> NONE then (* if it is in a hand *)
 
 -- PortTypeSnap:doPart --
 do THIS(PortType)[] -> private.thePlace.snapTo -> (dx, dy);
+
+-- PlaceKindPrivate:Descriptor --
+(# 
+   thePlace: ^Place;
+   ml: ^text;
+#)
+
+-- PlaceKindGetPlace:doPart --
+do private.thePlace[] -> thePlace[];
+
+-- PlaceKindDefaultSnapToElement:doPart --
+do private.thePlace[] -> elm[];
+
+-- PlaceKindSetPlace:doPart --
+do thePlace[] -> private.thePlace[];
+
+-- PlaceKindDelete:doPart --
+do (# theTransition: ^Transition;
+      thePlace: ^Place;
+      thePort: ^PlaceKind;
+   do father[] -> thePlace[];
+   #);
+   
+-- PlaceKindUpdate:doPart --
+do ('theText[]<> none', theText[]<> none) -> assert (# #);
+   (if theText[]<> none then
+       (if true
+        // ('fifo' -> theText.equal) then
+           NamesPlaceKindFIFO -> getGlobalNames -> theText[];
+        // ('lifo' -> theText.equal) then
+           NamesPlaceKindLIFO -> getGlobalNames -> theText[];
+        // ('pqueue' -> theText.equal) then
+	     &text[] -> theText[];
+           NamesPlaceKindPQueue -> getGlobalNames -> theText.puttext;
+	     ': ' -> theText.puttext;
+	     private.ml[] -> theText.puttext;
+        // ('bound' -> theText.equal) then
+	     &text[] -> theText[];
+           NamesPlaceKindBound-> getGlobalNames -> theText.puttext;
+	     ': ' -> theText.puttext;
+	     private.ml[] -> theText.puttext;
+       if);
+   if);
+        
+-- PlaceKindNext:doPart --
+do father[] -> QUA
+     (# as:: Place;
+     do thisObj.getPlaceKind -> elm[];
+        (if elm[] = NONE then
+            thisObj.createPlaceKind -> elm[];
+        if);
+     #);
+
+-- PlaceKindOnSemanticChanged:doPart --
+do ('private.thePlace[] <> NONE', private.thePlace[] <> NONE) -> assert (# #);
+   private.thePlace.semanticChanged;
+
+-- PlaceKindOnChanged:doPart --
+do (if private.thePlace[] <> NONE then (* if it is in a hand *)
+       THIS(PlaceKind)[] -> private.thePlace.changed;
+   if)
+
+-- PlaceKindSnap:doPart --
+do THIS(PlaceKind)[] -> private.thePlace.snapTo -> (dx, dy);
   
 -- SubPageInfoPrivate:descriptor--
 (#

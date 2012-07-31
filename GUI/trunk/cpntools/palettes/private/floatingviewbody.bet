@@ -201,12 +201,18 @@ do getToolCells->list[];
    &ToolCell[]->PlaceCell[];
    &ToolCell[]->TransitionCell[];
    &ToolCell[]->ArcCell[];
+   &ToolCell[]->ResetArcCell[];
+   &ToolCell[]->InhibitorArcCell[];
    &ToolCell[]->DeleteCell[];
    &ToolCell[]->CloneCell[];
    &ToolCell[]->CycleArcCell[];
    &ToolCell[]->HorizontalGuideCell[];
    &ToolCell[]->VerticalGuideCell[];
    &ToolCell[]->ToogleExplicitCell[];
+   &ToolCell[]->FIFOCell[];
+   &ToolCell[]->LIFOCell[];
+   &ToolCell[]->PQueueCell[];
+   &ToolCell[]->BoundedCell[];
    
    getInstruments->theInstrumentList[];
    'place'->theInstrumentList.lookup->thePlaceInstrument[];
@@ -220,6 +226,14 @@ do getToolCells->list[];
    'arc'->theInstrumentList.lookup->theArcInstrument[];
    (theArcInstrument[], 'arc')->ArcCell.init;
    'create_arc'->ArcCell.helpname[];
+   
+   'resetarc'->theInstrumentList.lookup->theArcInstrument[];
+   (theArcInstrument[], 'resetarc')->ResetArcCell.init;
+   'create_reset_arc'->ResetArcCell.helpname[];
+   
+   'inhibitorarc'->theInstrumentList.lookup->theArcInstrument[];
+   (theArcInstrument[], 'inhibitorarc')->InhibitorArcCell.init;
+   'create_inhibitor_arc'->InhibitorArcCell.helpname[];
    
    'delete'->theInstrumentList.lookup->theDeleteInstrument[];
    (theDeleteInstrument[], 'delete')->DeleteCell.init;
@@ -244,6 +258,23 @@ do getToolCells->list[];
    
    'toogleExplicit' -> theInstrumentList.lookup -> theToogleExplicitInstrument[];
    (theToogleExplicitInstrument[], 'toogleExplicit') -> ToogleExplicitCell.init;
+   'toggle_explicit'->VerticalGuideCell.helpname[];
+   
+   'fifo' -> theInstrumentList.lookup -> theFIFOKindInstrument[];
+   (theFIFOKindInstrument[], 'fifo') -> FIFOCell.init;
+   'fifo'->FIFOCell.helpname[];
+   
+   'lifo' -> theInstrumentList.lookup -> theLIFOKindInstrument[];
+   (theLIFOKindInstrument[], 'lifo') -> LIFOCell.init;
+   'lifo'->LIFOCell.helpname[];
+   
+   'pqueue' -> theInstrumentList.lookup -> thePQueueKindInstrument[];
+   (thePQueueKindInstrument[], 'pqueue') -> PQueueCell.init;
+   'pqueue'->PQueueCell.helpname[];
+   
+   'bound' -> theInstrumentList.lookup -> theBoundedKindInstrument[];
+   (theBoundedKindInstrument[], 'bound') -> BoundedCell.init;
+   'bound'->BoundedCell.helpname[];
    
    &CPNToolCollection[]->theCollection[];
    theCollection.init;
@@ -254,13 +285,21 @@ do getToolCells->list[];
    PlaceCell[]->theCollection.add;
    TransitionCell[]->PlaceCell.SetLeftCell;
    ArcCell[]->PlaceCell.SetRightCell;
+   ResetArcCell[] -> ArcCell.setRightCell;
+   InhibitorArcCell[] -> ResetArcCell.setRightCell;
+
    DeleteCell[]->TransitionCell.SetBottomCell;
    CloneCell[]->DeleteCell.SetRightCell;
    CycleArcCell[]->CloneCell.SetRightCell;
    HorizontalGuideCell[]->CycleArcCell.SetRightCell;
-   VerticalGuideCell[]->HorizontalGuideCell.SetTopCell;
-   (if internal then 
-       ToogleExplicitCell[] -> VerticalGuideCell.SetRightCell;
+   VerticalGuideCell[]->HorizontalGuideCell.SetRightCell;
+
+   FIFOCell[] -> DeleteCell.setBottomCell;
+   LIFOCell[] -> FIFOCell.setRightCell;
+   PQueueCell[] -> LIFOCell.setRightCell;
+   BoundedCell[] -> PQueueCell.setRightCell;
+   (if internal or true then 
+       ToogleExplicitCell[] -> BoundedCell.setRightCell;
    if);
    
    theCollection.Changed;

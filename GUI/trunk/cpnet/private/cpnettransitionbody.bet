@@ -485,11 +485,10 @@ do (# atLeastOneArc, allArcsHaveAnnotation, allPlacesHaveType: @boolean;
       warning: ^Text;
       portok: @boolean;
    do (* Check that:
-       *   - there is at least one arc
-       *   - all arcs has an annotation
-       *   - all places have a type
+       *   - there is at least one arc // Removed
+       *   - all arcs has an annotation // All regular arcs to non-unit
+       *   - all places have a type // Removed
        *)
-      hasArcs -> atLeastOneArc;
       true -> allPlacesHaveType;
       true -> allArcsHaveAnnotation;
       true -> allSocketPlacesIsAssigned;
@@ -507,21 +506,23 @@ do (# atLeastOneArc, allArcsHaveAnnotation, allPlacesHaveType: @boolean;
                          leave check;
                      if);
                #);
-	       (if (current.getPlaceEnd).getPlaceType = none then
-	           false -> allPlacesHaveType;
-	           (* 'TransitionlocalCheck: not allPlacesHaveType'->debugtemp; *)
-	           leave check;
-	       if);
 	       (* has to check if the place is uncheck!? (#930) /omega*)
 	       (if (current.getPlaceEnd).status = unchecked then
 	           false -> allPlaceAreChecked;
                    (* 'TransitionlocalCheck: not allPlaceAreChecked'->debugtemp; *)
 	           leave check;
 	       if);
-	       (if (getSubpage = none) and
+		 (if (getSubpage = none) and
+		       (* no inscription *)
                    ((current.getAnnotation = NONE) or
                    ((current.getAnnotation).defaultInscription
-                     -> ((current.getAnnotation).getInscription).equal)) then
+                     -> ((current.getAnnotation).getInscription).equal))
+			   and 
+			   (* non UNIT place type *)
+			   ((((current.getPlaceEnd).getPlaceType <> NONE) and
+			   (not ('UNIT' -> (((current.getPlaceEnd).getPlaceType).getType).equal))) and
+			   (* standard arc *)
+			   (current.getOrientation < Inhibitor)) then
 	           false -> allArcsHaveAnnotation;
 	           (* 'TransitionlocalCheck: not allArcsHaveAnnotation'->debugtemp; *)
 	           leave check;
@@ -549,7 +550,7 @@ do (# atLeastOneArc, allArcsHaveAnnotation, allPlacesHaveType: @boolean;
       if);
       
       not private.transActionSyntaxError and
-      atLeastOneArc and allPlacesHaveType and
+      allPlacesHaveType and
       allArcsHaveAnnotation and allSocketPlacesIsAssigned and
       allPlacesHasNoAssignmentChainError and allCurrentMarkingsHasNoError and
       allPlaceAreChecked -> IAmFine;

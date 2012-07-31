@@ -29,6 +29,7 @@ INCLUDE '../../cpntools/cpnworkspace';
 INCLUDE '../../cpntools/wselements/statusbubble';
 INCLUDE '../runtimeerror';
 INCLUDE '~beta/basiclib/private/basicsystemenvbody';
+INCLUDE '~beta/basiclib/regexp';
 
 
 ---mlGetMLName:doPart---
@@ -567,7 +568,8 @@ do 'sendUncheckedPlaces' -> debugSyntaxCheck;
    0 -> count;
    scanPlaces
    (# thePlaceType: ^PlaceType;
-      theInitMark: ^InitMark;
+	   theInitMark: ^InitMark;
+	   tmp: ^text;
    do (if (current.getFusionSet = NONE) and
           (current.status = unchecked) then
           (if (current.getCPNPage).net.checkNames and
@@ -597,24 +599,34 @@ do 'sendUncheckedPlaces' -> debugSyntaxCheck;
                   current.checkedName[] -> bis.putString;
 
                   (* Send the type. *)
-                  (* A place ALWAYS has a place type here
-                   * otherwise the local check would have failed *)
                   current.getPlaceType -> thePlaceType[];
                   'Place Type' -> debugSyntaxCheck;
                   (if not (thePlaceType.defaultInscription
                         -> (thePlaceType.getInscription).equal) then
                       thePlaceType.getInscription -> bis.putString;
                    else
-                      '' -> bis.putString;
+                      'UNIT' -> bis.putString;
                   if);
                   
                   (* Send the initial marking. *)
                   current.getInitMark -> theInitMark[];
                   'Initial Marking' -> debugSyntaxCheck;
                   (if not (theInitMark.defaultInscription
-                        -> (theInitMark.getInscription).equal) then 
-                      theInitMark.getInscription -> bis.putString;
-                   else
+			   -> (theInitMark.getInscription).equal) and
+                                    not ('' -> (theInitMark.getInscription).equal) then
+			    0 -> (theInitMark.getInscription).pos;
+			   (if    
+			   ((current.getPlaceType = NONE) or
+			   ('UNIT' -> ((current.getPlaceType).getType).equal)) and
+			   ('^ *[0-9]+ *$' -> (theInitMark.getInscription).regexp_match) then
+			   &text[] -> tmp[];
+			   theInitMark.getInscription -> tmp.puttext;
+			   '`()' -> tmp.puttext;
+			   tmp[] -> bis.putString;
+				else
+				theInitMark.getInscription -> bis.putString;
+				if);
+			else
                       '' -> bis.putString;
                   if);
               if);
@@ -630,7 +642,8 @@ do 'sendUncheckedFusionPlaces' -> debugSyntaxCheck;
    0 -> count;
    scanPlaces
    (# thePlaceType: ^PlaceType;
-      theInitMark: ^InitMark;
+	   theInitMark: ^InitMark;
+	   tmp: ^text;
    do (if (current.getFusionSet <> NONE) and
           (current.status = unchecked) then
           (if (current.getCPNPage).net.checkNames then
@@ -667,7 +680,7 @@ do 'sendUncheckedFusionPlaces' -> debugSyntaxCheck;
                   current.getPlaceType -> thePlaceType[];
                   (if not thePlaceType.isBeingEdited and
                       not (thePlaceType.defaultInscription
-                        -> (thePlaceType.getInscription).equal) then 
+                        -> (thePlaceType.getInscription).equal) then
                       thePlaceType.getInscription -> bis.putString;
                    else
                       (checking,unchecked) -> current.changeStatus;
@@ -682,8 +695,20 @@ do 'sendUncheckedFusionPlaces' -> debugSyntaxCheck;
                   current.getInitMark -> theInitMark[];
                   (if not theInitMark.isBeingEdited and
                       not (theInitMark.defaultInscription 
-                        -> (theInitMark.getInscription).equal) then 
-                      theInitMark.getInscription -> bis.putString;
+			    -> (theInitMark.getInscription).equal) and
+                                    not ('' -> (theInitMark.getInscription).equal) then
+			    0 -> (theInitMark.getInscription).pos;
+			   (if    
+			   ((current.getPlaceType = NONE) or
+			   ('UNIT' -> ((current.getPlaceType).getType).equal)) and
+			   ('^ *[0-9]+ *$' -> (theInitMark.getInscription).regexp_match) then
+			   &text[] -> tmp[];
+			   theInitMark.getInscription -> tmp.puttext;
+			   '`()' -> tmp.puttext;
+			   tmp[] -> bis.putString;
+				else
+				theInitMark.getInscription -> bis.putString;
+				if);
                    else
                       (*(checking,unchecked) -> current.changeStatus;*)
                       (if debugging then
@@ -878,14 +903,35 @@ do 'sendUncheckedTransitions' -> debugSyntaxCheck;
                          current.placeEnd.id[] -> bis.putString;
                          false -> annotationFound;
                          current.getAnnotation ->
-                         (# current: ^Inscription;
+				 (# current: ^Annotation;
+				    tmp: ^text;
                          enter current[]
                          do (if (current[]<> NONE) then
                                 (if (current.getInscription<> NONE) and
-                                    not (current.defaultInscription -> (current.getInscription).equal) then
-                                    current.getInscription -> bis.putString;
-                                    true -> annotationFound;
-                                if);
+                                    not (current.defaultInscription -> (current.getInscription).equal) and
+                                    not ('' -> (current.getInscription).equal) then
+						(if ((((current.getArc).getPlaceEnd).getPlaceType = NONE) or
+						('UNIT' -> ((((current.getArc).getPlaceEnd).getPlaceType).getType).equal)) then
+						0 -> (current.getInscription).pos;
+						(if ('^ *[0-9]+ *$' -> (current.getInscription).regexp_match) then
+						  &text[] -> tmp[];
+						  current.getInscription -> tmp.puttext;
+						  '`()' -> tmp.puttext;
+						  tmp[] -> bis.putString;
+						  else
+						  current.getInscription -> bis.putString;
+						  if);
+						  else
+						  current.getInscription -> bis.putString;
+						  if);
+						  true -> annotationFound;
+						else 
+						  (if (((current.getArc).getPlaceEnd).getPlaceType = NONE) or
+						  ('UNIT' -> ((((current.getArc).getPlaceEnd).getPlaceType).getType).equal) then
+						  '1`()' -> bis.putString;
+						  true -> annotationFound;
+						if);
+					if);
                             if);
                          #);
                          (if not annotationFound then '' -> bis.PutString; if);
@@ -903,12 +949,33 @@ do 'sendUncheckedTransitions' -> debugSyntaxCheck;
                          current.placeEnd.id[] -> bis.putString;
                          false -> annotationFound;
                          current.getAnnotation -> 
-                         (# current: ^Annotation; 
+				 (# current: ^Annotation; 
+					 tmp: ^text;
                          enter current[]
                          do (if (current.getInscription<> NONE) and
-                                not (current.defaultInscription -> (current.getInscription).equal) then
-                                current.getInscription -> bis.putString;
-                                true -> annotationFound;
+                                    not (current.defaultInscription -> (current.getInscription).equal) and
+                                    not ('' -> (current.getInscription).equal) then
+   						(if ((((current.getArc).getPlaceEnd).getPlaceType = NONE) or
+						('UNIT' -> ((((current.getArc).getPlaceEnd).getPlaceType).getType).equal)) then
+						0 -> (current.getInscription).pos;
+						(if ('^ *[0-9]+ *$' -> (current.getInscription).regexp_match) then
+						  &text[] -> tmp[];
+						  current.getInscription -> tmp.puttext;
+						  '`()' -> tmp.puttext;
+						  tmp[] -> bis.putString;
+						  else
+						  current.getInscription -> bis.putString;
+						  if);
+						  else
+						  current.getInscription -> bis.putString;
+						  if);
+						  true -> annotationFound;
+						else 
+						  (if (((current.getArc).getPlaceEnd).getPlaceType = NONE) or
+						  ('UNIT' -> ((((current.getArc).getPlaceEnd).getPlaceType).getType).equal) then
+						  '1`()' -> bis.putString;
+						  true -> annotationFound;
+						  if);
                             if);
                          #);
                          (if not annotationFound then '' -> bis.putString; if);
@@ -926,13 +993,34 @@ do 'sendUncheckedTransitions' -> debugSyntaxCheck;
                          current.placeEnd.id[] -> bis.putString;
                          false -> annotationFound;
                          current.getAnnotation -> 
-                         (# current: ^Annotation;
+				 (# current: ^Annotation;
+					tmp: ^text;
                          enter current[]
                          do (if (current.getInscription<> NONE) and
-                                not (current.defaultInscription -> (current.getInscription).equal) then
-                                current.getInscription -> bis.putString;
-                                true -> annotationFound;
-                            if);
+                                    not (current.defaultInscription -> (current.getInscription).equal) and
+                                    not ('' -> (current.getInscription).equal) then
+     						(if ((((current.getArc).getPlaceEnd).getPlaceType = NONE) or
+						('UNIT' -> ((((current.getArc).getPlaceEnd).getPlaceType).getType).equal)) then
+						0 -> (current.getInscription).pos;
+						(if ('^ *[0-9]+ *$' -> (current.getInscription).regexp_match) then
+						  &text[] -> tmp[];
+						  current.getInscription -> tmp.puttext;
+						  '`()' -> tmp.puttext;
+						  tmp[] -> bis.putString;
+						  else
+						  current.getInscription -> bis.putString;
+						  if);
+						  else
+						  current.getInscription -> bis.putString;
+						  if);
+						  true -> annotationFound;
+						else 
+						  (if (((current.getArc).getPlaceEnd).getPlaceType = NONE) or
+						  ('UNIT' -> ((((current.getArc).getPlaceEnd).getPlaceType).getType).equal) then
+						  '1`()' -> bis.putString;
+						  true -> annotationFound;
+						  if);
+                       if);
                          #);
                          (if not annotationFound then '' -> bis.putString; if);
                      if);

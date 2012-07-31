@@ -268,6 +268,10 @@ do &XMLLibrary[] -> theXMLLibrary[];
    
    &Arc[] -> defaultArc[];
    defaultArc.init;
+   &Arc[] -> defaultResetArc[];
+   defaultResetArc.init;
+   &Arc[] -> defaultInhibitorArc[];
+   defaultInhibitorArc.init;
    
    &SSNode[] -> defaultSSNode[];
    defaultSSNode.init;
@@ -275,10 +279,20 @@ do &XMLLibrary[] -> theXMLLibrary[];
    
    &Annotation[] -> defaultAnnotation[];
    defaultAnnotation.init;
+   defaultAnnotation[] -> defaultResetArc.setAnnotation;
+   defaultResetArc[] -> defaultAnnotation.setArc;
+   defaultAnnotation[] -> defaultResetArc.computeInitialAttachPoint;
 
+   &Annotation[] -> defaultAnnotation[];
+   defaultAnnotation.init;
+   defaultAnnotation[] -> defaultInhibitorArc.setAnnotation;
+   defaultInhibitorArc[] -> defaultAnnotation.setArc;
+   defaultAnnotation[] -> defaultInhibitorArc.computeInitialAttachPoint;
+
+   &Annotation[] -> defaultAnnotation[];
+   defaultAnnotation.init;
    defaultAnnotation[] -> defaultArc.setAnnotation;
    defaultArc[] -> defaultAnnotation.setArc;
-
    defaultAnnotation[] -> defaultArc.computeInitialAttachPoint;
 
    &Aux[] -> defaultAuxBox[];
@@ -328,6 +342,26 @@ do &XMLLibrary[] -> theXMLLibrary[];
    1.2 -> defaultArc.arrowHeadSize;
    '' -> defaultArc.fillpattern[];
    PtoT -> defaultArc.setOrientation;
+
+   'black' -> colorTable.lookup -> defaultInhibitorArc.lineColor[];
+   'white' -> colorTable.lookup -> defaultInhibitorArc.fillColor[];
+   1 -> defaultInhibitorArc.strokeWidth;
+   'black' -> colorTable.lookup -> defaultInhibitorArc.textColor[];
+   false -> defaultInhibitorArc.filled;
+   'Solid' -> defaultInhibitorArc.linetype[];
+   1.2 -> defaultInhibitorArc.arrowHeadSize;
+   '' -> defaultInhibitorArc.fillpattern[];
+   Inhibitor -> defaultInhibitorArc.setOrientation;
+
+   'black' -> colorTable.lookup -> defaultResetArc.lineColor[];
+   'white' -> colorTable.lookup -> defaultResetArc.fillColor[];
+   1 -> defaultResetArc.strokeWidth;
+   'black' -> colorTable.lookup -> defaultResetArc.textColor[];
+   false -> defaultResetArc.filled;
+   'Solid' -> defaultResetArc.linetype[];
+   1.2 -> defaultResetArc.arrowHeadSize;
+   '' -> defaultResetArc.fillpattern[];
+   ResetArc -> defaultResetArc.setOrientation;
 
    true -> defaultSSNode.dead;
    'black' -> colorTable.lookup -> defaultSSNode.lineColor[];

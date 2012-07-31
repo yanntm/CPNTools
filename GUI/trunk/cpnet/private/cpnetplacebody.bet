@@ -30,6 +30,7 @@ ORIGIN '../cpnet';
    theInitMark: ^InitMark;
    theFusionInfo: ^FusionInfo;
    thePortType: ^PortType;
+   thePlaceKind: ^PlaceKind;
    theFusionSet: ^FusionSet; 
    assignments: @AssignmentList;
    notAssignedToPortError, notAssignedToSocketError: @boolean;
@@ -56,6 +57,9 @@ do theCPNPage[] -> private.thePlaceType.setCPNPage;
    if);   
    (if getPortType <> none then
        theCPNPage[] -> (getPortType).setCPNPage;
+   if);   
+   (if getPlaceKind <> none then
+       theCPNPage[] -> (getPlaceKind).setCPNPage;
    if);   
    
 -- PlaceToString:doPart --
@@ -154,6 +158,15 @@ do (# thePort: ^Place;
            if);
         exit thePortType[]
         #);
+      getPlaceKind:
+        (# thePort: ^Place;
+           thePlaceKind: ^Text;
+        enter thePort[]
+        do (if thePort.getPlaceKind <> none then
+               ((thePort.getPlaceKind).getCPNML).copy -> thePlaceKind[];
+           if);
+        exit thePlaceKind[]
+        #);
       addNotAssignedError:
         (# theTransition: ^Transition;
            errorMsg: ^Text;
@@ -237,7 +250,7 @@ do (# isAssigned:
         #);
    do false -> private.notAssignedToSocketError;
            (* 'PlaceCheckIfUnassigned: %s '->debugtemp(# do tostring->s#); *)
-      (if hasPortType (* and not (getCPNPage).isPrime *) then
+      (if hasPortType and not (getCPNPage).isPrime then
           (getCPNPage).scanInstances
           (# assigned: @boolean;
              thePlaceInstance: ^Placeinstance;
@@ -410,19 +423,19 @@ do getSlaves -> theList[];
 -- PlacelocalCheck: dopart --
 do (# reportedError: @boolean;
       type: ^Inscription;
-      error: ^Text;
+	error: ^Text;
+	typeName: ^text;
    do false -> reportedError;
       getPlaceType -> type[];
-      (if (type.defaultInscription -> (type.getInscription).equal) then
-          (* 'PlacelocalCheck: hasDefaultInscription'->debugtemp; *)
-          (any_status,unchecked) -> changeStatus;
-          true -> reportedError;
+	(if (type.defaultInscription -> (type.getInscription).equal) then
+	   'UNIT' -> typeName[];
+      else
+          type.getInscription -> typeName[];
       if);
       (if (not reportedError) and
-          not (type.getInscription -> names.defined) and
-          not type.isDefaultInscription then
+          not (typeName[] -> names.defined) then
           'Color-set not defined: "' -> error[];
-          type.getInscription -> error.puttext;
+          typeName[] -> error.puttext;
           '"' -> error.put;
           error.copy -> onSyntaxError;
           true -> reportedError;
@@ -479,6 +492,9 @@ do (# elm: ^PageElement;
       (if private.thePortType[] <> none then
           private.thePortType[] -> theList.append;
       if);           
+      (if private.thePlaceKind[] <> none then
+          private.thePlaceKind[] -> theList.append;
+      if);           
    #);
 
 -- PlaceGetInscriptions:doPart --
@@ -531,10 +547,26 @@ do (if (private.thePortType[] <> NONE) and (thePortType[] <> NONE) then
          do current.portPlaceHasChangedType;
          #);
    if);
+ 
+-- PlaceSetPlaceKind: dopart --
+do (if (private.thePlaceKind[] <> NONE) and (thePlaceKind[] <> NONE) then
+       thePlaceKind.getCPNML -> private.thePlaceKind.setCPNML;
+    else
+       thePlaceKind[] -> private.thePlaceKind[];
+   if);
+   (if getCPNPage <> NONE then (* only do this when on a page *)
+       THIS(Place)[] -> changed; 
+       changedAssignmentToSocket;
+       scanSockets
+         (#
+         do current.portPlaceHasChangedType;
+         #);
+   if);
    
 -- PlaceClone: dopart --
 do (# thePlaceType: ^PlaceType;
       thePortType: ^PortType;
+      thePlaceKind: ^PlaceKind;
       theInitMark: ^InitMark;
       theFusionInfo: ^FusionInfo;
    do tokenSnapId -> new.tokenSnapId;
@@ -553,6 +585,13 @@ do (# thePlaceType: ^PlaceType;
           thePortType.clone -> thePortType[];
           new[] -> thePortType.setPlace;
           thePortType[] -> new.setPortType;
+      if);
+      
+      getPlaceKind -> thePlaceKind[];
+      (if thePlaceKind[] <> NONE then
+          thePlaceKind.clone -> thePlaceKind[];
+          new[] -> thePlaceKind.setPlace;
+          thePlaceKind[] -> new.setPlaceKind;
       if);
       
       getFusionInfo -> theFusionInfo[];
@@ -628,6 +667,12 @@ do private.thePortType[] -> thePortType[];
 -- PlaceHasPortType:doPart --
 do private.thePortType[] <> none -> value;
    
+-- PlaceGetPlaceKind:doPart --
+do private.thePlaceKind[] -> thePlaceKind[];   
+
+-- PlaceHasPlaceKind:doPart --
+do private.thePlaceKind[] <> none -> value;
+   
 -- PlaceSetFusionInfo:dopart --
 do theFusionInfo[] -> private.theFusionInfo[];
    (if theFusionInfo[]<>none then
@@ -685,6 +730,15 @@ do ('creating a porttype from something', cpnml[] <> NONE) -> assert (# #);
    this(Place)[] -> thePortType.setPlace;
    getCPNPage -> thePortType.setCPNPage;
    thePortType.defaultSnap;
+
+-- PlacecreatePlaceKind: dopart --
+do ('creating a PlaceKind from something', cpnml[] <> NONE) -> assert (# #);
+   &PlaceKind[] -> thePlaceKind[];
+   thePlaceKind.init;
+   cpnml[] -> thePlaceKind.setCPNML;
+   this(Place)[] -> thePlaceKind.setPlace;
+   getCPNPage -> thePlaceKind.setCPNPage;
+   thePlaceKind.defaultSnap;
 
 -- Placenext: dopart --
 do (# thePlaceType: ^PlaceType;

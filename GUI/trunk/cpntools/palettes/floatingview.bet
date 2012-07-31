@@ -126,12 +126,18 @@ CreatingTools:
   (# PlaceCell: ^ToolCell;
      TransitionCell: ^ToolCell;
      ArcCell: ^ToolCell;
+     ResetArcCell: ^ToolCell;
+     InhibitorArcCell: ^ToolCell;
      DeleteCell: ^ToolCell;
      CloneCell: ^ToolCell;
      CycleArcCell: ^ToolCell;
      HorizontalGuideCell: ^ToolCell;
      VerticalGuideCell: ^ToolCell;
      ToogleExplicitCell: ^ToolCell;
+     FIFOCell: ^ToolCell;
+     LIFOCell: ^ToolCell;
+     PQueueCell: ^ToolCell;
+     BoundedCell: ^ToolCell;
      
      thePlaceInstrument: ^CPNGenericInstrument;
      theTransitionInstrument: ^CPNGenericInstrument;
@@ -146,6 +152,10 @@ CreatingTools:
      theHorizontalGuideInstrument: ^CreateHorizontalGuideInstrument;
      theVerticalGuideInstrument: ^CreateVerticalGuideInstrument;
      theToogleExplicitInstrument: ^ToogleExplicitInstrument;
+     theFIFOKindInstrument: ^FIFOKindInstrument;
+     theLIFOKindInstrument: ^LIFOKindInstrument;
+     thePQueueKindInstrument: ^PQueueKindInstrument;
+     theBoundedKindInstrument: ^BoundedKindInstrument;
      
      theCollection: ^ToolCollection;
      list: ^ToolCellList;
