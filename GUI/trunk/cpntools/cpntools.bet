@@ -122,7 +122,11 @@ CpnWorkSpace
              
              theHorizontalGuideInstrument: ^CreateHorizontalGuideInstrument;
              theVerticalGuideInstrument: ^CreateVerticalGuideInstrument;
-             theToogleExplicitInstrument: ^ToogleExplicitInstrument;
+		 theToogleExplicitInstrument: ^ToogleExplicitInstrument;
+		 theFIFOKindInstrument: ^FIFOKindInstrument;
+		 theLIFOKindInstrument: ^LIFOKindInstrument;
+		 thePQueueKindInstrument: ^PQueueKindInstrument;
+		 theBoundedKindInstrument: ^BoundedKindInstrument;
              
              theRewindInstrument: ^RewindInstrument;
              theStopInstrument: ^StopInstrument;
@@ -307,6 +311,12 @@ CpnWorkSpace
              &ArcInstrument[]->theArcInstrument[];
              theArcInstrument.init;
              ('arc', theArcInstrument[])->theInstrumentList.associate;
+             &ResetArcInstrument[]->theArcInstrument[];
+             theArcInstrument.init;
+             ('resetarc', theArcInstrument[])->theInstrumentList.associate;
+             &InhibitorArcInstrument[]->theArcInstrument[];
+             theArcInstrument.init;
+             ('inhibitorarc', theArcInstrument[])->theInstrumentList.associate;
              
              &GenericDeleteInstrument[]->theDeleteInstrument[];
              theDeleteInstrument.init;
@@ -329,7 +339,23 @@ CpnWorkSpace
              &ToogleExplicitInstrument[] -> theToogleExplicitInstrument[];
              theToogleExplicitInstrument.init;
              ('toogleExplicit', theToogleExplicitInstrument[]) -> theInstrumentList.associate;
-             
+             &FIFOKindInstrument[] -> theFIFOKindInstrument[];
+             theFIFOKindInstrument.init;
+             ('fifo', theFIFOKindInstrument[]) 
+               -> theInstrumentList.associate;
+             &LIFOKindInstrument[] -> theLIFOKindInstrument[];
+             theLIFOKindInstrument.init;
+             ('lifo', theLIFOKindInstrument[]) 
+               -> theInstrumentList.associate;
+             &PQueueKindInstrument[] -> thePQueueKindInstrument[];
+             thePQueueKindInstrument.init;
+		 ('pqueue', thePQueueKindInstrument[]) 
+               -> theInstrumentList.associate;
+		 &BoundedKindInstrument[] -> theBoundedKindInstrument[];
+             theBoundedKindInstrument.init;
+             ('bound', theBoundedKindInstrument[]) 
+               -> theInstrumentList.associate;
+              
              &RewindInstrument[]->theRewindInstrument[];
              theRewindInstrument.init;
              ('rewind', theRewindInstrument[]) 

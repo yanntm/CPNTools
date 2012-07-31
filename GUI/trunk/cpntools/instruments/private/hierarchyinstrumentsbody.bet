@@ -173,8 +173,8 @@ do (# theClipping: ^AssignmentClipping;
            (if not 
                ((((theSocket.GetPlaceType) <> NONE) AND
                ((thePort.GetPlaceType) <> NONE) AND
-               ((theSocket.GetPlaceType).getInscription 
-                 -> ((thePort.GetPlaceType).getInscription).equal)) 
+               ((theSocket.GetPlaceType).getType
+                 -> ((thePort.GetPlaceType).getType).equal)) 
                OR
                (((theSocket.GetPlaceType) = NONE) AND
                ((thePort.GetPlaceType) = NONE))) then
@@ -681,7 +681,8 @@ do (if not notUndoable then
 -- FusionInstrumentPickUpFusionInstrumentRelevant:DoPart --
 do (theFusionSet[] = none) and 
    not target.hasAssignments and
-   (target.getPortType = none) -> value;
+   (target.getPortType = none) and
+   (target.getPlaceKind = none) -> value;
    
 -- FusionInstrumentPickUpFusionInstrumentApply:DoPart --
 do (# thePlaceList: ^PlaceList;
@@ -718,6 +719,7 @@ do (# thePlaceList: ^PlaceList;
 do (theFusionSet[] <> none) and
    not target.hasAssignments and 
    (target.getPortType = none) and
+   (target.getPlaceKind = none) and
    (target.getCPNet = theFusionSet.net[]) -> value;
    
 -- FusionInstrumentAssignFusionInstrumentApply:DoPart --
@@ -765,7 +767,7 @@ do removedAssignments.clear;
    (if removedAssignments.size > 0 then
        elm.semanticChangedOnPlaceGraph;
    if);
-   
+
 -- CreateDeletePageCommandLib:Attributes --
 buildPageCommand:
   (# 
@@ -1275,7 +1277,7 @@ do elm.getFusionInfo -> theFusionInfo[];
        &Text[] -> elm.createFusionInfo -> theFusionInfo[];
    if);
    (elm.getInitMark).getInscription -> theInitMark[];
-   (elm.getPlaceType).getInscription -> thePlaceType[];
+   (elm.getPlaceType).getType -> thePlaceType[];
    
 -- FusionSetClippingInsert:DoPart --
 do elm[] -> context.addPlace;

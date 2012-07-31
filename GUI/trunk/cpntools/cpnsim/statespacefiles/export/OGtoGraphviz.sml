@@ -50,7 +50,7 @@ fun nodeToNodeID (CPN'node : Node) =
  * generate a node statement in the DOT language for Graphviz
  *)
 fun genNodeStmt CPN'node = 
-    "  "^nodeToNodeID(CPN'node)^"\n";
+    "  "^nodeToNodeID(CPN'node)^" [label=\""^(NodeDescriptor(CPN'node))^"\"];\n" 
 
 
 fun arcToEdgeLabel (CPN'arc: Arc) =

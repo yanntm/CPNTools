@@ -195,20 +195,34 @@ PlaceFigure: Figure
 
 ArcFigure: Figure
   (# useDefaultHotspot::(# do true -> value; #);
-     theArrow: ^Line;
+  theArrow: ^Line;
+
+  theArrowStyle:<
+  (# style: @integer;
+	  do ARROW_START -> style;
+	     INNER;
+	  exit style
+	  #);
      
      
      init::<
        (#
           point: ^Point2d;
+          theBasicStyle: ^CompleteStyle;   
        do &Line[]->theArrow[];
           theArrow[]->add;
           &PointList[]->theArrow.points[];
-          (for 2 repeat &Point2d[]->point[]->theArrow.points.append; for);     
+	    (for 3 repeat &Point2d[]->point[]->theArrow.points.append; for);     
+
+          &CompleteStyle[]->theBasicStyle[];
+          (Black[],NONE,1,theArrowStyle)->theBasicStyle;
+          theBasicStyle[]->theArrow.theStyle[];
           
-          1->theArrow.points.get->point[];
-          (18,18)->point;          
+          3->theArrow.points.get->point[];
+          (9,18)->point;          
           2->theArrow.points.get->point[];
+          (18,14)->point;          
+          1->theArrow.points.get->point[];
           (0,0)->point; 
           
           INNER;   
@@ -1066,3 +1080,68 @@ ToogleExplicitFigure: Figure
           theTextItem[] -> add;
        #);     
   #);
+
+SetKindFigure: Figure
+  (# useDefaultHotspot::(# do true -> value; #);
+     theTextItem: ^TextItem;
+     PlaceKind: ^Text;
+     theEllipse: ^Ellipse;
+     theRect: ^Rect;
+     theCompletestyle: ^Completestyle; 
+     
+     init::
+       (# theStyle: ^CompositeStyle;
+          theStrokeStyle: ^StrokeStyle;
+          theStrokeWidthStyle: ^StrokeWidthStyle;
+          RectColor: ^Color;  
+          point: ^Point2d;
+          w, h: @real;
+       do &Ellipse[] -> theEllipse[];
+          &CompositeStyle[] -> theStyle[] -> theEllipse.theStyle[];
+          black[] -> StrokeStyle -> theStyle.add;
+          white[] -> FillStyle -> theStyle.add;
+          theEllipse[]->add;
+          (12,10) -> (theEllipse.width, theEllipse.height);
+          (0,0) -> (theEllipse.x, theEllipse.y);
+          
+          &TextItem[] -> theTextItem[];
+          
+          &Rect[] -> theRect[];
+          &CompositeStyle[] -> theStyle[] -> theRect.theStyle[];
+          green[] -> StrokeStyle -> theStyle.add;
+          greenish[] -> RectColor[];
+          RectColor.lighten -> FillStyle -> theStyle.add;
+          theRect[] -> add;
+          (if theTextItem.content[] <> NONE then
+              theTextItem.content[] -> arial.measureText -> (w, h);
+              (w + 5, h/2 + 5) -> (theRect.width, theRect.height);
+           else 
+              14 -> theRect.width;
+              9 -> theRect.height;
+          if);
+          (7,-14) -> (theRect.x, theRect.y);
+          
+          green[] -> StrokeStyle -> theTextItem.theStyle[];
+          theTextItem[] -> add;
+          (0,-10) -> (theTextItem.x, theTextItem.y);
+       #);
+     
+     update::
+       (# w, h: @real;
+       do PlaceKind[] -> theTextItem.content[];
+          (if theTextItem.content[] <> NONE then
+              theTextItem.content[] -> arial.measureText -> (w, h);
+              (w + 5, h/2 + 5) -> (theRect.width, theRect.height);
+           else 
+              14 -> theRect.width;
+              9 -> theRect.height;
+          if);
+       #);
+     
+     onchanged::
+       (# 
+       do 'placekind' -> options.lookupText -> PlaceKind[];
+       #);
+  #);
+
+

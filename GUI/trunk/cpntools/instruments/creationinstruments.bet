@@ -592,7 +592,7 @@ SetArcOrientation: CPNCommand
   (# TargetType:: Arc;
      Relevant::
        (# 
-       do ((target## <= Arc##) and not(target## <= SSArc##))-> value;
+       do ((target## <= Arc##) and not(target## <= SSArc##)) and (target.getOrientation < 4)-> value;
        #);
      previousOrientation: @Integer;
      apply::
@@ -1052,7 +1052,7 @@ CreateAuxPngInstrument: Instrument
   #);
 
 ArcInstrument: CPNGenericInstrument
-  (# FigureT:: ArcFigure;
+(# FigureT::< ArcFigure;
           
      destination: ^Node;
      bends: @PointList;
@@ -1110,13 +1110,20 @@ ArcInstrument: CPNGenericInstrument
             #);
        #);
 
-     thePrototype: ^Arc;
+	 thePrototype: ^Arc;
+
+	 defaultPrototype:<
+	 (# prototype: ^Arc;
+	    do defaultArc[] -> prototype[];
+	       INNER
+	    exit prototype[]
+	 #);
      getPrototype:
        (# prototype: ^Arc;
        do (if thePrototype[] <> NONE then
               thePrototype[] -> prototype[];
            else
-	      defaultArc[] -> prototype[];
+	      defaultPrototype -> prototype[];
           if);
        exit prototype[]
        #);
@@ -1133,9 +1140,10 @@ ArcInstrument: CPNGenericInstrument
      view: ^CpnSheet;
      arrow: ^Line;
      
-     ToolTip::
+     ToolTip::<
        (# 
-       do NamesCreateArc -> getGlobalNames -> theTip[];
+		 do NamesCreateArc -> getGlobalNames -> theTip[];
+		 INNER;
        #);
      
      addArrow:
@@ -1252,7 +1260,7 @@ ArcInstrument: CPNGenericInstrument
        #);
      
      startArc: @Instrument
-       (# TargetType:: CPNNode;
+       (# TargetType::< CPNNode;
           relevant::
             (#
             do source[] = NONE -> value;
@@ -1378,7 +1386,7 @@ ArcInstrument: CPNGenericInstrument
             #);
        #);  
      DropAfterFirstInvocation:< BooleanObject;     
-     init::
+     init::<
        (# sr: @StyleRecord;
        enter thePrototype[]
        do 'create_arc' -> helpname[];
@@ -1389,10 +1397,35 @@ ArcInstrument: CPNGenericInstrument
           createBendPoint[] -> register;
           finishArc.init;
           finishArc[] -> register;
-          getPrototype -> sr.prepare;
+	    getPrototype -> sr.prepare;
           sr.createBasicStyle -> instrumentIcon.theFigure.theStyle[];
        #);
-  #);
+	 #);
+
+ResetArcInstrument: ArcInstrument
+(# FigureT::< ArcFigure (# theArrowStyle:: (# do DIAMOND_START -> style #); #);
+     ToolTip::<
+       (# 
+		 do NamesCreateResetArc -> getGlobalNames -> theTip[];
+		 INNER;
+       #);
+	 defaultPrototype::<
+	 (#
+		 do defaultResetArc[] -> prototype[]
+	 #);
+#);
+InhibitorArcInstrument: ArcInstrument
+(# FigureT::< ArcFigure (# theArrowStyle:: (# do CIRCLE_START -> style #); #);
+     ToolTip::<
+       (# 
+		 do NamesCreateInhibitorArc -> getGlobalNames -> theTip[];
+		 INNER;
+       #);
+	 defaultPrototype::<
+	 (#
+		 do defaultInhibitorArc[] -> prototype[]
+	 #);
+#);
 
 
 GroupClipCommand: Command
@@ -2401,17 +2434,135 @@ ToogleExplicit: CPNCommand
        #);
   #);
 
+SetKindInstrument: FigureTInstrument
+  (# FigureT:: SetKindFigure;
+     TargetType:: Place;
+     thePlaceKind: ^Text;
+     relevant::
+       (# 
+       do (target.getFusionSet = none) and (target.getPortType = none) -> value;
+       #);
+     apply::
+       (# 
+       do (target[], thePlaceKind[]) -> SetPlaceKind;
+          finish;
+       #);
+     
+     init::<
+       (# 
+       do INNER;
+          'set_place_kind' -> helpname[];
+          ('placekind', thePlaceKind[]) -> options.setaddoption
+          (# OptionType::TextOption(# invisible:: trueObject; #); #);
+       #);
+  #);
 
+FIFOKindInstrument: SetKindInstrument
+  (# ToolTip:: 
+       (# 
+       do NamesSetKind -> getGlobalNames -> 
+          theTip.putFormat (# do NamesPlaceKindFIFO -> getGlobalNames -> s; #);
+       #);     
+     
+     init:: 
+       (# 
+       do 'fifo' -> thePlaceKind[]; 
+       #);
+  #);
+LIFOKindInstrument: SetKindInstrument
+  (# ToolTip:: 
+       (# 
+       do NamesSetKind -> getGlobalNames -> 
+          theTip.putFormat (# do NamesPlaceKindLIFO -> getGlobalNames -> s; #);
+       #);     
+     
+     init:: 
+       (# 
+       do 'lifo' -> thePlaceKind[]; 
+       #);
+  #);
+PQueueKindInstrument: SetKindInstrument
+  (# ToolTip:: 
+       (# 
+       do NamesSetKind -> getGlobalNames -> 
+          theTip.putFormat (# do NamesPlaceKindPQueue -> getGlobalNames -> s; #);
+       #);     
+     
+     init:: 
+       (# 
+       do 'pqueue' -> thePlaceKind[]; 
+       #);
+  #);
+BoundedKindInstrument: SetKindInstrument
+  (# ToolTip:: 
+       (# 
+       do NamesSetKind -> getGlobalNames -> 
+          theTip.putFormat (# do NamesPlaceKindBound -> getGlobalNames -> s; #);
+       #);     
+     
+     init:: 
+       (# 
+       do 'bounded' -> thePlaceKind[]; 
+       #);
+	 #);
 
+SetPlaceKind:
+  (# thePlace: ^Place;
+     thePlaceKind: ^Text;
+  enter (thePlace[], thePlaceKind[])
+  do (# theClipping: ^KindClipping;
+        theCommand: ^SetPlaceKindCommand;
+     do &KindClipping[] -> theClipping[];
+        (if thePlace.getPlaceKind <> none then
+            (thePlace[], ((thePlace.getPlaceKind).getTextItem).content[]) -> theClipping.init;
+         else 
+            (thePlace[], none) -> theClipping.init;
+        if);
+        
+        &SetPlaceKindCommand[] -> theCommand[];
+        theCommand.init;
+        thePlaceKind[] -> theCommand.prepare;
+        theClipping[] -> theCommand.apply;
+        (thePlace.getCPNet,theCommand[]) -> registerCommand;
+     #);
+  #);
 
+KindClipping: SafeClipping
+  (# Element:: Place;
+     getCPNet:: (# do (elm.getCPNPage).net[] -> net[]; #);
+     ContextType:: Text;     
+     previousPlaceKind: ^Text;
+     previousTag: ^PlaceKind;
+     removedAssignments: @AssignmentList;
+     init::
+       (# 
+       enter previousPlaceKind[]
+       do removedAssignments.init;
+          elm.getPlaceKind -> previousTag[];
+       #);     
+     insert::
+       (# 
+       do previousTag[] -> elm.setPlaceKind;
+          context[] -> elm.createPlaceKind -> elm.setPlaceKind;
+          (if elm.isLolited then
+              elm.lolite;
+           else
+              elm.hilite;
+          if);
+          removedAssignments.scan
+          (# 
+          do (current.getPort, current.getSocket, current.getSubTransition) -> current.init;
+          #);
+       #);     
+     remove:: (# <<SLOT KindClipping:DoPart>> #);
+     #);
 
-
-
-
-
-
-
-
-  
+SetPlaceKindCommand: StandardInsertCommand
+  (# ClippingType:: KindClipping;
+     getName::
+       (#
+       do 'Set PlaceKind' -> name[];
+       #);
+  #);
 
 

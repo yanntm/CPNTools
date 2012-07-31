@@ -724,9 +724,9 @@ do (# useGroupElementInstrument:
 	      com: ^CreateCommand;
 	      groups: ^GroupList;
 	      slaves: ^PageElementList;
-	   do thePrototype.clone -> theArc[];
+		do thePrototype.clone -> theArc[];
 	      (if source## = Place## then
-		  (if theArc.getOrientation <> BothDir then
+		(if theArc.getOrientation = TtoP then
 		      PtoT -> theArc.setOrientation;
 		  if);
 		  source[] -> thePlace[];
@@ -734,7 +734,7 @@ do (# useGroupElementInstrument:
 	       else
 		  destination[] -> thePlace[];
 		  source[] -> theTransition[];
-		  (if theArc.getOrientation <> BothDir then
+		  (if theArc.getOrientation = PtoT then
 		      TtoP -> theArc.setOrientation;
 		  if);
 	      if);
@@ -1631,3 +1631,25 @@ do previousChoiceType -> target.setExplicit;
 do target.isExplicit -> previousChoiceType;
    (NOT previousChoiceType) -> target.setExplicit;
    target.SemanticChanged;
+
+-- KindClipping:DoPart --
+do removedAssignments.clear;
+(*   (if previousPlaceKind[] = none then
+       elm.scanAssignments
+       (# 
+       do (if current.getPort = elm[] then
+              current[] -> removedAssignments.append;
+              current.delete;
+          if);
+       #);
+   if);*)
+   (if previousPlaceKind[]<>NONE then
+       previousPlaceKind[] -> elm.createPlaceKind -> elm.setPlaceKind;
+    else
+       NONE -> elm.setPlaceKind;
+   if);
+   (if removedAssignments.size > 0 then
+       elm.semanticChangedOnPlaceGraph;
+   if);
+
+

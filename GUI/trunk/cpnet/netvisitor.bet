@@ -79,6 +79,12 @@ NetVisitor:
        do INNER;
        #);
 
+     visitPlaceKind:<
+       (# current: ^PlaceKind;
+       enter current[]
+       do INNER;
+       #);
+
      visitFusionInfo:<
        (# current: ^FusionInfo;
        enter current[]

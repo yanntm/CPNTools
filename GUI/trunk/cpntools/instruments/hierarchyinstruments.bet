@@ -405,7 +405,7 @@ SetPortInstrument: FigureTInstrument
      thePortType: ^Text;
      relevant::
        (# 
-       do target.getFusionSet = none -> value;
+       do (target.getFusionSet = none) and (target.getPlaceKind = none) -> value;
        #);
      apply::
        (# 

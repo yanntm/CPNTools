@@ -83,6 +83,7 @@ BODY 'private/cpnetmonitorbody';
 BODY 'private/cpnetmonitorblockbody';
 BODY 'private/cpnetmonitormlcommandsbody';
 BODY 'private/cpnetregistercommandbody';
+BODY 'private/cpnetdeclarebody.bet';
 
 -- textLib: Attributes --
 
@@ -199,6 +200,8 @@ PageList: List (# Element:: CPNPage; #);
 CPNPageList: List (# Element:: CPNPage; #);
 ArcList: List (# Element:: Arc; #);
 SSArcList: List (# Element:: SSArc; #);
+ConstraintArcList: List (# Element:: ConstraintArc; #);
+ConstraintInscriptionList: List (# Element:: ConstraintInscription; #);
 InscriptionList: List (# Element:: Inscription; #);
 DeclList: List (# Element:: Decl; #);
 OptionSmartList: Smartlist (# ElementType:: Option; #);
@@ -237,6 +240,10 @@ PageElementList: SmartList
        <<SLOT PageElementListScanArcs:DoPart>>
        #);
      scanSSArcs:
+       (# current: ^SSArc;
+       <<SLOT PageElementListScanSSArcs:DoPart>>
+       #);
+     scanConstraintArcs:
        (# current: ^SSArc;
        <<SLOT PageElementListScanSSArcs:DoPart>>
        #);
@@ -464,6 +471,7 @@ PageInstanceIdDictionary: NotifierIdDictionary (# Element:: PageInstance; #);
 PlaceInstanceIDDictionary: NotifierIdDictionary (# Element:: PlaceInstance; #);
 TransitionInstanceIDDictionary: NotifierIdDictionary (# Element:: TransitionInstance; #);
 ArcInstanceIDDictionary: NotifierIdDictionary (# Element:: ArcInstance; #);
+ConstraintArcInstanceIDDictionary: NotifierIdDictionary (# Element:: ConstraintArcInstance; #);
 PlaceIDDictionary: NotifierIdDictionary (# Element::Place; #);
 PageElementIDDictionary: NotifierIDDictionary 
   (# Element::< PageElement; 
@@ -472,6 +480,7 @@ PageElementListIDDictionary: IdDictionary (# Element:: PageElementList; #);
 FusionSetIDDictionary: IdDictionary (# Element:: FusionSet; #);
 TransitionIDDictionary: IdDictionary (# Element::Transition; #);
 ArcIDDictionary: IdDictionary (# Element::Arc; #);
+ConstraintArcIDDictionary: IdDictionary (# Element::ConstraintArc; #);
 BendpointListIDDictionary: IdDictionary (# Element:: BendpointList; #);
 AuxIDDictionary: IdDictionary (# Element:: Aux; #);
 SSNodeIDDictionary: IdDictionary (# Element:: SSNode; #);
@@ -1247,6 +1256,7 @@ CPNPage: Highlightable
      lookupPlace: Lookup (# Element:: Place <<SLOT CPNPageLookupPlace:doPart>> #);
      lookupTransition: Lookup (# Element:: Transition <<SLOT CPNPageLookupTransition:doPart>> #);
      lookupArc: Lookup (# Element:: Arc <<SLOT CPNPageLookupArc:doPart>> #);
+     lookupConstraintArc: Lookup (# Element:: ConstraintArc <<SLOT CPNPageLookupConstraintArc:doPart>> #);
      lookupSSNode: Lookup (# Element:: SSNode <<SLOT CPNPageLookupSSNode:doPart>> #);
      lookupPageElement: Lookup (# Element:: PageElement <<SLOT CPNPageLookupPageElement:doPart>> #);
      lookupTopCPNPage: Lookup (# Element:: CPNPage <<SLOT CPNPageLookupTopCPNPage:doPart>> #);
@@ -1290,6 +1300,10 @@ CPNPage: Highlightable
      scanArcs: 
        (# current: ^Arc;    
        <<SLOT CPNPageScanArcs:doPart>>
+       #);
+     scanConstraintArcs: 
+       (# current: ^ConstraintArc;    
+       <<SLOT CPNPageScanConstraintArcs:doPart>>
        #);
      scanGuidelines:
        (# current: ^Guideline;
@@ -1341,6 +1355,11 @@ CPNPage: Highlightable
        (# theArc: ^Arc;
        enter theArc[]
        <<SLOT CPNPageAddArc:doPart>>          
+       #);
+     addConstraintArc:
+       (# theConstraintArc: ^ConstraintArc;
+       enter theConstraintArc[]
+       <<SLOT CPNPageAddConstraintArc:doPart>>          
        #);
      addGuideline:
        (# theGuideline: ^Guideline;
@@ -1398,6 +1417,11 @@ CPNPage: Highlightable
        (# theArc: ^Arc;
        enter theArc[]
        <<SLOT CPNPageRemoveArc:doPart>>       
+       #);
+     removeConstraintArc:
+       (# theConstraintArc: ^ConstraintArc;
+       enter theConstraintArc[]
+       <<SLOT CPNPageRemoveConstraintArc:doPart>>       
        #);
      removeGuideline:
        (# theGuideline: ^Guideline;
@@ -1817,6 +1841,10 @@ PageInstance: Highlightable
        (# Element:: ArcInstance;
        <<SLOT PageInstanceLookupArcInstance:doPart>>
        #);     
+     lookupConstraintArcInstance: lookup
+       (# Element:: ConstraintArcInstance;
+       <<SLOT PageInstanceLookupConstraintArcInstance:doPart>>
+       #);     
      lookupNodeInstance: lookup
        (# Element:: NodeInstance;
        <<SLOT PageInstanceLookupNodeInstance:DoPart>>
@@ -1922,10 +1950,21 @@ PageInstance: Highlightable
        enter theArc[]
        <<SLOT PageInstanceAddArc:DoPart>>
        #);
+     addConstraintArc:
+       (# theConstraintArc: ^ConstraintArc;
+          theConstraintArcInstance: ^ConstraintArcInstance;
+       enter theConstraintArc[]
+       <<SLOT PageInstanceAddConstraintArc:DoPart>>
+       #);
      removeArc:
        (# theArc: ^Arc;
        enter theArc[]
        <<SLOT PageInstanceRemoveArc:DoPart>>
+       #);
+     removeConstraintArc:
+       (# theConstraintArc: ^ConstraintArc;
+       enter theConstraintArc[]
+       <<SLOT PageInstanceRemoveConstraintArc:DoPart>>
        #);
      init:: 
        (# superPageInstance: ^PageInstance;
@@ -2521,6 +2560,23 @@ ArcInstance: NodeInstance
      onChanged:: (# <<SLOT ArcInstanceOnChanged:DoPart>> #);
   #);
 
+ConstraintArcInstance: NodeInstance
+  (# private: @<<SLOT ConstraintArcInstancePrivate:Descriptor>>;
+     theConstraintArc: ^ConstraintArc;
+     thePageInstance: ^PageInstance;
+     init:: (# <<SLOT ConstraintArcInstanceInit:DoPart>> #);
+     update:: (# <<SLOT ConstraintArcInstanceUpdate:DoPart>> #);
+     delete:: (# <<SLOT ConstraintArcInstanceDelete:DoPart>> #);
+     status:: (# <<SLOT ConstraintArcInstanceStatus:DoPart>> #);
+     getCurrentHighlight:: (# <<SLOT ConstraintArcInstanceGetCurrentHighlight:DoPart>> #);
+     setSimulationError: 
+       (# error: @boolean;
+       enter error
+       <<SLOT ConstraintArcInstanceSetSimulationError:DoPart>>
+       #);
+     onChanged:: (# <<SLOT ConstraintArcInstanceOnChanged:DoPart>> #);
+  #);
+
 PageElement: Snapable
   (# private: @<<SLOT PageElementPrivate:descriptor>>;
      ignore: @boolean;
@@ -3001,7 +3057,23 @@ Transition: CPNNode
        (# current: ^Place;
        <<SLOT TransitionScanSurroundingPlaces:DoPart>>          
        #);
-     changeStatus:: (# <<SLOT TransitionChangeStatus:doPart>> #);
+	 changeStatus:: (# <<SLOT TransitionChangeStatus:doPart>> #);
+
+     addConstraintArc:<
+       (# theConstraintArc: ^ConstraintArc;
+       enter theConstraintArc[]
+       <<SLOT TransitionAddConstraintArc:DoPart>>
+       #);
+     removeConstraintArc:<
+       (# theConstraintArc: ^ConstraintArc;
+       enter theConstraintArc[]
+       <<SLOT TransitionRemoveConstraintArc:DoPart>>
+       #);     
+     scanConstraintArcs: 
+       (# current: ^ConstraintArc;
+       <<SLOT TransitionScanConstraintArcs:doPart>>
+       #);
+     hasConstraintArcs: BooleanValue (# <<SLOT TransitionHasConstraintArcs:DoPart>> #); 
      
      menuName::<
        (# 
@@ -3410,6 +3482,11 @@ Place: CPNNode
        enter thePortType[]
        <<SLOT PlaceSetPortType:doPart>>
        #);     
+     SetPlaceKind: 
+       (# thePlaceKind: ^PlaceKind;
+       enter thePlaceKind[]
+       <<SLOT PlaceSetPlaceKind:doPart>>
+       #);     
      Clone::
        (# Type:: Place;
        <<SLOT PlaceClone:doPart>> 
@@ -3449,14 +3526,28 @@ Place: CPNNode
        <<SLOT PlaceGetPortType:doPart>>
        exit thePortType[]
        #);
+     getPlaceKind:
+       (# thePlaceKind: ^PlaceKind;
+       <<SLOT PlaceGetPlaceKind:doPart>>
+       exit thePlaceKind[]
+       #);
      hasPortType: BooleanValue
        (# <<SLOT PlaceHasPortType:doPart>> #);
+     hasPlaceKind: BooleanValue
+       (# <<SLOT PlaceHasPlaceKind:doPart>> #);
      createPortType: 
        (# thePortType: ^PortType;
           cpnml: ^Text;
        enter cpnml[]
        <<SLOT PlacecreatePortType:doPart>>
        exit thePortType[]
+       #);     
+     createPlaceKind: 
+       (# thePlaceKind: ^PlaceKind;
+          cpnml: ^Text;
+       enter cpnml[]
+       <<SLOT PlacecreatePlaceKind:doPart>>
+       exit thePlaceKind[]
        #);     
      getFusionInfo:
        (# theFusionInfo: ^FusionInfo;
@@ -3505,9 +3596,40 @@ Place: CPNNode
        #);
      
      makeShape:: 
-       (# ItemType:: Ellipse;
-       do width -> theItem.width;
-          height -> theItem.height;
+       (# ItemType:: Composite;
+	    theLine: ^Line;
+	    theEllipse: ^Ellipse;
+       do (if not (hasPlaceKind) then
+		    &Ellipse[] -> theEllipse[];
+		    theEllipse.init;
+		    width -> theEllipse.width;
+		    height -> theEllipse.height;
+		    theEllipse[] -> theItem.add;
+		    (if hasPortType then
+			   &Ellipse[] -> theEllipse[];
+			   theEllipse.init;
+			   width - 8 -> theEllipse.width;
+			   height - 8 -> theEllipse.height;
+			   1 -> &StrokeWidthStyle -> theEllipse.theStyle[];
+			   theEllipse[] -> theItem.add;
+		    if);
+	    else
+		  (# points: ^PointList;
+		  do &PointList[] -> points[];
+		     (0, -height/2) -> makePoint -> points.append;
+		     (width/2, -height/2) -> makePoint -> points.append;
+		     (width/2, height/2) -> makePoint -> points.append;
+		     (0, height/2) -> makePoint -> points.append;
+		     (-width/2, height/2) -> makePoint -> points.append;
+		     (-width/2, -height/2) -> makePoint -> points.append;
+		     (0, -height/2) -> makePoint -> points.append;
+		     &Line[] -> theLine[];
+		     theLine.init;
+		     15.0 -> &CurvatureStyle -> theLine.theStyle[];
+		     points[] -> theLine.points[];
+		     theLine[] -> theItem.add;
+		  #);
+	    if);
        #);
      getIntersect::
        (# <<SLOT PlaceGetIntersect:doPart>> #);
@@ -3589,6 +3711,8 @@ Place: CPNNode
 BothDir: (# exit 1 #);
 PtoT: (# exit 2 #);
 TtoP: (# exit 3 #);
+Inhibitor: (# exit 4 #);
+ResetArc: (# exit 5 #);
 
 ArcDistance: (# exit 14 #);
 
@@ -4114,6 +4238,13 @@ PlaceType: PlaceInscription
      onSemanticChanged:: (# <<SLOT PlaceTypeOnSemanticChanged:doPart>> #);   
      onFocusLost:: (# <<SLOT PlaceTypeOnFocusLost:DoPart>> #);
      init:: (# <<SLOT PlaceTypeInit:DoPart>> #);
+     getType: (# result: ^text;
+         do getInscription -> result[];
+	      (if (result[] = NONE) or ('' -> result.equal) then
+		   'UNIT' -> result[];
+		if);
+         exit result[]
+      #);
   #);
 
 InitMark: PlaceInscription
@@ -4219,6 +4350,32 @@ PortType: HierarchyInfo
      onSemanticChanged:: (# <<SLOT PortTypeOnSemanticChanged:doPart>> #);
      onChanged:: (# <<SLOT PortTypeOnChanged:doPart>> #);
      snap:: (# <<SLOT PortTypeSnap:doPart>> #);
+  #);
+
+PlaceKind: HierarchyInfo
+  (# private: @<<SLOT PlaceKindPrivate:Descriptor>>;
+     setPlace: 
+       (# thePlace: ^Place; 
+       enter thePlace[] 
+       <<SLOT PlaceKindSetPlace:doPart>> #);
+     getPlace: 
+       (# thePlace: ^Place;
+       <<SLOT PlaceKindGetPlace:doPart>> 
+       exit thePlace[] 
+       #);
+     defaultSnapToElement:: (# <<SLOT PlaceKindDefaultSnapToElement:doPart>> #);     
+     menuName::<
+       (# 
+       do NamesPageMenuPlaceKind -> getGlobalNames -> txt[];
+          INNER;
+       #);
+     clone:: (# type:: PlaceKind; #);
+     delete:: (# <<SLOT PlaceKindDelete:doPart>> #);     
+     update:: (# <<SLOT PlaceKindUpdate:doPart>> #);     
+     next:: (# <<SLOT PlaceKindNext:doPart>> #);
+     onSemanticChanged:: (# <<SLOT PlaceKindOnSemanticChanged:doPart>> #);
+     onChanged:: (# <<SLOT PlaceKindOnChanged:doPart>> #);
+     snap:: (# <<SLOT PlaceKindSnap:doPart>> #);
   #);
 
 SubPageInfo: HierarchyInfo
@@ -5270,6 +5427,29 @@ SSArc: Arc
      #);
    menuName::<
      (# <<SLOT SSArcMenuName:doPart>> #);
+#);
+
+ConstraintArc: Arc
+  (#
+     number, srcNode, destNode: @Integer;
+     descriptor: ^Text;
+     delta: @Point2d;
+     visible: @boolean;
+     deadInfo: @boolean;
+     dead:
+       (# d: @Boolean;
+       enter
+     (#
+     enter d
+     do (if (d AND (NOT deadInfo) and (((0.0, 0.0, 0.0) -> &Color) -> (getColor).equal)) then (0.5, 0.5, 0.5) -> &Color -> setColor; if);
+        d -> deadInfo;
+         #)
+       exit deadInfo
+       #);
+   deleteFromPage:: (# do THIS(ConstraintArc)[] -> (getCPNPage).removeConstraintArc; #);
+   update:: (# <<SLOT ConstraintArcUpdate:doPart>> #);
+   menuName::<
+     (# <<SLOT ConstraintArcMenuName:doPart>> #);
 #);
 
 (*

@@ -272,8 +272,8 @@ do (if (theAnnotation[] = NONE) and
    (if theAnnotation[] = NONE then
        &Annotation[] -> private.theAnnotation[];
        private.theAnnotation.init;
-       this(Arc)[] -> private.theAnnotation.setArc;
-       'expr' -> private.theAnnotation.setInscription;
+	 this(Arc)[] -> private.theAnnotation.setArc;
+	 'expr' -> private.theAnnotation.setInscription;
        private.theAnnotation[] -> computeInitialAttachPoint;
        private.theAnnotation.computePosition;
        NONE -> private.theAnnotation.setInscription;       
@@ -601,6 +601,10 @@ do (# present_point:
           ARROW_START -> theStyle.arrow;
        //TtoP then
           ARROW_END -> theStyle.arrow;
+	 //Inhibitor then
+	    CIRCLE_START -> theStyle.arrow;
+	 //ResetArc then
+	    DIAMOND_START -> theStyle.arrow;
       if);
       arrowHeadSize -> theStyle.arrowHeadSize;
       

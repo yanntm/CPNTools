@@ -981,7 +981,7 @@ do getMLReserved -> reserved[];
                       (#
                       do false -> isLegal;
                          ((current.thePlace.getCPNPage).net.ml[],current.marking[],
-                         (current.thePlace.getPlaceType).getInscription)
+                         (current.thePlace.getPlaceType).getType)
                            -> MLCheckMarking -> isLegal;
                          (if isLegal then
                              ((current.thePlace.getCPNPage).net.ml[],current.thePlace.id[],

@@ -33,6 +33,7 @@ INCLUDE '../../cpntools/wselements/cpnbinder';
 INCLUDE '../../cpntools/wselements/index';
 INCLUDE '../netvisitor';
 INCLUDE '../descriptordialog';
+INCLUDE '~beta/basiclib/regexp';
 
 -- Workspacelib: attributes --
 
@@ -101,6 +102,7 @@ PackVisitor: NetVisitor
      visitInitMark:: (# <<SLOT PackVisitorVisitInitMark:doPart>> #);
      visitFusionInfo:: (# <<SLOT PackVisitorVisitFusionInfo:doPart>> #);
      visitPortType:: (# <<SLOT PackVisitorVisitPortType:doPart>> #);
+     visitPlaceKind:: (# <<SLOT PackVisitorVisitPlaceKind:doPart>> #);
      visitTransition:: (# <<SLOT PackVisitorVisitTransition:doPart>> #);
      visitTransGuard:: (# <<SLOT PackVisitorVisitTransGuard:doPart>> #);
      visitTransTime:: (# <<SLOT PackVisitorVisitTransTime:doPart>> #);
@@ -528,6 +530,10 @@ do (# dir: ^Text;
           'PtoT'->dir[];
        //TtoP then
           'TtoP'->dir[];
+       //Inhibitor then
+          'Inhibitor'->dir[];
+       //ResetArc then
+          'Reset'->dir[];
        else
           ''->dir[];
       if);
@@ -597,28 +603,6 @@ do (# ast: ^Text;
       astXML: ^theXML.Element;
    do current[]->packPageElement;
       current.getAST -> ast[];
-      (if emit_structured_inscriptions AND
-          (ast[] <> NONE) AND
-          NOT(ast.empty) then
-          (if NOT('unknown' -> ast.containsSubstring) then
-              true -> astOK;
-              ast[] -> theXML.parse
-              (# onError:: 
-                   (# 
-                   do 'Parsing the string "%s" into XML failed' -> 
-                      FIXME(# do ast[] -> s; #);
-                      false -> astOK;
-                      true -> continue;
-                   #); 
-              #) -> astXML[];
-              (if astOK then
-                  'structure'->theXML.createElement->tmpElm[]->(elmStack.top).addElement;
-                  astXML[] -> tmpElm.addElement;
-              if);
-           else
-              'An "<unknown/>" element was found in the AST' -> debugAST;
-          if);
-      if);
       'text'->theXML.createElement->tmpElm[]->(elmStack.top).addElement;
       ('tool',toolname) -> tmpElm.createTextAttribute;
       ('version',version) -> tmpElm.createTextAttribute;
@@ -813,17 +797,31 @@ do (# dx, dy: @real;
       (if current.getPortType <> NONE then
           current.getPortType -> visitPortType;
       if);
+      (if current.getPlaceKind <> NONE then
+          current.getPlaceKind -> visitPlaceKind;
+      if);
       popElm;
    #);
    
 --PackVisitorVisitPlaceType: doPart--
 do ('type', current.ID[])->createAndPushElm;
    current[]->packInscription;
+   (if current.isDefaultInscription then
+       current.getType->theXML.createDataElement->tmpElm.addElement;
+   if);
    popElm;
    
 --PackVisitorVisitInitMark: doPart--
 do ('initmark', current.ID[])->createAndPushElm;
    current[]->packInscription;
+	   (if (((current.getPlace).getPlaceType = NONE) or ('UNIT' -> (((current.getPlace).getPlaceType).getType).equal)) then
+		 (if current.getInscription <> NONE then
+		     0 -> (current.getInscription).pos;
+		     (if '^ *[0-9]+ *$' -> (current.getInscription).regexp_match then
+			 '`()' ->theXML.createDataElement->tmpElm.addElement;
+		     if);
+		 if);
+	   if);
    popElm;
    
 --PackVisitorVisitFusionInfo: doPart--
@@ -834,6 +832,12 @@ do ('fusioninfo', current.ID[])->createAndPushElm;
    
 --PackVisitorVisitPortType: doPart--
 do ('port', current.ID[])->createAndPushElm;
+   current[]->packHierarchyInfo;
+   ('type', current.getCPNML)->(elmStack.top).createTextAttribute;
+   popElm;
+   
+--PackVisitorVisitPlaceKind: doPart--
+do ('kind', current.ID[])->createAndPushElm;
    current[]->packHierarchyInfo;
    ('type', current.getCPNML)->(elmStack.top).createTextAttribute;
    popElm;
@@ -875,7 +879,7 @@ do (# portsock: ^Text;
       current.getTransGuard -> visitTransGuard;
       current.getTransTime -> visitTransTime;
       current.getTransAction -> visitTransAction;
-      current.getTransChannel -> visitTransChannel;
+(*      current.getTransChannel -> visitTransChannel;*)
       current.getTransPriority -> visitTransPriority;
       ('explicit', current.isExplicit) -> (elmStack.top).createBoolAttribute;
       popElm;
@@ -915,9 +919,7 @@ do ('subpageinfo', current.ID[]) -> createAndPushElm;
 --PackVisitorVisitArc: doPart--
 do ('arc', current.ID[])->createAndPushElm;
    current[] -> packArc;
-   (if current.getAnnotation <> NONE then
-       current.getAnnotation -> visitAnnotation;
-   if);
+   current.getAnnotation -> visitAnnotation;
    popElm;
    
 -- PackVisitorVisitSSArc:doPart --
@@ -984,10 +986,23 @@ do ('bendpoint', current.ID[])->createAndPushElm;
    popElm;
    
 -- PackVisitorVisitAnnotation: doPart --
-do ('annot', current.ID[])->createAndPushElm;
-   current[]->packInscription;
-   popElm;
-   
+do (if (current[] <> NONE) or (current.getInscription <> NONE) or ('UNIT' -> ((((current.getArc).getPlaceEnd).getPlaceType).getType).equal) then
+	   ('annot', current.ID[])->createAndPushElm;
+	   current[]->packInscription;
+	   (if ((((current.getArc).getPlaceEnd).getPlaceType = NONE) or ('UNIT' -> ((((current.getArc).getPlaceEnd).getPlaceType).getType).equal)) then
+		   (if ((current.getInscription = NONE) or current.isDefaultInscription) then
+			 '1`()' ->theXML.createDataElement->tmpElm.addElement;
+		 if);
+		 (if current.getInscription <> NONE then
+		     0 -> (current.getInscription).pos;
+		     (if '^ *[0-9]+ *$' -> (current.getInscription).regexp_match then
+			 '`()' ->theXML.createDataElement->tmpElm.addElement;
+		     if);
+		 if);
+	   if);
+	   popElm;
+   if);
+	   
 -- PackVisitorVisitAux: doPart --
 do ('Aux', current.ID[])->createAndPushElm;
    current[]->packPageElement;
