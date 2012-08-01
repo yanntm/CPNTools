@@ -26,7 +26,8 @@
 ORIGIN '../cpnet';
 
 -- TransitionPrivate:Descriptor --
-(# theTransGuard: ^TransGuard;
+(# constraintArcs: @ConstraintArcList;
+   theTransGuard: ^TransGuard;
    theTransTime: ^TransTime;
    theTransAction: ^TransAction;
    theTransChannel: ^TransChannel;
@@ -40,6 +41,7 @@ ORIGIN '../cpnet';
      do false -> transActionSyntaxError;
         (7.2,-3)->deltaPositionOfBindingIndex;
         false -> explicit;
+	  constraintArcs.init;
      #);
 #)
 
@@ -694,3 +696,20 @@ do (# l, t, b, r: @real;
           center[] -> intersect[];
       if);
    #);
+
+-- TransitionRemoveConstraintArc:DoPart --
+do 
+   theConstraintArc[] -> private.constraintArcs.at -> private.constraintArcs.delete;
+   theConstraintArc[] -> detach;
+   inner;
+   (*** onSemanticChanged; ***)
+ 
+-- TransitionHasConstraintArcs:DoPart --
+do not private.constraintArcs.empty -> value;
+   
+-- TransitionAddConstraintArc:DoPart --
+do theConstraintArc[] -> private.constraintArcs.append;
+   theConstraintArc[] -> attach;
+   inner;
+   (*** onSemanticChanged; ***)
+   

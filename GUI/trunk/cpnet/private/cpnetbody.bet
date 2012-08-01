@@ -97,6 +97,15 @@ do scan
       if);
    #);
 
+-- PageElementListScanConstraintArcs:DoPart --
+do scan
+   (# 
+   do (if current## <= ConstraintArc## then
+          current[] -> this(scanConstraintArcs).current[];
+          inner scanConstraintArcs;
+      if);
+   #);
+
 -- PageElementListScanSSArcs:DoPart --
 do scan
    (# 

@@ -129,6 +129,7 @@ do (if private.superpageInstance[] = NONE then
    transitionInstances: @TransitionInstanceIDDictionary;
    placeInstances: @PlaceInstanceIDDictionary;
    arcInstances: @ArcInstanceIDDictionary;
+   constraintArcInstances: @ConstraintArcInstanceIDDictionary;
    superpageInstance: ^PageInstance;
    subPageInstances: @Notifier
      (# instances: @ElementDeque
@@ -202,6 +203,9 @@ do id[] -> private.placeInstances.lookup -> result[];
    
 -- PageInstanceLookupArcInstance:doPart --
 do id[] -> private.arcInstances.lookup -> result[];
+   
+-- PageInstanceLookupConstraintArcInstance:doPart --
+do id[] -> private.constraintArcInstances.lookup -> result[];
    
 -- PageInstanceLookupNodeInstance:DoPart --
 do id[] -> private.placeInstances.lookup -> result[];
@@ -1170,3 +1174,25 @@ do (if qerror[] <> none then
        qerror.update;
    if);   
    update;
+
+-- PageInstanceAddConstraintArc:DoPart --
+do &ConstraintArcInstance[] -> theConstraintArcInstance[];
+   theConstraintArcInstance.init;
+   theConstraintArc[] -> theConstraintArcInstance.theConstraintArc[];
+   theConstraintArcInstance[] -> theConstraintArc.attach;
+   (theConstraintArc.id[], theConstraintArcInstance[]) -> private.constraintArcInstances.associate;
+   this(PageInstance)[] -> theConstraintArcInstance.thePageInstance[];
+   (anyStatus, noRemarks) -> nodeChangedStatus;
+   
+-- PageInstanceRemoveConstraintArc:DoPart --
+do (# theConstraintArcInstance: ^ConstraintArcInstance;
+   do theConstraintArc.id[] -> private.constraintArcInstances.lookup -> theConstraintArcInstance[];
+      (if theConstraintArcInstance[] <> none then
+          (theConstraintArcInstance.status, anyStatus) -> nodeChangedStatus;
+          (if theConstraintArcInstance.presentation[] <> none then
+              theConstraintArcInstance.delete;
+          if);
+          theConstraintArc.id[] -> private.constraintArcInstances.disassociate;
+      if);
+   #);
+ 

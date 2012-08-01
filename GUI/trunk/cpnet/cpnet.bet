@@ -244,8 +244,8 @@ PageElementList: SmartList
        <<SLOT PageElementListScanSSArcs:DoPart>>
        #);
      scanConstraintArcs:
-       (# current: ^SSArc;
-       <<SLOT PageElementListScanSSArcs:DoPart>>
+       (# current: ^ConstraintArc;
+       <<SLOT PageElementListScanConstraintArcs:DoPart>>
        #);
      scanNodes:
        (# current: ^Node;
@@ -4407,6 +4407,39 @@ SubPageInfo: HierarchyInfo
      onSemanticChanged:: (# <<SLOT SubPageInfoOnSemanticChanged:doPart>> #);
      onChanged:: (# <<SLOT SubPageInfoOnChanged:doPart>> #);
      snap:: (# <<SLOT SubPageInfoSnap:doPart>> #);
+     makeShape:: (# ItemType:: Rect; #);
+  #);
+
+
+ConstraintInscription: HierarchyInfo
+  (# private: @<<SLOT ConstraintInscriptionPrivate:descriptor>>;
+     setTransition: 
+       (# theTransition: ^Transition;
+       enter theTransition[]
+       <<SLOT ConstraintInscriptionSetTransition:doPart>>
+       #);
+     getTransition:
+       (# theTransition: ^Transition;
+       <<SLOT ConstraintInscriptionGetTransition:doPart>> 
+       exit theTransition[]  
+       #);
+     defaultSnap::
+       (#
+       do CenterJustify -> changeAnchorHorizontal;
+       #);
+     defaultSnapToElement:: (# <<SLOT ConstraintInscriptionDefaultSnapToElement:doPart>> #);
+     menuName::<
+       (# 
+       do NamesPageMenuSubpage -> getGlobalNames -> txt[];
+          INNER;
+       #);
+     status:: (# <<SLOT ConstraintInscriptionstatus:doPart>> #);     
+     delete:: (# <<SLOT ConstraintInscriptiondelete:doPart>> #);
+     clone:: (# type:: ConstraintInscription; #);
+     next:: (# <<SLOT ConstraintInscriptionNext:doPart>> #);
+     onSemanticChanged:: (# <<SLOT ConstraintInscriptionOnSemanticChanged:doPart>> #);
+     onChanged:: (# <<SLOT ConstraintInscriptionOnChanged:doPart>> #);
+     snap:: (# <<SLOT ConstraintInscriptionSnap:doPart>> #);
      makeShape:: (# ItemType:: Rect; #);
   #);
 
