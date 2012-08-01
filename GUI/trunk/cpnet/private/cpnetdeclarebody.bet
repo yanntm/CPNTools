@@ -24,4 +24,142 @@
 (* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
 (************************************************************************)
 ORIGIN '../cpnet';
+-- ConstraintInscriptionPrivate:descriptor--
+(#
+   theTransition: ^Transition;
+#)
+   
+-- ConstraintInscriptionSetTransition:doPart--
+do theTransition[] -> private.theTransition[];
 
+-- ConstraintInscriptionGetTransition:doPart--
+do ('theTransition[] <> NONE ', private.theTransition[] <> NONE) -> assert (# #);
+   private.theTransition[] -> theTransition[];
+
+-- ConstraintInscriptionDefaultSnapToElement:doPart --
+do private.theTransition[] -> elm[];
+
+-- ConstraintInscriptionstatus:doPart --
+do (* (if private.theTransition.getSubpage <> NONE then *)
+(*        (private.theTransition.getSubpage).getNodesAndSubpagesStatus -> value; *)
+(*    if); *)
+   
+--ConstraintInscriptiondelete: doPart--
+do (if debugging then 'Cpnet: Deleting ConstraintInscription\n' -> debugCPNet if);   
+   (getTransition).socketplaces.clear;
+   NONE -> (getTransition).setSubpage; 
+   
+--ConstraintInscriptionNext:doPart--
+do (*private.theTransition.getConstraintInscription -> elm[];
+   (if elm[] = NONE then
+       private.theTransition.createConstraintInscription -> elm[];
+       elm[] -> private.theTransition.setConstraintInscription;
+   if);*)
+
+-- ConstraintInscriptionOnSemanticChanged:doPart --
+do ('private.theTransition[] <> NONE', private.theTransition[] <> NONE) -> assert (# #);
+   private.theTransition.semanticChanged;
+
+-- ConstraintInscriptionOnChanged:doPart --
+do (if private.theTransition[] <> NONE then
+       THIS(ConstraintInscription)[] -> private.theTransition.changed;
+       (if private.theTransition.getSubpage <> NONE then
+           (private.theTransition.getSubpage).name -> setCPNML;
+       if);
+   if); 
+   
+-- ConstraintInscriptionSnap:doPart --
+do THIS(ConstraintInscription)[] -> private.theTransition.snapTo -> (dx,dy);   
+
+-- TransitionScanConstraintArcs:doPart --
+do scanArcs
+   (# 
+   do (if current## <= ConstraintArc## then
+          current[] -> this(scanConstraintArcs).current[];
+          inner scanConstraintArcs;
+      if);
+   #);
+
+-- ConstraintArcInstancePrivate:Descriptor --
+(# simulationError: @boolean;
+   init:
+     (# 
+     do false -> simulationError;
+     #);
+#)
+
+-- ConstraintArcInstanceInit:DoPart --
+do private.init;
+   
+-- ConstraintArcInstanceUpdate:DoPart --
+do (# showHalo:
+        (# theColor: ^Color;
+           halo: ^Line;
+           theStyle: ^CompositeStyle;
+        enter theColor[]
+        do (if (theColor[] <> NONE) and
+               (theConstraintArc.points[] <> NONE) then
+               &Line[] -> halo[];
+               &CompositeStyle[] -> theStyle[];
+               halo.init;
+               theStyle[] -> halo.theStyle[];
+               theConstraintArc.points[] -> halo.points[];
+               (halo_width+theConstraintArc.strokeWidth-1,theColor[]) -> &HaloStyle -> theStyle.add;
+               15 -> &CurvatureStyle -> theStyle.add;
+               halo[] -> presentation.add;
+               theConstraintArc.present -> presentation.add;
+           if);
+        #);
+   do (if presentation[] <> NONE then
+          presentation.clear;
+          (if theConstraintArc.getCurrentHighlight = none then
+              getCurrentHighlight -> showHalo;
+          if);
+          (if (NOT ((theConstraintArc.getCPNPage).getSelectedGroup).all) and
+              (NOT (theConstraintArc[]->((theConstraintArc.getCPNPage).getSelectedGroup).isMember)) then
+              0.1->&AlphaStyle->presentation.theStyle[];
+           else
+              NONE -> presentation.theStyle[];
+          if);
+      if);
+   #);
+   
+-- ConstraintArcInstanceDelete:DoPart --
+do 
+   
+-- ConstraintArcInstanceStatus:DoPart --
+do (if true
+    // private.simulationError then
+       hasSimulationError -> value;
+    else 
+       noRemarks -> value;
+   if);
+   
+-- ConstraintArcInstanceGetCurrentHighlight:DoPart --
+do status -> getHighlight -> currentHighlight[];
+   
+-- ConstraintArcInstanceSetSimulationError:DoPart --
+do (if error <> private.simulationError then
+       (if error then
+           (status, hasSimulationError) -> thePageInstance.nodeChangedStatus;
+           error -> private.simulationError;       
+        else
+           error -> private.simulationError;                  
+           (hasSimulationError, status) -> thePageInstance.nodeChangedStatus;           
+       if);
+       changed;
+   if);
+         
+-- ConstraintArcInstanceOnChanged:DoPart --
+do (if qerror[] <> none then
+       (theConstraintArc.getAnnotation).changed;
+       qerror.update;
+   if);   
+   update;
+
+-- ConstraintArcMenuName:doPart --
+do NamesPageMenuConstraintArc -> getGlobalNames -> txt[];
+INNER;
+
+-- ConstraintArcUpdate: doPart --
+do 

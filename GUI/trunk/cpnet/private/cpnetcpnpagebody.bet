@@ -31,6 +31,7 @@ ORIGIN '../cpnet';
      do places.init;
         transitions.init;
         arcs.init;
+        constraintArcs.init;
         guidelines.init;
         auxs.init;
         groups.init;
@@ -45,6 +46,7 @@ ORIGIN '../cpnet';
    transitions: @TransitionIDDictionary;
    SSArcs: @SSArcIDDictionary;
    arcs: @ArcIDDictionary;
+   constraintArcs: @ConstraintArcIDDictionary;
    guidelines: @GuidelineList;
    auxs: @AuxIDDictionary;
    SSNodes: @SSNodeIDDictionary;
@@ -224,6 +226,9 @@ do id[] -> private.transitions.lookup -> result[];
 -- CPNPageLookupArc:doPart --
 do id[] -> private.arcs.lookup -> result[];
 
+-- CPNPageLookupConstraintArc:doPart --
+do id[] -> private.constraintArcs.lookup -> result[];
+
 -- CPNPageLookupSSNode:doPart --
 do id[] -> private.SSNodes.lookup -> result[];
 
@@ -345,6 +350,13 @@ do private.arcs.scan
       INNER scanArcs; 
    #);
    
+-- CPNPageScanConstraintArcs:doPart --     
+do private.constraintArcs.scan 
+   (# 
+   do current[] -> this(scanConstraintArcs).current[];
+      INNER scanConstraintArcs; 
+   #);
+   
 -- CPNPageScanGuidelines:doPart --
 do private.guidelines.scan
    (#
@@ -436,6 +448,12 @@ do THIS(CPNPage)[] -> theArc.attach;
    THIS(CPNPage)[] -> theArc.setCPNPage;
    theArc[] -> added;
 
+-- CPNPageAddConstraintArc:doPart --
+do THIS(CPNPage)[] -> theConstraintArc.attach;
+   (theConstraintArc.id[], theConstraintArc[]) -> private.constraintArcs.associate;
+   THIS(CPNPage)[] -> theConstraintArc.setCPNPage;
+   theConstraintArc[] -> added;
+
    
 -- CPNPageAddGuideline:doPart --
 do THIS(CPNPage)[] -> theGuideline.attach;
@@ -520,6 +538,11 @@ do THIS(CPNPage)[] -> theSSNode.detach;
 do THIS(CPNPage)[] -> theArc.detach;
    theArc.id[] -> private.arcs.disassociate;
    theArc[] -> removed;
+   
+-- CPNPageRemoveConstraintArc:doPart --   
+do THIS(CPNPage)[] -> theConstraintArc.detach;
+   theConstraintArc.id[] -> private.constraintArcs.disassociate;
+   theConstraintArc[] -> removed;
    
 -- CPNPageRemoveSSArc:doPart --
 do THIS(CPNPage)[] -> theSSArc.detach;
