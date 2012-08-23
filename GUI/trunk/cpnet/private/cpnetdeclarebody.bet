@@ -40,21 +40,13 @@ do ('theTransition[] <> NONE ', private.theTransition[] <> NONE) -> assert (# #)
 do private.theTransition[] -> elm[];
 
 -- ConstraintInscriptionstatus:doPart --
-do (* (if private.theTransition.getSubpage <> NONE then *)
-(*        (private.theTransition.getSubpage).getNodesAndSubpagesStatus -> value; *)
-(*    if); *)
+do 
    
 --ConstraintInscriptiondelete: doPart--
 do (if debugging then 'Cpnet: Deleting ConstraintInscription\n' -> debugCPNet if);   
-   (getTransition).socketplaces.clear;
-   NONE -> (getTransition).setSubpage; 
    
 --ConstraintInscriptionNext:doPart--
-do (*private.theTransition.getConstraintInscription -> elm[];
-   (if elm[] = NONE then
-       private.theTransition.createConstraintInscription -> elm[];
-       elm[] -> private.theTransition.setConstraintInscription;
-   if);*)
+do 
 
 -- ConstraintInscriptionOnSemanticChanged:doPart --
 do ('private.theTransition[] <> NONE', private.theTransition[] <> NONE) -> assert (# #);
@@ -63,9 +55,6 @@ do ('private.theTransition[] <> NONE', private.theTransition[] <> NONE) -> asser
 -- ConstraintInscriptionOnChanged:doPart --
 do (if private.theTransition[] <> NONE then
        THIS(ConstraintInscription)[] -> private.theTransition.changed;
-       (if private.theTransition.getSubpage <> NONE then
-           (private.theTransition.getSubpage).name -> setCPNML;
-       if);
    if); 
    
 -- ConstraintInscriptionSnap:doPart --
@@ -163,3 +152,62 @@ INNER;
 
 -- ConstraintArcUpdate: doPart --
 do 
+
+-- TransitionCreateConstraintInscription:doPart --
+do 
+   &ConstraintInscription[] -> theConstraintInscription[];
+   (theName[], theLabel[], theFormula[], theLineStyle) -> theConstraintInscription.init;
+   this(Transition)[] -> theConstraintInscription.setTransition;
+   getCPNPage -> theConstraintInscription.setCPNPage;
+   theConstraintInscription.defaultSnap;
+
+-- ConstraintInscriptionUpdate: doPart --
+do theLabel[] -> theText[];
+   (# theLine: ^Line;
+	point: ^Point2D;
+	theCompletestyle: ^Completestyle; 
+	theStyle: ^CompositeStyle;
+	do  theRect[] -> presentation.remove;
+          &Line[] -> theLine[];
+          &PointList[]->theLine.points[];
+          (for 5 repeat &Point2d[]->point[]->theLine.points.append; for);     
+
+          &Completestyle[]->theCompletestyle[];
+          (Black[],NONE,1,0)->theCompletestyle;
+          theCompletestyle[]->theLine.theStyle[];
+          1->theLine.points.get->point[];
+          (-15,6)->point;          
+          2->theLine.points.get->point[];
+          (-15,-6)->point; 
+          3->theLine.points.get->point[];
+          (0,-14)->point; 
+          4->theLine.points.get->point[];
+          (15,-6)->point; 
+          5->theLine.points.get->point[];
+	    (15,6)->point; 
+          &CompositeStyle[] -> theStyle[] -> theLine.theStyle[];
+          black[] -> StrokeStyle -> theStyle.add;
+          white[] -> FillStyle -> theStyle.add;
+
+	    theLine[] -> presentation.add;
+    #);
+    black[] -> StrokeStyle -> (getTextItem).theStyle[]
+
+-- ConstraintArcmakeShape: doPart --
+do lineStyle -> theStyle.lineStyle;
+   arrowStyle -> theStyle.arrow;
+   INNER;
+
+-- ConstraintArcClone: doPart --
+do lineStyle -> new.lineStyle;
+   arrowStyle -> new.arrowStyle;
+   (if theName[] <> NONE then
+	   theName.copy -> new.theName[];
+   if);
+   (if theLabel[] <> NONE then
+	   theLabel.copy -> new.theLabel[];
+   if);
+   (if theFormula[] <> NONE then
+	   theFormula.copy -> new.theFormula[];
+   if);
+   INNER;

@@ -34,6 +34,7 @@ INCLUDE '../../cpntools/wselements/index';
 INCLUDE '../netvisitor';
 INCLUDE '../descriptordialog';
 INCLUDE '~beta/basiclib/regexp';
+INCLUDE '~beta/postwimp/foundation/abstractsurface';
 
 -- Workspacelib: attributes --
 
@@ -66,6 +67,11 @@ PackVisitor: NetVisitor
        (# current: ^Arc;
        enter current[]
        <<SLOT PackVisitorPackArc:doPart>>
+       #);
+     packConstraintArc:
+       (# current: ^ConstraintArc;
+       enter current[]
+	 <<SLOT PackVisitorPackConstraintArc:doPart>>
        #);
      packSSArc:
        (# current: ^SSArc;
@@ -111,6 +117,8 @@ PackVisitor: NetVisitor
      visitTransPriority:: (# <<SLOT PackVisitorVisitTransPriority:doPart>> #);
      visitSubpageInfo:: (# <<SLOT PackVisitorVisitSubpageInfo:doPart>> #);
      visitArc:: (# <<SLOT PackVisitorVisitArc:doPart>> #); 
+     visitConstraintArc: (# current: ^ConstraintArc; enter current[] <<SLOT PackVisitorVisitConstraintArc:doPart>> #); 
+     visitConstraintInscription: (# current: ^ConstraintInscription; enter current[] <<SLOT PackVisitorVisitConstraintInscription:doPart>> #);
      visitBendPoint:: (# <<SLOT PackVisitorVisitBendPoint:doPart>> #);
      visitAnnotation:: (# <<SLOT PackVisitorVisitAnnotation:doPart>> #);
      visitAux:: (# <<SLOT PackVisitorVisitAux:doPart>> #);
@@ -589,6 +597,81 @@ do (#
          current[] -> visitBendPoint;
       #);
    #);
+  
+-- PackVisitorPackConstraintArc:doPart --
+do (# theArrow, theLine: @integer; (* TODO *)
+   do current[]->packPageElement;
+      
+      ('order',current.getOrder) -> (elmStack.top).createIntAttribute;
+
+	'graphics' -> theXML.createElement -> tmpElm[] -> (elmStack.top).addElement;
+	('type', 'arc') -> tmpElm.createTextAttribute;
+	('label', current.theLabel[]) -> tmpElm.createTextAttribute;
+	(if (theArrow %band ARROW_START > 0) then
+	       'arrow_start' -> theXML.createElement -> tmpElm.addElement;
+	if);
+	(if (theArrow %band ARROW_END > 0) then
+	       'arrow_end' -> theXML.createElement -> tmpElm.addElement;
+	if);
+	(if (theArrow %band CIRCLE_START > 0) then
+	       'circle_start' -> theXML.createElement -> tmpElm.addElement;
+	if);
+	(if (theArrow %band CIRCLE_END > 0) then
+	       'circle_end' -> theXML.createElement -> tmpElm.addElement;
+	if);
+	(if (theArrow %band DIAMOND_START > 0) then
+	       'diamond_start' -> theXML.createElement -> tmpElm.addElement;
+	if);
+	(if (theArrow %band DIAMOND_END > 0) then
+	       'diamond_end' -> theXML.createElement -> tmpElm.addElement;
+	if);
+	(if (theArrow %band FILLED_CIRCLE_START > 0) then
+	       'filled_circle_start' -> theXML.createElement -> tmpElm.addElement;
+	if);
+	(if (theArrow %band FILLED_CIRCLE_END > 0) then
+	       'filled_circle_end' -> theXML.createElement -> tmpElm.addElement;
+	if);
+	
+	(if (theLine %band DOUBLE > 0) then
+	       'double' -> theXML.createElement -> tmpElm.addElement;
+	if);
+	(if (theLine %band TRIPLE > 0) then
+		'triple' -> theXML.createElement -> tmpElm.addElement;
+	if);
+	(if (theLine %band STRIKE > 0) then
+	       'strike' -> theXML.createElement -> tmpElm.addElement;
+	if);
+	(if (theLine %band DIAMOND > 0) then
+	       'diamond' -> theXML.createElement -> tmpElm.addElement;
+	if);
+	(if (theLine %band FILLED_DIAMOND > 0) then
+	       'filled_diamond' -> theXML.createElement -> tmpElm.addElement;
+	if);
+
+	'semantics' -> theXML.createElement -> tmpElm[] -> (elmStack.top).addElement;
+	('name', current.theName[]) -> tmpElm.createTextAttribute;
+	('formula', current.theFormula[]) -> tmpElm.createTextAttribute;
+
+      'arrowattr'->theXML.createElement->tmpElm[]->(elmStack.top).addElement;
+      ('headsize', current.arrowHeadSize)->tmpElm.createRealAttribute;
+      ('currentcyckle', current.currentSize)->tmpElm.createIntAttribute;
+      
+      (if current.transend[] <> none then
+          'task1'->theXML.createElement->tmpElm[]->(elmStack.top).addElement;
+          ('idref', current.transend.ID[])->tmpElm.createTextAttribute;
+      if);
+      (if current.placeend[] <> none then (* TODO *)
+		'task2'->theXML.createElement->tmpElm[]->(elmStack.top).addElement;
+          ('idref', current.placeend.ID[])->tmpElm.createTextAttribute;
+      if);
+      
+      current.scanBendPoints
+      (# serial: @integer;
+      do serial + 1 -> serial;
+         serial -> current.serial;
+         current[] -> visitBendPoint;
+      #);
+   #);
       
 -- PackVisitorPackNode: doPart --
 do current[]->packPageElement;
@@ -749,13 +832,21 @@ do ('page', current.ID[])->createAndPushElm;
    current.scanPlaces(# do current[] -> visitPlace; #);
    current.scanTransitions(# do current[] -> visitTransition; #);
    current.scanArcs(# do current[] -> visitArc; #);
+
+   ('constraints', NONE) -> createAndPushElm;
+   current.scanConstraintArcs(# do current[] -> visitConstraintArc; #);
+   current.scanTransitions(# do current.scanConstraintInscriptions (#
+	   do current[] -> visitConstraintInscription;
+   #); #);
+   popElm;
+   
    current.scanHorizontalGuidelines(# do current[] -> visitHorizontalGuideline; #);
    current.scanVerticalGuidelines(# do current[] -> visitVerticalGuideline; #);
    current.scanAuxs(# do current[] -> visitAux; #);
    current.scanGroups(# do current[] -> visitGroup; #);
    current.scanSSArcs(# do current[] -> visitSSArc; #);
    current.scanSSNodes(# do current[] -> visitSSNode; #);
-   
+
    (if debugging then
        'done packing CPNPage %s.'->debugSave(# do current.id[]->s; #);
    if);
@@ -833,7 +924,27 @@ do ('fusioninfo', current.ID[])->createAndPushElm;
 --PackVisitorVisitPortType: doPart--
 do ('port', current.ID[])->createAndPushElm;
    current[]->packHierarchyInfo;
+
    ('type', current.getCPNML)->(elmStack.top).createTextAttribute;
+   popElm;
+
+--PackVisitorVisitConstraintInscription: doPart--
+do ('constraint', current.ID[])->createAndPushElm;
+   current[]->packHierarchyInfo;
+
+   'graphics' -> theXML.createElement -> tmpElm[] -> (elmStack.top).addElement;
+   ('type', 'inscription') -> tmpElm.createTextAttribute;
+   ('label', current.theLabel[]) -> tmpElm.createTextAttribute;
+
+   'semantics' -> theXML.createElement -> tmpElm[] -> (elmStack.top).addElement;
+   ('name', current.theName[]) -> tmpElm.createTextAttribute;
+   ('formula', current.theFormula[]) -> tmpElm.createTextAttribute;
+
+   (if current.getTransition <> none then
+	   'task1'->theXML.createElement->tmpElm[]->(elmStack.top).addElement;
+	   ('idref', (current.getTransition).ID[])->tmpElm.createTextAttribute;
+   if);
+
    popElm;
    
 --PackVisitorVisitPlaceKind: doPart--
@@ -917,10 +1028,20 @@ do ('subpageinfo', current.ID[]) -> createAndPushElm;
    popElm;
    
 --PackVisitorVisitArc: doPart--
-do ('arc', current.ID[])->createAndPushElm;
-   current[] -> packArc;
-   current.getAnnotation -> visitAnnotation;
-   popElm;
+do (if not (current## <= ConstraintArc##) then
+	('arc', current.ID[])->createAndPushElm;
+	current[] -> packArc;
+	current.getAnnotation -> visitAnnotation;
+	popElm;
+   if);
+   
+--PackVisitorVisitConstraintArc: doPart--
+do (if current## <= ConstraintArc## then
+	('constraint', current.ID[])->createAndPushElm;
+	current[] -> packConstraintArc;
+	current.getAnnotation -> visitAnnotation;
+	popElm;
+   if);
    
 -- PackVisitorVisitSSArc:doPart --
 do (# tmpElm: ^XML.Element;

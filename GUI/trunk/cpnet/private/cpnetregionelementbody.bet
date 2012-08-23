@@ -42,11 +42,9 @@ do private.theItem[] -> theTextItem[];
 --HierarchyInfoUpdate:doPart--
 do (*presentation.clear;*)
    private.cpnml[] -> theText[];
-   INNER;
    theRect[] -> presentation.add;
-   (if private.theItem.content[] = none then
-       theText[] -> private.theItem.content[];
-   if);
+   INNER;
+   theText[] -> private.theItem.content[];
    (# setRect: 
         (# theText: ^Text;
         enter theText[] 
@@ -200,14 +198,14 @@ do (# theTransition: ^Transition;
 do ('theText[]<> none', theText[]<> none) -> assert (# #);
    (if theText[]<> none then
        (if true
-        // ('in' -> theText.equal) then
+        // ('in' -> theText.equalNCS) then
            NamesPortTypeIn -> getGlobalNames -> theText[];
-        // ('out' -> theText.equal) then
+        // ('out' -> theText.equalNCS) then
            NamesPortTypeOut -> getGlobalNames -> theText[];
-        // ('i/o' -> theText.equal) then
+        // ('i/o' -> theText.equalNCS) then
            NamesPortTypeIO -> getGlobalNames -> theText[];
        if);
-   if);
+ if);
         
 -- PortTypeNext:doPart --
 do father[] -> QUA
@@ -265,7 +263,7 @@ do ('theText[]<> none', theText[]<> none) -> assert (# #);
            NamesPlaceKindPQueue -> getGlobalNames -> theText.puttext;
 	     ': ' -> theText.puttext;
 	     private.ml[] -> theText.puttext;
-        // ('bound' -> theText.equal) then
+        // ('bounded' -> theText.equal) then
 	     &text[] -> theText[];
            NamesPlaceKindBound-> getGlobalNames -> theText.puttext;
 	     ': ' -> theText.puttext;

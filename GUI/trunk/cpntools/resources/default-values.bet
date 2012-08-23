@@ -37,7 +37,7 @@ halo_width: (# exit 3 #);
 index_width_magic: (# exit 50 #);
 
 highlight_color:
-  (# exit (0,1,1) -> &Color #);
+  (# exit (0,1.0,1) -> &Color #);
 compile_color: 
   (# exit (1, 0xd7/255, 0) -> &Color #);
 check_color: 
@@ -45,9 +45,9 @@ check_color:
 error_color: 
   (# exit (1, 0, 0) -> &Color #);
 depend_color: 
-  (# exit (0, 0, 1) -> &Color #);
+  (# exit fusion_color #);
 fusion_color: 
-  (# exit (1, 0, 1) -> &Color #);
+  (# exit (0, 0.4, 1.0) -> &Color #);
 token_color:
   (# exit ((102/255, 205/255, 0) ->&Color).lighten #);
 sim_color: 
@@ -58,7 +58,7 @@ nameerror_color:
   (# exit (0.8,0.3,0.3) -> &Color #);
 
 index_background_color:
-  (# exit (0xd5 / 255, 0xd5 / 255, 0xed / 250) -> &Color #);
+(# exit (0xd7 / 255, 0xf3 / 255, 0xff / 255) -> Color #);
 
 cpnet_scale_factor:
   (# exit 2.83 #);

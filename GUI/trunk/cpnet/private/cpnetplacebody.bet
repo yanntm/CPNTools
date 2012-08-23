@@ -494,7 +494,7 @@ do (# elm: ^PageElement;
       if);           
       (if private.thePlaceKind[] <> none then
           private.thePlaceKind[] -> theList.append;
-      if);           
+      if);
    #);
 
 -- PlaceGetInscriptions:doPart --
@@ -508,6 +508,9 @@ do (if private.theFusionInfo[] <> NONE then
    if);
    (if private.thePortType[] <> NONE then
        private.thePortType[] -> theList.append;
+   if); 
+   (if private.thePlaceKind[] <> NONE then
+       private.thePlaceKind[] -> theList.append;
    if); 
 
 -- PlaceGetAnchors: doPart --

@@ -70,6 +70,7 @@ BODY 'private/cpntoolsbody';
 -- program: descriptor --
 CpnWorkSpace
 (# theCreatingTools: @CreatingTools;
+   theDeclareTools: @DeclareTools;
    theStyleTools: @StyleTools;
    theSimulationTools: @SimulationTools;
    theStateSpaceTools: @StateSpaceTools;
@@ -122,6 +123,7 @@ CpnWorkSpace
              
              theHorizontalGuideInstrument: ^CreateHorizontalGuideInstrument;
              theVerticalGuideInstrument: ^CreateVerticalGuideInstrument;
+             theGuideGridInstrument: ^CreateGuideGridInstrument;
 		 theToogleExplicitInstrument: ^ToogleExplicitInstrument;
 		 theFIFOKindInstrument: ^FIFOKindInstrument;
 		 theLIFOKindInstrument: ^LIFOKindInstrument;
@@ -135,7 +137,9 @@ CpnWorkSpace
              theFastForwardInstrument: ^FastForwardInstrument;
              theBindManuallyInstrument: ^BindManuallyInstrument;
 	     theGenericMLEvaluateInstrument: ^GenericMLEvaluateInstrument;
-             theMLEvaluateInscriptionInstrument: ^MLEvaluateInscriptionInstrument;
+	     theMLEvaluateInscriptionInstrument: ^MLEvaluateInscriptionInstrument;
+	     theConstraintArcInstrument: ^ConstraintArcInstrument;
+	     theConstraintInscriptionInstrument: ^ConstraintInscriptionInstrument;
              
              (* State Space Instruments *)
              theEnterStateSpaceInstrument: ^EnterStateSpaceInstrument;
@@ -260,8 +264,8 @@ CpnWorkSpace
              &SetArcDirectionInstrument[]->theSetArcDirectionInstrument[];
              theSetArcDirectionInstrument.init;
              ('setArcDirection', theSetArcDirectionInstrument[]) 
-               -> theInstrumentList.associate;
-             
+		 -> theInstrumentList.associate;
+
              &CycleArcHeadInstrument[]->theCycleArcHeadInstrument[];
              theCycleArcHeadInstrument.init;
              ('cycleArcHead', theCycleArcHeadInstrument[])
@@ -273,7 +277,116 @@ CpnWorkSpace
              
              &CloneGraphicsInstrument[] -> theCloneGraphicsInstrument[];
              theCloneGraphicsInstrument.init;
-             ('cloneGraphics',theCloneGraphicsInstrument[]) -> theInstrumentList.associate;
+		 ('cloneGraphics',theCloneGraphicsInstrument[]) -> theInstrumentList.associate;
+
+		 &ConstraintArcInstrument[] -> theConstraintArcInstrument[];
+		 (NONE, 'response', '', FILLED_CIRCLE_START + ARROW_END, SINGLE) -> theConstraintArcInstrument.init;
+		 ('response', theConstraintArcInstrument[]) -> theInstrumentList.associate;
+
+		 &ConstraintArcInstrument[] -> theConstraintArcInstrument[];
+		 (NONE, 'precedence', '', FILLED_CIRCLE_END + ARROW_END, SINGLE) -> theConstraintArcInstrument.init;
+		 ('precedence', theConstraintArcInstrument[]) -> theInstrumentList.associate;
+
+		 &ConstraintArcInstrument[] -> theConstraintArcInstrument[];
+		 (NONE, 'succession', '', FILLED_CIRCLE_START + FILLED_CIRCLE_END + ARROW_END, SINGLE) -> theConstraintArcInstrument.init;
+		 ('succession', theConstraintArcInstrument[]) -> theInstrumentList.associate;
+
+		 &ConstraintArcInstrument[] -> theConstraintArcInstrument[];
+		 (NONE, 'alternate response', '', FILLED_CIRCLE_START + ARROW_END, DOUBLE) -> theConstraintArcInstrument.init;
+		 ('aresponse', theConstraintArcInstrument[]) -> theInstrumentList.associate;
+
+		 &ConstraintArcInstrument[] -> theConstraintArcInstrument[];
+		 (NONE, 'alternate precedence', '', FILLED_CIRCLE_END + ARROW_END, DOUBLE) -> theConstraintArcInstrument.init;
+		 ('aprecedence', theConstraintArcInstrument[]) -> theInstrumentList.associate;
+
+		 &ConstraintArcInstrument[] -> theConstraintArcInstrument[];
+		 (NONE, 'alternate succession', '', FILLED_CIRCLE_START + FILLED_CIRCLE_END + ARROW_END, DOUBLE) -> theConstraintArcInstrument.init;
+		 ('asuccession', theConstraintArcInstrument[]) -> theInstrumentList.associate;
+
+		 &ConstraintArcInstrument[] -> theConstraintArcInstrument[];
+		 (NONE, 'chain response', '', FILLED_CIRCLE_START + ARROW_END, TRIPLE) -> theConstraintArcInstrument.init;
+		 ('cresponse', theConstraintArcInstrument[]) -> theInstrumentList.associate;
+
+		 &ConstraintArcInstrument[] -> theConstraintArcInstrument[];
+		 (NONE, 'chain precedence', '', FILLED_CIRCLE_END + ARROW_END, TRIPLE) -> theConstraintArcInstrument.init;
+		 ('cprecedence', theConstraintArcInstrument[]) -> theInstrumentList.associate;
+
+		 &ConstraintArcInstrument[] -> theConstraintArcInstrument[];
+		 (NONE, 'chain succession', '', FILLED_CIRCLE_START + FILLED_CIRCLE_END + ARROW_END, TRIPLE) -> theConstraintArcInstrument.init;
+		 ('csuccession', theConstraintArcInstrument[]) -> theInstrumentList.associate;
+
+		 &ConstraintArcInstrument[] -> theConstraintArcInstrument[];
+		 (NONE, 'not co-existence', '', FILLED_CIRCLE_START + FILLED_CIRCLE_END, SINGLE + STRIKE) -> theConstraintArcInstrument.init;
+		 ('ncoexistence', theConstraintArcInstrument[]) -> theInstrumentList.associate;
+
+		 &ConstraintArcInstrument[] -> theConstraintArcInstrument[];
+		 (NONE, 'not succession', '', FILLED_CIRCLE_START + FILLED_CIRCLE_END + ARROW_END, SINGLE + STRIKE) -> theConstraintArcInstrument.init;
+		 ('nsuccession', theConstraintArcInstrument[]) -> theInstrumentList.associate;
+
+		 &ConstraintArcInstrument[] -> theConstraintArcInstrument[];
+		 (NONE, 'not chain succession', '', FILLED_CIRCLE_START + FILLED_CIRCLE_END + ARROW_END, TRIPLE + STRIKE) -> theConstraintArcInstrument.init;
+		 ('ncsuccession', theConstraintArcInstrument[]) -> theInstrumentList.associate;
+
+		 &ConstraintArcInstrument[] -> theConstraintArcInstrument[];
+		 (NONE, 'responded existence', '', FILLED_CIRCLE_START, SINGLE) -> theConstraintArcInstrument.init;
+		 ('respondedexistence', theConstraintArcInstrument[]) -> theInstrumentList.associate;
+
+		 &ConstraintArcInstrument[] -> theConstraintArcInstrument[];
+		 (NONE, 'co-existence', '', FILLED_CIRCLE_START + FILLED_CIRCLE_END, SINGLE) -> theConstraintArcInstrument.init;
+		 ('coexistence', theConstraintArcInstrument[]) -> theInstrumentList.associate;
+
+		 &ConstraintArcInstrument[] -> theConstraintArcInstrument[];
+		 (NONE, 'choice', '', 0, SINGLE + DIAMOND) -> theConstraintArcInstrument.init;
+		 ('choice', theConstraintArcInstrument[]) -> theInstrumentList.associate;
+
+		 &ConstraintArcInstrument[] -> theConstraintArcInstrument[];
+		 (NONE, 'exclusive choice', '', 0, SINGLE + FILLED_DIAMOND) -> theConstraintArcInstrument.init;
+		 ('exclusivechoice', theConstraintArcInstrument[]) -> theInstrumentList.associate;
+
+		 &ConstraintInscriptionInstrument[] -> theConstraintInscriptionInstrument[];
+		 ('init', '', SINGLE, 'init') -> theConstraintInscriptionInstrument.init;
+		 ('init', theConstraintInscriptionInstrument[]) -> theInstrumentList.associate;
+
+		 &ConstraintInscriptionInstrument[] -> theConstraintInscriptionInstrument[];
+		 ('last', '', SINGLE, 'last') -> theConstraintInscriptionInstrument.init;
+		 ('last', theConstraintInscriptionInstrument[]) -> theInstrumentList.associate;
+
+		 &ConstraintInscriptionInstrument[] -> theConstraintInscriptionInstrument[];
+		 ('existence', '', SINGLE, '1..*') -> theConstraintInscriptionInstrument.init;
+		 ('existence1', theConstraintInscriptionInstrument[]) -> theInstrumentList.associate;
+
+		 &ConstraintInscriptionInstrument[] -> theConstraintInscriptionInstrument[];
+		 ('existence2', '', SINGLE, '2..*') -> theConstraintInscriptionInstrument.init;
+		 ('existence2', theConstraintInscriptionInstrument[]) -> theInstrumentList.associate;
+
+		 &ConstraintInscriptionInstrument[] -> theConstraintInscriptionInstrument[];
+		 ('existence3', '', SINGLE, '3..*') -> theConstraintInscriptionInstrument.init;
+		 ('existence3', theConstraintInscriptionInstrument[]) -> theInstrumentList.associate;
+
+		 &ConstraintInscriptionInstrument[] -> theConstraintInscriptionInstrument[];
+		 ('absence', '', SINGLE, '0') -> theConstraintInscriptionInstrument.init;
+		 ('absence1', theConstraintInscriptionInstrument[]) -> theInstrumentList.associate;
+
+		 &ConstraintInscriptionInstrument[] -> theConstraintInscriptionInstrument[];
+		 ('absence2', '', SINGLE, '0..1') -> theConstraintInscriptionInstrument.init;
+		 ('absence2', theConstraintInscriptionInstrument[]) -> theInstrumentList.associate;
+
+		 &ConstraintInscriptionInstrument[] -> theConstraintInscriptionInstrument[];
+		 ('absence3', '', SINGLE, '0..2') -> theConstraintInscriptionInstrument.init;
+		 ('absence3', theConstraintInscriptionInstrument[]) -> theInstrumentList.associate;
+
+		 &ConstraintInscriptionInstrument[] -> theConstraintInscriptionInstrument[];
+		 ('exactly1', '', SINGLE, '1') -> theConstraintInscriptionInstrument.init;
+		 ('exactly1', theConstraintInscriptionInstrument[]) -> theInstrumentList.associate;
+
+		 &ConstraintInscriptionInstrument[] -> theConstraintInscriptionInstrument[];
+		 ('exactly2', '', SINGLE, '2') -> theConstraintInscriptionInstrument.init;
+		 ('exactly2', theConstraintInscriptionInstrument[]) -> theInstrumentList.associate;
+
+		 &ConstraintInscriptionInstrument[] -> theConstraintInscriptionInstrument[];
+		 ('exactly3', '', SINGLE, '3') -> theConstraintInscriptionInstrument.init;
+		 ('exactly3', theConstraintInscriptionInstrument[]) -> theInstrumentList.associate;
+
              (* Aux Init...*)
              &CreateAuxBoxInstrument[] -> theCreateAuxBoxInstrument[];
              ('CreateAuxBox', theCreateAuxBoxInstrument[])
@@ -326,16 +439,15 @@ CpnWorkSpace
              theCloneInstrument.init;
              ('clone', theCloneInstrument[]) -> theInstrumentList.associate;
              
-             &CreateHorizontalGuideInstrument[] 
-               -> theHorizontalGuideInstrument[];
+             &CreateHorizontalGuideInstrument[] -> theHorizontalGuideInstrument[];
              theHorizontalGuideInstrument.init;
-             ('horizontalGuide', theHorizontalGuideInstrument[]) 
-               -> theInstrumentList.associate;
-             &CreateVerticalGuideInstrument[] 
-               -> theVerticalGuideInstrument[];
+             ('horizontalGuide', theHorizontalGuideInstrument[]) -> theInstrumentList.associate;
+             &CreateVerticalGuideInstrument[] -> theVerticalGuideInstrument[];
              theVerticalGuideInstrument.init;
-             ('verticalGuide', theVerticalGuideInstrument[]) 
-               -> theInstrumentList.associate;
+             ('verticalGuide', theVerticalGuideInstrument[]) -> theInstrumentList.associate;
+             &CreateGuideGridInstrument[] -> theGuideGridInstrument[];
+             theGuideGridInstrument.init;
+             ('guideGrid', theGuideGridInstrument[]) -> theInstrumentList.associate;
              &ToogleExplicitInstrument[] -> theToogleExplicitInstrument[];
              theToogleExplicitInstrument.init;
              ('toogleExplicit', theToogleExplicitInstrument[]) -> theInstrumentList.associate;
@@ -629,6 +741,11 @@ CpnWorkSpace
              theCreatingTools.thecollection[] 
                -> theToolBox.add;
              ('create',theCreatingTools.theCollection[]) -> theToolCollectionList.associate;
+             
+             theDeclareTools.init;
+             theDeclareTools.thecollection[] 
+               -> theToolBox.add;
+             ('declare',theDeclareTools.theCollection[]) -> theToolCollectionList.associate;
              
              theHierarchyTools.init;
              theHierarchyTools.thecollection[] 

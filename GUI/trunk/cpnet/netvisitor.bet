@@ -145,6 +145,12 @@ NetVisitor:
        do INNER;
        #);
      
+     visitConstraintInscription:<
+       (# current: ^ConstraintInscription;
+       enter current[]
+       do INNER;
+       #);
+     
      visitSSArc:<
        (# current: ^SSArc;
        enter current[]

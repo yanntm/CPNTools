@@ -1466,7 +1466,7 @@ CPNIndex: Index
                
                showSheet::
                  (#
-                 do 'http://cpntools.org/support/' ->ShowHelp;
+                 do 'http://cpntools.uservoice.com/' ->ShowHelp;
                  #);
             #);
           getName::
@@ -1779,6 +1779,10 @@ CPNIndex: Index
                if);
                (if 'create' -> toolBoxName.equalNCS then
                    'Create' -> paletteName[];
+                   leave findRightName;                       
+               if);       
+               (if 'declare' -> toolBoxName.equalNCS then
+                   'Declare' -> paletteName[];
                    leave findRightName;                       
                if);       
                (if 'hierarchy' -> toolBoxName.equalNCS then

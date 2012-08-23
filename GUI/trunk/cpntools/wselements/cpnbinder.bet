@@ -161,7 +161,10 @@ HighlightableSheet: StandardSheet
 
 CpnTab: SheetTab
   (# SheetType:: CpnSheet; 
-     theSheet: ^CpnSheet;
+	  theSheet: ^CpnSheet;
+	  init:: (#
+		  do (0.93, 0.93, 0.93) -> color -> original[] -> tabColor;
+		  #);
      editable::
        (#
        do true -> isEditable;
@@ -186,6 +189,112 @@ CpnTab: SheetTab
        #);
   #);
 
+PatternLayer: Layer (#
+   thePattern: ^Pattern;
+   onPanChanged:: (#
+   x, y: @integer;
+   do father.pan -> (x, y);
+      (x mod thePattern.patternSize - thePattern.patternSize, y mod thePattern.patternSize - thePattern.patternSize) -> position;
+   #);
+   init:: (#
+         enter thePattern[]
+	   do (if thePattern.patternSize <= 0 then 25 -> thePattern.patternSize; if);
+	      true-> clipping;
+	      LeftJustify -> horizontalAnchor;
+	      TopJustify -> verticalAnchor;
+		thePattern[] -> show;
+         exit THIS(PatternLayer)[]
+   #);
+   onSizeChanged::< (#
+   #);
+   enter thePattern[]
+   exit this(PatternLayer)[]
+#);
+
+Pattern: ContentItem (# 
+   patternSize: @integer;
+   init::< (#
+   do INNER;
+   exit THIS(Pattern)[]
+   #);
+   enter patternSize
+   exit THIS(Pattern)[]
+#);
+
+SquarePattern: Pattern (#
+pattern: ^Composite;
+update::< (#
+	ls: ^Style;
+	oldw, oldh: @integer;
+	w, h: @integer;
+	dx, dy: @integer;
+	l: ^Line;
+do
+     (if pattern[] = NONE then
+	    &Composite[] -> pattern[];
+	    pattern.init;
+	    lightblueish[] -> &StrokeStyle -> ls[];
+	    100 -> w;
+	    100 -> h;
+	    w * patternSize -> oldw;
+	    h * patternSize -> oldh;
+	    (for w repeat
+	    	&Line[] -> l[];
+		l.init;
+		&PointList[] -> l.points[];
+		(dx, 0) -> MakePoint -> l.points.append;
+		(dx, oldh) -> MakePoint -> l.points.append;
+		ls[] -> l.theStyle[];
+		l[] -> pattern.add;
+		patternSize + dx -> dx;
+	    for);
+	    (for h repeat
+	    	&Line[] -> l[];
+		l.init;
+		&PointList[] -> l.points[];
+		(0, dy) -> MakePoint -> l.points.append;
+		(oldw, dy) -> MakePoint -> l.points.append;
+		ls[] -> l.theStyle[];
+		l[] -> pattern.add;
+		patternSize + dy -> dy;
+	    for);
+	 if);
+	 pattern[] -> presentation.add;
+#);
+#);
+
+LinePattern: Pattern (#
+pattern: ^Composite;
+update::< (#
+	ls: ^Style;
+	oldw, oldh: @integer;
+	w, h: @integer;
+	dx, dy: @integer;
+	l: ^Line;
+do
+     (if pattern[] = NONE then
+	    &Composite[] -> pattern[];
+	    pattern.init;
+	    urinish[] -> &StrokeStyle -> ls[];
+	    100 -> w;
+	    100 -> h;
+	    w * patternSize -> oldw;
+	    h * patternSize -> oldh;
+	    (for h repeat
+	    	&Line[] -> l[];
+		l.init;
+		&PointList[] -> l.points[];
+		(0, dy) -> MakePoint -> l.points.append;
+		(oldw, dy) -> MakePoint -> l.points.append;
+		ls[] -> l.theStyle[];
+		l[] -> pattern.add;
+		patternSize + dy -> dy;
+	    for);
+	 if);
+	 pattern[] -> presentation.add;
+#);
+#);
+
 CpnSheet: HighlightableSheet
   (# <<SLOT CPNSheetLib: Attributes>>;
      ContentType:: PageInstance;
@@ -193,6 +302,8 @@ CpnSheet: HighlightableSheet
      TabType:: GroupTab;
      SimulationLayer: SheetLayer (# #);
      simlayer: ^Layer;
+     thePatternLayer: ^PatternLayer;
+     patternSize: (# exit 42 #);
      guidelinelayer: ^Layer;
      FatherType:: Folder;
      shouldBeInMainLayer:: 
@@ -430,7 +541,7 @@ TextTab: SheetTab
   (# 
      init::
        (#
-       do 0.5->blueish.lighten->original[]->tabColor;
+		 do (1.0, 0.95, 0.88) -> color -> original[]->tabColor;
        #);
   #);
 
@@ -440,6 +551,8 @@ TextSheet: HighlightableSheet
   (# ContentType:: Declaration;
      FatherType:: CPNBinder;
      TopTabType:: DeclTextTab;
+     thePatternLayer: ^PatternLayer;
+     patternSize: (# exit 28 #);
      adapter: ^DeclarationTextAdapter;
      
      sheetAir::
@@ -478,8 +591,11 @@ TextSheet: HighlightableSheet
        (#
        do LeftJustify -> mainLayer.verticalAnchor;
           TopJustify -> mainLayer.horizontalAnchor;
-          (7, 20) -> pan;
-	  0.5->blueish.lighten->theSheetColor[];
+	    ((patternSize -> &LinePattern).init -> &PatternLayer).init -> thePatternLayer[];
+	    thePatternLayer[] -> add;
+	    thePatternLayer[] -> layers.sendToBack;          
+	    (7, 20) -> pan;
+	    (1.0, 0.95, 0.88) -> Color -> theSheetColor[];
        #);
      secondary: ^Text;
      onSemanticChanged::
@@ -575,7 +691,7 @@ MLCodeOptionSheet: StandardSheet
        do LeftJustify -> mainLayer.verticalAnchor;
           TopJustify -> mainLayer.horizontalAnchor;
           (7, 20) -> pan;
-	  0.5->blueish.lighten->sheetColor;
+	    (1.0, 0.95, 0.88) -> color ->sheetColor;
        #);
      
      onChanged::

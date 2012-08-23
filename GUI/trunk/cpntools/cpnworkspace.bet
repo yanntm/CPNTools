@@ -37,6 +37,7 @@ INCLUDE '~beta/sysutils/objinterface';
 INCLUDE 'instruments/cpnoption';
 INCLUDE 'resources/XMLLibrary';
 INCLUDE '~beta/postwimp/common/standardpath';
+INCLUDE '~beta/postwimp/foundation/abstractsurface';
 
 BODY 'private/cpnworkspacebody';
 
@@ -93,6 +94,7 @@ CPNWorkSpace: Workspace
           
      status: @StatusBubble;
      fixedstatus: @FixedStatusBubble;
+     logo: ^ImageItem;
      
      scanBinders:
        (# current: ^CPNBinder;
@@ -454,6 +456,10 @@ CPNWorkSpace: Workspace
      onResized::<
        (#
        do theIndex.layout; 
+	    (if logo[] <> NONE then
+	        width - logo.content.width / 2 -> logo.x;
+	        height - logo.content.height / 2 -> logo.y;
+	    if);
           INNER;
        #);
      
@@ -596,7 +602,20 @@ CPNWorkSpace: Workspace
             #);
           
        do THIS(Workspace)[] -> content.owner[];
-          THIS(Workspace)[] -> background.owner[];
+	    THIS(Workspace)[] -> background.owner[];
+          (#
+		    entry: @diskentry;
+		do  init;
+		    'images/logoblue.png' -> relativeFile -> entry.path;
+		    (if entry.exists then
+		          &ImageItem[] -> logo[];
+			    entry.path -> widget.loadImage -> logo.content[];
+			    (*30000-> widget.loadImageByID -> logo.content[];*)
+			    width - logo.content.width / 2 -> logo.x;
+			    height - logo.content.height / 2 -> logo.y;
+			    logo[] -> background.add;
+		    if);
+	    #);
           prepareStatus;
           prepareConfig;
           INNER;
@@ -611,7 +630,7 @@ CPNWorkSpace: Workspace
        #);
      init::<
        (#
-	 do (0xa7 / 255, 0xa7 / 255, 0xce / 255) -> &Color -> backgroundColor[];
+	 do (0xa1 / 255, 0xca / 255, 0xf1 / 255) -> &Color -> backgroundColor[];
        #);   
      onSheetDropped:: (# <<SLOT OnSheetDropped:doPart>> #);     
      onKeyDown::

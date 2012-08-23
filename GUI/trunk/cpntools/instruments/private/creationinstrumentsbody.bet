@@ -96,7 +96,7 @@ do (# ISSE: @Boolean;
       ISSE -> context.net.ignoreStateSpaceExit;
       
       (elm.getAnnotation).computePosition;
-      (if (NOT elm.deadInfo) AND ((context.Net.stateSpaceNumber <> ssNumber) OR (NOT context.net.stateSpaceEntered)) then
+      (if (NOT elm.deadInfo) AND ((context.Net.stateSpaceNumber <> ssNumber) OR (context.net.stateSpaceEntered < 1)) then
 	  true -> elm.dead;
       if);
    #);
@@ -1633,23 +1633,11 @@ do target.isExplicit -> previousChoiceType;
    target.SemanticChanged;
 
 -- KindClipping:DoPart --
-do removedAssignments.clear;
-(*   (if previousPlaceKind[] = none then
-       elm.scanAssignments
-       (# 
-       do (if current.getPort = elm[] then
-              current[] -> removedAssignments.append;
-              current.delete;
-          if);
-       #);
-   if);*)
-   (if previousPlaceKind[]<>NONE then
-       previousPlaceKind[] -> elm.createPlaceKind -> elm.setPlaceKind;
+do 
+   (if previousPlaceKind[] <> none then
+       previousPlaceKind[] -> insert;
     else
        NONE -> elm.setPlaceKind;
-   if);
-   (if removedAssignments.size > 0 then
-       elm.semanticChangedOnPlaceGraph;
    if);
 
 

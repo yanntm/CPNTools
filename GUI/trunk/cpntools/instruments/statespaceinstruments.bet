@@ -33,15 +33,22 @@ INCLUDE '../../cpnet/cpnet';
 INCLUDE '../../document/ml/mlcom';
 INCLUDE '../../document/ml/mlcommands';
 INCLUDE '../../document/ml/mlparse';
+INCLUDE '~beta/basiclib/timedate';
 
 BODY 'private/statespaceinstrumentsbody';
 
-
-
 -- CPNWorkSpaceLib: attributes --
+NotEntered: (# exit 0 #);
+Entered: (# exit 1 #);
+SSCalculated: (# exit 2 #);
+SCCCalculated: (# exit 3 #);
+
 
 StateSpaceCommand: CPNCommand
   (# TargetType:: CPNSheet;
+     theHand: ^Hand;
+
+     prepare::< (# do theHand[] -> THIS(StateSpaceCommand).theHand[]; INNER; #);
      notUndoable::
        (# do true -> value #);
      getNet:
@@ -127,6 +134,32 @@ CalcStateSpaceInstrument: CPNInstrument
        #);
   #);
 
+appendDifference: (#
+ prefix, theText: ^text;
+ start: ^time;
+ difference: @period;
+ tmpText: @text;
+ int: @integer;
+ enter (prefix[], start[], theText[])
+ do   
+      (timeNow, start) -> timeDifference -> difference;
+	search: (if prefix[] <> NONE then
+		prefix.reset;
+		'Generation took' -> prefix.findText (#
+			do (1, inx - 1) -> prefix.sub -> tmpText.puttext;
+			leave search;
+		#);
+		prefix[] -> tmpText.putline;
+	if);
+	(if theText[] <> NONE then
+		theText[] -> tmpText.putline;
+	if);
+	'Generation took ' -> tmpText.puttext;
+	difference -> tmpText.putPeriod;
+ exit tmpText[]
+#);
+
+
 CalcStateSpaceCommand: StateSpaceCommand
   (# error: @boolean;
      theText: ^Text;
@@ -135,8 +168,7 @@ CalcStateSpaceCommand: StateSpaceCommand
 
      relevant::
        (#
-       do ((target.content.thePage.net.status = compiled) AND
-          target.content.thePage.net.statespaceEntered) -> value;
+       do target.content.thePage.net.status = compiled -> value;
        #);
 
      Apply::<
@@ -145,7 +177,22 @@ CalcStateSpaceCommand: StateSpaceCommand
         * between the simulator and the editor.
         *)
        (# sheetPage: ^PageInstance;
-       do (if (target.content.thePage.net.status = compiled) then
+	    theEnterStateSpaceInstrument: ^EnterStateSpaceInstrument;
+	    start: @time;
+	    oldMessage: ^text;
+       do 
+	    (if (target.content.thePage.net.status = compiled) then
+		  timeNow -> start;
+	        (if target.content.thePage.net.stateSpaceEntered < Entered then
+		     'enterog' -> theInstrumentList.lookup -> theEnterStateSpaceInstrument[];
+		     (target[], theHand[]) -> theEnterStateSpaceInstrument.relevant;
+		     (theHand[], target[]) -> theEnterStateSpaceInstrument.prepare;
+		     theEnterStateSpaceInstrument.apply;
+		     (if target.content.thePage.net.stateSpaceEntered < Entered then
+		         leave Apply;
+		     if);
+		     status.theMessage[] -> oldMessage[];
+		  if);
               CalcStateSpaceRunning -> 
               getGlobalNames -> fixedStatus.running;
               fixedStatus.start;
@@ -244,13 +291,13 @@ CalcStateSpaceCommand: StateSpaceCommand
                                    (1, pos) -> message.sub -> theText.putline;
                                    CalcStateSpaceErrorStopCritTip -> 
                                    getGlobalNames -> theText.puttext;
-                                   theText[] -> status.warning;
+                                   (oldMessage[], start[], theText[]) -> appendDifference -> status.warning;
                                 #);
                              else
                                 CalcStateSpaceErrorCalc -> 
                                 getGlobalNames -> theText[];
                                 message[] -> theText.putline;
-                                theText[] -> status.error;
+                                (oldMessage[], start[], theText[]) -> appendDifference -> status.error;
                             if);
                             true -> error; (* We cannot leave L here - that would
                                                 * leave a semaphore blocked! *)
@@ -259,9 +306,10 @@ CalcStateSpaceCommand: StateSpaceCommand
                     (if error then
                         leave L;
                      else
-                        theText[] -> status.message;
+				(oldMessage[], start[], theText[]) -> appendDifference -> status.messageKeep;
                     if);
-		    CalcStateSpaceDone -> getGlobalNames -> status.message;
+			  (oldMessage[], start[], CalcStateSpaceDone -> getGlobalNames) -> appendDifference -> status.messageKeep;
+			  SSCalculated -> target.content.thePage.net.stateSpaceEntered;
                  #);
               UnsetBusyCursor;
               fixedStatus.stop;
@@ -288,13 +336,28 @@ CalcSccCommand: StateSpaceCommand
   (# 
      relevant::
        (#
-       do ((target.content.thePage.net.status = compiled) and target.content.thePage.net.statespaceEntered) -> value;
+       do (target.content.thePage.net.status = compiled) -> value;
        #);
 
      Apply::<
        (# sheetPage: ^PageInstance;
-       do (if (target.content.thePage.net.status = compiled) then
-              'Calculating SCC Graph' -> fixedStatus.running;
+	    start: @time;
+	    theCalcStateSpaceInstrument: ^CalcStateSpaceInstrument;
+	    oldMessage: ^text;
+       do 
+	    (if (target.content.thePage.net.status = compiled) then
+		 timeNow -> start;
+	        (if target.content.thePage.net.stateSpaceEntered < SSCalculated then
+		     'calcoccgraph' -> theInstrumentList.lookup -> theCalcStateSpaceInstrument[];
+		     (target[], theHand[]) -> theCalcStateSpaceInstrument.relevant;
+		     (theHand[], target[]) -> theCalcStateSpaceInstrument.prepare;
+		     theCalcStateSpaceInstrument.apply;
+		     (if target.content.thePage.net.stateSpaceEntered < SSCalculated then
+		         leave Apply;
+		     if);
+		     status.theMessage[] -> oldMessage[];
+		  if);
+		 'Calculating SCC Graph' -> fixedStatus.running;
 	      fixedStatus.start;
 	      setBusyCursor;
 	      target.content[] -> sheetPage[];
@@ -302,13 +365,13 @@ CalcSccCommand: StateSpaceCommand
               (#
                  onMLException::
                    (#
-                   do 'Error calculating SCC graph' -> status.error;
-                      message[] -> screen.putline;
+                   do (oldMessage[], start[], 'Error calculating SCC graph') -> appendDifference -> status.error;
                    #);
               #);
 	      UnsetBusyCursor;
 	      fixedStatus.stop;
-              'SCC graph calculated' -> status.message;
+		(oldMessage[], start[], 'SCC graph calculated') -> appendDifference -> status.messageKeep;
+		SCCCalculated -> target.content.thePage.net.stateSpaceEntered;
           if);
        #);
   #);
@@ -368,7 +431,7 @@ SaveReportCommand: StateSpaceCommand
 
      relevant::
        (#
-       do ((target.content.thePage.net.status = compiled) and target.content.thePage.net.statespaceEntered) -> value;
+       do (target.content.thePage.net.status = compiled) -> value;
        #);
 
      apply:: (# <<SLOT SaveReportCommandApply:DoPart>> #);       
@@ -527,7 +590,7 @@ DisplayNodeInstrument: PageElementInstrument
 	  net: ^CPNet;
 	  inNet: ^SSNodeIDDictionary;
        do target.content.thePage.net[] -> net[];
-	  (if net.stateSpaceEntered then
+	  (if (net.stateSpaceEntered < SSCalculated) then
               &SSMLHelper[] -> MLHelper[];
 	      'nodeNumber' -> options.lookupInteger -> list[1];
 	      net.ml[] -> theHandler[];
@@ -580,7 +643,7 @@ DisplaySuccessorsInstrument: FigureTInstrument
 	  theGroupClipping: ^GroupClipping;
 	  com: ^GroupClipCommand;
 
-       do (if (target.getCPNPage).net.stateSpaceEntered then
+       do (if ((target.getCPNPage).net.stateSpaceEntered > SSCalculated) then
               (if NOT target.dead then
 	          target[] -> theSSNode[];
     	          target.x -> x;
@@ -767,7 +830,7 @@ DisplayPredecessorsInstrument: FigureTInstrument
 	  theArcs: ^SSArcList;
 	  theSSNode: ^SSNode;
 	  
-       do (if (target.getCPNPage).net.stateSpaceEntered then
+       do (if (target.getCPNPage).net.stateSpaceEntered > SSCalculated then
     	      target[] -> theSSNode[];
     	      target.x -> x;
     	      target.y -> y;
@@ -830,7 +893,7 @@ DisplayPartialSSGraphInstrument: FigureTInstrument
 	  theGroupElementsInstrument: ^GroupElementsInstrument;
           picker: ^PickInstrument;
 
-       do (if (target.getCPNPage).net.stateSpaceEntered then
+       do (if (target.getCPNPage).net.stateSpaceEntered < SSCalculated then
 	      &SSMLHelper[] -> MLHelper[];
     	      (target.getCPNPage).net.ml[] -> theHandler[];
     	      target[] -> theAUX[];

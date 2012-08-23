@@ -1,0 +1,190 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../cpnworkspace';
+INCLUDE '../resources/texts/texts';
+INCLUDE 'creationinstruments';
+INCLUDE '../resources/figures/declarefigures';
+
+BODY 'private/declareinstrumentbody';
+
+-- cpnworkspacelib: attributes --
+
+ConstraintArcClipping: PageElementClipping
+  (# Element:: ConstraintArc;
+     t1, t2: ^Transition;
+     originalX, originalY: @Real;
+     storage: @List
+       (# Element:: Clipping;
+       #);     
+     add:
+       (# theClipping: ^Clipping;
+       enter theClipping[]
+       do theClipping[] -> storage.append;
+       #);
+     init::
+       (# 
+       enter (t1[], t2[])
+       <<SLOT ConstraintArcClippingInit:DoPart>>
+       #);
+     insert:: (# <<SLOT ConstraintArcClippingInsert:DoPart>> #);
+     remove:: (# <<SLOT ConstraintArcClippingRemove:DoPart>> #);
+  #);
+
+ConstraintInscriptionClipping: Clipping
+(# Element:: ConstraintInscription;
+	ContextType:: Transition;
+	 insert:: (# 
+		 do elm[] -> context.addConstraintInscription;
+		 elm.update;
+		 context.changed;
+		 context.semanticChanged;
+	 #);
+	 remove:: (# 
+		 do elm[] -> context.removeConstraintInscription;
+		 context.changed;
+		 context.semanticChanged;
+		 #);
+  #);
+
+ConstraintArcInstrument: AbstractArcInstrument
+(#    
+	constraintName: ^text;
+	formula: ^text;
+	FigureT::< ConstraintArcFigure;
+	PlaceType:: Transition;
+     ToolTip::<
+       (# 
+		 do    &text [] -> theTip[];
+			 NamesCreateConstraint -> getGlobalNames ->
+			 theTip.putFormat (# do constraintName[] -> s; #);
+			 #);
+
+	    defaultPrototype::< (#
+	             theConstraintArcPrototype: ^ConstraintArc;
+		    do &ConstraintArc[] -> thePrototype[] -> theConstraintArcPrototype[] -> prototype[];
+		       prototype.init;
+			 prototype.setAnnotation;
+		       ('arrow' -> options.lookupInteger) -> theConstraintArcPrototype.arrowStyle;
+		       ('line' -> options.lookupInteger) -> theConstraintArcPrototype.lineStyle;
+	    #);
+     
+	 init ::< (# arrowStyle, lineStyle: @integer;
+		 enter (constraintName[], formula[], arrowStyle, lineStyle)
+		 do	
+			 'constraint_instrument' -> helpname[];
+			 ('arrow', arrowStyle -> int) -> options.setaddoption
+			 (# OptionType::IntegerOption(# invisible:: trueObject; #); #);
+			 ('line', lineStyle -> int) -> options.setaddoption
+			 (# OptionType::IntegerOption(# invisible:: trueObject; #); #);
+
+	 #);
+
+	 LocalCreateArc::< (#
+	   do (theCPNPage[], source[], destination[], bends[], thePrototype[]) -> CreateConstraintArc;
+	 #);
+#);
+
+ConstraintInscriptionInstrument: FigureTInstrument
+  (# FigureT:: ConstraintInscriptionFigure;
+     TargetType:: Transition;
+     lineStyle: @integer;
+     constraintName: ^text;
+     ToolTip::<
+       (# 
+		 do 
+		    NamesCreateConstraint -> getGlobalNames ->
+		       theTip.putFormat (# do constraintName[] -> s; #);
+       #);
+     relevant::
+       (# 
+		 do true -> value;
+       #);
+     apply::
+       (# theConstraint: ^ConstraintInscription;
+		 do 
+		 ('name' -> options.lookupText,
+		  'label' -> options.lookupText,
+		  'formula' -> options.lookupText,
+		  lineStyle) -> target.createConstraintInscription -> theConstraint[];
+		 (target[], theConstraint[]) -> AddConstraintInscription;
+		 finish;
+	    #);
+
+     init::<
+     (# 
+     label: ^text;
+     formula: ^text;
+	     enter (constraintName[], formula[], lineStyle, label[])
+       do INNER;
+	    'constraint_instrument' -> helpname[];
+          ('formula', formula[]) -> options.setaddoption
+          (# OptionType::TextOption(# invisible:: trueObject; #); #);
+          ('name', constraintName[]) -> options.setaddoption
+          (# OptionType::TextOption(# invisible:: trueObject; #); #);
+          ('label', label[]) -> options.setaddoption
+          (# OptionType::TextOption(# invisible:: trueObject; #); #);
+       #);
+ #);
+
+AddConstraintInscriptionCommand: StandardInsertCommand (#
+	ClippingType:: ConstraintInscriptionClipping;
+	getName:: (#
+		do 'Add Constraint' -> name[];
+	#);
+#);
+
+AddConstraintInscription: (#
+    theTransition: ^Transition;
+    theConstraintInscription: ^ConstraintInscription;
+
+    enter (theTransition[], theConstraintInscription[])
+    do (#
+	    theClipping: ^ConstraintInscriptionClipping;
+	    theCommand: ^AddConstraintInscriptionCommand;
+	    do
+	    	&ConstraintInscriptionClipping[] -> theClipping[];
+		theConstraintInscription[] -> theClipping.init;
+
+		&AddConstraintInscriptionCommand[] -> theCommand[];
+		theCommand.init;
+		theTransition[] -> theCommand.prepare;
+		theClipping[] -> theCommand.apply;
+		(theTransition.getCPNet, theCommand[]) -> registerCommand;
+	 #)
+#);
+
+CreateConstraintArc:
+  (# context: ^CPNPage;
+     source, destination: ^Transition;
+     bends: ^PointList;
+     thePrototype: ^ConstraintArc;
+     theArc: ^ConstraintArc;
+  enter (context[], source[], destination[], bends[], thePrototype[])
+  <<SLOT CreateConstraintArc:doPart>>
+  exit theArc[]
+  #);
+
+

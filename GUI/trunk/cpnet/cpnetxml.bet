@@ -1118,6 +1118,7 @@ CPNetLoader: Loader
                               &ArcLoader[] -> register;
                               &SSArcLoader[] -> register;
                               &AuxLoader[] -> register;
+					&ConstraintLoader[] -> register;
                            #);
                          
                          createLoader::
@@ -1128,6 +1129,63 @@ CPNetLoader: Loader
                                 #);
                            #);
                       #);
+
+			  ConstraintLoader: PageElementLoader
+			    (#
+			      elmName:: (# do 'constraints' -> value[]; #);
+			    	load:: (#
+                                   ConstraintInscriptionLoader: @PageElementLoader
+                                     (# Type:: ConstraintInscription;
+						    elmName:: (# do 'constraint' -> value; #);
+                                        load::
+                                          (# t: ^Transition;
+                                          do getPage -> obj.setCPNPage;
+							   elm.scanElements (#
+							   do (if true
+							   // 'graphics' -> current.tag.equalNCS then
+							      'label' -> current.lookupText -> obj.theLabel[];
+							   // 'semantics' -> current.tag.equalNCS then
+							      'name' -> current.lookupText -> obj.theName[];
+								'formula' -> current.lookupText -> obj.theFormula[];
+						         // 'task1' -> current.tag.equalNCS then
+							       &Task (# stage:: (# do 1 -> value; #);
+								 do
+							      'idref' -> current.lookupText -> lookupObject -> t[] -> obj.setTransition;
+								obj[] -> t.addConstraintInscription;
+								#)[] -> scheduleTask;
+						         if);
+							   #);
+                                          #);
+                                     #);
+
+						 do elm.scanElements (#
+							 type: @integer;
+						 do 
+						 (if true
+						 // 'constraint' -> current.tag.equalNCS then
+                                         current.scanElements (#
+						     do (if true
+						     // 'graphics' -> current.tag.equalNCS then
+						         (if true 
+							   // 'inscription' -> ('type' -> current.lookupText).equalNCS then
+							       1 -> type;
+							   // 'arc' -> ('type' -> current.lookupText).equalNCS then
+							       2 -> type;
+							   if);
+                                         // 'task1' -> current.tag.equalNCS then
+						         (1, type) -> max -> type;
+                                         // 'task2' -> current.tag.equalNCS then
+						         (2, type) -> max -> type;
+						     if);
+						     #);
+						     (if type
+						     // 1 then current[] -> ConstraintInscriptionLoader.load;
+						     // 2 then current[];
+						     if);
+						 if);
+						 #);
+                                  #);
+			    #);
                     
                     GuidelineLoader: PageElementLoader
                       (# Type::< Guideline;
