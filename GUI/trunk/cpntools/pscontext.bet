@@ -230,8 +230,8 @@ PSContext: Context
           '%f setlinewidth\n' ->
              output.putFormat
                (#
-               do (if theStrokeWidth < 0.5 then
-                      0.5 -> f;
+               do (if theStrokeWidth < 1.0 then
+                      1.0 -> f;
                   else
                      theStrokewidth -> f;
                   if);
@@ -305,11 +305,11 @@ PSContext: Context
      drawArrow:
        (# A:
             (#
-            exit 10.0 * theArrowHeadSize
+            exit 8.0 * theArrowHeadSize
             #);
           B:
             (#
-            exit 10.0 * theArrowHeadSize
+            exit 12.0 * theArrowHeadSize
             #);
           C:
             (#
@@ -351,14 +351,189 @@ PSContext: Context
                    do q.x -> f;
                       (- q.y) -> f;
                    #);
+              '%f %f lineto\n' ->
+                 output.putFormat
+                   (#
+                   do m.x -> f;
+                      (- m.y) -> f;
+                   #);
               'fill grestore' -> output.putline;
           if);
+	    #);
+     drawDiamond:
+       (# A:
+            (#
+            exit 16.0 * theArrowHeadSize
+            #);
+          B:
+            (#
+            exit 8.0 * theArrowHeadSize
+            #);
+          C:
+            (#
+            exit 5.0 * theArrowHeadSize
+            #);
+          p, m, q: ^Point2d;
+          vx, vy, ux, uy, rx, ry, l: @real;
+	    start, end: ^Point2d;
+	    filled: @boolean;
+       enter (start[], end[], filled)
+       do start.x - end.x -> vx;
+          start.y - end.y -> vy;
+          vx * vx + vy * vy -> sqrt -> l;
+          (if l > 0.0 then
+              vx / l -> ux;
+              vy / l -> uy;
+              (end.x + ux * A, end.y + uy * A) -> MakePoint -> m[];
+              B * ux -> rx;
+              B * uy -> ry;
+              (end.x + rx * 0.5, end.y + ry * 0.5) -> Point2d;
+              (end.x + rx - C * uy, end.y + ry + C * ux) -> MakePoint -> q[];
+              (end.x + rx + C * uy, end.y + ry - C * ux) -> MakePoint -> p[];
+              doStroke;
+              'gsave newpath' -> output.putline;
+              '%f %f moveto\n' ->
+                 output.putFormat
+                   (#
+                   do p.x -> f;
+                      (- p.y) -> f;
+                   #);
+              '%f %f lineto\n' ->
+                 output.putFormat
+                   (#
+                   do end.x -> f;
+                      (- end.y) -> f;
+                   #);
+              '%f %f lineto\n' ->
+                 output.putFormat
+                   (#
+                   do q.x -> f;
+                      (- q.y) -> f;
+                   #);
+              '%f %f lineto\n' ->
+                 output.putFormat
+                   (#
+                   do m.x -> f;
+                      (- m.y) -> f;
+                   #);
+              'fill grestore' -> output.putline;
+          if);
+	    #);
+     drawStroke:
+       (# A: (# exit 14.0 * theArrowHeadSize #);
+	    theB: (# exit 3.0 * theArrowHeadSize #);
+
+          start, end: ^Point2d;
+          vx, vy, unitX, unitY, l: @real;
+       enter (start[], end[])
+       do start.x - end.x -> vx;
+          start.y - end.y -> vy;
+	    vx*vx + vy*vy -> sqrt -> l;
+	    (if l > 0.0 then
+              vx/l -> unitX;
+		  vy/l -> unitY;
+              'gsave newpath' -> output.putline;
+              '%f %f moveto\n' ->
+                 output.putFormat
+                   (#
+			 do end.x + unitY / 2 * A -> f;
+                      -(end.y - unitX / 2 * A) -> f;
+                   #);
+              '%f %f lineto\n' ->
+                 output.putFormat
+                   (#
+                   do end.x - unitY / 2 * A -> f;
+                      -(end.y + unitX / 2 * A) -> f;
+                   #);
+		  'stroke newpath' -> output.putline;
+              '%f %f moveto\n' ->
+                 output.putFormat
+                   (#
+			 do end.x + unitX * theB + unitY / 2 * A -> f;
+                      -(end.y + unitY * theB - unitX / 2 * A) -> f;
+                   #);
+              '%f %f lineto\n' ->
+                 output.putFormat
+                   (#
+                   do end.x + unitX * theB - unitY / 2 * A -> f;
+                      -(end.y + unitY * theB + unitX / 2 * A) -> f;
+                   #);
+		  'stroke grestore' -> output.putline;
+          if);
        #);
+
+      drawCircle:
+       (# radius: (# exit 5.0*theArrowHeadSize #);
+          attach: ^Point2d;
+          start, end: ^Point2d;
+          vx, vy, unitX, unitY, rx, ry, l: @real;
+	    p, m, q: ^Point2d;
+	    filled: @boolean;
+       enter (start[], end[], filled)
+       do 
+          start.x - end.x -> vx;
+          start.y - end.y -> vy;
+          vx*vx + vy*vy -> sqrt -> l;
+          (if l > 0.0 then
+              vx/l -> unitX;
+              vy/l -> unitY;
+              'gsave newpath' -> output.putline;
+              '%f %f %f 0 360 arc\n' ->
+                 output.putFormat
+                   (#
+                   do end.x + unitX * (radius) -> f;
+			    -end.y - unitY * (radius) -> f;
+                      (radius) -> f;
+			    #);
+		    'fill' -> output.putline;
+		    (if not filled then
+		    '1.0 1.0 1.0 setrgbcolor' -> output.putline;
+			  '%f %f %f 0 360 arc\n' ->
+			     output.putFormat
+				 (#
+				 do end.x + unitX * (radius) -> f;
+				    -end.y - unitY * (radius) -> f;
+				    (radius) - 2 -> f;
+				    #);
+			    'fill' -> output.putline;
+		    if);
+			'grestore' -> output.putline;
+		  if);
+	      exit radius
+       #);
+
      drawLine:: 
-       (# drawFlatLine:
-            (# segments: ^SegmentList;
-            do doStroke;
-               'gsave newpath' -> output.putline;
+     (#  getMidPoint: (#
+	        p1, p2: ^Point2d;
+		  result: @point2d;
+		  enter (p1[], p2[])
+              do ((p1.x + p2.x) / 2, (p1.y + p2.y) / 2) -> result;
+		  exit result[]
+		  #);
+            getDeltaPoint: (#
+			p1, p2: ^Point2d;
+			result: @point2d;
+			vx, vy, ux, uy, l, delta: @real;
+			enter (p1[], p2[], delta)
+			do p2 -> result;
+			   (if delta > 0 then
+				   p1.x - p2.x -> vx;
+				   p1.y - p2.y -> vy;
+				   vx*vx + vy*vy -> sqrt -> l;
+				   (if l > 0.0 then
+					   vx/l -> ux;
+					   vy/l -> uy;
+					   (p2.x + ux * delta, p2.y + uy * delta) -> result;
+				   if);
+			   if);
+			exit (p1[], result[])
+		#);
+	     drawFlatLine:
+		 (# segments: ^SegmentList;
+		   deltaStart, deltaEnd, d, oldSize: @real;
+		   midpoint: ^Point2d;
+		   drawTheLine: (#
+               do 'gsave newpath' -> output.putline;
                (if theCurvature > 0 then
                    (points[], theCurvature) -> smoothenCurve -> segments[];
                    segments.scan
@@ -416,19 +591,112 @@ PSContext: Context
                     #);
                if);
                'stroke grestore' -> output.putline;
-               (if theArrow
-                // ARROW_NONE then
-                // ARROW_BOTH then
-                   (2 -> points.get, 1 -> points.get) -> DrawArrow;
-                   (points.size - 1 -> points.get, points.size -> points.get) ->
-                      DrawArrow;
-                // ARROW_START then
-                   (2 -> points.get, 1 -> points.get) -> DrawArrow;
-                // ARROW_END then
-                   (points.size - 1 -> points.get, points.size -> points.get) ->
-                      DrawArrow;
-               if);
-            #);
+		   #);
+
+		   oldColor: ^color;
+		   oldStrokeWidth, tmpStrokeWidth: @real;
+		   do 
+		   (if theStroke[] <> NONE then
+			    theStrokeWidth -> oldStrokeWidth -> tmpStrokeWidth;
+			    (if oldStrokeWidth = 0 then
+				     1.0 -> tmpStrokeWidth;
+			    if);
+                      theStroke[] -> oldColor[];
+			 (if true
+			    // (theLineStyle %band TRIPLE) > 0 then
+			       5 * tmpStrokeWidth -> strokeWidth;
+				 doStroke;
+				 drawTheLine;
+
+				 (255, 255, 255) -> &Color -> theStroke[];
+				 3 * tmpStrokeWidth -> strokeWidth;
+				 doStroke;
+				 drawTheLine;
+
+				 oldColor[] -> theStroke[];
+				 oldStrokeWidth -> strokeWidth;
+				 doStroke;
+				 drawTheLine;
+			    // (theLineStyle %band DOUBLE) > 0 then
+				 3 * tmpStrokeWidth -> theStrokeWidth;
+				 doStroke;
+				 drawTheLine;
+
+				 (255, 255, 255) -> &Color -> theStroke[];
+				 oldStrokeWidth -> strokeWidth;
+				 doStroke;
+				 drawTheLine;
+
+				 oldColor[] -> theStroke[];
+				 doStroke;
+			    else
+				 doStroke;
+			       drawTheLine; 
+		       if);
+			   
+			 (2 -> points.get, 1 -> points.get) -> getMidPoint -> midpoint[];
+			 (if true
+			    // (theLineStyle %band DIAMOND) > 0 then
+				    theArrowHeadSize -> oldSize;
+				    oldSize * 0.7 -> theArrowHeadSize;
+				    (1 -> points.get, midpoint[], false) -> drawDiamond;
+				    oldSize -> theArrowHeadSize;
+			    // (theLineStyle %band FILLED_DIAMOND) > 0 then
+				    theArrowHeadSize -> oldSize;
+				    oldSize * 0.7 -> theArrowHeadSize;
+				    (1 -> points.get, midpoint[], true) -> drawDiamond;
+				    oldSize -> theArrowHeadSize;
+			    // (theLineStyle %band STRIKE) > 0 then
+				    theArrowHeadSize -> oldSize;
+				    oldSize * 0.7 -> theArrowHeadSize;
+				    (1 -> points.get, midpoint[]) -> drawStroke;
+				    oldSize -> theArrowHeadSize;
+                   if);
+
+                   (if (theArrow %band CIRCLE_START > 0) then
+			 (2 -> points.get, 1 -> points.get, false)
+			     -> DrawCircle -> d;
+			     d *1.2 + deltaStart -> deltaStart;
+                   if);
+                   (if (theArrow %band CIRCLE_END > 0) then
+                       (points.size - 1 -> points.get, 
+                       points.size -> points.get, false)
+			     -> DrawCircle -> d;
+			     d *1.2 + deltaEnd -> deltaEnd;
+                   if);
+                   (if (theArrow %band FILLED_CIRCLE_START > 0) then
+                       (2 -> points.get, 1 -> points.get, true)
+			     -> DrawCircle -> d;
+			     d *1.2 + deltaStart -> deltaStart;
+                   if);
+                   (if (theArrow %band FILLED_CIRCLE_END > 0) then
+                       (points.size - 1 -> points.get, 
+                       points.size -> points.get, true)
+			     -> DrawCircle -> d;
+			     d *1.2 + deltaEnd -> deltaEnd;
+                   if);
+                   (if (theArrow %band ARROW_START > 0) then
+				 (2 -> points.get, 1 -> points.get, deltaStart)
+				 -> getDeltaPoint
+                         -> DrawArrow;
+                   if);
+                   (if (theArrow %band ARROW_END > 0) then
+                       (points.size - 1 -> points.get, 
+			     points.size -> points.get, deltaEnd)
+			       -> getDeltaPoint
+                         -> DrawArrow;
+                   if);
+                   (if (theArrow %band DIAMOND_START > 0) then
+                       (2 -> points.get, 1 -> points.get, true)
+                         -> DrawDiamond;
+                   if);
+			 (if (theArrow %band DIAMOND_END > 0) then
+                       (points.size - 1 -> points.get, 
+                       points.size -> points.get, true)
+                         -> DrawDiamond;
+			 if);
+			if);	 
+		#);
        do (if theMode
            // 0 then
               drawFlatLine;

@@ -29,6 +29,7 @@ INCLUDE '../resources/figures/simulationfigures';
 INCLUDE 'cpninstrument';
 INCLUDE 'bindingdialoginstruments';
 INCLUDE 'workspaceinstruments';
+INCLUDE '~beta/basiclib/timedate';
 
 BODY 'private/simulationinstrumentsbody';
 
@@ -444,10 +445,13 @@ FastForward: SimulationCommand
           tmpi: @integer;
           tmps: ^Text;
           stopReason: ^Text;
+	    start: @time;
+	    difference: @period;
        do (if (target.content.thePage.net.status = compiled) then
               'numberofsteps'->options.lookupInteger -> numOfSteps;
               (if numOfSteps > 0 then
-                  'Simulation fast forward in progress' -> fixedstatus.running;
+		      timeNow -> start;
+			'Fast forward simulation running...' -> fixedstatus.running;
                   fixedstatus.start;
                   target.content[] -> sheetPage[];
                   (numOfSteps,0) -> sheetPage.thePage.net.setStopCriteria;
@@ -463,14 +467,21 @@ FastForward: SimulationCommand
                         if);
                      #);
                   sheetPage.thePage.net.updateStepAndTime;
+			(timeNow, start) -> timeDifference -> difference;
                   fixedstatus.stop;
-                  (if stopReason[]<>none then
-                      (if 'error' -> ((1,5) -> stopReason.sub).equalNCS then
-                          stopReason[] -> status.error;
-                       else
-                          stopReason[] -> status.message;
-                      if);
-                  if);
+			(if stopReason[] = NONE then
+			'' -> stopReason[];
+			else
+			stopReason.length -> stopReason.setPos;
+			stopReason.putline;
+			if);
+			'Simulation took ' -> stopReason.puttext;
+			difference -> stopReason.putPeriod;
+			(if 'error' -> ((1,5) -> stopReason.sub).equalNCS then
+				 stopReason[] -> status.error;
+			 else
+				 stopReason[] -> status.messageKeep;
+			 if);
   	      if);
           if);
        #);

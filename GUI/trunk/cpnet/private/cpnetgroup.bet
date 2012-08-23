@@ -53,6 +53,7 @@ do BOTTOM -> placement;
    (if private.theGroup[] <> NONE then
        private.theGroup[] -> setGroup;
    if);
+   (0.93, 0.93, 0.93) -> color -> original[] -> tabColor;
    
 -- GroupTabGetCPNPage:doPart --
 do THIS(GroupTab).father[] -> qua
@@ -144,8 +145,14 @@ do (if true
     // aPageElement## <= PortType## then
        (aPageElement[] -> QUA(# as::PortType #)).getPlace
        -> private.groupElements.has -> value;
+    // aPageElement## <= PlaceKind## then
+       (aPageElement[] -> QUA(# as::PlaceKind#)).getPlace
+       -> private.groupElements.has -> value;
     // aPageElement## <= SubPageInfo## then
        (aPageElement[] -> QUA(# as::SubPageInfo #)).getTransition
+       -> private.groupElements.has -> value;
+    // aPageElement## <= ConstraintInscription## then
+       (aPageElement[] -> QUA(# as::ConstraintInscription#)).getTransition
        -> private.groupElements.has -> value;
    if); 
 

@@ -571,7 +571,7 @@ do not this(CPNet).private.MLComSemanticChanged -> value;
 do (# theManager: ^CommandManager;
    do
       (if (not ignoreStateSpaceExit) then
-      false -> statespaceEntered;
+      0 -> statespaceEntered;
       scanCPNPages(#
           do
          current.scanSSArcs

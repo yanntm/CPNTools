@@ -196,37 +196,41 @@ PlaceFigure: Figure
 ArcFigure: Figure
   (# useDefaultHotspot::(# do true -> value; #);
   theArrow: ^Line;
-
-  theArrowStyle:<
-  (# style: @integer;
-	  do ARROW_START -> style;
-	     INNER;
-	  exit style
-	  #);
-     
+  arrowStyle, lineStyle: @integer;
+  theBasicStyle: ^CompleteStyle;   
      
      init::<
-       (#
+       (# 
           point: ^Point2d;
-          theBasicStyle: ^CompleteStyle;   
        do &Line[]->theArrow[];
+          &CompleteStyle[]->theBasicStyle[];
+          theBasicStyle[]->theArrow.theStyle[];
           theArrow[]->add;
           &PointList[]->theArrow.points[];
 	    (for 3 repeat &Point2d[]->point[]->theArrow.points.append; for);     
-
-          &CompleteStyle[]->theBasicStyle[];
-          (Black[],NONE,1,theArrowStyle)->theBasicStyle;
-          theBasicStyle[]->theArrow.theStyle[];
           
-          3->theArrow.points.get->point[];
+          1->theArrow.points.get->point[];
           (9,18)->point;          
           2->theArrow.points.get->point[];
           (18,14)->point;          
-          1->theArrow.points.get->point[];
+          3->theArrow.points.get->point[];
           (0,0)->point; 
           
           INNER;   
        #);
+
+	 update::< (#
+	 do
+          (Black[],NONE,1,arrowStyle)->theBasicStyle;
+	    lineStyle -> theBasicStyle.lineStyle;
+	    INNER;
+	 #);
+
+	 onChanged::< (#
+	 do 'arrow'-> options.lookupInteger -> arrowStyle;
+	    'line' -> options.lookupInteger -> lineStyle;
+	    INNER;
+	 #);
   #);
 
 CycleArcFigure: CycleFigure
@@ -447,7 +451,8 @@ HorizontalGuideFigure: Figure
      
      Layout:
        (# 
-       do 1 -> theline.points.get -> point[];
+       do 
+	    1 -> theline.points.get -> point[];
           (0, 0) -> point;
           2 -> theline.points.get -> point[];
           (32, 0) -> point;
@@ -468,7 +473,7 @@ VerticalGuideFigure: Figure
      theTransitionSnapPoint: ^Ellipse;
      point: ^Point2d;
      
-     Init::
+     Init::<
        (# 
           theBasicStyle: ^BasicStyle;
        do 
@@ -488,13 +493,14 @@ VerticalGuideFigure: Figure
           (for 2 repeat &Point2d[]->point[]->theline.points.append; for);
           
           theline[] -> theFigure.add;
+	    INNER;
           theTransitionFigure[]->theFigure.add;
           theTransitionSnapPoint[] -> theFigure.add;
           theFigure[]->add;
           Layout;
        #);    
      
-     Layout:
+     Layout:<
        (# 
        do 1 -> theline.points.get -> point[];
           (0, 0) -> point;
@@ -506,8 +512,55 @@ VerticalGuideFigure: Figure
           
           (0, 16) -> (theTransitionSnapPoint.x,theTransitionSnapPoint.y);
           (1,1) -> (theTransitionSnapPoint.width,theTransitionSnapPoint.height);
+
+	    INNER;
        #);  
   #);
+
+GuideGridFigure: VerticalGuideFigure (#
+     init ::< (#
+	    theLine2: ^Line;
+     do
+          &BasicStyle[]->theBasicStyle[];
+          (black[],NONE,1)->theBasicStyle;
+
+          &Line[]->theLine2[];
+          theBasicStyle->theLine2.theStyle[];
+          &PointList[] -> theline2.points[];
+          (for 2 repeat &Point2d[]->point[]->theline2.points.append; for);
+          theline2[] -> theFigure.add;
+	    1 -> theline2.points.get -> point[];
+          (-16, 16) -> point;
+          2 -> theline2.points.get -> point[];
+          (32, 16) -> point;
+
+          &Line[]->theLine2[];
+          theBasicStyle->theLine2.theStyle[];
+          &PointList[] -> theline2.points[];
+          (for 2 repeat &Point2d[]->point[]->theline2.points.append; for);
+          theline2[] -> theFigure.add;
+	    1 -> theline2.points.get -> point[];
+          (-16, 32) -> point;
+          2 -> theline2.points.get -> point[];
+          (32, 32) -> point;
+
+          &Line[]->theLine2[];
+          theBasicStyle->theLine2.theStyle[];
+          &PointList[] -> theline2.points[];
+          (for 2 repeat &Point2d[]->point[]->theline2.points.append; for);
+          theline2[] -> theFigure.add;
+	    1 -> theline2.points.get -> point[];
+          (16, 0) -> point;
+          2 -> theline2.points.get -> point[];
+          (16, 48) -> point;
+     #);
+
+     layout ::< (#
+     do
+          2 -> theline.points.get -> point[];
+          (0, 48) -> point;
+     #);
+#);
 
 ZoomInFigure: Figure
   (# useDefaultHotspot::(# do true -> value; #);
@@ -1114,7 +1167,8 @@ SetKindFigure: Figure
           theRect[] -> add;
           (if theTextItem.content[] <> NONE then
               theTextItem.content[] -> arial.measureText -> (w, h);
-              (w + 5, h/2 + 5) -> (theRect.width, theRect.height);
+              (w + 2, h + 2) -> (theRect.width, theRect.height);
+		  (-w / 2 + 8,h/2-16) -> (theTextItem.x, theTextItem.y);
            else 
               14 -> theRect.width;
               9 -> theRect.height;
@@ -1123,15 +1177,21 @@ SetKindFigure: Figure
           
           green[] -> StrokeStyle -> theTextItem.theStyle[];
           theTextItem[] -> add;
-          (0,-10) -> (theTextItem.x, theTextItem.y);
        #);
      
      update::
        (# w, h: @real;
-       do PlaceKind[] -> theTextItem.content[];
+	 do (if true
+            // 'fifo' -> PlaceKind.equalNCS then 'FIFO' -> theTextItem.content[];
+            // 'lifo' -> PlaceKind.equalNCS then 'LIFO' -> theTextItem.content[];
+            // 'pqueue' -> PlaceKind.equalNCS then 'PQ' -> theTextItem.content[];
+		// 'bounded' -> PlaceKind.equalNCS then 'Bnd' -> theTextItem.content[];
+		else '?' -> theTextItem.content[]
+          if);
           (if theTextItem.content[] <> NONE then
               theTextItem.content[] -> arial.measureText -> (w, h);
-              (w + 5, h/2 + 5) -> (theRect.width, theRect.height);
+              (w + 2, h + 2) -> (theRect.width, theRect.height);
+		  (-w / 2 + 8,h/2-16) -> (theTextItem.x, theTextItem.y);
            else 
               14 -> theRect.width;
               9 -> theRect.height;

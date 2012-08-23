@@ -216,7 +216,7 @@ do (# sheetPage: ^PageInstance;
                for);
             #);
 	    if);
-            true -> sheetPage.thePage.net.statespaceEntered;
+            1 -> sheetPage.thePage.net.statespaceEntered;
             StateSpaceEnteredMessage -> getGlobalNames -> status.message;
          #);      
       fixedStatus.stop;
@@ -243,12 +243,30 @@ do (# error_msg: ^Text;
    #);
    
 -- SaveReportCommandApply:DoPart --
-do (# dialog: ^saveDialog;
+do apply: (# dialog: ^saveDialog;
       sheetPage: ^PageInstance;
       t, theText: ^Text;
       noMLError: @boolean;
+	start: @time;
+	theCalcSccInstrument: ^CalcSccInstrument;
+	oldMessage: ^text;
    do (if (target.content.thePage.net.status = compiled) then
-          'Saving report' -> fixedStatus.running;
+          &saveDialog[] -> dialog[];
+          false -> noMLError;
+          dialog -> t[];
+          (if t[] <> NONE then
+	   timeNow -> start;
+	  (if target.content.thePage.net.stateSpaceEntered < SCCCalculated then
+	     'calcsccgraph' -> theInstrumentList.lookup -> theCalcSccInstrument[];
+	     (target[], theHand[]) -> theCalcSccInstrument.relevant;
+	     (theHand[], target[]) -> theCalcSccInstrument.prepare;
+	     theCalcSccInstrument.apply;
+	     (if target.content.thePage.net.stateSpaceEntered < SCCCalculated then
+		   leave Apply;
+	     if);
+	     status.theMessage[] -> oldMessage[];
+	  if);
+	  'Saving report' -> fixedStatus.running;
           fixedStatus.start;
           setBusyCursor;
           target.content[] -> sheetPage[];
@@ -262,10 +280,6 @@ do (# dialog: ^saveDialog;
           (if ('deadTI' -> options.lookupBoolean) then 'true,' -> theText.putText else 'false,' -> theText.putText if);
           (if ('liveTI' -> options.lookupBoolean) then 'true,' -> theText.putText else 'false,' -> theText.putText if);
           (if ('fairness' -> options.lookupBoolean) then 'true,"' -> theText.putText else 'false,"' -> theText.putText if);
-          &saveDialog[] -> dialog[];
-          false -> noMLError;
-          dialog -> t[];
-          (if t[] <> NONE then
               t[] -> convertBSlashToSlash -> theText.putText;
               '")' -> theText.putText;
               theText[] -> sheetPage.thePage.net.ML.evaluate
@@ -278,31 +292,31 @@ do (# dialog: ^saveDialog;
                       (#
                       do (inx,message.length) -> message.sub -> theMsg.putline;
                       #);
-                      theMsg[] -> status.error;
+                      (oldMessage[], start[], theMsg[]) -> appendDifference -> status.error;
                       fixedstatus.stop;
                       UnsetBusyCursor;
                       true -> noMLError;
                    #);
               #);
-          if);
           (if not noMLError then
               fixedstatus.stop;
               UnsetBusyCursor;
               (if t[]<>none then
-                  'Report saved'->status.message;
+                  (oldMessage[], start[], 'Report saved') -> appendDifference ->status.messageKeep;
               if);
+          if);
           if);
       if);
    #);
    
 -- SStoSimCommandRelevant:doPart --
 do (target.content.thePage.net.status = compiled) and
-   target.content.thePage.net.statespaceEntered 
+   (target.content.thePage.net.statespaceEntered >= SSCalculated)
      -> value;
    
 -- SimtoSSCommandRelevant:doPart --
 do ((target.content.thePage.net.status = compiled) and 
-   target.content.thePage.net.statespaceEntered) 
+   (target.content.thePage.net.statespaceEntered >= SSCalculated))
      -> value;
 
      (*************************************The new ml interface*****************************************)

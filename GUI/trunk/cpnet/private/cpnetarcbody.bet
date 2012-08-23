@@ -607,6 +607,7 @@ do (# present_point:
 	    DIAMOND_START -> theStyle.arrow;
       if);
       arrowHeadSize -> theStyle.arrowHeadSize;
+	INNER makeShape;
       
       computePoints;
       points[] -> theItem.points[];
@@ -808,6 +809,7 @@ do (# annot: ^Annotation;
 
       compiled -> new.status;
    #);
+   INNER;
    
 -- ArcInit:doPart --
 do 1.0 -> arrowHeadSize;

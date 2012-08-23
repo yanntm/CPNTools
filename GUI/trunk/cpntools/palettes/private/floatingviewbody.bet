@@ -195,7 +195,189 @@ do &ToolCell[] -> createauxboxcell[];
    createauxLabelcell[] -> createauxEllipsecell.setRightCell;
    
    theCollection.changed;
+
+-- declaretoolsinit: DoPart --
+do getToolCells->list[];
+   &ToolCell[] -> ResponseCell[];
+   &ToolCell[] -> PrecedenceCell[];
+   &ToolCell[] -> SuccessionCell[];
+   &ToolCell[] -> AResponseCell[];
+   &ToolCell[] -> APrecedenceCell[];
+   &ToolCell[] -> ASuccessionCell[];
+   &ToolCell[] -> CResponseCell[];
+   &ToolCell[] -> CPrecedenceCell[];
+   &ToolCell[] -> CSuccessionCell[];
+   &ToolCell[] -> NCoExistenceCell[];
+   &ToolCell[] -> NSuccessionCell[];
+   &ToolCell[] -> NCSuccessionCell[];
+   &ToolCell[] -> RespondedExistenceCell[];
+   &ToolCell[] -> CoExistenceCell[];
+   &ToolCell[] -> ChoiceCell[];
+   &ToolCell[] -> InitCell[];
+   &ToolCell[] -> LastCell[];
+   &ToolCell[] -> ExclusiveChoiceCell[];
+   &ToolCell[] -> Existence1Cell[];
+   &ToolCell[] -> Existence2Cell[];
+   &ToolCell[] -> Existence3Cell[];
+   &ToolCell[] -> Absence1Cell[];
+   &ToolCell[] -> Absence2Cell[];
+   &ToolCell[] -> Absence3Cell[];
+   &ToolCell[] -> Exactly1Cell[];
+   &ToolCell[] -> Exactly2Cell[];
+   &ToolCell[] -> Exactly3Cell[];
+
+   getInstruments->theInstrumentList[];
+
+   'response' -> theInstrumentList.lookup -> theResponseInstrument[];
+   (theResponseInstrument[], 'response') -> ResponseCell.init;
+   'response' -> ResponseCell.helpname[];
+
+   'precedence' -> theInstrumentList.lookup -> thePrecedenceInstrument[];
+   (thePrecedenceInstrument[], 'precedence') -> PrecedenceCell.init;
+   'precedence' -> PrecedenceCell.helpname[];
+
+   'succession' -> theInstrumentList.lookup -> theSuccessionInstrument[];
+   (theSuccessionInstrument[], 'succession') -> SuccessionCell.init;
+   'succession' -> SuccessionCell.helpname[];
+
+   'aresponse' -> theInstrumentList.lookup -> theAResponseInstrument[];
+   (theAResponseInstrument[], 'aresponse') -> AResponseCell.init;
+   'aresponse' -> AResponseCell.helpname[];
+
+   'aprecedence' -> theInstrumentList.lookup -> theAPrecedenceInstrument[];
+   (theAPrecedenceInstrument[], 'aprecedence') -> APrecedenceCell.init;
+   'aprecedence' -> APrecedenceCell.helpname[];
+
+   'asuccession' -> theInstrumentList.lookup -> theASuccessionInstrument[];
+   (theASuccessionInstrument[], 'asuccession') -> ASuccessionCell.init;
+   'asuccession' -> ASuccessionCell.helpname[];
+
+   'cresponse' -> theInstrumentList.lookup -> theCResponseInstrument[];
+   (theCResponseInstrument[], 'cresponse') -> CResponseCell.init;
+   'cresponse' -> CResponseCell.helpname[];
+
+   'cprecedence' -> theInstrumentList.lookup -> theCPrecedenceInstrument[];
+   (theCPrecedenceInstrument[], 'cprecedence') -> CPrecedenceCell.init;
+   'cprecedence' -> CPrecedenceCell.helpname[];
+
+   'csuccession' -> theInstrumentList.lookup -> theCSuccessionInstrument[];
+   (theCSuccessionInstrument[], 'csuccession') -> CSuccessionCell.init;
+   'csuccession' -> CSuccessionCell.helpname[];
+
+   'ncoexistence' -> theInstrumentList.lookup -> theNCoExistenceInstrument[];
+   (theNCoExistenceInstrument[], 'ncoexistence') -> NCoExistenceCell.init;
+   'ncoexistence' -> NCoExistenceCell.helpname[];
+
+   'nsuccession' -> theInstrumentList.lookup -> theNSuccessionInstrument[];
+   (theNSuccessionInstrument[], 'nsuccession') -> NSuccessionCell.init;
+   'nsuccession' -> NSuccessionCell.helpname[];
+
+   'ncsuccession' -> theInstrumentList.lookup -> theNCSuccessionInstrument[];
+   (theNCSuccessionInstrument[], 'ncsuccession') -> NCSuccessionCell.init;
+   'ncsuccession' -> NCSuccessionCell.helpname[];
+
+   'respondedexistence' -> theInstrumentList.lookup -> theRespondedExistenceInstrument[];
+   (theRespondedExistenceInstrument[], 'respondedexistence') -> RespondedExistenceCell.init;
+   'respondedexistence' -> RespondedExistenceCell.helpname[];
+
+   'coexistence' -> theInstrumentList.lookup -> theCoExistenceInstrument[];
+   (theCoExistenceInstrument[], 'coexistence') -> CoExistenceCell.init;
+   'coexistence' -> CoExistenceCell.helpname[];
+
+   'choice' -> theInstrumentList.lookup -> theChoiceInstrument[];
+   (theChoiceInstrument[], 'choice') -> ChoiceCell.init;
+   'choice' -> ChoiceCell.helpname[];
+
+   'init' -> theInstrumentList.lookup -> theInitInstrument[];
+   (theInitInstrument[], 'init') -> InitCell.init;
+   'init' -> InitCell.helpname[];
+
+   'last' -> theInstrumentList.lookup -> theLastInstrument[];
+   (theLastInstrument[], 'last') -> LastCell.init;
+   'last' -> LastCell.helpname[];
+
+   'exclusivechoice' -> theInstrumentList.lookup -> theExclusiveChoiceInstrument[];
+   (theExclusiveChoiceInstrument[], 'ExclusiveChoice') -> ExclusiveChoiceCell.init;
+   'exclusivechoice' -> ExclusiveChoiceCell.helpname[];
+
+   'existence1' -> theInstrumentList.lookup -> theExistence1Instrument[];
+   (theExistence1Instrument[], 'existence1') -> Existence1Cell.init;
+   'existence1' -> Existence1Cell.helpname[];
+
+   'existence2' -> theInstrumentList.lookup -> theExistence2Instrument[];
+   (theExistence2Instrument[], 'existence2') -> Existence2Cell.init;
+   'existence2' -> Existence2Cell.helpname[];
+
+   'existence3' -> theInstrumentList.lookup -> theExistence3Instrument[];
+   (theExistence3Instrument[], 'existence3') -> Existence3Cell.init;
+   'existence3' -> Existence3Cell.helpname[];
+
+   'absence1' -> theInstrumentList.lookup -> theAbsence1Instrument[];
+   (theAbsence1Instrument[], 'absence1') -> Absence1Cell.init;
+   'absence1' -> Absence1Cell.helpname[];
+
+   'absence2' -> theInstrumentList.lookup -> theAbsence2Instrument[];
+   (theAbsence2Instrument[], 'absence2') -> Absence2Cell.init;
+   'absence2' -> Absence2Cell.helpname[];
+
+   'absence3' -> theInstrumentList.lookup -> theAbsence3Instrument[];
+   (theAbsence3Instrument[], 'absence3') -> Absence3Cell.init;
+   'absence3' -> Absence3Cell.helpname[];
+
+   'exactly1' -> theInstrumentList.lookup -> theExactly1Instrument[];
+   (theExactly1Instrument[], 'exactly1') -> Exactly1Cell.init;
+   'exactly1' -> Exactly1Cell.helpname[];
+
+   'exactly2' -> theInstrumentList.lookup -> theExactly2Instrument[];
+   (theExactly2Instrument[], 'exactly2') -> Exactly2Cell.init;
+   'exactly2' -> Exactly2Cell.helpname[];
+
+   'exactly3' -> theInstrumentList.lookup -> theExactly3Instrument[];
+   (theExactly3Instrument[], 'exactly3') -> Exactly3Cell.init;
+   'exactly3' -> Exactly3Cell.helpname[];
+
+   &CPNToolCollection[]->theCollection[];
+   theCollection.init;
+   NamesDeclareTools -> getGlobalNames -> theCollection.name[];
+   'declare_tools' -> theCollection.helpname[];
+   PaletteMode -> theCollection.mode;
    
+   ResponseCell[] -> theCollection.add;
+   PrecedenceCell[] -> ResponseCell.setBottomCell;
+   SuccessionCell[] -> PrecedenceCell.setBottomCell;
+
+   AResponseCell[] -> ResponseCell.setRightCell;
+   APrecedenceCell[] -> PrecedenceCell.setRightCell;
+   ASuccessionCell[] -> SuccessionCell.setRightCell;
+
+   CResponseCell[] -> AResponseCell.setRightCell;
+   CPrecedenceCell[]-> APrecedenceCell.setRightCell;
+   CSuccessionCell[] -> ASuccessionCell.setRightCell;
+
+   NCoExistenceCell[] -> CResponseCell.setRightCell;
+   NSuccessionCell[] -> CPrecedenceCell.setRightCell;
+   NCSuccessionCell[] -> CSuccessionCell.setRightCell;
+
+   RespondedExistenceCell[] -> NCoExistenceCell.setRightCell;
+   CoExistenceCell[] -> NSuccessionCell.setRightCell;
+   ChoiceCell[] -> NCSuccessionCell.setRightCell;
+
+   InitCell[] -> RespondedExistenceCell.setRightCell;
+   LastCell[] -> CoExistenceCell.setRightCell;
+   ExclusiveChoiceCell[] -> ChoiceCell.setRightCell;
+
+   Existence1Cell[] -> InitCell.setRightCell;
+   Existence2Cell[] -> LastCell.setRightCell;
+   Existence3Cell[] -> ExclusiveChoiceCell.setRightCell;
+
+   Absence1Cell[] -> Existence1Cell.setRightCell;
+   Absence2Cell[] -> Existence2Cell.setRightCell;
+   Absence3Cell[] -> Existence3Cell.setRightCell;
+
+   Exactly1Cell[] -> Absence1Cell.setRightCell;
+   Exactly2Cell[] -> Absence2Cell.setRightCell;
+   Exactly3Cell[] -> Absence3Cell.setRightCell;
+
 -- createtoolsinit: DoPart --
 do getToolCells->list[];
    &ToolCell[]->PlaceCell[];
@@ -208,6 +390,7 @@ do getToolCells->list[];
    &ToolCell[]->CycleArcCell[];
    &ToolCell[]->HorizontalGuideCell[];
    &ToolCell[]->VerticalGuideCell[];
+   &ToolCell[]->GuideGridCell[];
    &ToolCell[]->ToogleExplicitCell[];
    &ToolCell[]->FIFOCell[];
    &ToolCell[]->LIFOCell[];
@@ -256,9 +439,13 @@ do getToolCells->list[];
    (theVerticalGuideInstrument[], 'verticalGuide')->VerticalGuideCell.init;
    'create_guideline'->VerticalGuideCell.helpname[];
    
+   'guideGrid'->theInstrumentList.lookup->theGuideGridInstrument[];
+   (theGuideGridInstrument[], 'guideGrid')->GuideGridCell.init;
+   'create_guideline'->GuideGridCell.helpname[];
+   
    'toogleExplicit' -> theInstrumentList.lookup -> theToogleExplicitInstrument[];
    (theToogleExplicitInstrument[], 'toogleExplicit') -> ToogleExplicitCell.init;
-   'toggle_explicit'->VerticalGuideCell.helpname[];
+   'toggle_explicit'->ToogleExplicitCell.helpname[];
    
    'fifo' -> theInstrumentList.lookup -> theFIFOKindInstrument[];
    (theFIFOKindInstrument[], 'fifo') -> FIFOCell.init;
@@ -298,8 +485,9 @@ do getToolCells->list[];
    LIFOCell[] -> FIFOCell.setRightCell;
    PQueueCell[] -> LIFOCell.setRightCell;
    BoundedCell[] -> PQueueCell.setRightCell;
-   (if internal or true then 
-       ToogleExplicitCell[] -> BoundedCell.setRightCell;
+   GuideGridCell[] -> BoundedCell.setRightCell;
+   (if internal then 
+       ToogleExplicitCell[] -> InhibitorArcCell.setRightCell;
    if);
    
    theCollection.Changed;
@@ -362,8 +550,7 @@ do &ToolCell[]->RewindCell[];
    theCollection.onChanged;
    
 -- statespacetoolsinit: DoPart --
-do &ToolCell[] -> EnterStateSpaceCell[];
-   &ToolCell[] -> CalcStateSpaceCell[];
+do &ToolCell[] -> CalcStateSpaceCell[];
    &ToolCell[] -> CalcSccCell[];
    &CPNEditableNumberCell[] -> SStoSimCell[];
    &ToolCell[] -> SimtoSSCell[];
@@ -374,9 +561,6 @@ do &ToolCell[] -> EnterStateSpaceCell[];
    &ToolCell[] -> DisplayPartialSSGraphCell[];
    
    getInstruments -> theInstrumentList[];
-   
-   'enterog' -> theInstrumentList.lookup -> theEnterStateSpaceInstrument[];
-   (theEnterStateSpaceInstrument[], 'EnterStateSpace') -> EnterStateSpaceCell.init;
    
    'calcoccgraph' -> theInstrumentList.lookup -> theCalcStateSpaceInstrument[];
    (theCalcStateSpaceInstrument[], 'CalcSS') -> CalcStateSpaceCell.init;
@@ -413,16 +597,15 @@ do &ToolCell[] -> EnterStateSpaceCell[];
    'state_space_tools'->theCollection.helpname[];
    PaletteMode->theCollection.Mode;
    
-   EnterStateSpaceCell[] -> theCollection.add;
-   CalcStateSpaceCell[] -> EnterStateSpaceCell.SetRightCell;
+   CalcStateSpaceCell[] -> theCollection.add;
    CalcSccCell[] -> CalcStateSpaceCell.SetRightCell;
    SaveReportCell[] -> CalcSccCell.SetRightCell;
-   DisplayNodeCell[] -> EnterStateSpaceCell.setBottomCell;
+   DisplayNodeCell[] -> CalcStateSpaceCell.setBottomCell;
    DisplaySuccessorsCell[] -> DisplayNodeCell.SetRightCell;
    DisplayPredecessorsCell[] -> DisplaySuccessorsCell.SetRightCell;
-   DisplayPartialSSGraphCell[] -> DisplayPredecessorsCell.SetRightCell;
    SStoSimCell[] -> DisplayNodeCell.SetBottomCell;
    SimtoSSCell[] -> SStoSimCell.SetRightCell;
+   DisplayPartialSSGraphCell[] -> SimtoSSCell.SetRightCell;
 
 
    

@@ -156,7 +156,8 @@ do highlightedPlaces.init;
    
 -- ShowHierInfoFatherHighLightInstrumentAdding:doPart --
 do (# thePlace: ^Place;
-   do CurrentFather[] -> thePlace[];
+   do (if currentFather## <= Place## then
+      CurrentFather[] -> thePlace[];
       thePlace.scanFusionSet
       (#
       do (if current[] = thePlace[] then
@@ -169,6 +170,7 @@ do (# thePlace: ^Place;
          fusion_color -> (current.getCPNPage).setHalo;
          current[] -> highlightedPlaces.append;
       #);
+	if);
    #);
    
 -- ShowHierInfoFatherHighLightInstrumentRemoving:doPart --
@@ -192,11 +194,24 @@ do (#
            do (if current## <= CPNSheet## then
                   leave search;
                else 
-                  (if current## <= FusionInfo## then
+                  (if true
+			  // (current## <= FusionInfo##) then
                       current[] -> theTarget[];
                       current[] -> QUA
                       (# as::FusionInfo;
                       do thisObj.getPlace -> CurrentFather[];
+                      #);
+                      leave search;
+			  // (current## <= PlaceKind##) then
+                      current[] -> QUA
+                      (# as::PlaceKind;
+                      do thisObj.getPlace -> CurrentFather[];
+                      #);
+                      leave search;
+			  // (current## <= ConstraintInscription##) then
+                      current[] -> QUA
+                      (# as::ConstraintInscription;
+                      do thisObj.getTransition -> CurrentFather[];
                       #);
                       leave search;
                   if);

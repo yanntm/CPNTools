@@ -76,7 +76,8 @@ SetPortFigure: Figure
           theRect[] -> add;
           (if theTextItem.content[] <> NONE then
               theTextItem.content[] -> arial.measureText -> (w, h);
-              (w + 5, h/2 + 5) -> (theRect.width, theRect.height);
+              (w + 2, h + 2) -> (theRect.width, theRect.height);
+		  (-w / 2 + 8,h/2-16) -> (theTextItem.x, theTextItem.y);
            else 
               14 -> theRect.width;
               9 -> theRect.height;
@@ -93,7 +94,8 @@ SetPortFigure: Figure
        do PortType[] -> theTextItem.content[];
           (if theTextItem.content[] <> NONE then
               theTextItem.content[] -> arial.measureText -> (w, h);
-              (w + 5, h/2 + 5) -> (theRect.width, theRect.height);
+              (w + 2, h + 2) -> (theRect.width, theRect.height);
+		  (-w / 2 + 8,h/2-16) -> (theTextItem.x, theTextItem.y);
            else 
               14 -> theRect.width;
               9 -> theRect.height;
@@ -188,7 +190,8 @@ FusionFigure: Figure
           
           (if theTextItem.content[] <> NONE then
               theTextItem.content[] -> arial.measureText -> (w, h);
-              (w + 5, h/2 + 5) -> (theRect.width, theRect.height);
+              (w + 2, h + 2) -> (theRect.width, theRect.height);
+		  (-w / 2 + 1,h/2-18) -> (theTextItem.x, theTextItem.y);
            else 
               (14,9) -> (theRect.width,theRect.height);
           if);
@@ -201,7 +204,8 @@ FusionFigure: Figure
        do fusionName[] -> theTextItem.content[];
           (if theTextItem.content[] <> NONE then
               theTextItem.content[] -> arial.measureText -> (w, h);
-              (w + 5, h/2 + 5) -> (theRect.width, theRect.height);
+              (w + 2, h + 2) -> (theRect.width, theRect.height);
+		  (-w / 2 + 1,h/2-18) -> (theTextItem.x, theTextItem.y);
               theTextItem.changed;
            else 
               (14,9) -> (theRect.width,theRect.height);

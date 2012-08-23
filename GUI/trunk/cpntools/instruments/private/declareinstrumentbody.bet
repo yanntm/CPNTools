@@ -23,50 +23,58 @@
 (* You should have received a copy of the GNU General Public License    *)
 (* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
 (************************************************************************)
-ORIGIN '../stylerecord';
--- StyleRecordprepare: doPart --
-do (# asArc: ^Arc;
-   do 
-      thePageElement.lineColor[] -> lineColor[];
-      thePageElement.fillColor[] -> fillColor[];
-      thePageElement.textColor[] -> textColor[];
-      thePageElement.filled -> filled;
-      thePageElement.linetype[] -> linetype[];
-      thePageElement.strokewidth -> strokewidth;
-(*      (if thePageElement[]->current.containsSubpage then true->result; if);*)
-      (if thePageElement## <= Arc## then
-          thePageElement[] -> asArc[];
-          asArc.arrowHeadSize -> arrowHeadSize;
-      if);
-   #);
+ORIGIN '../declareinstruments';
+INCLUDE '../creationinstruments';
+INCLUDE 'creationinstrumentsbody';
 
--- StyleRecordapply: doPart --
-do (# asArc: ^Arc;
-   do lineColor[] -> thePageElement.lineColor[];
-      fillColor[] -> thePageElement.fillColor[];
-      textColor[] -> thePageElement.textColor[];
-      filled -> thePageElement.filled;
-      linetype[] -> thePageElement.linetype[];
-      strokewidth -> thePageElement.strokewidth;
-      (if thePageElement## <= Arc## then
-          thePageElement[] -> asArc[];
-          arrowHeadSize -> asArc.arrowHeadSize;
-      if);
-      thePageElement.changed;
-   #);
+-- ConstraintArcClippingInit:DoPart --
+do 
 
--- StyleRecordcreateBasicStyle: doPart --
-do &CompleteStyle[] -> bs[];
-   lineColor[] -> bs.stroke[];
-   (if filled then
-       textColor[] -> bs.fill[];
-    else
-       fillcolor[] -> bs.fill[];
-   if);
-   strokewidth -> bs.strokewidth;
-   (if arrowHeadSize > 0 then
-       arrowHeadSize -> bs.arrowHeadSize;
-       ARROW_END -> bs.arrow;
-       NONE -> bs.fill[];
-   if);
+-- ConstraintArcClippingInsert:DoPart --
+do (#
+   do
+      t1[] -> elm.setSource;
+      t2[] -> elm.setTarget;
+      elm[] -> context.addConstraintArc;
+      elm[] -> t1.addConstraintArc;
+      elm[] -> t2.addConstraintArc;
+      elm.normalizeOrder;
+      storage.scan
+     	(#             
+     	do elm[] -> current.insert;
+     	#);
+      
+      (elm.getAnnotation).computePosition;
+   #);
    
+-- ConstraintArcClippingRemove:DoPart --
+do storage.scanReverse
+     (#
+     do elm[] -> current.remove;
+     #);
+
+   elm[] -> context.removeConstraintArc;
+   elm[] -> t1.removeArc;
+   elm[] -> t2.removeArc;
+
+ --CreateConstraintArc:doPart--
+do (# clipping: ^ConstraintArcClipping;
+      clip: ^PageClip;
+      groups: ^GroupList;
+      com: ^CreateCommand;
+   do 
+    	  thePrototype.clone -> theArc[];
+    	  
+    	  &ConstraintArcClipping[] -> clipping[];
+    	  context[] -> MakeGroupList -> groups[];
+	  (theArc[], groups[], NONE, source[], destination[]) -> clipping.init;
+    	  &PageClip[] -> clip[];
+    
+	  clipping[] -> clip.add;
+    	  
+    	  &CreateCommand[] -> com[];
+    	  context[] -> com.prepare;
+    	  clip[] -> com.apply;
+    	  (context.net[], com[]) -> registerCommand;
+   #);
+ 

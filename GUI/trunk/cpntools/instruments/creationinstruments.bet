@@ -514,6 +514,74 @@ DeleteCommand: ClipCommand
        #);
   #);
 
+CreateGuideGridInstrument: CPNGenericInstrument
+(#   FigureT :: GuideGridFigure;
+	CommandType:: CreateCommand;
+	round: (#
+	pos: @real;
+	posI: @integer;
+	  enter pos
+	  do
+	  pos -> posI;
+	  (if posI < 0 then
+		  posI / gridSize - 0.5 -> posI;
+	  else
+		  posI / gridSize + 0.5 -> posI;
+	  if);
+	  posI * gridSize -> posI;
+        exit posI
+	#);
+     ToolTip::
+       (# 
+       do   NamesCreateGuideGrid -> getGlobalNames -> theTip[];
+       #);
+     create:<
+       (# context: ^CPNPage;
+	 at: ^Point2d;
+	 pos: @Point2d;
+       enter (context[], at[])
+	 do 
+	    (((at.x - offsetX -> round) + offsetX), ((at.y - offsetY -> round) + offsetY)) -> pos;
+	    (for ('height' -> options.lookupInteger) repeat
+		    (context[], pos[]) -> CreateHorizontalGuide;
+		    pos.y + gridSize -> pos.y;
+	    for);
+	    (for ('width' -> options.lookupInteger) repeat
+		    (context[], pos[]) -> CreateVerticalGuide;
+		    pos.x + gridSize -> pos.x;
+	    for);
+       #);
+     PageInstrument: @Instrument
+       (# TargetType:: CPNSheet;
+          apply::
+            (# context: ^CPNPage;
+               at: ^Point2d;
+            do target.content.thePage[] -> context[];
+               &Point2d[] -> at[];
+		   theHand.anchor -> target.globalToLocal -> at;
+               (context[], at[]) -> create;
+               finish;
+            #);
+          
+		#);
+     init::
+       (# 
+       do PageInstrument.init;
+          PageInstrument[] -> register;
+          'create_guideline'->helpname[];
+	    ('width', &IntegerObject[])->options.setAddOption
+          (# OptionType:: IntegerOption
+               (# dname:: (# do 'Width' -> value[]; #); #);
+	    #); 
+	    ('height', &IntegerObject[])->options.setAddOption
+          (# OptionType:: IntegerOption
+               (# dname:: (# do 'Height' -> value[]; #); #);
+	    #); 
+	    ('width','guidegrid.width') -> options.setAddOptionWithDefault;
+          ('height','guidegrid.height') -> options.setAddOptionWithDefault;
+       #);
+  #);
+
 GuideInstrument: CPNGenericInstrument
   (# CommandType:: CreateCommand;
      create:<
@@ -1051,9 +1119,10 @@ CreateAuxPngInstrument: Instrument
   (# apply:: (# do finish #);
   #);
 
-ArcInstrument: CPNGenericInstrument
+AbstractArcInstrument: CPNGenericInstrument
 (# FigureT::< ArcFigure;
-          
+     arrowStyle: @integer;
+     lineStyle: @integer;
      destination: ^Node;
      bends: @PointList;
      FolderListener: @Element
@@ -1085,7 +1154,10 @@ ArcInstrument: CPNGenericInstrument
                if);
             #);
        #);
-     
+
+
+     PlaceType:< Node;
+
      source: ^Node;
      page: ^CPNPage;
      setPage:
@@ -1104,7 +1176,7 @@ ArcInstrument: CPNGenericInstrument
        (#
           onRemoved::
             (#
-            do (if source[] = THIS(ArcInstrument).source[] then
+            do (if source[] = THIS(AbstractArcInstrument).source[] then
                    cancel;
                if);
             #);
@@ -1147,14 +1219,26 @@ ArcInstrument: CPNGenericInstrument
        #);
      
      addArrow:
-       (# style: ^CompositeStyle;
+     (# 
+	     style: ^CompleteStyle;
           sr: @StyleRecord;
        do &Line[] -> arrow[];
           arrow.init;
-          &CompositeStyle[] -> style[];
-          getPrototype -> sr.prepare;
-          sr.createBasicStyle -> style.add;
-          15 -> &CurvatureStyle -> style.add;
+	    getPrototype -> sr.prepare;
+          sr.createBasicStyle -> style[];
+	    15 -> style.curvature;
+	    'arrow'-> options.lookupInteger -> arrowStyle;
+	    'line' -> options.lookupInteger -> lineStyle;
+	    (if arrowStyle
+	    // ARROW_END then (if (getPrototype).getOrientation = BothDir then ARROW_BOTH -> arrowStyle; if);
+	    // DIAMOND_END then (if source## <= Transition## then DIAMOND_START -> arrowStyle; if);
+	    // CIRCLE_END then (if source## <= Transition## then CIRCLE_START -> arrowStyle; if);
+	    if);
+	    lineStyle -> style.lineStyle;
+	    arrowStyle -> style.arrow;
+	    (if style.stroke[] = NONE then
+	       black[] -> style.stroke[];
+	    if);
           style[] -> arrow.theStyle[];
           IGNORE -> arrow.status;
           arrow[] -> foreground.add;
@@ -1291,7 +1375,7 @@ ArcInstrument: CPNGenericInstrument
                view.content.thePage[] -> setPage;
                addArrow;
                theHand.active[] -> picker[];
-               THIS(ArcInstrument)[] -> picker.ActivateInstrument;
+               THIS(AbstractArcInstrument)[] -> picker.ActivateInstrument;
                finish;
             #);
        #);
@@ -1329,23 +1413,24 @@ ArcInstrument: CPNGenericInstrument
                 else
                    &Point2d[] -> at[];
                    theHand.position -> view.globalToLocal -> at;
-                   (if source## <= Place## then
+                   (if source## <= PlaceType## then
                        (defaultTransition.height, defaultTransition.width) 
                          -> removeBendPointsInsideNode;
                        (target.content.thePage[], at[], defaultTransition[]) 
                          -> CreateTransition 
                          -> destination[];
-                   if);
-                   (if source## <= Transition## then
-                       (defaultPlace.height, defaultPlace.width) 
-                         -> removeBendPointsInsideNode;
-                       (target.content.thePage[], at[], defaultPlace[]) 
-                         -> CreatePlace
+				 else
+				 (if source## <= Transition## then
+				 (defaultPlace.height, defaultPlace.width) 
+				 -> removeBendPointsInsideNode;
+				 (target.content.thePage[], at[], defaultPlace[]) 
+				 -> CreatePlace
                          -> destination[];
+                   if);
                    if);
                    ('destination <> NONE', destination[] <> NONE) -> assert(# #);
                    NONE -> view[];
-                   (source.getCPNPage, source[], destination[], bends[], getPrototype) -> CreateArc;
+                   (source.getCPNPage, source[], destination[], bends[], getPrototype) -> LocalCreateArc;
                    destination.snap;
                    destination.changed;
                    target.content.thePage[] -> LoliteAllGuides;
@@ -1354,15 +1439,27 @@ ArcInstrument: CPNGenericInstrument
                if);
                finish;
 	    #);
-	 #);
+	    #);
+
+     LocalCreateArc:< (#
+	     theCPNPage: ^CPNPage;
+	     source, destination: ^Node;
+	     bends: ^PointList;
+	     thePrototype: ^Arc;
+	     enter (theCPNPage[], source[], destination[], bends[], thePrototype[])
+	     do INNER;
+     #);
+
      finishArc: @Instrument
        (# TargetType:: CPNNode;
           relevant::
             (#
             do false -> value;
                (if NOT (target## <= BendPoint##) then
-                   (if source[] <> NONE then
-                       (target## <> source##) AND (target.getCPNPage = source.getCPNPage) -> value;
+		       (if source[] <> NONE then
+                      (source## <= Transition##) and (target## <= PlaceType##) -> value;
+                      ((target## <= Transition##) and (source## <= PlaceType##)) or value -> value;
+			    (target.getCPNPage = source.getCPNPage) and value -> value;
                    if);
                if);
             #);          
@@ -1372,7 +1469,7 @@ ArcInstrument: CPNGenericInstrument
                
                NONE -> view[];
                target[] -> destination[];
-               (source.getCPNPage, source[], destination[], bends[], getPrototype) -> CreateArc;
+               (source.getCPNPage, source[], destination[], bends[], getPrototype) -> LocalCreateArc;
                destination.snap;
                destination.changed;
                target.getCPNPage -> LoliteAllGuides;
@@ -1387,7 +1484,13 @@ ArcInstrument: CPNGenericInstrument
        #);  
      DropAfterFirstInvocation:< BooleanObject;     
      init::<
-       (# sr: @StyleRecord;
+     (# sr: @StyleRecord;
+	     int: (# value: @integer; valueObject: ^IntegerObject;
+		     enter value
+		     do &IntegerObject[] -> valueObject[];
+		        value -> valueObject;
+			  exit valueObject[]
+			  #);
        enter thePrototype[]
        do 'create_arc' -> helpname[];
           bends.init;
@@ -1397,13 +1500,24 @@ ArcInstrument: CPNGenericInstrument
           createBendPoint[] -> register;
           finishArc.init;
           finishArc[] -> register;
+	    ('arrow', ARROW_END -> int) -> options.setaddoption
+	    (# OptionType::IntegerOption(# invisible:: trueObject; #); #);
+	    INNER;
 	    getPrototype -> sr.prepare;
-          sr.createBasicStyle -> instrumentIcon.theFigure.theStyle[];
-       #);
-	 #);
+	    sr.createBasicStyle -> instrumentIcon.theFigure.theStyle[];
+	    #);
+ #);
 
+
+ArcInstrument: AbstractArcInstrument (#
+	PlaceType:: Place;
+	LocalCreateArc:: (#
+	do
+	(theCPNPage[], source[], destination[], bends[], thePrototype[]) -> CreateArc;
+	#);
+#);
 ResetArcInstrument: ArcInstrument
-(# FigureT::< ArcFigure (# theArrowStyle:: (# do DIAMOND_START -> style #); #);
+(# 
      ToolTip::<
        (# 
 		 do NamesCreateResetArc -> getGlobalNames -> theTip[];
@@ -1413,9 +1527,14 @@ ResetArcInstrument: ArcInstrument
 	 (#
 		 do defaultResetArc[] -> prototype[]
 	 #);
-#);
+	 init::< (#
+		 do
+			 ('arrow', DIAMOND_END -> int) -> options.setaddoption
+			 (# OptionType::IntegerOption(# invisible:: trueObject; #); #);
+		 #);
+ #);
 InhibitorArcInstrument: ArcInstrument
-(# FigureT::< ArcFigure (# theArrowStyle:: (# do CIRCLE_START -> style #); #);
+(# 
      ToolTip::<
        (# 
 		 do NamesCreateInhibitorArc -> getGlobalNames -> theTip[];
@@ -1425,6 +1544,11 @@ InhibitorArcInstrument: ArcInstrument
 	 (#
 		 do defaultInhibitorArc[] -> prototype[]
 	 #);
+	 init::< (#
+		 do
+			 ('arrow', CIRCLE_END -> int) -> options.setaddoption
+			 (# OptionType::IntegerOption(# invisible:: trueObject; #); #);
+		 #);
 #);
 
 
@@ -1675,16 +1799,32 @@ GuidelineClipping: PageElementClipping
        #);
   #);
 
+offsetY: (# exit 10 #);
+offsetX: (# exit -6 #);
+gridSize: (# exit 42 #);
+distance: (# exit 10 #);
 CreateHorizontalGuide: 
   (# context: ^CPNPage;
      at: ^Point2d;
+     pos: @real;
+     posI: @integer;
   enter (context[], at[])
   do (# theGuideLine: ^HorizontalGuideline;
         theGuideClipping: ^GuidelineClipping;
         theGuideCommand: ^CreateGuideCommand;
      do &HorizontalGuideline[] -> theGuideLine[];
         theGuideLine.init;
-        at.y -> theGuideLine.setParameter;
+	  at.y - offsetY -> pos -> posI;
+	  (if posI < 0 then
+		  posI / gridSize - 0.5 -> posI;
+	  else
+		  posI / gridSize + 0.5 -> posI;
+	  if);
+	  posI * gridSize -> posI;
+	  (if ((pos - posI) -> abs) < distance then
+	        posI -> pos;
+	  if);
+        pos + offsetY -> theGuideLine.setParameter;
         &GuidelineClipping[] -> theGuideClipping[];
         (theGuideLine[], none, none) -> theGuideClipping.init;
         &CreateGuideCommand[] -> theGuideCommand[];
@@ -1700,13 +1840,25 @@ CreateHorizontalGuide:
 CreateVerticalGuide:
   (# context: ^CPNPage;
      at: ^Point2d;
+     pos: @real;
+     posI: @integer;
   enter (context[], at[])
   do (# theGuideLine: ^VerticalGuideline;
         theGuideClipping: ^GuidelineClipping;
         theGuideCommand: ^CreateGuideCommand;
      do &VerticalGuideline[] -> theGuideLine[];
         theGuideLine.init;
-        at.x -> theGuideLine.setParameter;
+	  at.x - offsetX -> pos -> posI;
+	  (if posI < 0 then
+		  posI / gridSize - 0.5 -> posI;
+	  else
+		  posI / gridSize + 0.5 -> posI;
+	  if);
+	  posI * gridSize -> posI;
+	  (if ((pos - posI) -> abs) < distance then
+	        posI -> pos;
+	  if);
+        pos + offsetX -> theGuideLine.setParameter;
         &GuidelineClipping[] -> theGuideClipping[];
         (theGuideLine[], none, none) -> theGuideClipping.init;
         &CreateGuideCommand[] -> theGuideCommand[];
@@ -2532,27 +2684,21 @@ KindClipping: SafeClipping
      getCPNet:: (# do (elm.getCPNPage).net[] -> net[]; #);
      ContextType:: Text;     
      previousPlaceKind: ^Text;
-     previousTag: ^PlaceKind;
-     removedAssignments: @AssignmentList;
      init::
        (# 
        enter previousPlaceKind[]
-       do removedAssignments.init;
-          elm.getPlaceKind -> previousTag[];
        #);     
      insert::
-       (# 
-       do previousTag[] -> elm.setPlaceKind;
-          context[] -> elm.createPlaceKind -> elm.setPlaceKind;
+       (# newPlaceKind: ^PlaceKind;
+       do 
+	 context[] -> elm.createPlaceKind -> newPlaceKind[] -> elm.setPlaceKind;
+          newPlaceKind.update;
           (if elm.isLolited then
-              elm.lolite;
+              newPlaceKind.lolite;
            else
-              elm.hilite;
+	     newPlaceKind.hilite;
           if);
-          removedAssignments.scan
-          (# 
-          do (current.getPort, current.getSocket, current.getSubTransition) -> current.init;
-          #);
+          elm.changed;
        #);     
      remove:: (# <<SLOT KindClipping:DoPart>> #);
      #);

@@ -100,6 +100,8 @@ do (# processHighlightable:
 -- CPNSheetInit:doPart --
 do &SimulationLayer[] -> simlayer[];
    simlayer.init;
+
+   ((patternSize -> &SquarePattern).init -> &PatternLayer).init -> thePatternLayer[];
    &SheetLayer[] -> guidelinelayer[];
    guidelinelayer.init;
    true  -> simlayer.clipping;
@@ -109,7 +111,10 @@ do &SimulationLayer[] -> simlayer[];
    true -> guidelinelayer.clickable;
    guidelinelayer[] -> add;
    guidelinelayer[] -> layers.sendToBack;          
+   thePatternLayer[] -> add;
+   thePatternLayer[] -> layers.sendToBack;          
    errorlayer[] -> layers.bringToFront;
+   (0.93, 0.93, 0.93) -> Color -> theSheetColor[];
    
 -- CPNSheetShow:doPart --
 do (if true
@@ -259,6 +264,9 @@ do (# ShowVisitor: NetVisitor
                 (if current.getFusionInfo <> NONE then
                     current.getFusionInfo -> visitFusionInfo;
                 if);
+                (if current.getPlaceKind <> NONE then
+                    current.getPlaceKind -> visitPlaceKind;
+                if);
              #);
            visitSSNode::<
              (#
@@ -277,6 +285,7 @@ do (# ShowVisitor: NetVisitor
                 if);
              #);
            visitPortType::< (# do current[] -> show; #);
+           visitPlaceKind::< (# do current[] -> show; #);
            visitFusionInfo::< (# do current[] -> show; #);
            visitTransition::< 
              (# 
@@ -289,8 +298,12 @@ do (# ShowVisitor: NetVisitor
                 (if current.getSubPageInfo <> NONE then
                     current.getSubpageInfo -> visitSubpageInfo;
                 if);
+		    current.scanConstraintInscriptions (#
+		    do current[] -> visitConstraintInscription;
+		    #);
              #);
            visitSubPageInfo::< (# do current[] -> show; #);
+           visitConstraintInscription::< (# do current[] -> show; #);
            visitTransTime::<
              (# 
              do (if current.isVisible then
@@ -371,7 +384,7 @@ do (# ShowVisitor: NetVisitor
 
 -- CPNSheetOnChanged:doPart --
 do (# theInscription: ^Inscription;
-   do 
+	do
       (if (source[] = content[])  then
           updatePageTab;
           toptab.changed;

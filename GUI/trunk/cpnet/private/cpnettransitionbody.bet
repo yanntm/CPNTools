@@ -27,6 +27,7 @@ ORIGIN '../cpnet';
 
 -- TransitionPrivate:Descriptor --
 (# constraintArcs: @ConstraintArcList;
+   constraintInscriptions: @ConstraintInscriptionList;
    theTransGuard: ^TransGuard;
    theTransTime: ^TransTime;
    theTransAction: ^TransAction;
@@ -65,6 +66,9 @@ do theCPNPage[] -> private.theTransGuard.setCPNPage;
    (if private.theSubpageInfo[] <> none then
        theCPNPage[] -> private.theSubpageInfo.setCPNPage;       
    if);
+   private.constraintInscriptions.scan (#
+     do theCPNPage[] -> current.setCPNPage;
+   #);
    
 -- TransitionGetElementsToAddToGroupWithThisElement: doPart --
 do (if theGroup[]<>NONE then
@@ -370,8 +374,10 @@ do private.theTransAction[] -> theList.append;
 -- TransitionGetHierarchyInfos:doPart --
 do (if private.theSubPageInfo[] <> NONE then
        private.theSubPageInfo[] -> theList.append;
-   if); 
-
+   if);
+   private.constraintInscriptions.scan (#
+   do current[] -> theList.append;
+   #);
 
 -- TransitiongetSlaves: doPart --
 do (if getCPNPage <> NONE then
@@ -393,6 +399,9 @@ do (if getCPNPage <> NONE then
    (if private.theSubPageInfo[] <> NONE then
        private.theSubPageInfo[] -> theList.append;
    if);
+   private.constraintInscriptions.scan (#
+   do current[] -> theList.append;
+   #);
 
 -- TransitiongetAnchors: doPart --
 do (x + a, y - b) -> MakePoint -> anchors.append;
@@ -428,6 +437,10 @@ do (# theGuard: ^TransGuard;
       new[] -> thePriority.setTransition;
       
       private.explicit -> new.setExplicit;
+
+	private.constraintInscriptions.scan (#
+	do (current.theName[], current.theLabel[], current.theFormula[], current.theLineStyle) -> new.createConstraintInscription -> new.addConstraintInscription;
+	#);
     #);
 
 -- Transitionnext: doPart --
@@ -704,12 +717,39 @@ do
    inner;
    (*** onSemanticChanged; ***)
  
--- TransitionHasConstraintArcs:DoPart --
-do not private.constraintArcs.empty -> value;
-   
 -- TransitionAddConstraintArc:DoPart --
 do theConstraintArc[] -> private.constraintArcs.append;
    theConstraintArc[] -> attach;
    inner;
    (*** onSemanticChanged; ***)
+
+-- TransitionRemoveConstraintInscription:DoPart --
+do 
+   theConstraintInscription[] -> private.constraintInscriptions.at -> private.constraintInscriptions.delete;
+   theConstraintInscription[] -> detach;
+   inner;
+   changed;
+   (*** onSemanticChanged; ***)
+ 
+-- TransitionHasConstraints:DoPart --
+do (not private.constraintInscriptions.empty) and (not private.constraintInscriptions.empty) -> value;
    
+-- TransitionAddConstraintInscription:DoPart --
+do theConstraintInscription[] -> private.constraintInscriptions.append;
+   (if isLolited then
+	   theConstraintInscription.lolite;
+   else
+	   theConstraintInscription.hilite;
+   if);
+   inner;
+   (*** onSemanticChanged; ***)
+
+-- TransitionScanConstraintInscriptions:doPart --
+do private.constraintInscriptions.scan
+   (# 
+   do 
+          current[] -> this(scanConstraintInscriptions).current[];
+          inner scanConstraintInscriptions;
+   #);
+
+

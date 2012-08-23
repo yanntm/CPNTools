@@ -125,17 +125,19 @@ getHighlight:
   #);
 
 highlight_color: 
-  (# exit (0,1,1)->&Color #);
+  (# exit (0,1.0,1)->&Color #);
 compile_color: 
-  (# exit (1, 0xd7/255, 0)->&Color #);
+(# exit (1, 0xd7/255, 0)->&Color #);
 check_color: 
   (# exit (1, 0x8c/255, 0)->&Color #);
 error_color: 
   (# exit (1, 0, 0)->&Color #);
 depend_color: 
-  (# exit (0, 0, 1)->&Color #);
+  (# exit fusion_color #);
+(*  (# exit (0, 0, 1)->&Color #);*)
 fusion_color: 
-  (# exit (1, 0, 1)->&Color #);
+  (# exit (0, 0.4, 1.0)->&Color #);
+(*  (# exit (1, 0, 1)->&Color #);*)
 sim_color: 
   (# exit token_color #);
 enabled_color: 

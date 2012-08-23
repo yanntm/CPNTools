@@ -619,7 +619,7 @@ CPNet: Highlightable
        do setSimulationOptions;
        #);
      knownFusionSets: @FusionSetIDDictionary;
-     statespaceEntered: @boolean;
+     statespaceEntered: @integer;
      stateSpaceNumber: @Integer;
      ignoreStateSpaceExit: @boolean;
      options: @OptionList;
@@ -3073,7 +3073,21 @@ Transition: CPNNode
        (# current: ^ConstraintArc;
        <<SLOT TransitionScanConstraintArcs:doPart>>
        #);
-     hasConstraintArcs: BooleanValue (# <<SLOT TransitionHasConstraintArcs:DoPart>> #); 
+      addConstraintInscription:<
+       (# theConstraintInscription: ^ConstraintInscription;
+       enter theConstraintInscription[]
+       <<SLOT TransitionAddConstraintInscription:DoPart>>
+       #);
+     removeConstraintInscription:<
+       (# theConstraintInscription: ^ConstraintInscription;
+       enter theConstraintInscription[]
+       <<SLOT TransitionRemoveConstraintInscription:DoPart>>
+       #);     
+     scanConstraintInscriptions: 
+       (# current: ^ConstraintInscription;
+       <<SLOT TransitionScanConstraintInscriptions:doPart>>
+       #);
+     hasConstraints: BooleanValue (# <<SLOT TransitionHasConstraints:DoPart>> #); 
      
      menuName::<
        (# 
@@ -3199,6 +3213,14 @@ Transition: CPNNode
        enter cpnml[]
        <<SLOT TransitioncreateSubPageInfo:dopart>>
        exit theSubPageInfo[]
+       #);
+     createConstraintInscription: 
+       (# theConstraintInscription: ^ConstraintInscription;
+		 theName, theLabel, theFormula: ^text;
+		 theLineStyle: @integer;
+	 enter (theName[], theLabel[], theFormula[], theLineStyle)
+	 <<SLOT TransitioncreateConstraintInscription:dopart>>
+       exit theConstraintInscription[]
        #);
      hasSubpageInfo: BooleanValue
        (# <<SLOT TransitionHasSubpageInfo:doPart>> #);
@@ -3599,7 +3621,7 @@ Place: CPNNode
        (# ItemType:: Composite;
 	    theLine: ^Line;
 	    theEllipse: ^Ellipse;
-       do (if not (hasPlaceKind) then
+       do 
 		    &Ellipse[] -> theEllipse[];
 		    theEllipse.init;
 		    width -> theEllipse.width;
@@ -3613,23 +3635,28 @@ Place: CPNNode
 			   1 -> &StrokeWidthStyle -> theEllipse.theStyle[];
 			   theEllipse[] -> theItem.add;
 		    if);
-	    else
-		  (# points: ^PointList;
-		  do &PointList[] -> points[];
-		     (0, -height/2) -> makePoint -> points.append;
-		     (width/2, -height/2) -> makePoint -> points.append;
-		     (width/2, height/2) -> makePoint -> points.append;
-		     (0, height/2) -> makePoint -> points.append;
-		     (-width/2, height/2) -> makePoint -> points.append;
-		     (-width/2, -height/2) -> makePoint -> points.append;
-		     (0, -height/2) -> makePoint -> points.append;
-		     &Line[] -> theLine[];
-		     theLine.init;
-		     15.0 -> &CurvatureStyle -> theLine.theStyle[];
-		     points[] -> theLine.points[];
-		     theLine[] -> theItem.add;
-		  #);
-	    if);
+		    (if (hasPlaceKind) then 
+			  (# points: ^PointList; offset: @real;
+			  do ((width - 10) / width -> acos -> sin) * height / 2 -> offset;
+			     &PointList[] -> points[];
+			     (-width / 2 + 5, -offset) -> makePoint -> points.append;
+			     (-width / 2 + 5, offset) -> makePoint -> points.append;
+			     &Line[] -> theLine[];
+			     theLine.init;
+			     points[] -> theLine.points[];
+			     1 -> &StrokeWidthStyle -> theLine.theStyle[];
+			     theLine[] -> theItem.add;
+
+			     &PointList[] -> points[];
+			     (width / 2 - 5, -offset) -> makePoint -> points.append;
+			     (width / 2 - 5, offset) -> makePoint -> points.append;
+			     &Line[] -> theLine[];
+			     theLine.init;
+			     points[] -> theLine.points[];
+			     1 -> &StrokeWidthStyle -> theLine.theStyle[];
+			     theLine[] -> theItem.add;
+			  #);
+		    if);
        #);
      getIntersect::
        (# <<SLOT PlaceGetIntersect:doPart>> #);
@@ -3842,7 +3869,7 @@ Arc: PageElement
      SetColor::< (# elm: ^Inscription; <<SLOT ArcSetColor:doPart>> #); 
      deleteFromPage::< (# <<SLOT ArcDeleteFromPage:DoPart>> #);
      delete:: (# <<SLOT ArcDelete:doPart>> #); 
-     Clone::< (# Type:: Arc; <<SLOT ArcClone:doPart>> #);
+     Clone::< (# Type::< Arc; <<SLOT ArcClone:doPart>> #);
      toString:: (# <<SLOT ArcToString:doPart>> #);
      setPlaceEnd: 
        (# newPlaceEnd: ^Node; enter newPlaceEnd[] <<SLOT ArcSetPlaceEnd:doPart>> #);
@@ -4357,7 +4384,14 @@ PlaceKind: HierarchyInfo
      setPlace: 
        (# thePlace: ^Place; 
        enter thePlace[] 
-       <<SLOT PlaceKindSetPlace:doPart>> #);
+	 <<SLOT PlaceKindSetPlace:doPart>> #);
+     init::< (#
+	     do    &CompositeStyle[] -> theCompStyle[] -> theRect.theStyle[];
+		     green[] -> StrokeStyle -> theCompStyle.add;
+		     greenish[] -> RectColor[];
+		     RectColor.lighten -> FillStyle -> theCompStyle.add;
+		     INNER;
+     #);
      getPlace: 
        (# thePlace: ^Place;
        <<SLOT PlaceKindGetPlace:doPart>> 
@@ -4370,6 +4404,7 @@ PlaceKind: HierarchyInfo
           INNER;
        #);
      clone:: (# type:: PlaceKind; #);
+     editable:: (# do true -> value; #);     
      delete:: (# <<SLOT PlaceKindDelete:doPart>> #);     
      update:: (# <<SLOT PlaceKindUpdate:doPart>> #);     
      next:: (# <<SLOT PlaceKindNext:doPart>> #);
@@ -4412,7 +4447,20 @@ SubPageInfo: HierarchyInfo
 
 
 ConstraintInscription: HierarchyInfo
-  (# private: @<<SLOT ConstraintInscriptionPrivate:descriptor>>;
+(# private: @<<SLOT ConstraintInscriptionPrivate:descriptor>>;
+     theName, theLabel, theFormula: ^text;
+     theLineStyle: @integer;
+     init::< (#
+	     enter (theName[], theLabel[], theFormula[], (# enter theLineStyle #))
+	     do theLabel[] -> setCPNML;
+	        INNER;
+     #);
+     clone:: (# type:: ConstraintInscription;
+     do theName.copy -> new.theName[];
+        theLabel.copy -> new.theLabel[] -> new.setCPNML;
+	  theFormula.copy -> new.theFormula[];
+	  theLineStyle -> new.theLineStyle;
+     #);
      setTransition: 
        (# theTransition: ^Transition;
        enter theTransition[]
@@ -4423,10 +4471,14 @@ ConstraintInscription: HierarchyInfo
        <<SLOT ConstraintInscriptionGetTransition:doPart>> 
        exit theTransition[]  
        #);
+     update:: (# <<SLOT ConstraintInscriptionUpdate:doPart>> #);     
      defaultSnap::
        (#
-       do CenterJustify -> changeAnchorHorizontal;
-       #);
+		 do N -> snap_id;
+	    CenterJustify -> changeAnchorHorizontal;
+          BottomJustify -> changeAnchorVertical;
+	 #);
+      
      defaultSnapToElement:: (# <<SLOT ConstraintInscriptionDefaultSnapToElement:doPart>> #);
      menuName::<
        (# 
@@ -4435,7 +4487,6 @@ ConstraintInscription: HierarchyInfo
        #);
      status:: (# <<SLOT ConstraintInscriptionstatus:doPart>> #);     
      delete:: (# <<SLOT ConstraintInscriptiondelete:doPart>> #);
-     clone:: (# type:: ConstraintInscription; #);
      next:: (# <<SLOT ConstraintInscriptionNext:doPart>> #);
      onSemanticChanged:: (# <<SLOT ConstraintInscriptionOnSemanticChanged:doPart>> #);
      onChanged:: (# <<SLOT ConstraintInscriptionOnChanged:doPart>> #);
@@ -5464,23 +5515,20 @@ SSArc: Arc
 
 ConstraintArc: Arc
   (#
-     number, srcNode, destNode: @Integer;
-     descriptor: ^Text;
-     delta: @Point2d;
-     visible: @boolean;
-     deadInfo: @boolean;
-     dead:
-       (# d: @Boolean;
-       enter
-     (#
-     enter d
-     do (if (d AND (NOT deadInfo) and (((0.0, 0.0, 0.0) -> &Color) -> (getColor).equal)) then (0.5, 0.5, 0.5) -> &Color -> setColor; if);
-        d -> deadInfo;
-         #)
-       exit deadInfo
-       #);
+     theName, theLabel, theFormula: ^text;
+     lineStyle, arrowStyle: @integer;
+     setSource: (#
+	     enter transEnd[]
+	     do TtoP -> setOrientation;
+	     #);
+     setTarget: (#
+	     enter placeEnd[]
+	     do TtoP -> setOrientation;
+	     #);
    deleteFromPage:: (# do THIS(ConstraintArc)[] -> (getCPNPage).removeConstraintArc; #);
    update:: (# <<SLOT ConstraintArcUpdate:doPart>> #);
+     makeShape::< (# <<SLOT ConstraintArcmakeShape:doPart>> #);
+     clone::< (# Type::< ConstraintArc; <<SLOT ConstraintArcClone:doPart>> #);
    menuName::<
      (# <<SLOT ConstraintArcMenuName:doPart>> #);
 #);
