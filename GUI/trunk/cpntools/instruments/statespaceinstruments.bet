@@ -590,7 +590,7 @@ DisplayNodeInstrument: PageElementInstrument
 	  net: ^CPNet;
 	  inNet: ^SSNodeIDDictionary;
        do target.content.thePage.net[] -> net[];
-	  (if (net.stateSpaceEntered < SSCalculated) then
+	 (if (net.stateSpaceEntered >= SSCalculated) then
               &SSMLHelper[] -> MLHelper[];
 	      'nodeNumber' -> options.lookupInteger -> list[1];
 	      net.ml[] -> theHandler[];
@@ -643,7 +643,7 @@ DisplaySuccessorsInstrument: FigureTInstrument
 	  theGroupClipping: ^GroupClipping;
 	  com: ^GroupClipCommand;
 
-       do (if ((target.getCPNPage).net.stateSpaceEntered > SSCalculated) then
+       do (if ((target.getCPNPage).net.stateSpaceEntered >= SSCalculated) then
               (if NOT target.dead then
 	          target[] -> theSSNode[];
     	          target.x -> x;
@@ -830,7 +830,7 @@ DisplayPredecessorsInstrument: FigureTInstrument
 	  theArcs: ^SSArcList;
 	  theSSNode: ^SSNode;
 	  
-       do (if (target.getCPNPage).net.stateSpaceEntered > SSCalculated then
+       do (if (target.getCPNPage).net.stateSpaceEntered >= SSCalculated then
     	      target[] -> theSSNode[];
     	      target.x -> x;
     	      target.y -> y;
@@ -893,7 +893,7 @@ DisplayPartialSSGraphInstrument: FigureTInstrument
 	  theGroupElementsInstrument: ^GroupElementsInstrument;
           picker: ^PickInstrument;
 
-       do (if (target.getCPNPage).net.stateSpaceEntered < SSCalculated then
+	    do (if (target.getCPNPage).net.stateSpaceEntered >= SSCalculated then
 	      &SSMLHelper[] -> MLHelper[];
     	      (target.getCPNPage).net.ml[] -> theHandler[];
     	      target[] -> theAUX[];

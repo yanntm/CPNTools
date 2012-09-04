@@ -1185,7 +1185,7 @@ SetKindFigure: Figure
             // 'fifo' -> PlaceKind.equalNCS then 'FIFO' -> theTextItem.content[];
             // 'lifo' -> PlaceKind.equalNCS then 'LIFO' -> theTextItem.content[];
             // 'pqueue' -> PlaceKind.equalNCS then 'PQ' -> theTextItem.content[];
-		// 'bounded' -> PlaceKind.equalNCS then 'Bnd' -> theTextItem.content[];
+		// 'bounded' -> PlaceKind.equalNCS then '<=' -> theTextItem.content[];
 		else '?' -> theTextItem.content[]
           if);
           (if theTextItem.content[] <> NONE then

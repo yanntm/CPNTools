@@ -1026,7 +1026,53 @@ do 'sendUncheckedTransitions' -> debugSyntaxCheck;
                      if);
                   #);
                   count -> bis.putInt; (* size(in/out(arcs(trans))) *)
-              if);
+
+                  0 -> count;
+                  scanArcs
+                  (# 
+                  do (* scan inhibitor arcs *)
+                     (if (current.transend[] = t[]) and (current.getOrientation = Inhibitor) then
+                         1 + count -> count;
+                         current.id[] -> bis.putString;
+                         current.placeEnd.id[] -> bis.putString;
+                         current.getAnnotation -> 
+				 (# current: ^Annotation; 
+					 tmp: ^text;
+                         enter current[]
+                         do (if (current.getInscription<> NONE) and
+                                    not (current.defaultInscription -> (current.getInscription).equal) then
+						  current.getInscription -> bis.putString;
+						else 
+						  '' -> bis.putString;
+                            if);
+                         #);
+                     if);
+                  #);
+                  count -> bis.putInt;
+
+                  0 -> count;
+                  scanArcs
+                  (# 
+                  do (* scan reset arcs *)
+                     (if (current.transend[] = t[]) and (current.getOrientation = ResetArc) then
+                         1 + count -> count;
+                         current.id[] -> bis.putString;
+                         current.placeEnd.id[] -> bis.putString;
+                         current.getAnnotation -> 
+				 (# current: ^Annotation; 
+					 tmp: ^text;
+                         enter current[]
+                         do (if (current.getInscription<> NONE) and
+                                    not (current.defaultInscription -> (current.getInscription).equal) then
+						  current.getInscription -> bis.putString;
+						else 
+						  '' -> bis.putString;
+                            if);
+                         #);
+                     if);
+                  #);
+                  count -> bis.putInt;
+               if);
           if);
       if);
    #);

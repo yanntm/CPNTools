@@ -57,7 +57,9 @@ ConstraintInscriptionClipping: Clipping
 (# Element:: ConstraintInscription;
 	ContextType:: Transition;
 	 insert:: (# 
-		 do elm[] -> context.addConstraintInscription;
+		 do 
+		 context.getCPNPage -> elm.setCPNPage;
+		 elm[] -> context.addConstraintInscription;
 		 elm.update;
 		 context.changed;
 		 context.semanticChanged;
