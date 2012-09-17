@@ -111,6 +111,8 @@ precedence nonassoc TRUE;
 						{: RESULT = new And(g1, new Guard(g1, new Future(g2))); :}
 					| guide:g1 AND guide:g2
 						{: RESULT = new And(g1, g2); :}
+					| guide:g1 BAR guide:g2
+						{: RESULT = new Or(g1, g2); :} 
 					| guide:g1 FINALLYGUARD LPAREN3 condition:c RPAREN3
 						{: RESULT = new Finally(g1, c); :}
 					| guide:g1 FINALLY LPAREN3 condition:c RPAREN3
