@@ -7,6 +7,7 @@ import org.cpntools.accesscpn.engine.highlevel.HighLevelSimulator;
 import org.cpntools.accesscpn.engine.highlevel.instance.Instance;
 import org.cpntools.accesscpn.model.PetriNet;
 import org.cpntools.grader.model.NameHelper;
+import org.cpntools.grader.model.btl.Environment;
 
 /**
  * @author michael
@@ -57,24 +58,25 @@ public class Not extends Simple {
 	@Override
 	public Set<Instance<org.cpntools.accesscpn.model.Transition>> force(
 	        final Set<Instance<org.cpntools.accesscpn.model.Transition>> candidates, final PetriNet model,
-	        final HighLevelSimulator simulator, final NameHelper names) {
+	        final HighLevelSimulator simulator, final NameHelper names, final Environment environment) {
 		final HashSet<Instance<org.cpntools.accesscpn.model.Transition>> set = new HashSet<Instance<org.cpntools.accesscpn.model.Transition>>();
 		set.addAll(candidates);
-		set.removeAll(child.force(candidates, model, simulator, names));
+		set.removeAll(child.force(candidates, model, simulator, names, environment));
 		return set;
 	}
 
 	@Override
 	public Simple progress(final Instance<org.cpntools.accesscpn.model.Transition> transition, final PetriNet model,
-	        final HighLevelSimulator simulator, final NameHelper names) {
-		final Simple newchild = child.progress(transition, model, simulator, names);
+	        final HighLevelSimulator simulator, final NameHelper names, final Environment environment) {
+		final Simple newchild = child.progress(transition, model, simulator, names, environment);
 		if (newchild == null) { return Failure.INSTANCE; }
 		return null;
 	}
 
 	@Override
-	public boolean canTerminate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names) {
-		return !child.canTerminate(model, simulator, names);
+	public boolean canTerminate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
+	        final Environment environment) {
+		return !child.canTerminate(model, simulator, names, environment);
 	}
 
 	@Override
@@ -83,7 +85,8 @@ public class Not extends Simple {
 	}
 
 	@Override
-	public void prestep(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names) {
+	public void prestep(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
+	        final Environment environment) {
 
 	}
 

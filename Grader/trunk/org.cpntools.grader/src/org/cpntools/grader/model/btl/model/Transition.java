@@ -7,6 +7,7 @@ import org.cpntools.accesscpn.engine.highlevel.HighLevelSimulator;
 import org.cpntools.accesscpn.engine.highlevel.instance.Instance;
 import org.cpntools.accesscpn.model.PetriNet;
 import org.cpntools.grader.model.NameHelper;
+import org.cpntools.grader.model.btl.Environment;
 
 /**
  * @author michael
@@ -57,7 +58,7 @@ public class Transition extends Simple {
 	@Override
 	public Set<Instance<org.cpntools.accesscpn.model.Transition>> force(
 	        final Set<Instance<org.cpntools.accesscpn.model.Transition>> candidates, final PetriNet model,
-	        final HighLevelSimulator simulator, final NameHelper names) {
+	        final HighLevelSimulator simulator, final NameHelper names, final Environment environment) {
 		final Instance<org.cpntools.accesscpn.model.Transition> ti = names.getTransitionInstance(name);
 		if (candidates.contains(ti)) { return Collections.singleton(ti); }
 		return Collections.emptySet();
@@ -65,13 +66,14 @@ public class Transition extends Simple {
 
 	@Override
 	public Simple progress(final Instance<org.cpntools.accesscpn.model.Transition> ti, final PetriNet model,
-	        final HighLevelSimulator simulator, final NameHelper names) {
+	        final HighLevelSimulator simulator, final NameHelper names, final Environment environment) {
 		if (ti.equals(names.getTransitionInstance(name))) { return null; }
 		return Failure.INSTANCE;
 	}
 
 	@Override
-	public boolean canTerminate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names) {
+	public boolean canTerminate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
+	        final Environment environment) {
 		return false;
 	}
 
@@ -81,7 +83,8 @@ public class Transition extends Simple {
 	}
 
 	@Override
-	public void prestep(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names) {
+	public void prestep(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
+	        final Environment environment) {
 
 	}
 

@@ -41,7 +41,8 @@ CommentContent          = ( [^*] | \*+ [^/*] )*
 %%
 
 <YYINITIAL>{
-	"("					{ return symbol(LPAREN); }
+	"<"[a-zA-Z_][a-zA-Z0-9_]*">"	{ String result = yytext(); return symbol(VAR, result.substring(1, result.length() - 1)); }
+ 	"("					{ return symbol(LPAREN); }
 	")"					{ return symbol(RPAREN); }
 	"{"					{ return symbol(LPAREN2); }
 	"}"					{ return symbol(RPAREN2); }
@@ -73,7 +74,10 @@ CommentContent          = ( [^*] | \*+ [^/*] )*
 	"true"				{ return symbol(TRUE); }
 	"false"				{ return symbol(FALSE); }
 	"failure"				{ return symbol(FAILURE); }
+	"new"					{ return symbol(NEW); }
+	"bind"				{ return symbol(BIND); }
 	"time"				{ return symbol(TIME); }
+	","					{ return symbol(COMMA); }
 	[1-9][0-9]*|0			{ return symbol(NUMBER, Integer.valueOf(yytext())); }
 	[\"][^\"]*(\\[\"][^\"]*)*[\"]	{ String result = yytext(); return symbol(ID, result.substring(1, result.length() - 1).replaceAll("\\\\\"", "\"")); } 
 	[a-zA-Z_][a-zA-Z0-9_]*		{ return symbol(ID, yytext()); }

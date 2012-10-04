@@ -7,6 +7,7 @@ import org.cpntools.accesscpn.engine.highlevel.HighLevelSimulator;
 import org.cpntools.accesscpn.engine.highlevel.instance.Instance;
 import org.cpntools.accesscpn.model.PetriNet;
 import org.cpntools.grader.model.NameHelper;
+import org.cpntools.grader.model.btl.Environment;
 
 /**
  * @author michael
@@ -71,18 +72,18 @@ public class SimpleAnd extends Simple {
 	@Override
 	public Set<Instance<org.cpntools.accesscpn.model.Transition>> force(
 	        final Set<Instance<org.cpntools.accesscpn.model.Transition>> candidates, final PetriNet model,
-	        final HighLevelSimulator simulator, final NameHelper names) {
+	        final HighLevelSimulator simulator, final NameHelper names, final Environment environment) {
 		final HashSet<Instance<org.cpntools.accesscpn.model.Transition>> set = new HashSet<Instance<org.cpntools.accesscpn.model.Transition>>();
-		set.addAll(s1.force(candidates, model, simulator, names));
-		set.retainAll(s2.force(candidates, model, simulator, names));
+		set.addAll(s1.force(candidates, model, simulator, names, environment));
+		set.retainAll(s2.force(candidates, model, simulator, names, environment));
 		return set;
 	}
 
 	@Override
 	public Simple progress(final Instance<org.cpntools.accesscpn.model.Transition> transition, final PetriNet model,
-	        final HighLevelSimulator simulator, final NameHelper names) {
-		final Simple news1 = s1.progress(transition, model, simulator, names);
-		final Simple news2 = s2.progress(transition, model, simulator, names);
+	        final HighLevelSimulator simulator, final NameHelper names, final Environment environment) {
+		final Simple news1 = s1.progress(transition, model, simulator, names, environment);
+		final Simple news2 = s2.progress(transition, model, simulator, names, environment);
 		if (news1 == null) { return news2; }
 		if (news2 == null) { return news1; }
 		if (news1 == Failure.INSTANCE || news2 == Failure.INSTANCE) { return Failure.INSTANCE; }
@@ -91,8 +92,10 @@ public class SimpleAnd extends Simple {
 	}
 
 	@Override
-	public boolean canTerminate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names) {
-		return s1.canTerminate(model, simulator, names) && s2.canTerminate(model, simulator, names);
+	public boolean canTerminate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
+	        final Environment environment) {
+		return s1.canTerminate(model, simulator, names, environment)
+		        && s2.canTerminate(model, simulator, names, environment);
 	}
 
 	@Override
@@ -104,9 +107,10 @@ public class SimpleAnd extends Simple {
 	}
 
 	@Override
-	public void prestep(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names) {
-		s1.prestep(model, simulator, names);
-		s2.prestep(model, simulator, names);
+	public void prestep(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
+	        final Environment environment) {
+		s1.prestep(model, simulator, names, environment);
+		s2.prestep(model, simulator, names, environment);
 	}
 
 }

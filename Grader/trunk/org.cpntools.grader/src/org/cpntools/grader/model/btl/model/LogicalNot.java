@@ -5,6 +5,7 @@ import java.util.Set;
 import org.cpntools.accesscpn.engine.highlevel.HighLevelSimulator;
 import org.cpntools.accesscpn.model.PetriNet;
 import org.cpntools.grader.model.NameHelper;
+import org.cpntools.grader.model.btl.Environment;
 
 /**
  * @author michael
@@ -56,8 +57,9 @@ public class LogicalNot extends BExpression {
 	}
 
 	@Override
-	public boolean evaluate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names) {
-		return !b.evaluate(model, simulator, names);
+	public boolean evaluate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
+	        final Environment environment) {
+		return !b.evaluate(model, simulator, names, environment);
 	}
 
 	@Override
@@ -66,7 +68,8 @@ public class LogicalNot extends BExpression {
 	}
 
 	@Override
-	public void prestep(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names) {
+	public void prestep(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
+	        final Environment environment) {
 
 	}
 

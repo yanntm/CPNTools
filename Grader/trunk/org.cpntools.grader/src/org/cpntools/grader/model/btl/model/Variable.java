@@ -11,15 +11,15 @@ import org.cpntools.grader.model.btl.Environment;
 /**
  * @author michael
  */
-public class Constant extends IExpression {
+public class Variable extends IExpression {
 	/**
 	 * @see java.lang.Object#hashCode()
 	 */
 	@Override
 	public int hashCode() {
-		final int prime = 31;
+		final int prime = 131;
 		int result = 1;
-		result = prime * result + value;
+		result = prime * result + (name == null ? 0 : name.hashCode());
 		return result;
 	}
 
@@ -30,35 +30,37 @@ public class Constant extends IExpression {
 	public boolean equals(final Object obj) {
 		if (this == obj) { return true; }
 		if (obj == null) { return false; }
-		if (!(obj instanceof Constant)) { return false; }
-		final Constant other = (Constant) obj;
-		if (value != other.value) { return false; }
+		if (!(obj instanceof Variable)) { return false; }
+		final Variable other = (Variable) obj;
+		if (name == null) {
+			if (other.name != null) { return false; }
+		} else if (!name.equals(other.name)) { return false; }
 		return true;
 	}
 
-	private final int value;
+	private final String name;
 
 	/**
-	 * @param value
+	 * @param name
 	 */
-	public Constant(final int value) {
-		this.value = value;
+	public Variable(final String name) {
+		this.name = name;
 
 	}
 
-	public int getValue() {
-		return value;
+	public String getName() {
+		return name;
 	}
 
 	@Override
 	public String toString() {
-		return "" + value;
+		return "<" + name + ">";
 	}
 
 	@Override
 	public int evaluate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
 	        final Environment environment) {
-		return value;
+		return Integer.parseInt(environment.get(name));
 	}
 
 	@Override

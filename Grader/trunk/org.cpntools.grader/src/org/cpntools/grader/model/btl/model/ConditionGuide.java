@@ -7,6 +7,7 @@ import org.cpntools.accesscpn.engine.highlevel.instance.Instance;
 import org.cpntools.accesscpn.model.PetriNet;
 import org.cpntools.accesscpn.model.Transition;
 import org.cpntools.grader.model.NameHelper;
+import org.cpntools.grader.model.btl.Environment;
 
 /**
  * @author michael
@@ -57,14 +58,14 @@ public class ConditionGuide implements Guide {
 	@Override
 	public Set<Instance<org.cpntools.accesscpn.model.Transition>> force(
 	        final Set<Instance<org.cpntools.accesscpn.model.Transition>> candidates, final PetriNet model,
-	        final HighLevelSimulator simulator, final NameHelper names) {
+	        final HighLevelSimulator simulator, final NameHelper names, final Environment environment) {
 		return candidates;
 	}
 
 	@Override
 	public Guide progress(final Instance<Transition> ti, final PetriNet model, final HighLevelSimulator simulator,
-	        final NameHelper names) throws Unconsumed {
-		final Condition newc = c.progress(ti, model, simulator, names);
+	        final NameHelper names, final Environment environment) throws Unconsumed {
+		final Condition newc = c.progress(ti, model, simulator, names, environment);
 		if (newc == Failure.INSTANCE) { return Failure.INSTANCE; }
 		if (newc == c) { return this; }
 		if (newc == null) { return null; }
@@ -72,8 +73,9 @@ public class ConditionGuide implements Guide {
 	}
 
 	@Override
-	public boolean canTerminate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names) {
-		return c.canTerminate(model, simulator, names);
+	public boolean canTerminate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
+	        final Environment environment) {
+		return c.canTerminate(model, simulator, names, environment);
 	}
 
 	@Override
@@ -82,8 +84,9 @@ public class ConditionGuide implements Guide {
 	}
 
 	@Override
-	public void prestep(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names) {
-		c.prestep(model, simulator, names);
+	public void prestep(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
+	        final Environment environment) {
+		c.prestep(model, simulator, names, environment);
 	}
 
 }

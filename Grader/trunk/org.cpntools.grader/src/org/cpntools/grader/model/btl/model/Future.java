@@ -7,6 +7,7 @@ import org.cpntools.accesscpn.engine.highlevel.instance.Instance;
 import org.cpntools.accesscpn.model.PetriNet;
 import org.cpntools.accesscpn.model.Transition;
 import org.cpntools.grader.model.NameHelper;
+import org.cpntools.grader.model.btl.Environment;
 
 /**
  * @author michael
@@ -36,7 +37,7 @@ public class Future implements Guide {
 	@Override
 	public Set<Instance<org.cpntools.accesscpn.model.Transition>> force(
 	        final Set<Instance<org.cpntools.accesscpn.model.Transition>> candidates, final PetriNet model,
-	        final HighLevelSimulator simulator, final NameHelper names) {
+	        final HighLevelSimulator simulator, final NameHelper names, final Environment environment) {
 		return candidates;
 	}
 
@@ -48,16 +49,17 @@ public class Future implements Guide {
 	 */
 	@Override
 	public Guide progress(final Instance<Transition> ti, final PetriNet model, final HighLevelSimulator simulator,
-	        final NameHelper names) throws Unconsumed {
-		final Guide newc = constraint.progress(ti, model, simulator, names);
+	        final NameHelper names, final Environment environment) throws Unconsumed {
+		final Guide newc = constraint.progress(ti, model, simulator, names, environment);
 		if (newc == Failure.INSTANCE) { return this; }
 		if (newc == constraint) { return this; }
 		return newc;
 	}
 
 	@Override
-	public boolean canTerminate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names) {
-		return constraint.canTerminate(model, simulator, names);
+	public boolean canTerminate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
+	        final Environment environment) {
+		return constraint.canTerminate(model, simulator, names, environment);
 	}
 
 	@Override
@@ -66,8 +68,9 @@ public class Future implements Guide {
 	}
 
 	@Override
-	public void prestep(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names) {
-		constraint.prestep(model, simulator, names);
+	public void prestep(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
+	        final Environment environment) {
+		constraint.prestep(model, simulator, names, environment);
 	}
 
 }

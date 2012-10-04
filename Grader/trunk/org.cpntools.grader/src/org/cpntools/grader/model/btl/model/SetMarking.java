@@ -8,6 +8,7 @@ import org.cpntools.accesscpn.engine.highlevel.instance.Instance;
 import org.cpntools.accesscpn.model.PetriNet;
 import org.cpntools.accesscpn.model.PlaceNode;
 import org.cpntools.grader.model.NameHelper;
+import org.cpntools.grader.model.btl.Environment;
 
 /**
  * @author michael
@@ -65,13 +66,14 @@ public class SetMarking implements Guide {
 	@Override
 	public Set<Instance<org.cpntools.accesscpn.model.Transition>> force(
 	        final Set<Instance<org.cpntools.accesscpn.model.Transition>> candidates, final PetriNet model,
-	        final HighLevelSimulator simulator, final NameHelper names) {
+	        final HighLevelSimulator simulator, final NameHelper names, final Environment environment) {
 		return candidates;
 	}
 
 	@Override
 	public Guide progress(final Instance<org.cpntools.accesscpn.model.Transition> ti, final PetriNet model,
-	        final HighLevelSimulator simulator, final NameHelper names) throws Unconsumed {
+	        final HighLevelSimulator simulator, final NameHelper names, final Environment environment)
+	        throws Unconsumed {
 		throw new Unconsumed();
 	}
 
@@ -80,7 +82,8 @@ public class SetMarking implements Guide {
 	}
 
 	@Override
-	public boolean canTerminate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names) {
+	public boolean canTerminate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
+	        final Environment environment) {
 		return true;
 	}
 
@@ -90,7 +93,8 @@ public class SetMarking implements Guide {
 	}
 
 	@Override
-	public void prestep(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names) {
+	public void prestep(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
+	        final Environment environment) {
 		try {
 			final Instance<PlaceNode> place = names.getPlaceInstance(name);
 			if (place != null) {
