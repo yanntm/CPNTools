@@ -108,8 +108,10 @@ public class BTLGrader extends AbstractGrader {
 		final Set<State> markings = new HashSet<State>();
 		final EnablingControl ec = (EnablingControl) EnablingControlAdapterFactory.getInstance().adapt(model,
 		        EnablingControl.class);
+		final DecisionTree<Instance<Transition>> decisionTree = new DecisionTree<Instance<Transition>>();
+		final Strategy<Instance<Transition>> strategy = new RandomStrategy<Instance<Transition>>();
 		for (int i = 0; i < repeats; i++) {
-			final Detail d = grade(model, simulator, names, allTransitionInstances, ec);
+			final Detail d = grade(model, simulator, names, allTransitionInstances, ec, decisionTree, strategy);
 			if (d != null) {
 				error++;
 				details.add(d);
@@ -166,36 +168,53 @@ public class BTLGrader extends AbstractGrader {
 				m.addDetail(d);
 			}
 		}
+		m.addDetail(new Detail("Coverage", decisionTree.toString()));
 		return m;
 	}
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	private Detail grade(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
-	        final List<Instance<Transition>> allTransitionInstances, final EnablingControl ec) {
+	        final List<Instance<Transition>> allTransitionInstances, final EnablingControl ec,
+	        final DecisionTree<Instance<Transition>> decisionTree, final Strategy<Instance<Transition>> strategy) {
 		try {
 			simulator.initialiseSimulationScheduler();
 			simulator.initialState();
 			Condition toSatisfy = getGuide();
 			final List<Binding> bindings = new ArrayList<Binding>();
+			Node<Instance<Transition>> node = decisionTree.getRoot();
 			for (int i = 0; maxSteps < 0 || i < maxSteps; i++) {
 				final Set<Instance<Transition>> allowed = new HashSet<Instance<Transition>>();
-				final List<Instance<? extends Transition>> enabled = getEnabledAndAllowed(model, simulator, names,
+				final List<Instance<Transition>> enabled = getEnabledAndAllowed(model, simulator, names,
 				        allTransitionInstances, ec, toSatisfy, allowed);
 				if (allowed.isEmpty()) {
-					if (toSatisfy.canTerminate(model, simulator, names)) { return null; }
+					if (toSatisfy.canTerminate(model, simulator, names, EmptyEnvironment.INSTANCE)) {
+						node.validate();
+						return null;
+					}
+					node.invalidate();
 					return new Detail("No Allowed Transtions for " + getName(), "Enabled Transitions:\n"
 					        + toString(enabled), "Executed Trace:\n" + toString(bindings), "Initial Formula:\n"
 					        + unparsed, "Parsed Formula:\n" + getGuide(), "Formula at error:\n" + toSatisfy,
 					        "Marking at error:\n" + simulator.getMarking(false));
 				}
-				final Binding binding = simulator.executeAndGet(new ArrayList<Instance<Transition>>(allowed));
+				for (final Instance<Transition> ti : enabled) {
+					decisionTree.addChild(node, ti);
+				}
+				final Binding binding = simulator.executeAndGet(strategy.getOne(decisionTree, node, enabled));
+				node = decisionTree.addChild(node, binding.getTransitionInstance());
 				bindings.add(binding);
-				toSatisfy = toSatisfy.progress(binding.getTransitionInstance(), model, simulator, names);
-				if (toSatisfy == Failure.INSTANCE) { return new Detail("Assertion Failed", "Enabled Transitions:\n"
-				        + toString(enabled), "Executed Trace:\n" + toString(bindings), "Initial Formula:\n" + unparsed,
-				        "Parsed Formula:\n" + getGuide(), "Formula at error:\n" + toSatisfy, "Marking at error:\n"
-				                + simulator.getMarking(false)); }
-				if (toSatisfy == null) { return null; // Nothing left to satisfy
+				toSatisfy = toSatisfy.progress(binding.getTransitionInstance(), model, simulator, names,
+				        EmptyEnvironment.INSTANCE);
+				if (toSatisfy == Failure.INSTANCE) {
+					node.invalidate();
+					return new Detail("Assertion Failed", "Enabled Transitions:\n" + toString(enabled),
+					        "Executed Trace:\n" + toString(bindings), "Initial Formula:\n" + unparsed,
+					        "Parsed Formula:\n" + getGuide(), "Formula at error:\n" + toSatisfy, "Marking at error:\n"
+					                + simulator.getMarking(false));
+				}
+				if (toSatisfy == null) {
+					node.validate();
+					return null; // Nothing left to satisfy
 				}
 			}
 			return new Detail("Simulation Not Terminating", "The simulation was running for " + maxSteps
@@ -208,23 +227,23 @@ public class BTLGrader extends AbstractGrader {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
-	public static List<Instance<? extends Transition>> getEnabledAndAllowed(final PetriNet model,
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	public static List<Instance<Transition>> getEnabledAndAllowed(final PetriNet model,
 	        final HighLevelSimulator simulator, final NameHelper names,
 	        final List<Instance<Transition>> allTransitionInstances, final EnablingControl ec,
 	        final Condition toSatisfy, final Set<Instance<Transition>> allowed) throws IOException {
 		if (toSatisfy != null) {
-			toSatisfy.prestep(model, simulator, names);
+			toSatisfy.prestep(model, simulator, names, EmptyEnvironment.INSTANCE);
 		}
-		List<Instance<? extends Transition>> enabled = getEnabled(simulator, allTransitionInstances, ec);
+		List<Instance<Transition>> enabled = getEnabled(simulator, allTransitionInstances, ec);
 		while (enabled.isEmpty() && simulator.increaseTime() == null) {
-			enabled = simulator.isEnabled(allTransitionInstances);
+			enabled = (List) simulator.isEnabled(allTransitionInstances);
 		}
-		allowed.addAll(toSatisfy.force(new HashSet(enabled), model, simulator, names));
+		allowed.addAll(toSatisfy.force(new HashSet(enabled), model, simulator, names, EmptyEnvironment.INSTANCE));
 		boolean changed = true;
 		while (allowed.isEmpty() && changed) {
 			changed = false;
-			final Set<Instance<? extends Transition>> oldEnabled = new HashSet<Instance<? extends Transition>>();
+			final Set<Instance<Transition>> oldEnabled = new HashSet<Instance<Transition>>();
 			oldEnabled.addAll(enabled);
 			for (final Instance<Transition> ti : allTransitionInstances) {
 				if (enabled.contains(ti)) {
@@ -238,13 +257,13 @@ public class BTLGrader extends AbstractGrader {
 				ec.disable((Instance<Transition>) ti);
 			}
 			simulator.initialiseSimulationScheduler();
-			enabled = simulator.isEnabled(allTransitionInstances);
+			enabled = (List) simulator.isEnabled(allTransitionInstances);
 			while (enabled.isEmpty() && simulator.increaseTime() == null) {
 				changed = true;
-				enabled = simulator.isEnabled(allTransitionInstances);
+				enabled = (List) simulator.isEnabled(allTransitionInstances);
 			}
 			allowed.clear();
-			allowed.addAll(toSatisfy.force(new HashSet(enabled), model, simulator, names));
+			allowed.addAll(toSatisfy.force(new HashSet(enabled), model, simulator, names, EmptyEnvironment.INSTANCE));
 			oldEnabled.addAll(enabled);
 			enabled.clear();
 			enabled.addAll(oldEnabled);
@@ -252,14 +271,15 @@ public class BTLGrader extends AbstractGrader {
 		return enabled;
 	}
 
-	public static List<Instance<? extends Transition>> getEnabled(final HighLevelSimulator simulator,
+	@SuppressWarnings("unchecked")
+	public static List<Instance<Transition>> getEnabled(final HighLevelSimulator simulator,
 	        final List<Instance<Transition>> allTransitionInstances, final EnablingControl ec) throws IOException {
 		for (final Instance<Transition> ti : allTransitionInstances) {
 			ec.enable(ti);
 		}
 		simulator.initialiseSimulationScheduler();
 		final List<Instance<? extends Transition>> enabled = simulator.isEnabled(allTransitionInstances);
-		return enabled;
+		return (List) enabled;
 	}
 
 	private String toString(final Collection<?> stuff) {

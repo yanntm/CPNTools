@@ -8,6 +8,7 @@ import org.cpntools.accesscpn.engine.highlevel.instance.Instance;
 import org.cpntools.accesscpn.model.PetriNet;
 import org.cpntools.accesscpn.model.Transition;
 import org.cpntools.grader.model.NameHelper;
+import org.cpntools.grader.model.btl.Environment;
 
 /**
  * @author michael
@@ -43,35 +44,35 @@ public class Always implements Guide {
 	@Override
 	public Set<Instance<org.cpntools.accesscpn.model.Transition>> force(
 	        final Set<Instance<org.cpntools.accesscpn.model.Transition>> candidates, final PetriNet model,
-	        final HighLevelSimulator simulator, final NameHelper names) {
+	        final HighLevelSimulator simulator, final NameHelper names, final Environment environment) {
 		boolean B = conjunction;
 		if (b != null) {
-			B = b.evaluate(model, simulator, names);
+			B = b.evaluate(model, simulator, names, environment);
 		}
 		if (conjunction) {
-			if (B) { return s == null ? candidates : s.force(candidates, model, simulator, names); }
+			if (B) { return s == null ? candidates : s.force(candidates, model, simulator, names, environment); }
 			return Collections.emptySet();
 		} else {
 			if (B) { return candidates; }
 			if (s == null) {
 				return Collections.emptySet();
 			} else {
-				return s.force(candidates, model, simulator, names);
+				return s.force(candidates, model, simulator, names, environment);
 			}
 		}
 	}
 
 	@Override
 	public Guide progress(final Instance<Transition> ti, final PetriNet model, final HighLevelSimulator simulator,
-	        final NameHelper names) throws Unconsumed {
+	        final NameHelper names, final Environment environment) throws Unconsumed {
 		Simple newb = b;
 		if (b != null) {
-			newb = b.progress(ti, model, simulator, names);
+			newb = b.progress(ti, model, simulator, names, environment);
 		}
 		if (newb == null && !conjunction) { return this; }
 		Simple news = s;
 		if (s != null) {
-			news = s.progress(ti, model, simulator, names);
+			news = s.progress(ti, model, simulator, names, environment);
 		}
 		if (news == null) { return this; }
 		if (news == Failure.INSTANCE) { return Failure.INSTANCE; }
@@ -80,7 +81,8 @@ public class Always implements Guide {
 	}
 
 	@Override
-	public boolean canTerminate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names) {
+	public boolean canTerminate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
+	        final Environment environment) {
 		return true;
 	}
 
@@ -90,8 +92,9 @@ public class Always implements Guide {
 	}
 
 	@Override
-	public void prestep(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names) {
-		s.prestep(model, simulator, names);
+	public void prestep(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
+	        final Environment environment) {
+		s.prestep(model, simulator, names, environment);
 	}
 
 	public BExpression getB() {

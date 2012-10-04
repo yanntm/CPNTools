@@ -6,6 +6,7 @@ import java.util.Set;
 import org.cpntools.accesscpn.engine.highlevel.HighLevelSimulator;
 import org.cpntools.accesscpn.model.PetriNet;
 import org.cpntools.grader.model.NameHelper;
+import org.cpntools.grader.model.btl.Environment;
 
 /**
  * @author michael
@@ -25,7 +26,8 @@ public class Time extends IExpression {
 	}
 
 	@Override
-	public int evaluate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names) {
+	public int evaluate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
+	        final Environment environment) {
 		try {
 			final String time = simulator.getTime();
 			try {
@@ -48,7 +50,8 @@ public class Time extends IExpression {
 	}
 
 	@Override
-	public void prestep(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names) {
+	public void prestep(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
+	        final Environment environment) {
 
 	}
 }

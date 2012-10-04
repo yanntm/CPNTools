@@ -6,6 +6,7 @@ import java.util.Set;
 import org.cpntools.accesscpn.engine.highlevel.HighLevelSimulator;
 import org.cpntools.accesscpn.model.PetriNet;
 import org.cpntools.grader.model.NameHelper;
+import org.cpntools.grader.model.btl.Environment;
 
 /**
  * @author michael
@@ -68,8 +69,9 @@ public class Minus extends IExpression {
 	}
 
 	@Override
-	public int evaluate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names) {
-		return e1.evaluate(model, simulator, names) - e2.evaluate(model, simulator, names);
+	public int evaluate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
+	        final Environment environment) {
+		return e1.evaluate(model, simulator, names, environment) - e2.evaluate(model, simulator, names, environment);
 	}
 
 	@Override
@@ -81,9 +83,10 @@ public class Minus extends IExpression {
 	}
 
 	@Override
-	public void prestep(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names) {
-		e1.prestep(model, simulator, names);
-		e2.prestep(model, simulator, names);
+	public void prestep(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
+	        final Environment environment) {
+		e1.prestep(model, simulator, names, environment);
+		e2.prestep(model, simulator, names, environment);
 	}
 
 }

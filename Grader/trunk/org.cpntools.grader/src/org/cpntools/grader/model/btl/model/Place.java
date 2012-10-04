@@ -6,6 +6,7 @@ import java.util.Set;
 import org.cpntools.accesscpn.engine.highlevel.HighLevelSimulator;
 import org.cpntools.accesscpn.model.PetriNet;
 import org.cpntools.grader.model.NameHelper;
+import org.cpntools.grader.model.btl.Environment;
 
 /**
  * @author michael
@@ -57,7 +58,8 @@ public class Place extends IExpression {
 	}
 
 	@Override
-	public int evaluate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names) {
+	public int evaluate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
+	        final Environment environment) {
 		try {
 			return simulator.getTokens(names.getPlaceInstance(name));
 		} catch (final Exception e) {
@@ -71,7 +73,8 @@ public class Place extends IExpression {
 	}
 
 	@Override
-	public void prestep(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names) {
+	public void prestep(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
+	        final Environment environment) {
 
 	}
 

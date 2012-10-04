@@ -2,6 +2,7 @@ package org.cpntools.grader.gui;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -12,7 +13,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -25,14 +25,18 @@ import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
+import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
+import javax.swing.JTextField;
 import javax.swing.table.DefaultTableModel;
 import javax.xml.parsers.ParserConfigurationException;
 
@@ -49,6 +53,13 @@ import org.cpntools.accesscpn.model.importer.NetCheckException;
 import org.cpntools.grader.model.NameHelper;
 import org.cpntools.grader.model.StudentID;
 import org.cpntools.grader.model.btl.BTLGrader;
+import org.cpntools.grader.model.btl.CoverageMaximizer;
+import org.cpntools.grader.model.btl.DecisionTree;
+import org.cpntools.grader.model.btl.EmptyEnvironment;
+import org.cpntools.grader.model.btl.NewTransitionStrategy;
+import org.cpntools.grader.model.btl.Node;
+import org.cpntools.grader.model.btl.RandomStrategy;
+import org.cpntools.grader.model.btl.Strategy;
 import org.cpntools.grader.model.btl.model.Failure;
 import org.cpntools.grader.model.btl.model.Guide;
 import org.cpntools.grader.model.btl.model.True;
@@ -62,6 +73,7 @@ public class BTLTester extends JDialog {
 	private static final Color NO = new Color(255, 151, 148);
 	private static final Color YES = new Color(144, 255, 176);
 	private static final Color MAYBE = new Color(247, 255, 119);
+	DecisionTree<Instance<Transition>> decisionTree = new DecisionTree<Instance<Transition>>();
 
 	public static class Snapshot {
 
@@ -98,12 +110,15 @@ public class BTLTester extends JDialog {
 
 	}
 
+	private int runs = 0;
+	private final JLabel runsLabel;
 	private final PetriNet petriNet;
 	private final JTextArea marking;
 	private HighLevelSimulator simulator;
 	Guide current = null;
 	private final JTextArea currentFormula;
 	private final JTextArea parsedFormula;
+	private final JComboBox strategy;
 	final JTextArea initFormula;
 	private final ModelInstance modelInstances;
 	private final List<Instance<Transition>> allTransitionInstances;
@@ -114,6 +129,7 @@ public class BTLTester extends JDialog {
 	private final DefaultTableModel trace;
 	private final DefaultTableModel mapping;
 	private Guide init;
+	private final JTextArea decision;
 
 	public BTLTester(final File selectedFile) throws FileNotFoundException, NetCheckException, SAXException,
 	        IOException, ParserConfigurationException {
@@ -136,11 +152,31 @@ public class BTLTester extends JDialog {
 		final JPanel buttons = new JPanel();
 		buttons.setLayout(new FlowLayout(FlowLayout.CENTER));
 		add(buttons, BorderLayout.SOUTH);
+		runsLabel = new JLabel("Runs: 0");
+		buttons.add(runsLabel);
+		strategy = new JComboBox(new Object[] { new RandomStrategy<Instance<Transition>>(),
+		        new CoverageMaximizer<Instance<Transition>>(), new NewTransitionStrategy<Instance<Transition>>() });
+		buttons.add(strategy);
+		final JButton resetButton = new JButton("Reset");
+		resetButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(final ActionEvent arg0) {
+				decisionTree = new DecisionTree<Instance<Transition>>();
+				runs = 0;
+				refreshDecision();
+			}
+		});
+		buttons.add(resetButton);
+		final JTextField runsField = new JTextField("1");
+		runsField.setMinimumSize(new Dimension(40, 10));
+		buttons.add(runsField);
 		final JButton checkButton = new JButton("Check");
 		checkButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(final ActionEvent arg0) {
-				check();
+				for (int i = Integer.parseInt(runsField.getText()); i > 0; i--) {
+					check();
+				}
 			}
 		});
 		checkButton.setEnabled(false);
@@ -227,6 +263,11 @@ public class BTLTester extends JDialog {
 		currentScroller.setBorder(BorderFactory.createTitledBorder("Current Formula"));
 		currentFormula.setLineWrap(true);
 		formulae.add(currentScroller);
+		decision = new JTextArea(3, 80);
+		final JScrollPane decisionScroller = new JScrollPane(decision);
+		decisionScroller.setBorder(BorderFactory.createTitledBorder("Descision Tree"));
+		decision.setLineWrap(true);
+		formulae.add(decisionScroller);
 
 		transitionList.addMouseListener(new MouseAdapter() {
 			@Override
@@ -307,8 +348,38 @@ public class BTLTester extends JDialog {
 		}
 	}
 
+	protected void refreshDecision() {
+		setColor(currentFormula, decisionTree.getSatisfactionProbability());
+		setColor(decision, decisionTree.getCoverage());
+		decision.setText(decisionTree.toString());
+		decision.setCaretPosition(0);
+		runsLabel.setText("Runs: " + runs);
+	}
+
+	private void setColor(final JComponent component, double p) {
+		if (p < 0.5) {
+			component.setBackground(new Color((int) ((1 - 2 * p) * NO.getRed() + 2 * p * MAYBE.getRed()),
+			        (int) ((1 - 2 * p) * NO.getGreen() + 2 * p * MAYBE.getGreen()),
+			        (int) ((1 - 2 * p) * NO.getBlue() + 2 * p * MAYBE.getBlue())));
+		} else {
+			p = p - 0.5;
+			component.setBackground(new Color((int) ((1 - 2 * p) * MAYBE.getRed() + 2 * p * YES.getRed()),
+			        (int) ((1 - 2 * p) * MAYBE.getGreen() + 2 * p * YES.getGreen()), (int) ((1 - 2 * p)
+			                * MAYBE.getBlue() + 2 * p * YES.getBlue())));
+
+		}
+
+	}
+
 	protected void check() {
 		initial();
+		runs++;
+
+		@SuppressWarnings({ "unchecked", "hiding" })
+		final Strategy<Instance<Transition>> strategy = (Strategy<Instance<Transition>>) this.strategy
+		        .getSelectedItem();
+		Node<Instance<Transition>> node = decisionTree.getRoot();
+
 		currentFormula.setBackground(MAYBE);
 		for (int i = 0; i < 25000 && current != null; i++) {
 			try {
@@ -316,20 +387,29 @@ public class BTLTester extends JDialog {
 				BTLGrader.getEnabledAndAllowed(petriNet, simulator, nameHelper, allTransitionInstances, ec, current,
 				        allowed);
 				if (allowed.isEmpty()) {
-					if (current.canTerminate(petriNet, simulator, nameHelper)) {
-						currentFormula.setBackground(YES);
+					if (current.canTerminate(petriNet, simulator, nameHelper, EmptyEnvironment.INSTANCE)) {
+						node.validate();
 					} else {
-						currentFormula.setBackground(NO);
+						node.invalidate();
 					}
+					refreshDecision();
 					break;
 				} else {
-					final Binding binding = simulator.executeAndGet(new ArrayList<Instance<Transition>>(allowed));
-					current = current.progress(binding.getTransitionInstance(), petriNet, simulator, nameHelper);
+					for (final Instance<Transition> ti : allowed) {
+						decisionTree.addChild(node, ti);
+					}
+					final Binding binding = simulator.executeAndGet(strategy.getOne(decisionTree, node,
+					        new ArrayList<Instance<Transition>>(allowed)));
+					node = decisionTree.addChild(node, binding.getTransitionInstance());
+					current = current.progress(binding.getTransitionInstance(), petriNet, simulator, nameHelper,
+					        EmptyEnvironment.INSTANCE);
 					addToTrace(simulator.getTime(), binding, current);
 					if (current == Failure.INSTANCE) {
-						currentFormula.setBackground(NO);
+						node.invalidate();
+						refreshDecision();
 					} else if (current == null) {
-						currentFormula.setBackground(YES);
+						node.validate();
+						refreshDecision();
 					}
 				}
 			} catch (final Exception e) {
@@ -345,7 +425,8 @@ public class BTLTester extends JDialog {
 		try {
 			simulator.execute(be);
 			if (current != null) {
-				current = current.progress(be.getTransitionInstance(), petriNet, simulator, nameHelper);
+				current = current.progress(be.getTransitionInstance(), petriNet, simulator, nameHelper,
+				        EmptyEnvironment.INSTANCE);
 			}
 			addToTrace(simulator.getTime(), be, current);
 			refreshMarking();
@@ -367,13 +448,13 @@ public class BTLTester extends JDialog {
 	private void refreshEnabling() {
 		try {
 			final Set<Instance<Transition>> allowed = new HashSet<Instance<Transition>>();
-			List<Instance<? extends Transition>> enabled;
+			List<Instance<Transition>> enabled;
 			if (current != null && current != True.INSTANCE) {
 				enabled = BTLGrader.getEnabledAndAllowed(petriNet, simulator, nameHelper, allTransitionInstances, ec,
 				        current, allowed);
 			} else {
 				enabled = BTLGrader.getEnabled(simulator, allTransitionInstances, ec);
-				allowed.addAll((Collection<? extends Instance<Transition>>) enabled);
+				allowed.addAll(enabled);
 			}
 			final SortedMap<String, Instance<? extends Transition>> sortedNames = new TreeMap<String, Instance<? extends Transition>>();
 			for (final Instance<? extends Transition> ti : enabled) {

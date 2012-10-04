@@ -8,6 +8,7 @@ import org.cpntools.accesscpn.engine.highlevel.instance.Instance;
 import org.cpntools.accesscpn.model.PetriNet;
 import org.cpntools.accesscpn.model.Transition;
 import org.cpntools.grader.model.NameHelper;
+import org.cpntools.grader.model.btl.Environment;
 
 /**
  * @author michael
@@ -68,27 +69,27 @@ public class And implements Guide {
 	@Override
 	public Set<Instance<org.cpntools.accesscpn.model.Transition>> force(
 	        final Set<Instance<org.cpntools.accesscpn.model.Transition>> candidates, final PetriNet model,
-	        final HighLevelSimulator simulator, final NameHelper names) {
+	        final HighLevelSimulator simulator, final NameHelper names, final Environment environment) {
 		final HashSet<Instance<org.cpntools.accesscpn.model.Transition>> set = new HashSet<Instance<org.cpntools.accesscpn.model.Transition>>();
-		set.addAll(g1.force(candidates, model, simulator, names));
-		set.retainAll(g2.force(candidates, model, simulator, names));
+		set.addAll(g1.force(candidates, model, simulator, names, environment));
+		set.retainAll(g2.force(candidates, model, simulator, names, environment));
 		return set;
 	}
 
 	@Override
 	public Guide progress(final Instance<Transition> ti, final PetriNet model, final HighLevelSimulator simulator,
-	        final NameHelper names) throws Unconsumed {
+	        final NameHelper names, final Environment environment) throws Unconsumed {
 		Guide newg1;
 		boolean unconsumed = false;
 		try {
-			newg1 = g1.progress(ti, model, simulator, names);
+			newg1 = g1.progress(ti, model, simulator, names, environment);
 		} catch (final Unconsumed e) {
 			unconsumed = true;
 			newg1 = null;
 		}
 		Guide newg2;
 		try {
-			newg2 = g2.progress(ti, model, simulator, names);
+			newg2 = g2.progress(ti, model, simulator, names, environment);
 		} catch (final Unconsumed e) {
 			newg2 = null;
 			if (unconsumed) { throw e; }
@@ -102,8 +103,10 @@ public class And implements Guide {
 	}
 
 	@Override
-	public boolean canTerminate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names) {
-		return g1.canTerminate(model, simulator, names) && g2.canTerminate(model, simulator, names);
+	public boolean canTerminate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
+	        final Environment environment) {
+		return g1.canTerminate(model, simulator, names, environment)
+		        && g2.canTerminate(model, simulator, names, environment);
 	}
 
 	@Override
@@ -115,9 +118,10 @@ public class And implements Guide {
 	}
 
 	@Override
-	public void prestep(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names) {
-		g1.prestep(model, simulator, names);
-		g2.prestep(model, simulator, names);
+	public void prestep(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
+	        final Environment environment) {
+		g1.prestep(model, simulator, names, environment);
+		g2.prestep(model, simulator, names, environment);
 	}
 
 }

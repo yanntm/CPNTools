@@ -8,6 +8,7 @@ import org.cpntools.accesscpn.engine.highlevel.instance.Instance;
 import org.cpntools.accesscpn.model.PetriNet;
 import org.cpntools.accesscpn.model.Transition;
 import org.cpntools.grader.model.NameHelper;
+import org.cpntools.grader.model.btl.Environment;
 
 /**
  * @author michael
@@ -72,7 +73,7 @@ public class Guard implements Guide {
 	@Override
 	public Set<Instance<org.cpntools.accesscpn.model.Transition>> force(
 	        final Set<Instance<org.cpntools.accesscpn.model.Transition>> candidates, final PetriNet model,
-	        final HighLevelSimulator simulator, final NameHelper names) {
+	        final HighLevelSimulator simulator, final NameHelper names, final Environment environment) {
 		return candidates;
 	}
 
@@ -84,21 +85,23 @@ public class Guard implements Guide {
 	 */
 	@Override
 	public Guide progress(final Instance<Transition> ti, final PetriNet model, final HighLevelSimulator simulator,
-	        final NameHelper names) throws Unconsumed {
+	        final NameHelper names, final Environment environment) throws Unconsumed {
 		try {
-			final Guide newc = condition.progress(ti, model, simulator, names);
+			final Guide newc = condition.progress(ti, model, simulator, names, environment);
 			if (newc == null) { return constraint; }
 			if (newc == Failure.INSTANCE) { return null; }
 			if (newc == condition) { return this; }
 			return new Guard(newc, constraint);
 		} catch (final Exception e) {
-			return constraint.progress(ti, model, simulator, names);
+			return constraint.progress(ti, model, simulator, names, environment);
 		}
 	}
 
 	@Override
-	public boolean canTerminate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names) {
-		if (condition.canTerminate(model, simulator, names)) { return constraint.canTerminate(model, simulator, names); }
+	public boolean canTerminate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
+	        final Environment environment) {
+		if (condition.canTerminate(model, simulator, names, environment)) { return constraint.canTerminate(model,
+		        simulator, names, environment); }
 		return true;
 	}
 
@@ -111,8 +114,9 @@ public class Guard implements Guide {
 	}
 
 	@Override
-	public void prestep(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names) {
-		condition.prestep(model, simulator, names);
+	public void prestep(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
+	        final Environment environment) {
+		condition.prestep(model, simulator, names, environment);
 	}
 
 }

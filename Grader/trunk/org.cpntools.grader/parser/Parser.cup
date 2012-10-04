@@ -1,6 +1,8 @@
 package org.cpntools.grader.model.btl.parser;
 
 import org.cpntools.grader.model.btl.model.*;
+import java.util.HashMap;
+import java.util.Map;
 import java.io.IOException; 
 
 parser code {:
@@ -34,10 +36,11 @@ parser code {:
 
 /* ------------Declaration of Terminals and Non Terminals Section----------- */
 
-terminal LPAREN, RPAREN, LPAREN2, RPAREN2, LPAREN3, RPAREN3, BAR, NEXT, GUARD, STEP, GUARDSTEP, NOT, STAR, ALWAYS, TRUE, FALSE, FAILURE, MINUS, PLUS, AND, TIME, ASSIGN, ADD, LESS, GREATER, LEQ, GEQ, EQUAL, DOT, FINALLY, FINALLYGUARD;
+terminal LPAREN, RPAREN, LPAREN2, RPAREN2, LPAREN3, RPAREN3, BAR, NEXT, GUARD, STEP, GUARDSTEP, NOT, STAR, ALWAYS, TRUE, FALSE, FAILURE, MINUS, PLUS, AND, TIME, ASSIGN, ADD, LESS, GREATER, LEQ, GEQ, EQUAL, DOT, FINALLY, FINALLYGUARD, NEW, BIND, COMMA;
 
-terminal String ID;
+terminal String ID, VAR;
 terminal Integer NUMBER;
+non terminal Map<String, String> varlist;
 non terminal Guide guide;
 non terminal Guide parenstep;
 non terminal Condition condition;
@@ -59,6 +62,7 @@ precedence left STAR, ALWAYS;
 precedence left MINUS, PLUS;
 precedence left AND, BAR;
 precedence right NOT;
+precedence right NEW;
 precedence nonassoc TRUE;
 
 /* ----------------------------Grammar Section-------------------- */
@@ -111,8 +115,10 @@ precedence nonassoc TRUE;
 						{: RESULT = new And(g1, new Guard(g1, new Future(g2))); :}
 					| guide:g1 AND guide:g2
 						{: RESULT = new And(g1, g2); :}
-					| guide:g1 BAR guide:g2
-						{: RESULT = new Or(g1, g2); :} 
+					| NEW ID:tname LPAREN2 varlist:vars RPAREN2 LPAREN guide:g RPAREN
+						{: RESULT = new Binder(tname, vars, g); :} 
+					| BIND LPAREN2 varlist:vars RPAREN2 LPAREN guide:g RPAREN
+						{: RESULT = new Bind(vars, g); :} 
 					| guide:g1 FINALLYGUARD LPAREN3 condition:c RPAREN3
 						{: RESULT = new Finally(g1, c); :}
 					| guide:g1 FINALLY LPAREN3 condition:c RPAREN3
@@ -141,6 +147,12 @@ precedence nonassoc TRUE;
     					{: RESULT = e; :}
     				;
     				
+    varlist ::=		  ID:n EQUAL ID:v
+    					{: Map<String, String> vs = new HashMap<String, String>(); vs.put(n, v); RESULT = vs; :}
+    				| ID:n EQUAL ID:v COMMA varlist:vs
+    					{: RESULT = vs; vs.put(n, v); :}
+    				;
+    				
     bexpression	::=	  iexpression:e1 LESS iexpression:e2
     					{: RESULT = new Less(e1, e2); :}
     				| iexpression:e1 LEQ iexpression:e2
@@ -163,6 +175,8 @@ precedence nonassoc TRUE;
     				
     iexpression	::=	  BAR name:n BAR
     					{: RESULT = new Place(n); :}
+    				| VAR:v
+    					{: RESULT = new Variable(v); :}
     				| iexpression:e1 PLUS iexpression:e2
     					{: RESULT = new Plus(e1, e2); :}
     				| iexpression:e1 MINUS iexpression:e2
@@ -177,11 +191,13 @@ precedence nonassoc TRUE;
     					{: RESULT = e; :}
     				;
     				
-    simple 		::=	
+    simple 		::=
     				  name:n
     					{: RESULT = new Transition(n); :}
     				| name:n LPAREN2 RPAREN2
     					{: RESULT = new Transition(n); :}
+    				| name:n LPAREN2 varlist:v RPAREN2
+    					{: RESULT = new Binding(n, v); :}
     				| TRUE
     					{: RESULT = True.INSTANCE; :}
     				| FALSE

@@ -7,6 +7,7 @@ import org.cpntools.accesscpn.engine.highlevel.instance.Instance;
 import org.cpntools.accesscpn.model.PetriNet;
 import org.cpntools.accesscpn.model.Transition;
 import org.cpntools.grader.model.NameHelper;
+import org.cpntools.grader.model.btl.Environment;
 
 /**
  * @author michael
@@ -64,15 +65,16 @@ public class Times implements Guide {
 	@Override
 	public Set<Instance<org.cpntools.accesscpn.model.Transition>> force(
 	        final Set<Instance<org.cpntools.accesscpn.model.Transition>> candidates, final PetriNet model,
-	        final HighLevelSimulator simulator, final NameHelper names) {
-		return g.force(candidates, model, simulator, names);
+	        final HighLevelSimulator simulator, final NameHelper names, final Environment environment) {
+		return g.force(candidates, model, simulator, names, environment);
 	}
 
 	@Override
 	public Guide progress(final Instance<Transition> ti, final PetriNet model, final HighLevelSimulator simulator,
-	        final NameHelper names) throws Unconsumed {
+	        final NameHelper names, final Environment environment) throws Unconsumed {
 		Guide newg;
-		newg = g.progress(ti, model, simulator, names); // We propagate because is is not consumed once, it won't be
+		newg = g.progress(ti, model, simulator, names, environment); // We propagate because is is not consumed once, it
+// won't be
 // later
 		if (g == newg) { return this; }
 		if (newg == Failure.INSTANCE) { return Failure.INSTANCE; }
@@ -85,9 +87,10 @@ public class Times implements Guide {
 	}
 
 	@Override
-	public boolean canTerminate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names) {
+	public boolean canTerminate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
+	        final Environment environment) {
 		if (count == 0) { return true; }
-		return g.canTerminate(model, simulator, names);
+		return g.canTerminate(model, simulator, names, environment);
 	}
 
 	@Override
@@ -96,7 +99,8 @@ public class Times implements Guide {
 	}
 
 	@Override
-	public void prestep(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names) {
-		g.prestep(model, simulator, names);
+	public void prestep(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
+	        final Environment environment) {
+		g.prestep(model, simulator, names, environment);
 	}
 }
