@@ -713,8 +713,7 @@ CPNet: Highlightable
      host: ^Text;
      port: @integer;
      bindingDialogToReset: ^BindingDialog; (*Make more general if needed*);
-     ML: @MLCom 
-       (# dispatch::
+     MLUpdateMarkingAndStep: MLDispatch
             (# tlist: ^TransitionList;
                plist: ^PlaceList;
                tag: @integer;
@@ -768,12 +767,73 @@ CPNet: Highlightable
                     #)
                for);
                
-               &MLBis[] -> reply[];
-               5 -> reply.opcode;
                1 -> reply.putInt;
                resp / 1000 -> d;
                d -> sleep;
-            #);
+		   #);
+     MLExtensionHandler: MLDispatch (#
+     do 
+        bis.reset;
+	  bis.getInt; (* Command = 10000 *)
+        (if bis.getInt
+	    // 101 then
+	       (# extId: @integer;
+		    extName: ^text;
+		    noOptions: @integer;
+		    extensionNode: ^OptionList;
+		    prefix: @text;
+		    tag: ^text;
+		    theType: @integer;
+		    theOName: ^text;
+		    theOption: ^Option;
+		 do 
+		    bis.getInt -> extId;
+		    bis.getString -> extName[];
+		    bis.getInt -> noOptions;
+		    'extensions.' -> prefix.puttext;
+		    extId -> prefix.putint;
+		    '.options.' -> prefix.puttext;
+		    (extId, extName[], noOptions > 0) -> registerExtensionOptions -> extensionNode[];
+		    (for noOptions repeat
+			    &text[] -> tag[];
+			    prefix[] -> tag.puttext;
+			    bis.getInt -> theType;
+			    bis.getString -> theOName[];
+			    bis.getString -> tag.puttext;
+			    (if theType
+			    // 0 then
+			       &BooleanOption (# dname:: (# do theOName[] -> value[]; #); #)[] -> theOption[];
+				 &FalseObject[] -> theOption.value;
+			    // 1 then
+			       &IntegerOption (# dname:: (# do theOName[] -> value[]; #); #)[] -> theOption[];
+                         &IntegerObject[] -> theOption.value;
+			    // 2 then
+			       &TextOption (# dname:: (# do theOName[] -> value[]; #); #)[] -> theOption[];
+			       &Text[] -> theOption.value;
+			    if);
+			    tag[] -> theOption.name;
+			    theOption.init;
+			    theOption[] -> extensionNode.add;
+		    for);
+		 #);
+	       1 -> reply.putInt;
+	    else
+	       -1 -> reply.putInt;
+        if);
+     #);
+
+     registerExtensionOptions: (#
+         id: @integer;
+	   extensionName: ^text;
+	   addOptionCateogry: @boolean;
+	   optionCategory: ^OptionList;
+     enter (id, extensionName[], addOptionCateogry)
+     <<SLOT CPNetRegisterExtensionOptions: DoPart>>
+     exit optionCategory[]
+     #);
+
+     ML: @MLCom 
+     (# 
           abortMultiFaseCommands::
             (# 
             do
@@ -783,7 +843,11 @@ CPNet: Highlightable
                    if);
                    bindingDialogToReset.clear;
                if);
-            #);          
+		   #);          
+		   init:: (#
+			   do (1, &MLUpdateMarkingAndStep[]) -> Dispatcher.register;
+			      (10000, &MLExtensionHandler[]) -> Dispatcher.register;
+			   #);
           daemon: @process;
           CommandType::CPNMLCommand;
           onError:: (# <<SLOT mlOnError:dopart>> #);
@@ -962,6 +1026,9 @@ CPNet: Highlightable
        exit theName[]
        #);
      mlInitialized: @boolean;
+     enableExtensions: (#
+     <<SLOT CPNetenableExtensions:DoPart>>
+     #);
      initML: 
        (# host: ^Text;
           port: @Integer;
@@ -974,7 +1041,7 @@ CPNet: Highlightable
           isRealTimeStamp: @boolean;
        enter (host[], port, user[], password[], path[], image[], isRealTimeStamp, localsim)
        <<SLOT mlCPNetInitML:doPart>>
-       #);
+	 #);
      
      GetEnabledTransitionInstances: CPNMLCommand
        (# tlist: ^TransitionList;
@@ -1238,6 +1305,7 @@ CPNPage: Highlightable
        <<SLOT CPNPageGetSubpagesHalo:DoPart>>
        exit halo[]          
        #);
+     isCanvas: (# canvas: @boolean; <<SLOT CPNPageisCanvas:DoPart>> exit canvas #);
      toString:
        (# str: ^Text;
        <<SLOT CPNPageToString:doPart>>
@@ -1696,7 +1764,8 @@ CPNPage: Highlightable
      
      init::
        (# theNet: ^CPNet;
-       enter theNet[]
+	    canvas: @boolean;
+       enter (theNet[], canvas)
        <<SLOT CPNPageinit:doPart>> 
        #);
      

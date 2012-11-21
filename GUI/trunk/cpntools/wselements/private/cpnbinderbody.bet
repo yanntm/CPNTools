@@ -101,7 +101,14 @@ do (# processHighlightable:
 do &SimulationLayer[] -> simlayer[];
    simlayer.init;
 
-   ((patternSize -> &SquarePattern).init -> &PatternLayer).init -> thePatternLayer[];
+   (if canvas then
+	   ((1.0, 0.80, 0.60) -> Color -> (patternSize -> &SquarePattern).init -> &PatternLayer).init -> thePatternLayer[];
+	    (1.0, 1.00, 0.80) -> Color -> theSheetColor[];
+   else
+	   (lightBlueish[] -> (patternSize -> &SquarePattern).init -> &PatternLayer).init -> thePatternLayer[];
+	   (0.93, 0.93, 0.93) -> Color -> theSheetColor[];
+   if);
+
    &SheetLayer[] -> guidelinelayer[];
    guidelinelayer.init;
    true  -> simlayer.clipping;
@@ -114,7 +121,7 @@ do &SimulationLayer[] -> simlayer[];
    thePatternLayer[] -> add;
    thePatternLayer[] -> layers.sendToBack;          
    errorlayer[] -> layers.bringToFront;
-   (0.93, 0.93, 0.93) -> Color -> theSheetColor[];
+   canvas -> topTab.init;
    
 -- CPNSheetShow:doPart --
 do (if true

@@ -1534,7 +1534,7 @@ do (# theCPNPageClipping: ^CPNPageClipping;
    do &CPNPageClipping[] -> theCPNPageClipping[];
       &CPNPage[] -> theSubpage[];
       theNameOfSubpage.copy -> theSubpage.theName[];            
-      (theGroup.getCPNPage).net[] -> theSubpage.init;
+      ((theGroup.getCPNPage).net[], false) -> theSubpage.init;
       theSubpage[] -> theCPNPageClipping.init;
       &SetSubpageCommand[] -> theSetSubpageCommand[];
       theSubTransition[] -> theSetSubpageCommand.prepare;

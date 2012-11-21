@@ -948,7 +948,26 @@ CpnWorkSpace
 	     '  Image path' -> imageOption.name;
 	     getDefaultImage -> imageOption.value;
 	     '  Image path' -> imageOption.setDefaultID;
-    	     imageOption[] -> imageOptions.add;
+	     imageOption[] -> imageOptions.add;
+
+	     ('extensions', 'extensions') -> imageOptions.setAddOptionWithDefault
+             (# OptionType::BooleanOption
+		  (# dname:: (# do 'Extensions' -> value[]; #); 
+                  #); 
+             #);
+
+	     ('exthost', 'exthost') -> imageOptions.setAddOptionWithDefault
+	       (# OptionType::TextOption
+		  (# dname:: (# do '  Host' -> value[]; #); 
+                  #); 
+             #);
+
+	     ('extport', 'extport') -> imageOptions.setAddOptionWithDefault
+             (# OptionType::IntegerOption
+		  (# dname:: (# do '  Port' -> value[]; #); 
+                  #); 
+             #);
+	
 	  #);
         
         

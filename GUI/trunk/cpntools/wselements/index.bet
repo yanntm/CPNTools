@@ -265,7 +265,8 @@ CPNIndex: Index
           step: @StepNode;
           monitors: @MonitorBlockNode;
           globals: ^GlobalBoxNode;
-          history: @HistoryNode;
+	    history: @HistoryNode;
+	    options: @OptionListNode;
           
           dragable:: (# do false -> value; #);
           
@@ -1406,10 +1407,20 @@ CPNIndex: Index
        #);
      OptionListNode: OptionNode
        (# OptionType:: OptionListOption;
-          buildOptions: (# <<SLOT OptionListNodeBuildOptions:DoPart>> #);
-          init::<
+	    buildOptions: (# <<SLOT OptionListNodeBuildOptions:DoPart>> #);
+	    addOption: (# current: ^Option; doLayout: @boolean;
+		    enter (current[], doLayout)
+		    <<SLOT OptionListNodeAddOption:DoPart>>
+		    #);
+	    Handler: @Element (#
+	    onAdded::< (#
+		    do (source[], true) -> addOption;
+		    #);
+	    #);
+	    init::<
             (#
-            do buildOptions;
+			do buildOptions;
+			handler[] -> content.theValue.attach;
             #);
        #);
      

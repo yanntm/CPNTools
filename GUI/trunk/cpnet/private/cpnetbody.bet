@@ -295,6 +295,9 @@ do check:
    timestampOption: ^BooleanOption;
    fairBEOption: ^BooleanOption;
    globalFairnessOption: ^BooleanOption;
+   extensionOptions: ^OptionList;
+   extensionOption: ^Option;
+   extensionsVisible: @boolean;
    currentTimeType: ^Text;
    simreportOptions: ^OptionList;
    repreportOptions: ^OptionList;
@@ -1513,7 +1516,7 @@ do (# deletedPage: ^CPNPage;
       theCPNPage.id[] -> private.theCPNPages.disassociate;
       theCPNPage[] -> removed;
       &CPNPage[] -> deletedPage[];
-      this(CPNet)[] -> deletedPage.init;
+      (this(CPNet)[], theCPNPage.isCanvas) -> deletedPage.init;
       theCPNPage.id.copy -> deletedPage.id[];
       theCPNPage.theName.copy -> deletedPage.theName[];
       deletedPage[] -> private.pagesToBeDeleted.append;      
@@ -1677,6 +1680,12 @@ do (if not private.preinited then
          op[] -> options.add;
          this(CPNet)[] -> op.attach;
                    
+         &OptionList[] -> private.extensionOptions[];
+         private.extensionOptions.init;
+         ('Extensions','extensions',private.extensionOptions[]) 
+           -> createNewOptionListOption -> private.extensionOption[];
+	   false -> private.extensionsVisible;
+         
          &OptionList[] -> performanceOptions[];
          performanceOptions.init;
          ('Performance report statistics','performanceReport',performanceOptions[]) 
@@ -1756,23 +1765,26 @@ do (# thePort: @integer;
       (if host[] <> NONE then
           host[] -> thehost[];
        else
-      'ariel.daimi.au.dk' -> thehost[];
+      'nowhere.cpntools.org' -> thehost[];
       if);
       (if port <> 0 then
           port -> thePort;
        else
-          3010 -> thePort;
+          2098 -> thePort;
       if);
       
       MLcheckerThread[] -> fork;
       &|System
       (# temp,temp2:^text;
      theCpnWorkSpace: ^CpnWorkspace;
-     remote: ^BooleanOption;
+     remote, extensions: ^BooleanOption;
      host, runtime, image: ^text;
      port: ^IntegerObject;
+     useExtension: @boolean;
       do 
          THIS(Workspace)[] -> theCpnWorkspace[]; 
+         'extensions' -> (theCpnWorkSpace.getGlobalOptions).find -> extensions[];
+	   extensions.theValue -> useExtension;
          'remote' -> (theCpnWorkSpace.getGlobalOptions).find -> remote[];
          (if remote.theValue then
          ('host' -> (theCpnWorkSpace.getGlobalOptions).find).theValue[] -> host[];
@@ -1785,13 +1797,16 @@ do (# thePort: @integer;
          'cpnsim/cpn.ML' -> relativeFile -> cygwinify -> temp[] -> temp2[];
              ('localhost', 2098, 'cpn2000', '', './',temp[],(this(CPNet).private.timestampOption.theValue), true) -> initML;
 		 if);
+	   (if useExtension then
+	      enableExtensions;
+         if);
+	   (private.fairBEOption.thevalue, private.globalFairnessOption.thevalue) -> setFairnessOption;
          (if this(CPNet).private.timestampOption.theValue then
             'real' -> this(CPNet).private.currentTimeType[];
          else
             'intinf' -> this(CPNet).private.currentTimeType[];
          if);
          MLcheckerThread.resume;
-	 (private.fairBEOption.thevalue, private.globalFairnessOption.thevalue) -> setFairnessOption;
       #)[] -> fork;
       
    #);
@@ -2501,6 +2516,12 @@ do (# setPlaceFusionSet:
           if);
           (if not thePlaceType.isDefaultInscription then
               (thePlaceType.getInscription).copy -> (thePlace.getPlaceType).setInscription;           
+              (theInitMark.getInscription).copy -> (thePlace.getInitMark).setInscription;           
+           else
+              (thePlace.getInitMark).delete;
+          if);
+          (if not thePlaceType.isDefaultInscription then
+              (thePlaceType.getInscription).copy -> (thePlace.getPlaceType).setInscription;           
            else
               (thePlace.getPlaceType).delete;
           if);
@@ -2588,3 +2609,30 @@ do (# reason: ^Text;
       else
          substring[] -> equal -> value;
      if);
+
+-- CPNetRegisterExtensionOptions: DoPart --
+do (# op: ^Option; key: @text; prefix: @text;
+do 
+   (if not private.extensionsVisible then
+       true -> private.extensionsVisible;
+	 private.extensionOption[] -> options.add;
+   if);
+   &BooleanOption (# dname:: (# do extensionName[] -> value[]; #); #)[] -> op[];
+   'extensions.' -> key.puttext;
+   id -> key.putint;
+   key[] -> prefix.puttext;
+   '.enable' -> key.puttext;
+   key[] -> op.name;
+   op.init;
+   &trueObject[] -> op.value;
+   op[] -> private.extensionOptions.add;
+   (if addOptionCateogry then
+       &OptionList[] -> optionCategory[];
+	 optionCategory.init;
+	 &OptionListOption (# dname:: (# do extensionName[] -> value[]; #); #)[] -> op[];
+	 prefix[] -> op.name;
+	 op.init;
+	 optionCategory[] -> op.theValue[];
+	 op[] -> options.add;
+   if);
+   #);

@@ -353,7 +353,24 @@ do setBusyCursor; (*** LOCK-INTERACTION ***)
    
    unsetBusyCursor; (*** UNLOCK-INTERACTION ***)
    'done initializing'->debugMLInit;
+
+
+-- CPNetenableExtensions: doPart --
+do
+(# host: ^text;
+   port: ^IntegerObject;
+   theCpnWorkSpace: ^CpnWorkspace;
+do 
+   THIS(Workspace)[] -> theCpnWorkspace[]; 
+   ('exthost' -> (theCpnWorkSpace.getGlobalOptions).find).theValue[] -> host[];
+   ('extport' -> (theCpnWorkSpace.getGlobalOptions).find).theValue[] -> port[];
+   (ML[], host[], port) -> MLSetExtensionLocation;
+   ML[] -> MLPingExtension;
+
    
+#);
+
+ 
 -- MLCompileDeclarationReceiveAborted:DoPart --
 do (checking, unchecked) -> declaration.changeStatus;
    

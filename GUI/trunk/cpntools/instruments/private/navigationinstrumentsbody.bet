@@ -71,7 +71,7 @@ do (# currentBinder, subpageBinder: ^Folder;
           theMoveTabFocusCommand[] -> theCommand[];
        else
           &CpnSheet[] -> subpageSheet[];
-          subpageSheet.init;
+          theSubpageInstance.thePage.isCanvas -> subpageSheet.init;
           theSubpageInstance[] -> subpageSheet.setContent;
           
           &TabClipping[] -> theClipping[];

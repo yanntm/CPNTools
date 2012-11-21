@@ -34,7 +34,7 @@ MLDispatch:
      reply: ^MLBIS;
   enter bis[]
   do &MLBIS[] -> reply[];
-     7 -> reply.opcode;
+     3 -> reply.opcode;
      INNER;
   exit reply[]
   #);

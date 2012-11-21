@@ -1232,7 +1232,7 @@ CPNetLoader: Loader
                     
                  do PageElementLoaderFactory.init;
                     (obj.id[],obj[]) -> registerObject;
-                    getNet -> obj.init;
+                    (getNet, false) -> obj.init;
                     getNet -> obj.net[];
                     elm.scanElements
                     (# theLoader: ^Loader;

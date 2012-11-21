@@ -25,11 +25,13 @@
 (************************************************************************)
 ORIGIN '../mldispatcher';
 INCLUDE '~beta/containers/dictionary';
+INCLUDE '../../../cpntools/debug';
 
 --- MLDispatcherAccept:DoPart ---
 do (# subOpcode: @Integer;
       intObj: ^integerObject;
-   do (if (bis.Ints >= 1) and (bis.opcode = -2) then
+   do 
+	(if (bis.Ints >= 1) and (bis.opcode = 3) then
           bis.GetInt->subOpcode;
           &integerObject[]->intObj[];
           subOpcode->intObj;

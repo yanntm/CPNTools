@@ -282,7 +282,51 @@ MLSetSimulationOptions: CPNMLCommand
      
   enter (pauseBefore, pauseAfter, pauseShow, reportTransitions, reportBindings, showMarkings, showEnablings, 
      untilStep[], addStep[], untilTime[], addTime[], pauseContinue[], reportFunction[], fair_be, global_fairness)
-  #);
+#);
+
+MLSetExtensionLocation: CPNMLCommand
+(# port: @integer;
+   host: ^text;
+	Send::
+       (# 
+       do (if debugging then 'mlcommands.bet: MLSetExtensionLocation: Set extension location'->debugDocument; if);
+          200->bis.PutInt; (* CPN misc command. *)
+	    8->bis.PutInt; (* Set extension location. *)
+	    port -> bis.putInt;
+	    host[] -> bis.putString;
+       #);
+     Receive::
+       (#
+		 do (if debugging then 'Set extension location (OK)'->debugDocument; if);
+       #);
+     
+     onError::
+       (#
+		 do (if debugging then 'Set extension location (FAILED)'->debugDocument; if);
+		    true->continue;
+       #);
+	 enter (host[], port)
+ #);
+
+MLPingExtension: CPNMLCommand
+(# 
+	Send::
+       (# 
+       do (if debugging then 'mlcommands.bet: MLPingExtension: Ping extension'->debugDocument; if);
+          10000->bis.PutInt; (* CPN extension command. *)
+	    301 ->bis.PutInt; (* Ping. *)
+       #);
+     Receive::
+       (#
+		 do (if debugging then 'Ping extension (OK)'->debugDocument; if);
+       #);
+     
+     onError::
+       (#
+		 do (if debugging then 'Ping extension (FAILED)'->debugDocument; if);
+		    true->continue;
+       #);
+ #);
 
 MLSetInitialState: CPNMLCommand
  (# Send::
