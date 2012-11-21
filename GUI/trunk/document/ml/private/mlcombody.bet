@@ -33,6 +33,7 @@ do host[]->Private.host[];
    path[]->Private.path[];
    image[]->Private.image[];
    10->Private.retries;
+   INNER;
    
 --- MLComStart:DoPart ---
 do (if not Private.initialized then
@@ -288,22 +289,8 @@ do private.njsmld.forceTimeout;
                 onBIS::
                   (# reply: ^MLBis;
                      
-                  do (if bis.opcode = 5 then
-                         bis.reset;
-                         (if bis.ints > 0 then
-                             (# tag: @integer;
-                             do bis.getInt -> tag;
-                                (if tag = 1 then
-                                    bis[] -> dispatch -> reply[];
-                                    (if reply[] <> NONE then
-                                        (waitForEver, reply[])->dmo.Put;
-                                    if);
-                                if);
-                             #);
-                         if);
-                     if);
-                     bis.reset;
-                     (if (bis[]->Dispatcher.Accept) then
+                  do 
+                     (if (bis.opcode = 3) and (bis[]->Dispatcher.Accept) then
                          bis.Reset;
                          bis[]->Dispatcher.Dispatch->reply[];
                          (if reply[] <> NONE then
@@ -314,7 +301,7 @@ do private.njsmld.forceTimeout;
                              bis.Reset;
                              (currentCommand[], bis[]) -> receiveCommand;
                              currentCommand.Private.lock.V;
-                             NONE->currentCommand[];
+				     NONE->currentCommand[];
                          if);
                      if);
                   #);

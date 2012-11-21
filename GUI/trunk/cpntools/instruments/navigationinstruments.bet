@@ -79,7 +79,7 @@ ShowSocketPage:
              theMoveTabFocusCommand[] -> theCommand[];
           else
              &CPNSheet[] -> theSocketSheet[];
-             theSocketSheet.init;         
+             theSocketInstance.thePage.isCanvas -> theSocketSheet.init;         
              theSocketInstance[] -> theSocketSheet.setContent;
              
              &TabClipping[] -> theClipping[];

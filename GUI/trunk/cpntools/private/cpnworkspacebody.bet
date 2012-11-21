@@ -182,10 +182,11 @@ do (# filename: ^Text;
                 inx -> arguments -> arg[];
                 (if true
                  // '-software' -> arg.equal then
-                    
+                 // '-safe' -> arg.equal then
                  // '-help' -> arg.equal then
                     'Usage: cpntools [OPTION]... [FILE]...' -> userinfo;
                     '  -software       use software rendering'->userinfo;
+                    '  -safe           use software rendering'->userinfo;
                     '  -help           display help'->userinfo;
                     stop;
                  else
@@ -301,6 +302,8 @@ do &XMLLibrary[] -> theXMLLibrary[];
    &defaultAuxEllipse.ellipseShape[] -> defaultAuxEllipse.theShape[];
    &Aux[] -> defaultAuxLabel[];
    &defaultAuxLabel.labelShape[] -> defaultAuxLabel.theShape[];
+   &Aux[] -> defaultAuxLine[];
+   &defaultAuxLine.lineShape[] -> defaultAuxLine.theShape[];
 
    60 -> defaultTransition.width;
    40 -> defaultTransition.height;
@@ -396,6 +399,8 @@ do &XMLLibrary[] -> theXMLLibrary[];
    'Solid' -> defaultAuxLabel.linetype[];
    '' -> defaultAuxLabel.fillpattern[];
    'Text' -> defaultAuxLabel.setText;
+
+   'black' -> colorTable.lookup -> defaultAuxLine.lineColor[];
 
    defaultPlaceType.defaultSnap;
    defaultInitMark.defaultSnap;

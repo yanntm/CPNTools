@@ -88,7 +88,7 @@ CreateAndOpenPage:
      net[]  -> theCreatePageCommand.prepare;
      theCreatePageCommand.apply;
      &CPNSheet[] -> newSheet[];
-     newSheet.init;
+     (theCreatePageCommand.getInstance).thePage.isCanvas -> newSheet.init;
      theCreatePageCommand.getInstance -> newSheet.setContent;
      
      &TabClipping[] -> theTabClipping[];

@@ -162,8 +162,14 @@ HighlightableSheet: StandardSheet
 CpnTab: SheetTab
   (# SheetType:: CpnSheet; 
 	  theSheet: ^CpnSheet;
-	  init:: (#
-		  do (0.93, 0.93, 0.93) -> color -> original[] -> tabColor;
+	  init:: (# canvas: @boolean;
+		  enter canvas
+		  do 
+		  (if canvas then
+			  (1.00, 1.00, 0.80) -> color -> original[] -> tabColor;
+		  else
+			  (0.93, 0.93, 0.93) -> color -> original[] -> tabColor;
+		  if);
 		  #);
      editable::
        (#
@@ -212,8 +218,10 @@ PatternLayer: Layer (#
 #);
 
 Pattern: ContentItem (# 
-   patternSize: @integer;
-   init::< (#
+	patternSize: @integer;
+	patternColor: ^Color;
+	init::< (#
+		enter patternColor[]
    do INNER;
    exit THIS(Pattern)[]
    #);
@@ -233,7 +241,7 @@ do
      (if pattern[] = NONE then
 	    &Composite[] -> pattern[];
 	    pattern.init;
-	    lightblueish[] -> &StrokeStyle -> ls[];
+	    patternColor[] -> &StrokeStyle -> ls[];
 	    100 -> w;
 	    100 -> h;
 	    w * patternSize -> oldw;
@@ -275,7 +283,7 @@ do
      (if pattern[] = NONE then
 	    &Composite[] -> pattern[];
 	    pattern.init;
-	    urinish[] -> &StrokeStyle -> ls[];
+	    patternColor[] -> &StrokeStyle -> ls[];
 	    100 -> w;
 	    100 -> h;
 	    w * patternSize -> oldw;
@@ -306,11 +314,15 @@ CpnSheet: HighlightableSheet
      patternSize: (# exit 42 #);
      guidelinelayer: ^Layer;
      FatherType:: Folder;
+     canvas: @boolean;
      shouldBeInMainLayer:: 
        (# 
        do not (source## <= guideline##) -> value;
        #);     
-     init:: (# <<SLOT CPNSheetInit:doPart>> #);
+	 init:: (# 
+		 enter canvas
+		 <<SLOT CPNSheetInit:doPart>>
+		 #);
      
      bounds::<
        (# 
@@ -591,7 +603,7 @@ TextSheet: HighlightableSheet
        (#
        do LeftJustify -> mainLayer.verticalAnchor;
           TopJustify -> mainLayer.horizontalAnchor;
-	    ((patternSize -> &LinePattern).init -> &PatternLayer).init -> thePatternLayer[];
+	    (urinish[] -> (patternSize -> &LinePattern).init -> &PatternLayer).init -> thePatternLayer[];
 	    thePatternLayer[] -> add;
 	    thePatternLayer[] -> layers.sendToBack;          
 	    (7, 20) -> pan;

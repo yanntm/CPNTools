@@ -322,7 +322,7 @@ do &onError[]->MLPrivate.currentErrorHandler[];
 	  (THIS(withIdle)[], 4) -> Private.ReceiveMem.ReadExact;
         (@@opcode, 4)->Private.ReceiveMem.CopyFromBuffer;
         opcode->ntohl->opcode;
-        (if (opcode = 9) or (opcode = 7) or (opcode = 6) or (opcode = 5) then
+        (if (opcode = 9) or (opcode = 7) or (opcode = 3) then
             (# bis: ^MLBIS;
                bools, ints, strings: @Integer;
                bool: @Integer;

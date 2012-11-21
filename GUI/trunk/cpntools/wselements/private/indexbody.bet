@@ -215,8 +215,11 @@ do private.instance.thePage.changed;
    private.instance.thePage.onTextUpdated; 
    
 --CPNIndexInstanceNodegetSheet: doPart--
-do &CpnSheet[] -> theSheet[];
-   theSheet.init;
+do (# theCPNSheet: ^CPNSheet;
+   do
+   &CpnSheet[] -> theCPNSheet[] -> theSheet[];
+   private.instance.thePage.isCanvas -> theCPNSheet.init;
+   #);
    private.instance[] -> theSheet.setContent;
    private.instance.thepage.showallerrormsg;
    private.instance.thepage[] -> (private.instance.thepage.getSelectedGroup).onSelect;
@@ -308,8 +311,9 @@ do page[] -> private.page[];
    
 --CPNIndexPageNodegetSheet: doPart--
 do (# fake: ^PageInstance;
-   do &CpnSheet[] -> theSheet[];
-      theSheet.init;
+      theCPNSheet: ^CPNSheet;
+   do &CpnSheet[] -> theCPNSheet[] -> theSheet[];
+      private.page.isCanvas -> theCPNSheet.init;
       &PageInstance[] -> fake[];
       private.page[] -> fake.thePage[];
       fake[] -> theSheet.setContent;
@@ -389,13 +393,13 @@ do net[] -> step.init;
    net[] -> time.init;
    time[] -> addIndexNode;
       
-   (# on: @OptionListNode;
+   (# 
       op: @OptionListOption (# dname:: (# do 'Options' -> value[]; #); #);
    do op.init;
       net.options[] -> op.theValue[];
-      op[] -> on.init;
-      on[] -> addIndexNode;
-      on.scanIndexNodes
+      op[] -> options.init;
+      options[] -> addIndexNode;
+      options.scanIndexNodes
       (# 
       do (if current## <= FolderPathOptionNode## then
              current[] -> qua
@@ -1133,14 +1137,20 @@ do THIS(TabNode)[] -> theTab.attach;
 do (if true
     // theTab.theSheet## <= MLCodeOptionSheet ## then
        &MLCodeOptionSheet[] -> theSheet[];
+	 theSheet.init;
     // theTab.theSheet## <= CPNSheet## then
-       &CpnSheet[] -> theSheet[];
+       (# theCPNSheet: ^CPNSheet;
+	 do 
+		 &CpnSheet[] -> theCPNSheet[] -> theSheet[];
+             (theTab.theSheet[] -> QUA(# as::CPNSheet #)).canvas -> theCPNSheet.init;
+	 #);
     // theTab.theSheet## <= ToolSheet## then
        &ToolSheet[] -> theSheet[];
+	 theSheet.init;
     // theTab.theSheet## <= TextSheet## then
        &TextSheet[] -> theSheet[];
+	 theSheet.init;
    if);
-   theSheet.init;
    theTab.theSheet.content[] -> theSheet.setContent;
    
 --TabNodeOnChanged:doPart--
@@ -1171,17 +1181,17 @@ do true -> value;
 -- FolderPathOptionNodeShowSheet:DoPart --
 do 
    
--- OptionListNodeBuildOptions:DoPart --
-do this(OptionListNode).theIndexNodes.clear;
-   (content.value).options.scan
-   (# rendered: @boolean;
+
+-- OptionListNodeAddOption: DoPart--
+do
+  (#
       onOption:
         (# OptionType:< Option;
            content: ^OptionType;
            OptionNodeType:< OptionNode;
            new: ^OptionNodeType;
         enter content[]
-        do (if content.showme AND NOT rendered then
+        do (if content.showme then
                &OptionNodeType[] -> new[];
                content[] -> new.init;
                new[] -> content.attach;
@@ -1247,8 +1257,18 @@ do this(OptionListNode).theIndexNodes.clear;
        // (current## <= OptionListOption##) then
           current[] -> onOptionListOption;
       if);
-      layout;
+	(if doLayout then
+		layout;
+	if);
+  #);
+
+-- OptionListNodeBuildOptions:DoPart --
+do this(OptionListNode).theIndexNodes.clear;
+   (content.value).options.scan
+   (# 
+   do (current[], false) -> addOption;
    #);
+   layout;
    
 -- CPNIndexMakeAbstractMonitorNodeTextEditor:DoPart --
 do scanIndexNodes

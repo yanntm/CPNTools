@@ -38,14 +38,7 @@ MLCom: Monitor
           INNER;
        exit value
        #);
-     dispatch:<
-       (# bis: ^MLBis;
-          reply: ^MLBis;
-       enter bis[]
-       do INNER;
-       exit reply[]
-       #);
-     Init:: 
+	 Init::<
        (# host: ^Text;
           port: @Integer;
           user: ^Text;
