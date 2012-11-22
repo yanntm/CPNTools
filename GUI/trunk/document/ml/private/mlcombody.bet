@@ -153,7 +153,6 @@ do (if Private.initialized then
    
 --- MLComExecute:DoPart ---
 do (if (command[] <> NONE) and (Private.initialized) then
-       private.lock.P;
        ExecuteScope: 
          (# 
          do 
@@ -166,7 +165,6 @@ do (if (command[] <> NONE) and (Private.initialized) then
             NONE->command.Private.errorHandler[];
             NONE->command.Private.currentMLCom[];
          #);
-       private.lock.V;
        (if clearDmoEval then
            EvaluateSequence:
              (# data: @MLData;

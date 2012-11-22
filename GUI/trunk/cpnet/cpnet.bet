@@ -783,6 +783,7 @@ CPNet: Highlightable
 		    extensionNode: ^OptionList;
 		    prefix: @text;
 		    tag: ^text;
+		    key: ^text;
 		    theType: @integer;
 		    theOName: ^text;
 		    theOption: ^Option;
@@ -799,16 +800,16 @@ CPNet: Highlightable
 			    prefix[] -> tag.puttext;
 			    bis.getInt -> theType;
 			    bis.getString -> theOName[];
-			    bis.getString -> tag.puttext;
+			    bis.getString -> key[] -> tag.puttext;
 			    (if theType
 			    // 0 then
-			       &BooleanOption (# dname:: (# do theOName[] -> value[]; #); #)[] -> theOption[];
+			       &BooleanOption (# theKey: @text; init::< (# do key[] -> theKey.puttext; #); lazyInit:: trueObject; dname:: (# do theOName[] -> value[]; #); onChanged:: (# do (ML[], extId, theKey[], theValue) -> MLSetExternalBooleanOption; #); #)[] -> theOption[];
 				 &FalseObject[] -> theOption.value;
 			    // 1 then
-			       &IntegerOption (# dname:: (# do theOName[] -> value[]; #); #)[] -> theOption[];
+			       &IntegerOption (# theKey: @text; init::< (# do key[] -> theKey.puttext; #); lazyInit:: trueObject; dname:: (# do theOName[] -> value[]; #); onChanged:: (# do (ML[], extId, theKey[], theValue) -> MLSetExternalIntegerOption; #); #)[] -> theOption[];
                          &IntegerObject[] -> theOption.value;
 			    // 2 then
-			       &TextOption (# dname:: (# do theOName[] -> value[]; #); #)[] -> theOption[];
+			       &TextOption (# theKey: @text; init::< (# do key[] -> theKey.puttext; #); lazyInit:: trueObject; dname:: (# do theOName[] -> value[]; #); onChanged:: (# do (ML[], extId, theKey[], theValue[]) -> MLSetExternalStringOption; #); #)[] -> theOption[];
 			       &Text[] -> theOption.value;
 			    if);
 			    tag[] -> theOption.name;

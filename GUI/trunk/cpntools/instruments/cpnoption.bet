@@ -64,6 +64,8 @@ Option: Notifier
      temporary:< booleanValue;
      invisible:< booleanObject;
      showme: booleanObject (# do (NOT invisible) AND (NOT temporary) -> value; #);
+     lazyInit:<booleanObject;
+     inited: @boolean;
 
      displayName:
        (# name: ^text;
@@ -142,11 +144,13 @@ Option: Notifier
      
      onChanged::<
        (# 
-       do observers.scan
-          (# 
-          do THIS(Option)[] -> current.changed;
-          #);
-          INNER;
+       do (if not lazyInit or inited then
+	        observers.scan
+		  (# 
+		   do THIS(Option)[] -> current.changed;
+		  #);
+		  INNER;
+	     if);
        #);
 
      init:< (# do INNER; #);

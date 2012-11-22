@@ -1191,7 +1191,10 @@ do
            OptionNodeType:< OptionNode;
            new: ^OptionNodeType;
         enter content[]
-        do (if content.showme then
+        do (if content.lazyInit then
+	         true -> content.inited;
+	     if);
+	     (if content.showme then
                &OptionNodeType[] -> new[];
                content[] -> new.init;
                new[] -> content.attach;
