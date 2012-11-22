@@ -1726,6 +1726,25 @@ CPNPage: Highlightable
      
      addSuper: (# <<SLOT CPNPageaddSuper:doPart>> #);
      numberOfTimesThisPageBeenChecked: @integer; (* for debugging /krell *)
+     checkDeclare: CPNMLCommand
+       (# send::
+	     (#
+	        addConstraintArc: (#
+		     constraint: ^ConstraintArc;
+		  enter constraint[]
+		  <<SLOT mlCPNPageCheckDeclareSendConstraintArc: DoPart>>
+		  #);
+	        addConstraintInscription: (#
+		     constraint: ^ConstraintInscription;
+		  enter constraint[]
+		  <<SLOT mlCPNPageCheckDeclareSendConstraintInscription: DoPart>>
+		  #);
+
+		  <<SLOT mlCPNPageCheckDeclareSend: DoPart>>
+	     #);
+          Receive:: (# <<SLOT mlCPNPageCheckDeclareReceive:DoPart>> #);
+          onError:: (# <<SLOT mlCPNPageCheckDeclareError:DoPart>> #);
+	 #);
      syntaxCheck: CPNMLCommand
        (# Send:: 
             (# count: @integer;

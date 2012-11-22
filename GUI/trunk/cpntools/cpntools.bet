@@ -280,11 +280,11 @@ CpnWorkSpace
 		 ('cloneGraphics',theCloneGraphicsInstrument[]) -> theInstrumentList.associate;
 
 		 &ConstraintArcInstrument[] -> theConstraintArcInstrument[];
-		 (NONE, 'response', '', FILLED_CIRCLE_START + ARROW_END, SINGLE) -> theConstraintArcInstrument.init;
+		 (NONE, 'response', '[]( ( "A" -> <>( "B" ) ) )', FILLED_CIRCLE_START + ARROW_END, SINGLE) -> theConstraintArcInstrument.init;
 		 ('response', theConstraintArcInstrument[]) -> theInstrumentList.associate;
 
 		 &ConstraintArcInstrument[] -> theConstraintArcInstrument[];
-		 (NONE, 'precedence', '', FILLED_CIRCLE_END + ARROW_END, SINGLE) -> theConstraintArcInstrument.init;
+		 (NONE, 'precedence', '!"B" W "A"', FILLED_CIRCLE_END + ARROW_END, SINGLE) -> theConstraintArcInstrument.init;
 		 ('precedence', theConstraintArcInstrument[]) -> theInstrumentList.associate;
 
 		 &ConstraintArcInstrument[] -> theConstraintArcInstrument[];
@@ -344,11 +344,11 @@ CpnWorkSpace
 		 ('exclusivechoice', theConstraintArcInstrument[]) -> theInstrumentList.associate;
 
 		 &ConstraintInscriptionInstrument[] -> theConstraintInscriptionInstrument[];
-		 ('init', '', SINGLE, 'init') -> theConstraintInscriptionInstrument.init;
+		 ('init', 'false W "A"', SINGLE, 'init') -> theConstraintInscriptionInstrument.init;
 		 ('init', theConstraintInscriptionInstrument[]) -> theInstrumentList.associate;
 
 		 &ConstraintInscriptionInstrument[] -> theConstraintInscriptionInstrument[];
-		 ('last', '', SINGLE, 'last') -> theConstraintInscriptionInstrument.init;
+		 ('last', '[] ("A" -> !X!"A")', SINGLE, 'last') -> theConstraintInscriptionInstrument.init;
 		 ('last', theConstraintInscriptionInstrument[]) -> theInstrumentList.associate;
 
 		 &ConstraintInscriptionInstrument[] -> theConstraintInscriptionInstrument[];
