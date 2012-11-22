@@ -90,7 +90,9 @@ ConstraintArcInstrument: AbstractArcInstrument
 		       prototype.init;
 			 prototype.setAnnotation;
 		       ('arrow' -> options.lookupInteger) -> theConstraintArcPrototype.arrowStyle;
-		       ('line' -> options.lookupInteger) -> theConstraintArcPrototype.lineStyle;
+			 ('line' -> options.lookupInteger) -> theConstraintArcPrototype.lineStyle;
+			 formula[] -> theConstraintArcPrototype.theFormula[];
+			 constraintName[] -> theConstraintArcPrototype.theName[]
 	    #);
      
 	 init ::< (# arrowStyle, lineStyle: @integer;

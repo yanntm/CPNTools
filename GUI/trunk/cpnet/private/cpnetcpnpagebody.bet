@@ -1417,3 +1417,50 @@ do (# dummyCPNPage, dummyCPNPageClone: ^CPNPage;
       #);            
    #);
 
+-- mlCPNPageCheckDeclareReceive: DoPart --
+do
+
+-- mlCPNPageCheckDeclareError: DoPart --
+do
+
+-- mlCPNPageCheckDeclareSend: DoPart --
+do (#
+   foundConstraintInscriptions: @ConstraintInscriptionList;
+do foundConstraintInscriptions.init;
+   scanTransitions (#
+   do current.scanConstraintInscriptions (#
+      do current[] -> foundConstraintInscriptions.append;
+      #);
+   #);
+
+   10000 -> bis.putInt; (* external *)
+   10001 -> bis.putInt; (* Declare extension *)
+   1 -> bis.putInt; (* Check page *)
+   id[] -> bis.putString;
+   foundConstraintInscriptions.size + THIS(CPNPage).private.constraintArcs.size -> bis.putint;
+   foundConstraintInscriptions.scan (#
+   do current[] -> addConstraintInscription;
+   #);
+   THIS(CPNPage).private.constraintArcs.scan (#
+   do current[] -> addConstraintArc;
+   #);
+#);
+
+-- mlCPNPageCheckDeclareSendConstraintInscription: DoPart --
+do (#
+do 1 -> bis.putInt; (* parameters *)
+   constraint.id[] -> bis.putString;
+   constraint.theName[] -> bis.putString;
+   constraint.theFormula[] -> bis.putString;
+   (constraint.getTransition).id[] -> bis.putString;
+#);
+
+-- mlCPNPageCheckDeclareSendConstraintArc: DoPart --
+do (#
+do 2 -> bis.putInt; (* parameters *)
+   constraint.id[] -> bis.putString;
+   constraint.theName[] -> bis.putString;
+   constraint.theFormula[] -> bis.putString;
+   constraint.placeEnd.id[] -> bis.putString;
+   constraint.transEnd.id[] -> bis.putString;
+#);

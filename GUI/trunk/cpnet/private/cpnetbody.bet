@@ -889,7 +889,10 @@ do getMLReserved -> reserved[];
            safePoint;
            (if pginst.thePage.status = unchecked then
                (unchecked,checking) -> pginst.thePage.changeStatus;
-               (ml[], theGlobals.getColorNames) -> pginst.thePage.syntaxCheck;
+		   (ml[], theGlobals.getColorNames) -> pginst.thePage.syntaxCheck;
+		   (if (pginst.thePage.status = checked) then
+		       ml[] -> pginst.thePage.checkDeclare;
+		   if);
                (if debugging then
                    (if true
                     // pginst.thePage.status = checking then
@@ -1083,8 +1086,8 @@ do getMLReserved -> reserved[];
            (current.id[], current[]) -> this(CPNet).private.incorrectMonitors.associate;
            Safepoint;
         #);
-        this(CPNet).private.monitorsToBeRemoved.clear;
-        
+	  this(CPNet).private.monitorsToBeRemoved.clear;
+
         thePageInstances.scanReverse
         (# pginst: ^PageInstance;
         do current[] -> pginst[];
