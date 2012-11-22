@@ -328,6 +328,81 @@ MLPingExtension: CPNMLCommand
        #);
  #);
 
+MLSetExternalIntegerOption: CPNMLCommand
+(# extension: @integer; key: ^text; value: @integer;
+	Send::
+       (# 
+       do (if debugging then 'mlcommands.bet: MLSetExternalIntegerOption'->debugDocument; if);
+          10000->bis.PutInt; (* CPN extension command. *)
+	    201 ->bis.PutInt; (* Set option. *)
+	    extension -> bis.putInt;
+	    key[] -> bis.putString;
+	    0 -> bis.putInt; (* integer *)
+	    value -> bis.putInt;
+       #);
+     Receive::
+       (#
+		 do (if debugging then 'Set External Integer Option (OK)'->debugDocument; if);
+       #);
+     
+     onError::
+       (#
+		 do (if debugging then 'Set External Integer Option (FAILED)'->debugDocument; if);
+		    true->continue;
+       #);
+   enter (extension, key[], value)
+ #);
+
+MLSetExternalBooleanOption: CPNMLCommand
+(# extension: @integer; key: ^text; value: @boolean;
+	Send::
+       (# 
+       do (if debugging then 'mlcommands.bet: MLSetExternalBooleanOption'->debugDocument; if);
+          10000->bis.PutInt; (* CPN extension command. *)
+	    201 ->bis.PutInt; (* Set option. *)
+	    extension -> bis.putInt;
+	    key[] -> bis.putString;
+	    1 -> bis.putInt; (* boolean *)
+	    value -> bis.putBool;
+       #);
+     Receive::
+       (#
+		 do (if debugging then 'Set External Boolean Option (OK)'->debugDocument; if);
+       #);
+     
+     onError::
+       (#
+		 do (if debugging then 'Set External Boolean Option (FAILED)'->debugDocument; if);
+		    true->continue;
+       #);
+   enter (extension, key[], value)
+ #);
+
+MLSetExternalStringOption: CPNMLCommand
+(# extension: @integer; key: ^text; value: ^text;
+	Send::
+       (# 
+       do (if debugging then 'mlcommands.bet: MLSetExternalliStringOption'->debugDocument; if);
+          10000->bis.PutInt; (* CPN extension command. *)
+	    201 ->bis.PutInt; (* Set option. *)
+	    extension -> bis.putInt;
+	    key[] -> bis.putString;
+	    2 -> bis.putInt; (* string *)
+	    value[] -> bis.putString;
+       #);
+     Receive::
+       (#
+		 do (if debugging then 'Set External String Option (OK)'->debugDocument; if);
+       #);
+     
+     onError::
+       (#
+		 do (if debugging then 'Set External String Option (FAILED)'->debugDocument; if);
+		    true->continue;
+       #);
+   enter (extension, key[], value[])
+ #);
+
 MLSetInitialState: CPNMLCommand
  (# Send::
        (# 
