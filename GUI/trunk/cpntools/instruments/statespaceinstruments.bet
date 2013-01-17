@@ -100,6 +100,15 @@ CalcStateSpaceInstrument: CPNInstrument
        do (name[],defaultId[]) -> options.setAddOptionWithDefault(# OptionType:: type #);
        #);
 
+     insertBooleanOption:
+       (# theBoolean: ^BooleanObject;
+          name: ^Text;
+          defaultId: ^Text;
+          type:< BooleanOption;
+       enter (name[],defaultId[])
+       do (name[],defaultId[]) -> options.setAddOptionWithDefault(# OptionType:: type #);
+       #);
+
      insertMLCodeOption:
        (# name: ^Text;
           defaultId: ^Text;
@@ -111,6 +120,8 @@ CalcStateSpaceInstrument: CPNInstrument
      init::
        (#
        do 'calculate_state_space' -> helpname[];
+          ('creatiottime','calcss.creatiottime') -> insertBooleanOption;
+          ('terminationtime','calcss.terminationtime') -> insertBooleanOption;
           ('nodesstop','calcss.nodesstop') -> insertIntegerOption;
           ('arcsstop','calcss.arcsstop') -> insertIntegerOption;
           ('secsstop','calcss.secsstop') -> insertIntegerOption;
@@ -163,6 +174,7 @@ appendDifference: (#
 CalcStateSpaceCommand: StateSpaceCommand
   (# error: @boolean;
      theText: ^Text;
+     reductionoptions: ^Text;
      stopoptions: ^Text;
      branchoptions: ^Text;
 
@@ -207,6 +219,24 @@ CalcStateSpaceCommand: StateSpaceCommand
                      *  Predicate = predicatestop
                      * };
                      *)
+                    &Text[] -> reductionoptions[];
+			  'OGSet.ReductionOptions {' -> reductionoptions.putline;
+			  'CreationTime = ' -> reductionoptions.puttext;
+			  (if ('creatiottime' -> options.lookupBoolean) and not ('terminationtime' -> options.lookupBoolean) then
+			      'true' -> reductionoptions.puttext;
+		        else
+			      'false' -> reductionoptions.puttext;
+			  if);
+			  ',' -> reductionoptions.putline;
+			  'TerminationTime = ' -> reductionoptions.puttext;
+			  (if ('terminationtime' -> options.lookupBoolean) then
+			      'true' -> reductionoptions.puttext;
+		        else
+			      'false' -> reductionoptions.puttext;
+			  if);
+                    ' };' -> reductionoptions.putline;
+                    reductionoptions[] -> sheetPage.thePage.net.ML.Evaluate
+
                     &Text[] -> stopoptions[];
                     'OGSet.StopOptions {' -> stopoptions.putline;
                     'Nodes = ' -> stopoptions.puttext;

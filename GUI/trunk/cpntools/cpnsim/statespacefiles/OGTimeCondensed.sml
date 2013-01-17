@@ -1,12 +1,6 @@
 (************************************************************************)
 (* CPN Tools                                                            *)
-(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
-(*                                                                      *)
-(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
-(* University from 2000 to 2010. The main architects behind the tool    *)
-(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
-(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
-(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(* Copyright 2013 AIS Group, Eindhoven University of Technology         *)
 (*                                                                      *)
 (* This file is part of CPN Tools.                                      *)
 (*                                                                      *)
@@ -23,17 +17,24 @@
 (* You should have received a copy of the GNU General Public License    *)
 (* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
 (************************************************************************)
-(* Switch to state space tool - part 4 *)
+(*
+ * Module:       OGTimeCondensed
+ *
+ * Description:  Time condensed state spaces
+ *
+ * CPN Tools
+ *)
 
-CPN'NetCapture.exe();
-CPN'NetCapture.check_names();         
+structure CPN'OGStopCrit = struct
+    val CreationTime = ref false
+    val TerminationTime = ref false
 
-CPN'Env.use_string (CPN'OGIdsGen.gen_TI());   
-CPN'Env.use_string (CPN'OGIdsGen.gen_PI());   
-CPN'Env.use_string (CPN'OGBTconvGen.gen_binding());
-CPN'Env.use_string (CPN'OGBTconvGen.gen_grbinding());
-CPN'Env.use_string (CPN'OGBTconvGen.gen_conv());
-CPN'Env.use_string (CPN'OGBTconvGen.gen_encode());
-CPN'Env.use_string (CPN'OGBTconvGen.gen_st_binding());      
-CPN'Env.use_string (CPN'OGBasicRefsGen.gen());     
-CPN'Env.use_string (CPN'OGTimeCondensed.gen());     
+    fun SetParams { CreationTime = CPN'creationtime,
+                    TerminationTime = CPN'terminationtime } =
+        (CreationTime := CPN'creationtime;
+         TerminationTime := CPN'terminationtime)
+end;
+
+structure CPN'OGTimeCondensed = struct
+    fun gen() = [""]
+end;

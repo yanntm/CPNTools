@@ -32,3 +32,4 @@ use (ogpath^"OGCreateStateRec.sml");
 use (ogpath^"OGTransEnabOccGen.sml");
 use (ogpath^"OGBind.sml");
 use (ogpath^"OGTimeListTreeFun.sml");
+use (ogpath^"OGTimeCondensed.sml");   
