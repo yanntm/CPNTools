@@ -77,7 +77,12 @@ structure OGSet = struct
 	   CPN'OGDrawUtils.predpredoffsetref := nextpred;
 	   CPN'OGDrawUtils.max_faninref := maxpred);
 *)
-	
+
+    fun ReductionOptions { CreationTime = creationtime,
+                           TerminationTime = terminationtime }
+       = CPN'OGReductionOptions.SetParams { CreationTime = creationtime,
+                                            TerminationTime = terminationtime }
+
     fun StopOptions {Nodes = nodes,
 		     Arcs = arcs,
 		     Secs = secs,
