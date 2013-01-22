@@ -40,7 +40,7 @@ do (# thePage: ^CPNPage;
         #);
    do findCompiledNet;
       (if thenet[] <> NONE then
-          (1,0) -> thenet.setStopCriteria;
+          (1,0,0,0) -> thenet.setStopCriteria;
           theNet.ML[] -> MLRun;
           theNet.getAllMarkings;
           L: (#

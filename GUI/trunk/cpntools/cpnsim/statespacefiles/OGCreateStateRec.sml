@@ -50,6 +50,7 @@ fun gen () =
 (
  code_temp:="fun CPN'OGCreateStateRec()\n"^
                "=let\n"^
+                 "val creationtime = time()\n"^
                  "val staterec\n"^
                     "=CPN'OGState{\n";
  
@@ -61,18 +62,18 @@ fun gen () =
          (fn {instno=instno,instmlno=instmlno,...}
             => code_temp:=(!code_temp)^(
                 "pg"^pgmlno^"'"^instno^"="^
-                  "CPN'OGstore_pg"^pgmlno^"("^instno^"),\n"))
+                  "CPN'OGstore_pg"^pgmlno^"(creationtime, "^instno^"),\n"))
          instlist) handle CPN'AvlTree.ExcAvlLookup => [])
  (!CPN'NetCapture.Net);
                           
                                                
  (CPN'AvlTree.AvlLookup(CPN'OGIdsGen.DataRecFields,"pgglobfus");
-  code_temp:=(!code_temp)^"pgglobfus=CPN'OGstore_pgglobfus(),\n")
+  code_temp:=(!code_temp)^"pgglobfus=CPN'OGstore_pgglobfus(creationtime),\n")
  handle CPN'AvlTree.ExcAvlLookup =>();
  
  if (CPN'Time.name <> "unit")
  then
-  code_temp:=(!code_temp)^"creationtime=(!CPN'Time.model_time),\n"
+  code_temp:=(!code_temp)^"creationtime=CPN'TimeEquivalence.compressTimestamp creationtime,\n"
  else
   (); 
  

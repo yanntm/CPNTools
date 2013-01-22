@@ -173,6 +173,7 @@ CpnWorkSpace
 	     theSaveAllNetsInstument: ^SaveAllNetsInstrument;
              theSaveNetAsInstrument: ^SaveNetAsInstrument;
              theSaveNetAndSimulatorInstrument: ^SaveNetAndSimulatorInstrument;
+             theSavePNMLInstrument: ^SavePNMLInstrument;
 	     theHelpInstrument: ^HelpInstrument;
 	     thePrintInstrument: ^PrintInstrument;
              theCreateNetInstrument: ^CreateNetInstrument;
@@ -288,99 +289,111 @@ CpnWorkSpace
 		 ('precedence', theConstraintArcInstrument[]) -> theInstrumentList.associate;
 
 		 &ConstraintArcInstrument[] -> theConstraintArcInstrument[];
-		 (NONE, 'succession', '', FILLED_CIRCLE_START + FILLED_CIRCLE_END + ARROW_END, SINGLE) -> theConstraintArcInstrument.init;
+		 (NONE, 'succession', '([]( ( "A" -> <>( "B" ) ) )) && (!"B" W "A")', FILLED_CIRCLE_START + FILLED_CIRCLE_END + ARROW_END, SINGLE) -> theConstraintArcInstrument.init;
 		 ('succession', theConstraintArcInstrument[]) -> theInstrumentList.associate;
 
 		 &ConstraintArcInstrument[] -> theConstraintArcInstrument[];
-		 (NONE, 'alternate response', '', FILLED_CIRCLE_START + ARROW_END, DOUBLE) -> theConstraintArcInstrument.init;
+		 (NONE, 'alternate response', '[]( "A" -> X ( ("B" R !"A") && (<> "B") ) )', FILLED_CIRCLE_START + ARROW_END, DOUBLE) -> theConstraintArcInstrument.init;
 		 ('aresponse', theConstraintArcInstrument[]) -> theInstrumentList.associate;
 
 		 &ConstraintArcInstrument[] -> theConstraintArcInstrument[];
-		 (NONE, 'alternate precedence', '', FILLED_CIRCLE_END + ARROW_END, DOUBLE) -> theConstraintArcInstrument.init;
+		 (NONE, 'alternate precedence', '(!"B" W "A" ) && ([] ( "B" -> X ( "A" R !"B" ) ) )', FILLED_CIRCLE_END + ARROW_END, DOUBLE) -> theConstraintArcInstrument.init;
 		 ('aprecedence', theConstraintArcInstrument[]) -> theInstrumentList.associate;
 
 		 &ConstraintArcInstrument[] -> theConstraintArcInstrument[];
-		 (NONE, 'alternate succession', '', FILLED_CIRCLE_START + FILLED_CIRCLE_END + ARROW_END, DOUBLE) -> theConstraintArcInstrument.init;
+		 (NONE, 'alternate succession', '([]( "A" -> ( ( X ("B" R !"A") ) && (<> "B") ) )) && (!"B" W "A" ) && ([] ( "B" -> X ( "A" R !"B" ) ) )', FILLED_CIRCLE_START + FILLED_CIRCLE_END + ARROW_END, DOUBLE) -> theConstraintArcInstrument.init;
 		 ('asuccession', theConstraintArcInstrument[]) -> theInstrumentList.associate;
 
 		 &ConstraintArcInstrument[] -> theConstraintArcInstrument[];
-		 (NONE, 'chain response', '', FILLED_CIRCLE_START + ARROW_END, TRIPLE) -> theConstraintArcInstrument.init;
+		 (NONE, 'chain response', '[] ( ( "A"  -> X( "B" ) ) )', FILLED_CIRCLE_START + ARROW_END, TRIPLE) -> theConstraintArcInstrument.init;
 		 ('cresponse', theConstraintArcInstrument[]) -> theInstrumentList.associate;
 
 		 &ConstraintArcInstrument[] -> theConstraintArcInstrument[];
-		 (NONE, 'chain precedence', '', FILLED_CIRCLE_END + ARROW_END, TRIPLE) -> theConstraintArcInstrument.init;
+		 (NONE, 'chain precedence', '[]( ( Y( "B" ) -> "A") )', FILLED_CIRCLE_END + ARROW_END, TRIPLE) -> theConstraintArcInstrument.init;
 		 ('cprecedence', theConstraintArcInstrument[]) -> theInstrumentList.associate;
 
 		 &ConstraintArcInstrument[] -> theConstraintArcInstrument[];
-		 (NONE, 'chain succession', '', FILLED_CIRCLE_START + FILLED_CIRCLE_END + ARROW_END, TRIPLE) -> theConstraintArcInstrument.init;
+		 (NONE, 'chain succession', '[](  ( "A" = X( "B" ) )  )', FILLED_CIRCLE_START + FILLED_CIRCLE_END + ARROW_END, TRIPLE) -> theConstraintArcInstrument.init;
 		 ('csuccession', theConstraintArcInstrument[]) -> theInstrumentList.associate;
 
 		 &ConstraintArcInstrument[] -> theConstraintArcInstrument[];
-		 (NONE, 'not co-existence', '', FILLED_CIRCLE_START + FILLED_CIRCLE_END, SINGLE + STRIKE) -> theConstraintArcInstrument.init;
+		 (NONE, 'not co-existence', '!((F "A") && (F "B"))', FILLED_CIRCLE_START + FILLED_CIRCLE_END, SINGLE + STRIKE) -> theConstraintArcInstrument.init;
 		 ('ncoexistence', theConstraintArcInstrument[]) -> theInstrumentList.associate;
 
 		 &ConstraintArcInstrument[] -> theConstraintArcInstrument[];
-		 (NONE, 'not succession', '', FILLED_CIRCLE_START + FILLED_CIRCLE_END + ARROW_END, SINGLE + STRIKE) -> theConstraintArcInstrument.init;
+		 (NONE, 'not succession', '[]( ( "A" -> !( <>( "B" ) ) ) )', FILLED_CIRCLE_START + FILLED_CIRCLE_END + ARROW_END, SINGLE + STRIKE) -> theConstraintArcInstrument.init;
 		 ('nsuccession', theConstraintArcInstrument[]) -> theInstrumentList.associate;
 
 		 &ConstraintArcInstrument[] -> theConstraintArcInstrument[];
-		 (NONE, 'not chain succession', '', FILLED_CIRCLE_START + FILLED_CIRCLE_END + ARROW_END, TRIPLE + STRIKE) -> theConstraintArcInstrument.init;
+		 (NONE, 'not chain succession', '[]( ( "A" -> Y( !( "B" ) ) ) )', FILLED_CIRCLE_START + FILLED_CIRCLE_END + ARROW_END, TRIPLE + STRIKE) -> theConstraintArcInstrument.init;
 		 ('ncsuccession', theConstraintArcInstrument[]) -> theInstrumentList.associate;
 
 		 &ConstraintArcInstrument[] -> theConstraintArcInstrument[];
-		 (NONE, 'responded existence', '', FILLED_CIRCLE_START, SINGLE) -> theConstraintArcInstrument.init;
+		 (NONE, 'responded existence', '( <>("A") -> <>( "B" ) )', FILLED_CIRCLE_START, SINGLE) -> theConstraintArcInstrument.init;
 		 ('respondedexistence', theConstraintArcInstrument[]) -> theInstrumentList.associate;
 
 		 &ConstraintArcInstrument[] -> theConstraintArcInstrument[];
-		 (NONE, 'co-existence', '', FILLED_CIRCLE_START + FILLED_CIRCLE_END, SINGLE) -> theConstraintArcInstrument.init;
+		 (NONE, 'co-existence', '( ( <>("A") -> <>( "B" ) ) /\ ( <>("B") -> <>( "A" ) )  )', FILLED_CIRCLE_START + FILLED_CIRCLE_END, SINGLE) -> theConstraintArcInstrument.init;
 		 ('coexistence', theConstraintArcInstrument[]) -> theInstrumentList.associate;
 
 		 &ConstraintArcInstrument[] -> theConstraintArcInstrument[];
-		 (NONE, 'choice', '', 0, SINGLE + DIAMOND) -> theConstraintArcInstrument.init;
+		 (NONE, 'choice', '<>( ( "A" \/ "B" ) )', 0, SINGLE + DIAMOND) -> theConstraintArcInstrument.init;
 		 ('choice', theConstraintArcInstrument[]) -> theInstrumentList.associate;
 
 		 &ConstraintArcInstrument[] -> theConstraintArcInstrument[];
-		 (NONE, 'exclusive choice', '', 0, SINGLE + FILLED_DIAMOND) -> theConstraintArcInstrument.init;
+		 (NONE, 'exclusive choice', '(  ( <>( "A" ) \/ <>( "B" )  )  /\ !( (  <>( "A" ) /\ <>( "B" ) ) ) )', 0, SINGLE + FILLED_DIAMOND) -> theConstraintArcInstrument.init;
 		 ('exclusivechoice', theConstraintArcInstrument[]) -> theInstrumentList.associate;
+
+		 &ConstraintArcInstrument[] -> theConstraintArcInstrument[];
+		 (NONE, 'include', '', ARROW_END + PLUS_END, SINGLE) -> theConstraintArcInstrument.init;
+		 ('include', theConstraintArcInstrument[]) -> theInstrumentList.associate;
+
+		 &ConstraintArcInstrument[] -> theConstraintArcInstrument[];
+		 (NONE, 'exclude', '', ARROW_END + MINUS_END, SINGLE) -> theConstraintArcInstrument.init;
+		 ('exclude', theConstraintArcInstrument[]) -> theInstrumentList.associate;
+
+		 &ConstraintArcInstrument[] -> theConstraintArcInstrument[];
+		 (NONE, 'milestone', '', ARROW_END + DIAMOND_END, SINGLE) -> theConstraintArcInstrument.init;
+		 ('milestone', theConstraintArcInstrument[]) -> theInstrumentList.associate;
 
 		 &ConstraintInscriptionInstrument[] -> theConstraintInscriptionInstrument[];
 		 ('init', 'false W "A"', SINGLE, 'init') -> theConstraintInscriptionInstrument.init;
 		 ('init', theConstraintInscriptionInstrument[]) -> theInstrumentList.associate;
 
 		 &ConstraintInscriptionInstrument[] -> theConstraintInscriptionInstrument[];
-		 ('last', '[] ("A" -> !X!"A")', SINGLE, 'last') -> theConstraintInscriptionInstrument.init;
+		 ('last', '[] ("A" -> Y(!"A"))', SINGLE, 'last') -> theConstraintInscriptionInstrument.init;
 		 ('last', theConstraintInscriptionInstrument[]) -> theInstrumentList.associate;
 
 		 &ConstraintInscriptionInstrument[] -> theConstraintInscriptionInstrument[];
-		 ('existence', '', SINGLE, '1..*') -> theConstraintInscriptionInstrument.init;
+		 ('existence', '<> ( "A" )', SINGLE, '1..*') -> theConstraintInscriptionInstrument.init;
 		 ('existence1', theConstraintInscriptionInstrument[]) -> theInstrumentList.associate;
 
 		 &ConstraintInscriptionInstrument[] -> theConstraintInscriptionInstrument[];
-		 ('existence2', '', SINGLE, '2..*') -> theConstraintInscriptionInstrument.init;
+		 ('existence2', '<> ( ( "A" /\ X(<>("A")) ) )', SINGLE, '2..*') -> theConstraintInscriptionInstrument.init;
 		 ('existence2', theConstraintInscriptionInstrument[]) -> theInstrumentList.associate;
 
 		 &ConstraintInscriptionInstrument[] -> theConstraintInscriptionInstrument[];
-		 ('existence3', '', SINGLE, '3..*') -> theConstraintInscriptionInstrument.init;
+		 ('existence3', '<>( "A" /\ X(  <>( "A" /\ X( <> "A" )) ))', SINGLE, '3..*') -> theConstraintInscriptionInstrument.init;
 		 ('existence3', theConstraintInscriptionInstrument[]) -> theInstrumentList.associate;
 
 		 &ConstraintInscriptionInstrument[] -> theConstraintInscriptionInstrument[];
-		 ('absence', '', SINGLE, '0') -> theConstraintInscriptionInstrument.init;
+		 ('absence', '!( <> ( "A" ) )', SINGLE, '0') -> theConstraintInscriptionInstrument.init;
 		 ('absence1', theConstraintInscriptionInstrument[]) -> theInstrumentList.associate;
 
 		 &ConstraintInscriptionInstrument[] -> theConstraintInscriptionInstrument[];
-		 ('absence2', '', SINGLE, '0..1') -> theConstraintInscriptionInstrument.init;
+		 ('absence2', '! ( <> ( ( "A" /\ X(<>("A")) ) ) )', SINGLE, '0..1') -> theConstraintInscriptionInstrument.init;
 		 ('absence2', theConstraintInscriptionInstrument[]) -> theInstrumentList.associate;
 
 		 &ConstraintInscriptionInstrument[] -> theConstraintInscriptionInstrument[];
-		 ('absence3', '', SINGLE, '0..2') -> theConstraintInscriptionInstrument.init;
+		 ('absence3', '!(<>( "A" /\ X(  <>( "A" /\ X( <> "A" )) )))', SINGLE, '0..2') -> theConstraintInscriptionInstrument.init;
 		 ('absence3', theConstraintInscriptionInstrument[]) -> theInstrumentList.associate;
 
 		 &ConstraintInscriptionInstrument[] -> theConstraintInscriptionInstrument[];
-		 ('exactly1', '', SINGLE, '1') -> theConstraintInscriptionInstrument.init;
+		 ('exactly1', '(  <> ("A") /\ ! ( <> ( ( "A" /\ X(<>("A")) ) ) ) )', SINGLE, '1') -> theConstraintInscriptionInstrument.init;
 		 ('exactly1', theConstraintInscriptionInstrument[]) -> theInstrumentList.associate;
 
 		 &ConstraintInscriptionInstrument[] -> theConstraintInscriptionInstrument[];
-		 ('exactly2', '', SINGLE, '2') -> theConstraintInscriptionInstrument.init;
+		 ('exactly2', '(<> ( ( "A" /\ X(<>("A")) ) )) /\ (!(<>( "A" /\ X(  <>( "A" /\ X( <> "A" )) ))))', SINGLE, '2') -> theConstraintInscriptionInstrument.init;
 		 ('exactly2', theConstraintInscriptionInstrument[]) -> theInstrumentList.associate;
 
 		 &ConstraintInscriptionInstrument[] -> theConstraintInscriptionInstrument[];
@@ -601,6 +614,10 @@ CpnWorkSpace
              &SaveNetAndSimulatorInstrument[] -> theSaveNetAndSimulatorInstrument[];
              theSaveNetAndSimulatorInstrument.init;
              ('SaveNetAndSimulator', theSaveNetAndSimulatorInstrument[])->theInstrumentList.associate;
+             
+             &SavePNMLInstrument[]->theSavePNMLInstrument[];
+             theSavePNMLInstrument.init;
+		 ('SavePNML', theSavePNMLInstrument[])->theInstrumentList.associate;
              
 	     &HelpInstrument[]->theHelpInstrument[];
 	     theHelpInstrument.init;

@@ -185,6 +185,9 @@ DeclareTools:
      RespondedExistenceCell: ^ToolCell;
      CoExistenceCell: ^ToolCell;
      ChoiceCell: ^ToolCell;
+     IncludeCell: ^ToolCell;
+     ExcludeCell: ^ToolCell;
+     MilestoneCell: ^ToolCell;
      InitCell: ^ToolCell;
      LastCell: ^ToolCell;
      ExclusiveChoiceCell: ^ToolCell;
@@ -213,6 +216,9 @@ DeclareTools:
      theRespondedExistenceInstrument: ^Instrument;
      theCoExistenceInstrument: ^Instrument;
      theChoiceInstrument: ^Instrument;
+     theIncludeInstrument: ^Instrument;
+     theExcludeInstrument: ^Instrument;
+     theMilestoneInstrument: ^Instrument;
      theInitInstrument: ^Instrument;
      theLastInstrument: ^Instrument;
      theExclusiveChoiceInstrument: ^Instrument;
@@ -351,6 +357,7 @@ NetTools:
      saveAsCell: ^ToolCell;
      saveCell: ^ToolCell;
      saveNetAndSimulator: ^ToolCell;
+     savePNMLCell: ^ToolCell;
      newNetCell: ^ButtonCell;
      newPageCell: ^ToolCell;     
      closeNetCell: ^ToolCell;
@@ -360,6 +367,7 @@ NetTools:
      theSaveNetAsInstrument: ^SaveNetAsInstrument;
      theSaveNetInstrument: ^SaveNetInstrument;
      theSaveNetAndSimulatorInstrument: ^SaveNetAndSimulatorInstrument;
+     theSavePNMLInstrument: ^SavePNMLInstrument;
      theCreateNetInstrument: ^CreateNetInstrument;
      theCreatePageIndexInstrument: ^CreatePageIndexInstrument;    
      theCloseNetInstrument: ^Instrument;

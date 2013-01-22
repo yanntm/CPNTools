@@ -104,9 +104,10 @@ CalcStateSpaceInstrument: CPNInstrument
        (# theBoolean: ^BooleanObject;
           name: ^Text;
           defaultId: ^Text;
-          type:< BooleanOption;
+	    hide:< booleanObject;
+	    type:< BooleanOption (# invisible:: hide #);
        enter (name[],defaultId[])
-       do (name[],defaultId[]) -> options.setAddOptionWithDefault(# OptionType:: type #);
+	 do (name[],defaultId[]) -> options.setAddOptionWithDefault(# OptionType:: type #);
        #);
 
      insertMLCodeOption:
@@ -120,8 +121,8 @@ CalcStateSpaceInstrument: CPNInstrument
      init::
        (#
        do 'calculate_state_space' -> helpname[];
-          ('creatiottime','calcss.creatiottime') -> insertBooleanOption;
-          ('terminationtime','calcss.terminationtime') -> insertBooleanOption;
+          ('creationtime','calcss.creationtime') -> insertBooleanOption;
+          ('terminationtime','calcss.terminationtime') -> insertBooleanOption (# hide:: trueObject #);
           ('nodesstop','calcss.nodesstop') -> insertIntegerOption;
           ('arcsstop','calcss.arcsstop') -> insertIntegerOption;
           ('secsstop','calcss.secsstop') -> insertIntegerOption;
@@ -222,7 +223,7 @@ CalcStateSpaceCommand: StateSpaceCommand
                     &Text[] -> reductionoptions[];
 			  'OGSet.ReductionOptions {' -> reductionoptions.putline;
 			  'CreationTime = ' -> reductionoptions.puttext;
-			  (if ('creatiottime' -> options.lookupBoolean) and not ('terminationtime' -> options.lookupBoolean) then
+			  (if ('creationtime' -> options.lookupBoolean) and not ('terminationtime' -> options.lookupBoolean) then
 			      'true' -> reductionoptions.puttext;
 		        else
 			      'false' -> reductionoptions.puttext;
@@ -235,7 +236,7 @@ CalcStateSpaceCommand: StateSpaceCommand
 			      'false' -> reductionoptions.puttext;
 			  if);
                     ' };' -> reductionoptions.putline;
-                    reductionoptions[] -> sheetPage.thePage.net.ML.Evaluate
+                    reductionoptions[] -> sheetPage.thePage.net.ML.Evaluate;
 
                     &Text[] -> stopoptions[];
                     'OGSet.StopOptions {' -> stopoptions.putline;

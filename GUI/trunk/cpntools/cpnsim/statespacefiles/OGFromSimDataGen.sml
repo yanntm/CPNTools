@@ -58,13 +58,15 @@ fun gen_field {fieldname=fieldname, colset=colset} =
 			    "let fun CPN'extract_time ((CPN'Time.@(_,CPN't))::CPN'xs) = CPN't::CPN'extract_time CPN'xs \n \
 		            \      | CPN'extract_time nil = nil \n \
 			    \    val CPN'tl=CPN'extract_time(Misc.sort (TMS.tlt "^(CPN'CSTable.get_prime_cs colset)^".lt) "^		  
-			    "((CPN'place"^plmlno^".get CPN'pginst))) in \n"^
-			    "CPN'TimeListsTree.Insert(CPN'TimeListTree,CPN'tl,CPN'OGEncode.TimeList CPN'tl) end"
+                      "((CPN'place"^plmlno^".get CPN'pginst))) \n" ^
+                      "val CPN'tl = CPN'TimeEquivalence.compressTime creationtime CPN'tl\n"^
+                      "in \n"^
+			    "CPN'TimeListsTree.Insert(CPN'TimeListTree,CPN'tl,CPN'OGEncode.TimeList (CPN'tl)) end"
 		       else ""))
 		 end
 
 fun gen_localstore ("pgglobfus",ref fieldlist)
-   = (code_temp:=("fun CPN'OGstore_pgglobfus()\n"^
+   = (code_temp:=("fun CPN'OGstore_pgglobfus(creationtime)\n"^
           "= let\n"^
 	     "val CPN'pginst = 1 (* Is CPN'pginst always 1 for global fusion set? *)\n"^ (* Does this always work? *)
               "val pgglobfusrec\n"^
@@ -84,7 +86,7 @@ fun gen_localstore ("pgglobfus",ref fieldlist)
        code_storage:=(!code_temp)::(!code_storage))
 
   | gen_localstore (recname,ref fieldlist)
-   = (code_temp:=("fun CPN'OGstore_"^recname^"(CPN'pginst:Inst)\n"^
+  = (code_temp:=("fun CPN'OGstore_"^recname^"(creationtime, CPN'pginst:Inst)\n"^
           "= let\n"^
               "val "^recname^"rec\n"^
                  "=CPN'OGLocal"^recname^"\n{");
@@ -164,7 +166,7 @@ in
                         code_temp2:=
                          "fun CPN'OGstore_state"^funpostfix^
                           "(srcnoderef as ref(CPN'OGnode{state=ref(CPN'OGState srcrec),...}))\n"^
-                          "=CPN'OGState\n{"; 
+                          "=let val creationtime = time() in CPN'OGState\n{"; 
                          
                         
                         map
@@ -177,7 +179,7 @@ in
                                       ((CPN'AvlTree.AvlLookup(unchngrecs,"pg"^pgmlno^"'"^instno);
                                         "#"^"pg"^pgmlno^"'"^instno^" srcrec,\n")
                                         handle CPN'AvlTree.ExcAvlLookup
-                                          =>"CPN'OGstore_pg"^pgmlno^"("^instno^"),\n"))
+                                          =>"CPN'OGstore_pg"^pgmlno^"(creationtime, "^instno^"),\n"))
                                instlist) handle CPN'AvlTree.ExcAvlLookup => [])
                          (!CPN'NetCapture.Net);
                           
@@ -185,17 +187,17 @@ in
                         (CPN'AvlTree.AvlLookup(CPN'OGIdsGen.DataRecFields,"pgglobfus");
                          if !pgglobfuschng
                          then code_temp2:=(!code_temp2)^
-                              "pgglobfus= CPN'OGstore_pgglobfus(),\n"
+                              "pgglobfus= CPN'OGstore_pgglobfus(creationtime),\n"
                          else code_temp2:=(!code_temp2)^"pgglobfus= #pgglobfus srcrec,\n")
                         handle CPN'AvlTree.ExcAvlLookup =>();
                         
                         if (CPN'Time.name <> "unit")
                         then
-                         code_temp2:=(!code_temp2)^"creationtime = time(),\n"
+                         code_temp2:=(!code_temp2)^"creationtime = CPN'TimeEquivalence.compressTimestamp creationtime,\n"
                         else
                          ();
              
-                        code_temp2:=(!code_temp2)^"owner = ref srcnoderef};\n";
+                        code_temp2:=(!code_temp2)^"owner = ref srcnoderef} end;\n";
 
                         code_storage2:=(!code_temp2)::(!code_storage2);
                         

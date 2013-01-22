@@ -391,6 +391,28 @@ SaveAsFigure: SaveFigure
        #);
   #);
 
+SavePNMLFigure: SaveFigure
+  (# 
+     theTextItem: ^TextItem;
+     point: ^Point2d;     
+     init::<
+       (# theComposite: ^Composite;
+	 do &Composite[] -> theComposite[];
+	    &TextItem[] -> theTextItem[];          
+	    'PN' -> theTextItem.content[];
+          6 -> theTextItem.x;
+	    -8 -> theTextItem.y;
+	    theTextItem[] -> theComposite.add;
+          &TextItem[] -> theTextItem[];          
+	    'ML' -> theTextItem.content[];
+          6 -> theTextItem.x;
+	    1 -> theTextItem.y;
+	    theTextItem[] -> theComposite.add;
+	    1.4 -> theComposite.scale;
+	    theComposite[] -> add;
+       #);
+  #);
+
 NewNetFigure: Figure
   (# useDefaultHotspot::(# do true -> value; #);
      theNewNetFigure: ^Composite;

@@ -1086,8 +1086,9 @@ CPNet: Highlightable
        #);
      
      setStopCriteria: 
-       (# AdditionalSteps, AbsoluteSteps: @Integer;
-       enter (AdditionalSteps, AbsoluteSteps)
+       (# AdditionalSteps, AbsoluteSteps: @Integer; 
+	    extraTime, totalTime: @integer;
+       enter (AdditionalSteps, AbsoluteSteps, extraTime, totalTime)
        <<SLOT mlCPNetSetStopCriteria:doPart>>
        #);
      getRandomPage: 
