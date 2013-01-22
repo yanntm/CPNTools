@@ -213,6 +213,9 @@ do getToolCells->list[];
    &ToolCell[] -> RespondedExistenceCell[];
    &ToolCell[] -> CoExistenceCell[];
    &ToolCell[] -> ChoiceCell[];
+   &ToolCell[] -> IncludeCell[];
+   &ToolCell[] -> ExcludeCell[];
+   &ToolCell[] -> MilestoneCell[];
    &ToolCell[] -> InitCell[];
    &ToolCell[] -> LastCell[];
    &ToolCell[] -> ExclusiveChoiceCell[];
@@ -288,6 +291,18 @@ do getToolCells->list[];
    (theChoiceInstrument[], 'choice') -> ChoiceCell.init;
    'choice' -> ChoiceCell.helpname[];
 
+   'include' -> theInstrumentList.lookup -> theIncludeInstrument[];
+   (theIncludeInstrument[], '') -> IncludeCell.init;
+   'include' -> IncludeCell.helpname[];
+
+   'exclude' -> theInstrumentList.lookup -> theExcludeInstrument[];
+   (theExcludeInstrument[], '') -> ExcludeCell.init;
+   'exclude' -> ExcludeCell.helpname[];
+
+   'milestone' -> theInstrumentList.lookup -> theMilestoneInstrument[];
+   (theMilestoneInstrument[], '') -> MilestoneCell.init;
+   'milestone' -> MilestoneCell.helpname[];
+
    'init' -> theInstrumentList.lookup -> theInitInstrument[];
    (theInitInstrument[], 'init') -> InitCell.init;
    'init' -> InitCell.helpname[];
@@ -362,13 +377,17 @@ do getToolCells->list[];
    CoExistenceCell[] -> NSuccessionCell.setRightCell;
    ChoiceCell[] -> NCSuccessionCell.setRightCell;
 
-   InitCell[] -> RespondedExistenceCell.setRightCell;
-   LastCell[] -> CoExistenceCell.setRightCell;
+   IncludeCell[] -> RespondedExistenceCell.setRightCell;
+   ExcludeCell[] -> CoExistenceCell.setRightCell;
    ExclusiveChoiceCell[] -> ChoiceCell.setRightCell;
 
-   Existence1Cell[] -> InitCell.setRightCell;
-   Existence2Cell[] -> LastCell.setRightCell;
-   Existence3Cell[] -> ExclusiveChoiceCell.setRightCell;
+   MilestoneCell[] -> IncludeCell.setRightCell;
+   InitCell[] -> ExcludeCell.setRightCell;
+   LastCell[] -> ExclusiveChoiceCell.setRightCell;
+
+   Existence1Cell[] -> MilestoneCell.setRightCell;
+   Existence2Cell[] -> InitCell.setRightCell;
+   Existence3Cell[] -> LastCell.setRightCell;
 
    Absence1Cell[] -> Existence1Cell.setRightCell;
    Absence2Cell[] -> Existence2Cell.setRightCell;
@@ -722,6 +741,7 @@ do
    &ToolCell[] -> saveCell[];
    &ToolCell[] -> saveAsCell[];
    &ToolCell[] -> saveNetAndSimulator[];
+   &ToolCell[] -> savePNMLCell[];
    &ButtonCell[] -> LoadCell[];
    &ToolCell[] -> helpCell[];
    &ToolCell[] -> printCell[];
@@ -740,6 +760,9 @@ do
    
    'SaveNetAndSimulator'->theInstrumentList.lookup->theSaveNetAndSimulatorInstrument[];
    (theSaveNetAndSimulatorInstrument[], 'SaveNetAndSimulator')->saveNetAndSimulator.init;
+   
+   'SavePNML'->theInstrumentList.lookup->theSavePNMLInstrument[];
+   (theSavePNMLInstrument[], 'Save PNML')->savePNMLCell.init;
    
    'NewNet'->theInstrumentList.lookup->theCreateNetInstrument[];
    (theCreateNetInstrument[],'NewNet')->newNetCell.init;
@@ -772,6 +795,7 @@ do
    LoadCell[]->newNetCell.SetBottomCell;
    saveCell[]->LoadCell.SetRightCell;
    saveAsCell[]->saveCell.SetRightCell;
+   savePNMLCell[] -> saveAsCell.setRightCell;
    theCollection.Changed;
    
 -- MonitoringToolsInit:DoPart --

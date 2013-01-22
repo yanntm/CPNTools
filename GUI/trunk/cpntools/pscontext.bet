@@ -302,7 +302,34 @@ PSContext: Context
               drawFlatRect;
           if);
        #);
-     drawArrow:
+	    drawLetter:
+     	    (# A: (# exit 6.0*theArrowHeadSize #);
+	       B: (# exit 6.0 * theArrowHeadSize #);
+		    start, end: ^Point2d;
+		    vx, vy, ux, uy, rx, ry, l, w, h, angle: @real;
+		    letter: ^text
+		    enter (start[], end[], letter[])
+		    do
+          start.x - end.x -> vx;
+          start.y - end.y -> vy;
+          vx*vx + vy*vy -> sqrt -> l;
+          (if l > 0.0 then
+              vx/l -> ux;
+              vy/l -> uy;
+		  letter[] -> theFont.measureText -> (w, h);
+              'gsave' -> output.putline;
+		  (end.x, end.y) -> translate;
+		  (ux, uy) -> atan2 -> angle;
+		  '%f rotate\n' -> output.putFormat(#
+		  do 	  270+(angle * 180 / pi) -> f;
+		  #);
+		  (A, 0-B) -> translate;
+		  letter[] -> drawTextSimple;
+              'grestore' -> output.putline;
+	    if);
+
+	    #);
+	drawArrow:
        (# A:
             (#
             exit 8.0 * theArrowHeadSize
@@ -358,16 +385,17 @@ PSContext: Context
                       (- m.y) -> f;
                    #);
               'fill grestore' -> output.putline;
-          if);
+		  if);
+		  exit A
 	    #);
      drawDiamond:
        (# A:
             (#
-            exit 16.0 * theArrowHeadSize
+            exit 12.0 * theArrowHeadSize
             #);
           B:
             (#
-            exit 8.0 * theArrowHeadSize
+            exit 6.0 * theArrowHeadSize
             #);
           C:
             (#
@@ -417,7 +445,8 @@ PSContext: Context
                       (- m.y) -> f;
                    #);
               'fill grestore' -> output.putline;
-          if);
+		  if);
+		  exit A
 	    #);
      drawStroke:
        (# A: (# exit 14.0 * theArrowHeadSize #);
@@ -595,6 +624,7 @@ PSContext: Context
 
 		   oldColor: ^color;
 		   oldStrokeWidth, tmpStrokeWidth: @real;
+		   p1, pn: ^Point2d;
 		   do 
 		   (if theStroke[] <> NONE then
 			    theStrokeWidth -> oldStrokeWidth -> tmpStrokeWidth;
@@ -675,6 +705,29 @@ PSContext: Context
 			     -> DrawCircle -> d;
 			     d *1.2 + deltaEnd -> deltaEnd;
                    if);
+                   (if (theArrow %band DIAMOND_START > 0) then
+                       (2 -> points.get, 1 -> points.get, true)
+                         -> DrawDiamond;
+                   if);
+			 (if (theArrow %band DIAMOND_END > 0) then
+                       (points.size - 1 -> points.get, 
+                       points.size -> points.get, true)
+			     -> DrawDiamond -> d;
+			     d + deltaEnd -> deltaEnd;
+			 if);
+                   (if (theArrow %band DARROW_START > 0) then
+				 (2 -> points.get, 1 -> points.get, deltaStart)
+				 -> getDeltaPoint
+				 -> DrawArrow -> d;
+				 d + deltaStart -> deltaStart;
+                   if);
+                   (if (theArrow %band DARROW_END > 0) then
+                       (points.size - 1 -> points.get, 
+			     points.size -> points.get, deltaEnd)
+			       -> getDeltaPoint
+				 -> DrawArrow -> d;
+				 d + deltaEnd -> deltaEnd;
+                   if);
                    (if (theArrow %band ARROW_START > 0) then
 				 (2 -> points.get, 1 -> points.get, deltaStart)
 				 -> getDeltaPoint
@@ -686,15 +739,32 @@ PSContext: Context
 			       -> getDeltaPoint
                          -> DrawArrow;
                    if);
-                   (if (theArrow %band DIAMOND_START > 0) then
-                       (2 -> points.get, 1 -> points.get, true)
-                         -> DrawDiamond;
+                   (if (theArrow %band PLUS_START > 0) then
+				 (2 -> points.get, 1 -> points.get, deltaStart)
+				 -> getDeltaPoint -> (p1[], pn[]);
+				 (p1[], pn[], '+')
+                         -> DrawLetter;
                    if);
-			 (if (theArrow %band DIAMOND_END > 0) then
+                   (if (theArrow %band PLUS_END > 0) then
                        (points.size - 1 -> points.get, 
-                       points.size -> points.get, true)
-                         -> DrawDiamond;
-			 if);
+			     points.size -> points.get, deltaEnd)
+			     -> getDeltaPoint -> (p1[], pn[]);
+			     (p1[], pn[], '+')
+                         -> DrawLetter;
+                   if);
+                   (if (theArrow %band MINUS_START > 0) then
+				 (2 -> points.get, 1 -> points.get, deltaStart)
+				 -> getDeltaPoint -> (p1[], pn[]);
+				 (p1[], pn[], '%')
+                         -> DrawLetter;
+                   if);
+                   (if (theArrow %band MINUS_END > 0) then
+                       (points.size - 1 -> points.get, 
+			     points.size -> points.get, deltaEnd)
+			     -> getDeltaPoint -> (p1[], pn[]);
+			     (p1[], pn[], '%')
+                         -> DrawLetter;
+                   if);
 			if);	 
 		#);
        do (if theMode

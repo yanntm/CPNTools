@@ -1231,8 +1231,8 @@ AbstractArcInstrument: CPNGenericInstrument
 	    'line' -> options.lookupInteger -> lineStyle;
 	    (if arrowStyle
 	    // ARROW_END then (if (getPrototype).getOrientation = BothDir then ARROW_BOTH -> arrowStyle; if);
-	    // DIAMOND_END then (if source## <= Transition## then DIAMOND_START -> arrowStyle; if);
 	    // CIRCLE_END then (if source## <= Transition## then CIRCLE_START -> arrowStyle; if);
+	    // (DARROW_END + ARROW_END) then (if source## <= Transition## then DARROW_START  + ARROW_START -> arrowStyle; if);
 	    if);
 	    lineStyle -> style.lineStyle;
 	    arrowStyle -> style.arrow;
@@ -1529,7 +1529,7 @@ ResetArcInstrument: ArcInstrument
 	 #);
 	 init::< (#
 		 do
-			 ('arrow', DIAMOND_END -> int) -> options.setaddoption
+			 ('arrow', DARROW_END + ARROW_END-> int) -> options.setaddoption
 			 (# OptionType::IntegerOption(# invisible:: trueObject; #); #);
 		 #);
  #);

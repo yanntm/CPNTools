@@ -253,6 +253,24 @@ SaveNetAsInstrument: FigureTInstrument
        #);
   #);
 
+SavePNMLInstrument: FigureTInstrument
+  (# TargetType:: theIndex.NetNode;
+     FigureT:: SavePNMLFigure;     
+     apply::
+       (# 
+       do target.net[] -> saveNetWithDialog;
+          finish;
+       #);
+     init:: 
+       (# 
+       do 'save_pnml' -> helpname[];
+       #);
+     ToolTip::
+       (# 
+       do NamesSavePNML -> getGlobalNames -> theTip[]; 
+       #);
+  #);
+
 CreateNetInstrument: CPNInstrument
   (# CommandType:: LoadNewNetCommand;   
      FigureT:: NewNetFigure;

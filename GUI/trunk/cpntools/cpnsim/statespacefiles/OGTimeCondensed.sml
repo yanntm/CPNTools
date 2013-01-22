@@ -25,7 +25,7 @@
  * CPN Tools
  *)
 
-structure CPN'OGStopCrit = struct
+structure CPN'OGReductionOptions = struct
     val CreationTime = ref false
     val TerminationTime = ref false
 
@@ -36,5 +36,69 @@ structure CPN'OGStopCrit = struct
 end;
 
 structure CPN'OGTimeCondensed = struct
-    fun gen() = [""]
+    fun gen_one (name, ref elements) =
+    let
+        fun gen_header ([], lst) = lst
+           | gen_header ({colset, fieldname}::rest, lst) =
+           let
+               val times = 
+                   if CPN'CSTable.is_timed colset
+                   then String.concat [", ", fieldname, "t"]
+                   else ""
+           in
+               gen_header (rest, ", "::fieldname::times::lst)
+           end
+        fun gen_body ([], lst) = lst
+           | gen_body ({colset, fieldname}::rest, lst) =
+           let
+               val times = 
+                   if CPN'CSTable.is_timed colset
+                   then String.concat [", ", fieldname, "t = CPN'subtract creationtime ", fieldname, "t"]
+                   else ""
+           in
+               gen_body (rest, ", "::fieldname::" = "::fieldname::times::lst)
+           end
+    in
+        List.concat [["fun compressST", name, " creationtime {"], List.tl (gen_header
+        (elements, [""])), ["} = { "],
+        List.tl (gen_body (elements, [""])), ["}\n"]]
+    end
+    fun gen_starttime_ones () =
+    let
+        val code = ref [[""]]
+        fun fuck_avl elms = (code := (gen_one elms)::(!code))
+        val _ = CPN'AvlTree.AvlAppKey (fuck_avl, CPN'OGIdsGen.DataRecFields)
+    in
+        List.concat (!code)
+    end
+    fun gen_starttime () =
+    let
+        val code1 = ref [" }) = if creationtime = CPN'Time.null then CPN'state else { "]
+        val code2 = ref [" }"]
+        fun fuck_avl (name, _) = (code1 := (", "::name::(!code1));
+            code2 := (", "::name::" = compressST"::name::" creationtime "::name::(!code2)))
+        val _ = CPN'AvlTree.AvlAppKey (fuck_avl, CPN'OGIdsGen.DataRecFields)
+    in
+        List.concat [["fun compressST (CPN'state as { creationtime, owner"], !code1,
+        ["creationtime = CPN'Time.null, owner = owner"], !code2]
+    end
+
+    fun gen() = ["structure CPN'TimeEquivalence = struct\n",
+        "fun CPN'subtract creationtime [] = []\n",
+          "| CPN'subtract creationtime (CPN'h::CPN't) =",
+          " if (CPN'Time.lt (CPN'h, creationtime)) ",
+          "then CPN'Time.null::(CPN'subtract creationtime CPN't) ",
+          "else (CPN'Time.sub (CPN'h, creationtime))::(CPN'subtract creationtime CPN't)\n",
+        String.concat (gen_starttime_ones ()),
+        String.concat (gen_starttime ()),
+        "fun compress CPN'state = ",
+        "if (!CPN'OGReductionOptions.CreationTime) ",
+        "then compressST CPN'state else CPN'state\n", 
+        "fun compressTime creationtime CPN'time = ",
+        "if (!CPN'OGReductionOptions.CreationTime) ",
+        "then CPN'subtract creationtime CPN'time else CPN'time\n",
+        "fun compressTimestamp creationtime = ",
+        "if (!CPN'OGReductionOptions.CreationTime) ",
+        "then CPN'Time.null else creationtime\n",
+        "end"]
 end;

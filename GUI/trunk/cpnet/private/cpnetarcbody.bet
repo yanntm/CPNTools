@@ -604,12 +604,12 @@ do (# present_point:
 	 //Inhibitor then
 	    CIRCLE_START -> theStyle.arrow;
 	 //ResetArc then
-	    DIAMOND_START -> theStyle.arrow;
+	 ARROW_START + DARROW_START -> theStyle.arrow;
       if);
       arrowHeadSize -> theStyle.arrowHeadSize;
 	INNER makeShape;
       
-      computePoints;
+	computePoints;
       points[] -> theItem.points[];
       15 -> theStyle.curvature;
       'END ArcMakeShape' -> debugAttachmentPoints;

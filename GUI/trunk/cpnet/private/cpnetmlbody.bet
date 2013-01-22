@@ -1686,12 +1686,20 @@ do (checking,incorrect) -> transend.changeStatus;
 --mlCPNetSetStopCriteria:DoPart--
 do &text[] -> simulationOptions.until_step[];
    &text[] -> simulationOptions.add_step[];
+   &text[] -> simulationOptions.until_time[];
+   &text[] -> simulationOptions.add_time[];
   
    (if AbsoluteSteps > 0 then
        AbsoluteSteps -> simulationOptions.until_step.putInt;
    if);
    (if AdditionalSteps > 0 then
        AdditionalSteps -> simulationOptions.add_step.putInt;
+   if);
+   (if extraTime > 0 then
+       extraTime -> simulationOptions.add_time.putInt;
+   if);
+   (if totalTime > 0 then
+       totalTime -> simulationOptions.until_time.putInt;
    if);
    setSimulationOptions;
    

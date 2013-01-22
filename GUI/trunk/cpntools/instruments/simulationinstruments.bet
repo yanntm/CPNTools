@@ -404,6 +404,9 @@ FastForwardInstrument: CPNInstrument
        do 'fast_forward'->helpname[];
           50 -> nSteps;
 	    ('numberofsteps','fastforward.numberofsteps')->options.setAddOptionWithDefault(# OptionType:: IntegerOption(# dname:: (# do 'Number of steps' -> value[]; #); #); #);
+	    ('totalsteps','fastforward.totalsteps')->options.setAddOptionWithDefault(# OptionType:: IntegerOption(# dname:: (# do 'Total steps' -> value[]; #); #); #);
+	    ('amountoftime','fastforward.amountoftime')->options.setAddOptionWithDefault(# OptionType:: IntegerOption(# dname:: (# do 'Amount of time' -> value[]; #); #); #);
+	    ('totaltime','fastforward.totaltime')->options.setAddOptionWithDefault(# OptionType:: IntegerOption(# dname:: (# do 'Total time' -> value[]; #); #); #);
        #);
 
      ToolTip::
@@ -429,7 +432,8 @@ FastForwardInstrument: CPNInstrument
 FastForward: SimulationCommand
   (#
      TargetType::CPNSheet;
-     numOfSteps: @integer;
+     numOfSteps, totalSteps: @integer;
+     extraTime, totalTime: @integer;
      theInstance: ^PageInstance;
 
      relevant::
@@ -449,12 +453,14 @@ FastForward: SimulationCommand
 	    difference: @period;
        do (if (target.content.thePage.net.status = compiled) then
               'numberofsteps'->options.lookupInteger -> numOfSteps;
-              (if numOfSteps > 0 then
+              'totalsteps'->options.lookupInteger -> totalSteps;
+		  'amountoftime'->options.lookupInteger -> extraTime;
+              'totaltime'->options.lookupInteger-> totalTime;
 		      timeNow -> start;
 			'Fast forward simulation running...' -> fixedstatus.running;
                   fixedstatus.start;
                   target.content[] -> sheetPage[];
-                  (numOfSteps,0) -> sheetPage.thePage.net.setStopCriteria;
+			(numOfSteps,totalSteps, extraTime, totalTime) -> sheetPage.thePage.net.setStopCriteria;
                   sheetPage.thePage.net.ML[] -> MLRun -> (tmpi,tmps[],stopReason[]);
                   sheetPage.thePage.net.getAllMarkings;
                   L: (#
@@ -482,7 +488,6 @@ FastForward: SimulationCommand
 			 else
 				 stopReason[] -> status.messageKeep;
 			 if);
-  	      if);
           if);
        #);
 
