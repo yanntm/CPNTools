@@ -41,15 +41,6 @@ BinderMenu: CPNMenu
                    theInstrument.init;
 		#);
 	#);
-     
-     CloneItem::
-       (# init::
-            (#     
-            do NamesNetNodeMenuNewPageItem -> getGlobalNames -> name[];
-               &CreatePageBinderInstrument[] -> theInstrument[];
-               theInstrument.init;
-            #);
-       #);
   #);
 
 ToolBinderMenu: CPNMenu

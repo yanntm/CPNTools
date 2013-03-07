@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="iso-8859-1"?>
-<!DOCTYPE workspaceElements PUBLIC "-//CPN//DTD CPNXML 1.0//EN" "http://www.daimi.au.dk/~cpntools/bin/DTD/6/cpn.dtd">
+<!DOCTYPE workspaceElements PUBLIC "-//CPN//DTD CPNXML 1.0//EN" "http://cpntools.org/DTD/6/cpn.dtd">
 
 <workspaceElements>
   <generator tool="CPN Tools"
-             version="2.3.13"
+             version="3.5.5"
              format="6"/>
   <cpnet>
     <globbox>
@@ -26,13 +26,28 @@
           <unit/>
           <layout>colset UNIT = unit;</layout>
         </color>
+        <color id="ID4">
+          <id>BOOL</id>
+          <bool/>
+        </color>
         <color id="ID3">
           <id>INT</id>
           <int/>
         </color>
-        <color id="ID4">
-          <id>BOOL</id>
-          <bool/>
+        <color id="ID1412312409">
+          <id>INTINF</id>
+          <intinf/>
+          <layout>colset INTINF = intinf;</layout>
+        </color>
+        <color id="ID1412312425">
+          <id>TIME</id>
+          <time/>
+          <layout>colset TIME = time;</layout>
+        </color>
+        <color id="ID1412322990">
+          <id>REAL</id>
+          <real/>
+          <layout>colset REAL = real;</layout>
         </color>
         <color id="ID5">
           <id>STRING</id>
@@ -42,20 +57,31 @@
     </globbox>
     <page id="ID6">
       <pageattr name="New Page"/>
+      <constraints/>
     </page>
     <instances>
       <instance id="ID2149"
                 page="ID6"/>
     </instances>
     <options>
-      <option name="outputdirectory">
-        <value>
-          <text>&lt;same as model&gt;</text>
-        </value>
-      </option>
       <option name="realtimestamp">
         <value>
           <boolean>false</boolean>
+        </value>
+      </option>
+      <option name="fair_be">
+        <value>
+          <boolean>false</boolean>
+        </value>
+      </option>
+      <option name="global_fairness">
+        <value>
+          <boolean>false</boolean>
+        </value>
+      </option>
+      <option name="outputdirectory">
+        <value>
+          <text>&lt;same as model&gt;</text>
         </value>
       </option>
       <option name="repavg">
@@ -283,6 +309,8 @@
       <IndexNode expanded="false">
         <IndexNode expanded="false"/>
         <IndexNode expanded="false"/>
+        <IndexNode expanded="false"/>
+        <IndexNode expanded="false"/>
         <IndexNode expanded="false">
           <IndexNode expanded="false">
             <IndexNode expanded="false">
@@ -334,13 +362,16 @@
         </IndexNode>
       </IndexNode>
       <IndexNode expanded="false"/>
-      <IndexNode expanded="true">
+      <IndexNode expanded="false">
         <IndexNode expanded="false">
           <IndexNode expanded="true"/>
           <IndexNode expanded="true"/>
           <IndexNode expanded="true"/>
         </IndexNode>
-        <IndexNode expanded="false">
+        <IndexNode expanded="true">
+          <IndexNode expanded="false"/>
+          <IndexNode expanded="false"/>
+          <IndexNode expanded="false"/>
           <IndexNode expanded="false"/>
           <IndexNode expanded="false"/>
           <IndexNode expanded="false"/>

@@ -43,36 +43,55 @@ DeletePageIndexInstrument: Instrument
        #);
   #);
 
-CreatePageIndexInstrument: FigureTInstrument
+CreatePageNodeInstrument: FigureTInstrument
   (# TargetType:: theIndex.NetNode;
      FigureT:: NewPageFigure;
      
      apply::
        (#
-       do (# com: ^CreatePageIndexCommand;
-          do &CreatePageIndexCommand[] -> com[];
-             target[] -> com.prepare;
+       do (# com: ^CreatePageCommand;
+	    do &CreatePageCommand[] -> com[];
+		 com.init;
+             target.net[] -> com.prepare;
              com.apply;
              (target.net[],com[]) -> registerCommand;
              finish;
           #);
        #);
-     init:: (# do 'new_page'->helpname[]; #);
-
-     ToolTip:: (# do NamesCreateNewPage -> getGlobalNames -> theTip[]; #);
   #);
 
-CreatePageBinderInstrument: Instrument
-  (# TargetType:: CpnBinder;
-     relevant::
-       (#
-       do target.theNet[] <> NONE -> value;
-       #);
+CreatePagePageInstrument: FigureTInstrument
+  (# TargetType:: CPNSheet;
+     FigureT:: NewPageFigure;
+     
      apply::
-       (# 
-       do (target.theNet[],target[]) -> CreateAndOpenPage;
+       (#
+       do (# com: ^CreatePageCommand;
+	    do &CreatePageCommand[] -> com[];
+		 com.init;
+             target.content.thePage.net[] -> com.prepare;
+             com.apply;
+             (target.content.thePage.net[],com[]) -> registerCommand;
+             finish;
+          #);
        #);
   #);
+
+CreatePageInstrument: CPNGenericInstrument (#
+  theNodeInstrument: @CreatePageNodeInstrument;
+  thePageInstrument: @CreatePagePageInstrument;
+     FigureT:: NewPageFigure;
+     ToolTip:: (# do NamesCreateNewPage -> getGlobalNames -> theTip[]; #);
+     init:: 
+       (# 
+       do 'new_page' -> helpname[];
+	    theNodeInstrument.init;
+	    theNodeInstrument[] -> register;
+	    thePageInstrument.init;
+	    thePageInstrument[] -> register;
+	 #);
+#);
+
 
 CreateAndOpenPage:
   (# net: ^CPNet;
@@ -121,6 +140,14 @@ CreatePageCommand: Command
      theInstanceNode: ^theIndex.InstanceNode;
      thePosition: @Integer;
      theCPNPageClipping: @CPNPageClipping;
+     canvas: @boolean;
+     name: ^text;
+
+     init:: (#
+     do
+     NamesDefaultNameOfNewPage -> getGlobalNames -> name[];
+     #);
+
      getName::
        (#
        do 'Create Page' -> name[];
@@ -135,10 +162,9 @@ CreatePageCommand: Command
           theNetNode.theIndexNodes.size -> thePosition;
           
           &CPNPage[] -> newPage[];
-          newPage.init;
-          target[] -> newPage.net[];
+	    (target[], canvas) -> newPage.init;
           
-          NamesDefaultNameOfNewPage -> getGlobalNames -> newPage.name;
+          name[] -> newPage.name;
           newPage.createPageInstance -> theInstance[];
           theInstance[] -> newPage.prime[];
           true -> theInstance.notMLinstance;
@@ -171,33 +197,3 @@ CreatePageCommand: Command
        #);
   #);
 
-CreatePageIndexCommand: Command
-  (# TargetType:: theIndex.NetNode;
-     
-     theCreatePageCommand: @CreatePageCommand;
-     
-     getName::
-       (#
-       do theCreatePageCommand.getName -> name[];
-       #);
-     
-     prepare::
-       (#
-       do target.net[] -> theCreatePageCommand.prepare;
-       #);
-     
-     apply::
-       (#
-       do theCreatePageCommand.apply;
-       #);
-     
-     undo::
-       (# 
-       do theCreatePageCommand.undo;         
-       #);
-     
-     redo::
-       (# 
-       do theCreatePageCommand.redo;
-       #);
-  #);

@@ -66,6 +66,7 @@ INCLUDE 'cpnfactory';
 INCLUDE '~beta/postwimp/foundation/private/worldbody';
 
 BODY 'private/cpntoolsbody';
+BODY 'instruments/drawingcallbacks';
 
 -- program: descriptor --
 CpnWorkSpace
@@ -173,11 +174,10 @@ CpnWorkSpace
 	     theSaveAllNetsInstument: ^SaveAllNetsInstrument;
              theSaveNetAsInstrument: ^SaveNetAsInstrument;
              theSaveNetAndSimulatorInstrument: ^SaveNetAndSimulatorInstrument;
-             theSavePNMLInstrument: ^SavePNMLInstrument;
 	     theHelpInstrument: ^HelpInstrument;
 	     thePrintInstrument: ^PrintInstrument;
              theCreateNetInstrument: ^CreateNetInstrument;
-             theCreatePageIndexInstrument: ^CreatePageIndexInstrument;
+             theCreatePageInstrument: ^CreatePageInstrument;
              theDeletePageIndexInstrument: ^DeletePageIndexInstrument;
              theCloseNetInstrument: ^CloseNetInstrument;
              
@@ -615,10 +615,6 @@ CpnWorkSpace
              theSaveNetAndSimulatorInstrument.init;
              ('SaveNetAndSimulator', theSaveNetAndSimulatorInstrument[])->theInstrumentList.associate;
              
-             &SavePNMLInstrument[]->theSavePNMLInstrument[];
-             theSavePNMLInstrument.init;
-		 ('SavePNML', theSavePNMLInstrument[])->theInstrumentList.associate;
-             
 	     &HelpInstrument[]->theHelpInstrument[];
 	     theHelpInstrument.init;
 	     ('Help',theHelpInstrument[])->theInstrumentList.associate;
@@ -631,9 +627,9 @@ CpnWorkSpace
              theCreateNetInstrument.init;
              ('NewNet', theCreateNetInstrument[])->theInstrumentList.associate;
              
-             &CreatePageIndexInstrument[]->theCreatePageIndexInstrument[];
-             theCreatePageIndexInstrument.init;
-             ('NewPage', theCreatePageIndexInstrument[])->theInstrumentList.associate;
+             &CreatePageInstrument[]->theCreatePageInstrument[];
+             theCreatePageInstrument.init;
+             ('NewPage', theCreatePageInstrument[])->theInstrumentList.associate;
              
              &DeletePageIndexInstrument[]->theDeletePageIndexInstrument[];
              theDeletePageIndexInstrument.init;

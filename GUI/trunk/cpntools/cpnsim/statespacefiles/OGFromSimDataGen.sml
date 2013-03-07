@@ -193,7 +193,7 @@ in
                         
                         if (CPN'Time.name <> "unit")
                         then
-                         code_temp2:=(!code_temp2)^"creationtime = CPN'TimeEquivalence.compressTimestamp creationtime,\n"
+                         code_temp2:=(!code_temp2)^"creationtime = creationtime,\n"
                         else
                          ();
              

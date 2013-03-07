@@ -200,18 +200,19 @@ PatternLayer: Layer (#
    onPanChanged:: (#
    x, y: @integer;
    do father.pan -> (x, y);
-      (x mod thePattern.patternSize - thePattern.patternSize, y mod thePattern.patternSize - thePattern.patternSize) -> position;
+   x + father.theWidth / 2 -> x;
+   y + father.theHeight / 2 -> y;
+   (x mod thePattern.patternSize - thePattern.patternSize - father.theWidth / 2, y mod thePattern.patternSize - thePattern.patternSize - father.theHeight/2) -> position;
    #);
    init:: (#
          enter thePattern[]
 	   do (if thePattern.patternSize <= 0 then 25 -> thePattern.patternSize; if);
 	      true-> clipping;
-	      LeftJustify -> horizontalAnchor;
-	      TopJustify -> verticalAnchor;
 		thePattern[] -> show;
          exit THIS(PatternLayer)[]
    #);
    onSizeChanged::< (#
+	   do onPanChanged;
    #);
    enter thePattern[]
    exit this(PatternLayer)[]
@@ -604,6 +605,8 @@ TextSheet: HighlightableSheet
        do LeftJustify -> mainLayer.verticalAnchor;
           TopJustify -> mainLayer.horizontalAnchor;
 	    (urinish[] -> (patternSize -> &LinePattern).init -> &PatternLayer).init -> thePatternLayer[];
+	      LeftJustify -> thePatternLayer.horizontalAnchor;
+	      TopJustify -> thePatternLayer.verticalAnchor;
 	    thePatternLayer[] -> add;
 	    thePatternLayer[] -> layers.sendToBack;          
 	    (7, 20) -> pan;

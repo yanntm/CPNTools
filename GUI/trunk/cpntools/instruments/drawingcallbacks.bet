@@ -1,0 +1,113 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2013 AIS Group, Eindhoven University of Technology         *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../../cpnet/cpnet';
+INCLUDE '../cpnworkspace';
+INCLUDE 'instancenodeinstruments';
+INCLUDE 'creationinstruments';
+
+--createcanvas:dopart--
+ do (# w: ^CPNWorkspace;
+    do
+    THIS(Workspace)[] -> w[];
+    (# com: ^w.CreatePageCommand;
+    do &w.CreatePageCommand[] -> com[];
+       not saved -> com.canvas;
+	 name[] -> com.name[];
+       THIS(CPNet)[] -> com.prepare;
+	 com.apply;
+	 (*(THIS(CPNet)[] ,com[]) -> registerCommand;*)
+	 com.theCPNPageClipping.elm.id[] -> id[];
+	 (id[], com.theCPNPageClipping.elm[]) -> canvases.associate;
+   #);
+   #);
+
+--createelement:dopart--
+ do (# w: ^CPNWorkspace;
+    do
+    THIS(Workspace)[] -> w[];
+   (# prototype: ^w.Aux; at: @point2d; point: ^Point2D; count: @integer;
+   do 
+	(if type
+	 // 1 then w.defaultAuxBox.clone -> prototype[];
+	    (bis.getInt, bis.getInt) -> at;
+	    bis.getInt -> prototype.theShape.width;
+	    bis.getInt -> prototype.theShape.height;
+	 // 2 then w.defaultAuxEllipse.clone -> prototype[];
+	    (bis.getInt, bis.getInt) -> at;
+	    bis.getInt -> prototype.theShape.width;
+	    bis.getInt -> prototype.theShape.height;
+	 // 3 then w.defaultAuxLabel.clone -> prototype[];
+	    (bis.getInt, bis.getInt) -> at;
+	    bis.getString -> prototype.setText;
+	 // 4 then w.defaultAuxLine.clone -> prototype[];
+	    &PointList[] -> prototype.theShape.points[];
+	    bis.getInt -> count;
+	    (for count repeat
+	       &Point2D[] -> point[];
+	       (bis.getInt, bis.getInt) -> point;
+		 point[] -> prototype.theShape.points.append;
+          for);
+	 // 11 then 
+	    (0, bis.getInt) -> at;
+	    (canvas[], at[]) -> w.CreateHorizontalGuide;
+	 // 12 then
+	    (bis.getInt, 0) -> at;
+	    (canvas[], at[]) -> w.CreateVerticalGuide;
+	if);
+	(if prototype[] <> NONE then
+	   'black' -> colorTable.lookup -> prototype.lineColor[];
+	   'white' -> colorTable.lookup -> prototype.fillColor[];
+	   1 -> prototype.strokeWidth;
+	   'black' -> colorTable.lookup -> prototype.textColor[];
+	   false -> prototype.filled;
+	   'Solid' -> prototype.linetype[];
+	   '' -> prototype.fillpattern[];
+	   at -> prototype.position;
+	   prototype[] -> canvas.addAux;
+	    prototype.id[] -> reply.putString;
+	    (prototype.id[], prototype[]) -> elements.associate;
+	if);
+   #);
+   #);
+
+-- styleelement:dopart --
+ do (# ws: ^CPNWorkspace;
+    do
+    THIS(Workspace)[] -> ws[];
+    (#
+    do
+	   bis.getString -> colorTable.lookup -> element.lineColor[];
+	   bis.getString -> colorTable.lookup -> element.fillColor[];
+	  element.changed;
+#);
+#);
+
+-- moveelement:dopart --
+ do (# ws: ^CPNWorkspace;
+    do
+    THIS(Workspace)[] -> ws[];
+    (#
+    do
+        (x, y) -> element.position;
+	  width -> element.theShape.width;
+	  height -> element.theShape.height;
+	  element.changed;
+#);
+#);

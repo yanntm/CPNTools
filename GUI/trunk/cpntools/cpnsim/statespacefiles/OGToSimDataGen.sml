@@ -48,7 +48,7 @@ fun  gen_placeinstcopy({OGdatarec=OGdatarec, OGdatarecfield=OGdatarecfield,
    let     
        val cur_elem = if (CPN'Time.name <> "unit") andalso (CPN'CSTable.is_timed colset)
 		      then (simplace^".set "^siminst^" (untimedToTimed((!(#"^OGdatarecfield^" og"^OGdatarec^")),\n\
-		           \                         (!(#"^OGdatarecfield^"t og"^OGdatarec^"))));\n"^
+		           \  CPN'TimeEquivalence.CPN'subtract creationtime (!(#"^OGdatarecfield^"t og"^OGdatarec^"))));\n"^
 			   simplace^".init "^siminst^";\n") 
 		      else (simplace^".set "^siminst^" (!(#"^OGdatarecfield^" og"^OGdatarec^"));\n") 
    in
@@ -118,7 +118,7 @@ in
 
  if (CPN'Time.name <> "unit")
  then
-     code_temp:=(!code_temp)^"CPN'Time.model_time:=creationtime;\n"
+     code_temp:=(!code_temp)^"CPN'Time.model_time:=(CPN'TimeEquivalence.compressTimestamp (creationtime));\n"
  else
      ();
 
