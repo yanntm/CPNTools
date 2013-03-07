@@ -409,7 +409,6 @@ do getToolCells->list[];
    &ToolCell[]->CycleArcCell[];
    &ToolCell[]->HorizontalGuideCell[];
    &ToolCell[]->VerticalGuideCell[];
-   &ToolCell[]->GuideGridCell[];
    &ToolCell[]->ToogleExplicitCell[];
    &ToolCell[]->FIFOCell[];
    &ToolCell[]->LIFOCell[];
@@ -458,10 +457,6 @@ do getToolCells->list[];
    (theVerticalGuideInstrument[], 'verticalGuide')->VerticalGuideCell.init;
    'create_guideline'->VerticalGuideCell.helpname[];
    
-   'guideGrid'->theInstrumentList.lookup->theGuideGridInstrument[];
-   (theGuideGridInstrument[], 'guideGrid')->GuideGridCell.init;
-   'create_guideline'->GuideGridCell.helpname[];
-   
    'toogleExplicit' -> theInstrumentList.lookup -> theToogleExplicitInstrument[];
    (theToogleExplicitInstrument[], 'toogleExplicit') -> ToogleExplicitCell.init;
    'toggle_explicit'->ToogleExplicitCell.helpname[];
@@ -500,14 +495,13 @@ do getToolCells->list[];
    HorizontalGuideCell[]->CycleArcCell.SetRightCell;
    VerticalGuideCell[]->HorizontalGuideCell.SetRightCell;
 
-   FIFOCell[] -> DeleteCell.setBottomCell;
+   (*FIFOCell[] -> DeleteCell.setBottomCell;
    LIFOCell[] -> FIFOCell.setRightCell;
    PQueueCell[] -> LIFOCell.setRightCell;
    BoundedCell[] -> PQueueCell.setRightCell;
-   GuideGridCell[] -> BoundedCell.setRightCell;
    (if internal then 
-       ToogleExplicitCell[] -> InhibitorArcCell.setRightCell;
-   if);
+       ToogleExplicitCell[] -> BoundedCell.setRightCell;
+   if);*)
    
    theCollection.Changed;
    
@@ -741,7 +735,6 @@ do
    &ToolCell[] -> saveCell[];
    &ToolCell[] -> saveAsCell[];
    &ToolCell[] -> saveNetAndSimulator[];
-   &ToolCell[] -> savePNMLCell[];
    &ButtonCell[] -> LoadCell[];
    &ToolCell[] -> helpCell[];
    &ToolCell[] -> printCell[];
@@ -761,14 +754,11 @@ do
    'SaveNetAndSimulator'->theInstrumentList.lookup->theSaveNetAndSimulatorInstrument[];
    (theSaveNetAndSimulatorInstrument[], 'SaveNetAndSimulator')->saveNetAndSimulator.init;
    
-   'SavePNML'->theInstrumentList.lookup->theSavePNMLInstrument[];
-   (theSavePNMLInstrument[], 'Save PNML')->savePNMLCell.init;
-   
    'NewNet'->theInstrumentList.lookup->theCreateNetInstrument[];
    (theCreateNetInstrument[],'NewNet')->newNetCell.init;
    
-   'NewPage'->theInstrumentList.lookup->theCreatePageIndexInstrument[];
-   (theCreatePageIndexInstrument[], 'NewPage')->newPageCell.init;
+   'NewPage'->theInstrumentList.lookup->theCreatePageInstrument[];
+   (theCreatePageInstrument[], 'NewPage')->newPageCell.init;
    
    'CloseNet'->theInstrumentList.lookup->theCloseNetInstrument[];
    (theCloseNetInstrument[], 'CloseNet')->closeNetCell.init;
@@ -795,7 +785,6 @@ do
    LoadCell[]->newNetCell.SetBottomCell;
    saveCell[]->LoadCell.SetRightCell;
    saveAsCell[]->saveCell.SetRightCell;
-   savePNMLCell[] -> saveAsCell.setRightCell;
    theCollection.Changed;
    
 -- MonitoringToolsInit:DoPart --

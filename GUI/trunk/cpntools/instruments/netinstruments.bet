@@ -106,15 +106,21 @@ CloseNet: WithCommandManager
   #);
 
 OpenSaveAsDialog:
-  (# path,suffix: ^Text;
-     entry: @DiskEntry;
+  (# path: ^Text;
+	  entry: @DiskEntry;
+	  oldName: ^text;
      saveDialog: @widget.FileCreationDialog
        (# 
        do &text[]->fileName[];
           NamesFileDialogFilter  -> getGlobalNames -> filter[];
-          NamesSaveInstrument -> getGlobalNames -> title[];
-       #);
+	    NamesSaveInstrument -> getGlobalNames -> title[];
+	    '.cpn' -> defaultExt[];
+	    (if (oldName[] <> NONE) and not ('' -> oldName.equal) then
+	       oldName[] -> filename[]
+	    if);
+	    #);
      
+     enter oldName[]
   do (if NOT modalDialog then
          true -> modalDialog;
          saveDialog -> path[];          
@@ -122,9 +128,11 @@ OpenSaveAsDialog:
      if);
      (if path[] <> none then
          path[] -> entry.path;
-         (if not ('.cpn' -> (entry.path.name.suffix).equal) then
+	   (if not (('.cpn' -> (entry.path.name.suffix).equalNCS) or
+			   ('.pnml' -> (entry.path.name.suffix).equalNCS) or
+			   ('.xml' -> (entry.path.name.suffix).equalNCS)
+	           ) then
              '.cpn' -> path.append;
-             path[] -> entry.path;
          if);
      if);
   exit path[]
@@ -170,9 +178,7 @@ SaveNetWithDialog:
        #);
   #);
 
-
-
-SaveNetInstrument: FigureTInstrument
+SaveNetNodeInstrument: FigureTInstrument
   (# TargetType:: theIndex.NetNode;
      FigureT:: SaveFigure;     
      apply::
@@ -180,15 +186,36 @@ SaveNetInstrument: FigureTInstrument
        do target.net[] -> saveNetWithDialog;
           finish;
        #);
-     init:: 
+  #);
+
+SaveNetPageInstrument: FigureTInstrument
+  (# TargetType:: CPNSheet;
+     FigureT:: SaveFigure;     
+     apply::
        (# 
-       do 'save_net' -> helpname[];
+       do target.content.thePage.net[] -> saveNetWithDialog;
+          finish;
        #);
+  #);
+
+SaveNetInstrument: CPNGenericInstrument (#
+  theNodeInstrument: @SaveNetNodeInstrument;
+  thePageInstrument: @SaveNetPageInstrument;
+  FigureT:: SaveFigure;     
      ToolTip::
        (# 
        do NamesSaveNet -> getGlobalNames -> theTip[]; 
        #);
-  #);
+     init:: 
+       (# 
+       do 'save_net' -> helpname[];
+	    theNodeInstrument.init;
+	    theNodeInstrument[] -> register;
+	    thePageInstrument.init;
+	    thePageInstrument[] -> register;
+	 #);
+#);
+
 
 SaveAllNetsInstrument: CPNInstrument
   (# CommandType:: SaveAllNetsCommand; 
@@ -197,23 +224,18 @@ SaveAllNetsInstrument: CPNInstrument
        (# 
        do NamesSaveAllNets -> getGlobalNames -> theTip[];
        #);
-  #);
-     
-SaveNetAsInstrument: FigureTInstrument
-  (# TargetType:: theIndex.NetNode;
-     FigureT:: SaveAsFigure;
-     apply::
-       (# path: ^Text;
-          suffix: ^Text;
-          entry: @diskentry;
-          saveDialog: @widget.FileCreationDialog
-            (# 
-            do &text[]->fileName[];
-               NamesFileDialogFilter  -> getGlobalNames -> filter[];
-               NamesSaveInstrument -> getGlobalNames -> title[];
-            #);
-       do OpenSaveAsDialog -> path[];
+#);
+
+SaveNetAs: (#
+	net: ^CPNet;
+	path: ^Text;
+	suffix: ^Text;
+	entry: @diskentry;
+	enter (net[])
+	do net.name -> OpenSaveAsDialog -> path[];
           (if path[] <> none then
+	        path[] -> entry.path;
+
               trySave:
                 (# status: ^StatusBubble;
                 do ObjectPool.get(# Type:: StatusBubble; #) -> status[];
@@ -221,55 +243,79 @@ SaveNetAsInstrument: FigureTInstrument
                        ExtendedASCIISave -> getGlobalNames -> status.error;
                        leave trySave;
                    if);
-                   target.net[] -> 
-                   SaveNet
-                   (#
-                      diskPath::
-                        (#
-                        do path.copy -> value[];
-                        #);
-                      myError::
-                        (#
-                        do msg[] -> status.error;
-                           leave trySave;
-                        #);
-                   #);
-                   target.net[] -> DeleteAutosave;
-                   path[] -> entry.path;
-                   entry.path.name -> target.net.name;
-                   entry.path.head -> target.net.path[];
-                   target.net.changed;
+			 (if (('.cpn' -> (entry.path.name.suffix).equalNCS) or
+				   ('.xml' -> (entry.path.name.suffix).equalNCS)
+			     ) then
+				 net[] -> SaveNet
+				 (#
+				    diskPath::
+					(#
+					do path.copy -> value[];
+					#);
+				    myError::
+					(#
+					do msg[] -> status.error;
+					   leave trySave;
+					#);
+				 #);
+				 net[] -> DeleteAutosave;
+				 entry.path.name -> net.name;
+				 entry.path.head -> net.path[];
+				 net.changed;
+			 if);
+			 (if ('.pnml' -> (entry.path.name.suffix).equalNCS) then
+				 (net[], path[]) -> SavePNML
+				 (#
+				    myError::
+					(#
+					do msg[] -> status.error;
+					   leave trySave;
+					#);
+				#);
+				'PNML exported successfully.' -> status.message;
+			 if);
                 #);
           if);
+	#);
+     
+SaveNetNodeAsInstrument: FigureTInstrument
+  (# TargetType:: theIndex.NetNode;
+     FigureT:: SaveAsFigure;
+     apply::
+     (#
+	    do target.net[] -> SaveNetAs;
           finish;
-       #);
-     init:: 
-       (# 
-       do 'save_net_as' -> helpname[]; 
-       #);     
-     ToolTip:: 
-       (# 
-       do NamesSaveNetNew -> getGlobalNames -> theTip[]; 
        #);
   #);
 
-SavePNMLInstrument: FigureTInstrument
-  (# TargetType:: theIndex.NetNode;
-     FigureT:: SavePNMLFigure;     
+SaveNetPageAsInstrument: FigureTInstrument
+  (# TargetType:: CPNSheet;
+     FigureT:: SaveAsFigure;
      apply::
        (# 
-       do target.net[] -> saveNetWithDialog;
+       do 
+	    target.content.thePage.net[] ->  SaveNetAs;
           finish;
+       #);
+  #);
+
+SaveNetAsInstrument: CPNGenericInstrument (#
+  theNodeInstrument: @SaveNetNodeAsInstrument;
+  thePageInstrument: @SaveNetPageAsInstrument;
+  FigureT:: SaveAsFigure;
+     ToolTip::
+       (# 
+       do NamesSaveNetNew -> getGlobalNames -> theTip[]; 
        #);
      init:: 
        (# 
-       do 'save_pnml' -> helpname[];
-       #);
-     ToolTip::
-       (# 
-       do NamesSavePNML -> getGlobalNames -> theTip[]; 
-       #);
-  #);
+       do 'save_net_as' -> helpname[];
+	    theNodeInstrument.init;
+	    theNodeInstrument[] -> register;
+	    thePageInstrument.init;
+	    thePageInstrument[] -> register;
+	 #);
+#);
 
 CreateNetInstrument: CPNInstrument
   (# CommandType:: LoadNewNetCommand;   
@@ -368,7 +414,7 @@ SaveAllNetsCommand: CPNCommand
        #);
    #);
 
-CloseNetInstrument: FigureTInstrument
+CloseNetNodeInstrument: FigureTInstrument
   (# TargetType:: theIndex.NetNode;
      FigureT:: CloseNetFigure;
      apply::
@@ -386,15 +432,45 @@ CloseNetInstrument: FigureTInstrument
             #);
           finish;
        #);
-     init::
+  #);
+
+CloseNetPageInstrument: FigureTInstrument
+  (# TargetType:: CPNSheet;
+     FigureT:: CloseNetFigure;
+     apply::
        (# 
-       do 'close_net' -> helpname[];
+       do attemptClose:
+            (#
+            do (if target.content.thePage.net.modifiedSinceSave then
+                   (if target.content.thePage.net[] -> PromptSaveOrDiscard then
+                       leave attemptClose;
+                   if);
+               if);
+               setBusyCursor; (*** LOCK-INTERACTION ***)
+               target.content.thePage.net[] -> CloseNet;
+               UnsetBusyCursor; (*** UNLOCK-INTERACTION ***)
+            #);
+          finish;
        #);
+  #);
+
+CloseNetInstrument: CPNGenericInstrument (#
+  theNodeInstrument: @CloseNetNodeInstrument;
+  thePageInstrument: @CloseNetPageInstrument;
+  FigureT:: CloseNetFigure;
      ToolTip::
        (# 
        do NamesCloseNet -> getGlobalNames -> theTip[];
        #);     
-  #);
+     init:: 
+       (# 
+       do 'close_net' -> helpname[];
+	    theNodeInstrument.init;
+	    theNodeInstrument[] -> register;
+	    thePageInstrument.init;
+	    thePageInstrument[] -> register;
+	 #);
+#);
 
 CloseAllNetsInstrument: CPNInstrument
   (# CommandType:: CloseAllNetsCommand; 

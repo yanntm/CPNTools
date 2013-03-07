@@ -84,6 +84,11 @@ structure CPN'OGTimeCondensed = struct
     end
 
     fun gen() = ["structure CPN'TimeEquivalence = struct\n",
+        "fun CPN'clamp creationtime [] = []\n",
+          "| CPN'clamp creationtime (CPN'h::CPN't) =",
+          " if (CPN'Time.lt (CPN'h, creationtime)) ",
+          "then creationtime::(CPN'clamp creationtime CPN't) ",
+          "else CPN'h::(CPN'clamp creationtime CPN't)\n",
         "fun CPN'subtract creationtime [] = []\n",
           "| CPN'subtract creationtime (CPN'h::CPN't) =",
           " if (CPN'Time.lt (CPN'h, creationtime)) ",
@@ -96,7 +101,7 @@ structure CPN'OGTimeCondensed = struct
         "then compressST CPN'state else CPN'state\n", 
         "fun compressTime creationtime CPN'time = ",
         "if (!CPN'OGReductionOptions.CreationTime) ",
-        "then CPN'subtract creationtime CPN'time else CPN'time\n",
+        "then CPN'clamp creationtime CPN'time else CPN'time\n",
         "fun compressTimestamp creationtime = ",
         "if (!CPN'OGReductionOptions.CreationTime) ",
         "then CPN'Time.null else creationtime\n",

@@ -76,7 +76,7 @@ fun gen () =
  
  if (CPN'Time.name <> "unit")
  then
-     code_temp:=(!code_temp)^"creationtime=CPN'TimeEquivalence.compressTimestamp creationtime,\n"
+     code_temp:=(!code_temp)^"creationtime=creationtime,\n"
  else
      (); 
  

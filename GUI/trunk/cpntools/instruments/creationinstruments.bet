@@ -1613,12 +1613,27 @@ MakeGuideList:
   (# context: ^CPNPage;
      guides: ^GuideLineList;
      x, y: @real;
+     intx, inty: @integer; oldX, oldY: @real;tmpX, tmpY: @real;
      snappedVGL: ^VerticalGuideLine;
      snappedHGL: ^HorizontalGuideline;
      snaph, snapv: @real;
   enter (context[], x, y)
   do &GuideLineList[] -> guides[];
      15.0 -> snaph -> snapv;
+     x -> oldX; y -> oldY;
+	  (oldX / 42.0 + 0.5 -> floor) * 42 -> intx;
+	  (oldY / 42.0 + 0.5 -> floor) * 42 -> inty;
+	  ((oldX - intx) -> fabs) -> tmpX;
+	  ((oldY - inty) -> fabs) -> tmpY;
+	 (if (tmpX < 10) then
+		intx -> x;
+		tmpX -> snapv;
+	 if);
+	 (if (tmpY < 10) then
+		inty -> y;
+		tmpY -> snaph;
+	 if);
+
      context.scanGuideLines
      (# vgl: ^VerticalGuideLine;
         hgl: ^HorizontalGuideline;
@@ -1626,14 +1641,14 @@ MakeGuideList:
      do (if current##
          // HorizontalGuideline## then
             current[] -> hgl[];
-            y - hgl.y -> fAbs -> csnap;
+            oldY - hgl.y -> fAbs -> csnap;
             (if csnap < snaph then
                 hgl[] -> snappedHGL[];
                 csnap -> snaph;
             if);
          // VerticalGuideLine## then
             current[] -> vgl[];
-            x - vgl.x -> fAbs -> csnap;
+            oldX - vgl.x -> fAbs -> csnap;
             (if csnap < snapv then
                 vgl[]-> snappedVGL[];
                 csnap -> snapv;
@@ -1915,8 +1930,8 @@ CreateAux:  (# context: ^CPNPage;
         if);
         
         (context.net[],com[]) -> registerCommand;
-     exit theAux[]
      #);
+     exit theAux[]
   #);
 
 CreatePlace:

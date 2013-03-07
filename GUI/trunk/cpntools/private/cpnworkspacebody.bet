@@ -313,10 +313,10 @@ do &XMLLibrary[] -> theXMLLibrary[];
    60 -> defaultSSNode.width;
    40 -> defaultSSNode.height;
 
-   60 -> defaultAuxBox.theShape.width;
-   60 -> defaultAuxBox.theShape.height;
-   60 -> defaultAuxEllipse.theShape.width;
-   60 -> defaultAuxEllipse.theShape.height;
+   42 -> defaultAuxBox.theShape.width;
+   42 -> defaultAuxBox.theShape.height;
+   42 -> defaultAuxEllipse.theShape.width;
+   42 -> defaultAuxEllipse.theShape.height;
    60 -> defaultAuxLabel.theShape.width;
    60 -> defaultAuxLabel.theShape.height;
 
@@ -401,6 +401,13 @@ do &XMLLibrary[] -> theXMLLibrary[];
    'Text' -> defaultAuxLabel.setText;
 
    'black' -> colorTable.lookup -> defaultAuxLine.lineColor[];
+   'white' -> colorTable.lookup -> defaultAuxLine.fillColor[];
+   1 -> defaultAuxLine.strokeWidth;
+   'black' -> colorTable.lookup -> defaultAuxLine.textColor[];
+   false -> defaultAuxLine.filled;
+   'Solid' -> defaultAuxLine.linetype[];
+   '' -> defaultAuxLine.fillpattern[];
+   &PointList[] -> defaultAuxLine.theShape.points[];
 
    defaultPlaceType.defaultSnap;
    defaultInitMark.defaultSnap;

@@ -46,8 +46,9 @@ local
  exception CPN'OGExcDuringGen of string ;
 
  fun CalcSucc' (CPN'n:Node)
-    = let
-	val _ = CPN'Time.model_time := CreationTime CPN'n
+     = let
+         val _ = CPN'Time.model_time := (CPN'TimeEquivalence.compressTimestamp
+         (CreationTime CPN'n))
        val NewCalcStat=ref FullProc; (* temp store for the future cal status of CPN'n *)
        
        fun createnewarc(srcnoderef,destnoderef,(CPN'tri,CPN'b))
@@ -261,37 +262,6 @@ in
 
          end)
                  
- (* Can ResumeGenOG be removed? 
-  * It doesn't seem to be used anywhere. *)     
- fun ResumeGenOG()
-    = (
-       CPN'OGStopCrit.InitCounts();
-       CPN'OGInspection.InitCounts();
-       
-       let
-	   val CPN'CurState = !(CPN'OGCreateStateRec())
-       in 
-	   (((CalcSucc'(CPN'OGNodeSel.SelectNextNode());
-              CPN'OGToSimData.copyStateRec CPN'CurState)
-	     handle CPN'OGNodeSel.NoSelPossible (* we are done *)
-	     => (CPN'OGToSimData.copyStateRec CPN'CurState;
-		 !CPN'OGInspection.Action()))
-            handle CPN'OGNodeSel.StopCritSatisfied
-	    => (CPN'OGToSimData.copyStateRec CPN'CurState;
-		!CPN'OGInspection.Action();
-		raise CPN'OGNodeSel.StopCritSatisfied)
-	    handle CPN'OGExcDuringGen errstr
-	    => (CPN'OGToSimData.copyStateRec CPN'CurState;
-	      (* FIXME: CPN'Error is raised so that an error message
-	       * can be returned to the user. This is only necessary
-	       * as long as state space functions are called via ML
-	       * evaluate rather than via message passing such as what
-	       * is found in simglue.sml
-	       *)
-	      raise CPN'Error errstr))
-	   
-       end)
-     
 fun CalculateOccGraph () = GenOG [];
 
 end (*local*);
