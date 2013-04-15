@@ -460,14 +460,16 @@ public class Translator {
 					variable = !g.containsKey(localName) ? l.get(localName) : g.get(localName);
 				}
 				final Transition transition = createTransition(page, start, statement.toString(), processVariable,
-				        variable == null ? null : new String[] { localName + "' = (" + a.getValue() + ")" }, a);
+				        variable == null ? null : null/* new String[] { localName + "' = (" + a.getValue() + ")" } */, a);
 				addArc(page, transition, end, processVariable);
 				if (variable != null) {
 					if (g.containsKey(localName)) {
 						addArc(page, variable, transition, localName);
-						addArc(page, transition, variable, localName + "'");
+// addArc(page, transition, variable, localName + "'");
+						addArc(page, transition, variable, a.getValue().toString());
 					} else {
 						addArc(page, variable, transition, "(" + processVariable + ", " + localName + ")");
+// addArc(page, transition, variable, "(" + processVariable + ", " + a.getValue() + ")");
 						addArc(page, transition, variable, "(" + processVariable + ", " + localName + "')");
 					}
 				}
