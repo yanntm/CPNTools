@@ -2,7 +2,9 @@ package org.cpntools.algorithms.translator;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.cpntools.algorithms.translator.ast.Assignment;
 import org.cpntools.algorithms.translator.ast.Declaration;
@@ -16,6 +18,7 @@ import org.cpntools.algorithms.translator.ast.Procedure;
 import org.cpntools.algorithms.translator.ast.Repeat;
 import org.cpntools.algorithms.translator.ast.Return;
 import org.cpntools.algorithms.translator.ast.Statement;
+import org.cpntools.algorithms.translator.ast.TopLevel;
 import org.cpntools.algorithms.translator.ast.Variable;
 import org.cpntools.algorithms.translator.ast.While;
 
@@ -30,6 +33,19 @@ public class DesugarExtreme extends Mapper {
 	int returnValue = 0;
 	int dummy = 0;
 	int local = 0;
+
+	private final Set<String> procedures = new HashSet<String>();
+
+	@Override
+	protected List<TopLevel> translate(final List<TopLevel> topLevels, final boolean ignore) {
+		for (final TopLevel topLevel : topLevels) {
+			if (topLevel instanceof Procedure) {
+				final Procedure procedure = (Procedure) topLevel;
+				procedures.add(procedure.getName());
+			}
+		}
+		return super.translate(topLevels, ignore);
+	}
 
 	@Override
 	protected Object translate(final Procedure t) {
@@ -111,7 +127,15 @@ public class DesugarExtreme extends Mapper {
 				final Not n = (Not) e;
 				return new Statement[] { new IfElse(t, n.getExpression(), i.getElseStatements(), i.getThenStatements()) };
 			}
-			if (!(e instanceof Variable)) {
+// if (!(e instanceof Variable)) {
+// final String name = getCondition();
+// return new Statement[] {
+// new Declaration(t, "BOOL", name),
+// new Assignment(t, name, e),
+// new IfElse(t, new Variable(t, name), translate(i.getThenStatements()),
+// translate(i.getElseStatements())) };
+// }
+			if (containsInvoke(e)) {
 				final String name = getCondition();
 				return new Statement[] {
 				        new Declaration(t, "BOOL", name),
@@ -145,14 +169,21 @@ public class DesugarExtreme extends Mapper {
 				e = n.getExpression();
 				variable = new Not(t, variable);
 			}
-			if (!(e instanceof Variable)) {
+// if (!(e instanceof Variable)) {
+// final List<Statement> list = new ArrayList<Statement>();
+// list.addAll(w.getStatements());
+// list.add(new Assignment(t, name, e));
+// return new Statement[] { new Declaration(t, "BOOL", name), new Assignment(t, name, e),
+// new While(t, variable, translate(list)) };
+// }
+			if (containsInvoke(e)) {
 				final List<Statement> list = new ArrayList<Statement>();
 				list.addAll(w.getStatements());
 				list.add(new Assignment(t, name, e));
 				return new Statement[] { new Declaration(t, "BOOL", name), new Assignment(t, name, e),
 				        new While(t, variable, translate(list)) };
 			}
-			return new While(t, translate(w.getCondition()), translate(w.getStatements()));
+			return new While(t, e, translate(w.getStatements()));
 		}
 		if (t instanceof ForAll) {
 			final ForAll f = (ForAll) t;
@@ -171,6 +202,21 @@ public class DesugarExtreme extends Mapper {
 			return new Assignment(t, getDummy(), e);
 		}
 		return super.translate(t);
+	}
+
+	private boolean containsInvoke(final Expression e) {
+		if (e instanceof Invocation) {
+			final Invocation i = (Invocation) e;
+			if (procedures.contains(i.getName())) { return true; }
+			for (final Expression ex : i.getValues()) {
+				if (containsInvoke(ex)) { return true; }
+			}
+			return false;
+		}
+		if (e instanceof MethodInvocation) {
+			assert false;
+		}
+		return false;
 	}
 
 	private String getDummy() {
