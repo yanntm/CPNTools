@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -56,12 +57,14 @@ import org.cpntools.algorithms.translator.ast.Variable;
 import org.cpntools.algorithms.translator.ast.Whatever;
 import org.cpntools.algorithms.translator.ast.While;
 
+import dk.klafbang.tools.Pair;
+
 /**
  * @author michael
  */
 public class Translator {
 	private static int id = 0;
-	private static final boolean SIMPLE_SPLIT = false;
+	private static final boolean SIMPLE_SPLIT = true;
 	private static final boolean LONG_NAMES = false;
 	private static int t = 0;
 
@@ -514,13 +517,15 @@ public class Translator {
 			}
 
 			final Expression e = i.getCondition();
-			String localName = e.toString();
-			PlaceNode variable = null;
-			if (e instanceof Variable) {
-				final Variable v = (Variable) e;
-				localName = names.get(v.getId());
+			final Collection<Variable> variables = getVariables(e);
+			final String localName = replaceVariables(e, names);
+			final List<Pair<PlaceNode, String>> placeNodes = new ArrayList<Pair<PlaceNode, String>>(variables.size());
+			for (final Variable v : variables) {
+				final String variableName = names.get(v.getId());
 				if (refined.containsKey(localName)) {
-					variable = !g.containsKey(localName) ? l.get(localName) : g.get(localName);
+					final PlaceNode placeNode = !g.containsKey(variableName) ? l.get(variableName) : g
+					        .get(variableName);
+					placeNodes.add(Pair.createPair(placeNode, variableName));
 				}
 			}
 
@@ -528,24 +533,24 @@ public class Translator {
 				final Transition t = createTransition(page, start, "If\n" + i.getCondition(), processVariable, null, i);
 				addArc(page, t, elsestart, "if " + localName + "\nthen empty\nelse 1`" + processVariable);
 				addArc(page, t, ifstart, "if " + localName + "\nthen 1`" + processVariable + "\nelse empty");
-				if (variable != null) {
-					final String expression = "(" + processVariable + ", " + localName + ")";
-					addArc(page, variable, t, expression, true);
+				for (final Pair<PlaceNode, String> pair : placeNodes) {
+					final String expression = "(" + processVariable + ", " + pair.getSecond() + ")";
+					addArc(page, pair.getFirst(), t, expression, true);
 				}
 			} else {
-				final Transition ifthen;
-				final Transition ifelse;
-				if (variable != null) {
-					ifthen = createTransition(page, start, "If\n" + localName + "\nThen", processVariable, null, i);
-					ifelse = createTransition(page, start, "If\n" + localName + "\nElse", processVariable, null, i);
-					addArc(page, variable, ifthen, "(" + processVariable + ", true)", true);
-					addArc(page, variable, ifelse, "(" + processVariable + ", false)", true);
-				} else {
-					ifthen = createTransition(page, start, "If\n" + localName + "\nThen", processVariable, null, i);
-					ifelse = createTransition(page, start, "If\n" + localName + "\nElse", processVariable, null, i);
-				}
-				addArc(page, ifthen, ifstart, processVariable);
-				addArc(page, ifelse, elsestart, processVariable);
+// final Transition ifthen;
+// final Transition ifelse;
+// if (variable != null) {
+// ifthen = createTransition(page, start, "If\n" + localName + "\nThen", processVariable, null, i);
+// ifelse = createTransition(page, start, "If\n" + localName + "\nElse", processVariable, null, i);
+// addArc(page, variable, ifthen, "(" + processVariable + ", true)", true);
+// addArc(page, variable, ifelse, "(" + processVariable + ", false)", true);
+// } else {
+// ifthen = createTransition(page, start, "If\n" + localName + "\nThen", processVariable, null, i);
+// ifelse = createTransition(page, start, "If\n" + localName + "\nElse", processVariable, null, i);
+// }
+// addArc(page, ifthen, ifstart, processVariable);
+// addArc(page, ifelse, elsestart, processVariable);
 			}
 		} else if (statement instanceof Lock) {
 			final Lock lock = (Lock) statement;
@@ -620,13 +625,15 @@ public class Translator {
 				myloopstart = end;
 			}
 
-			String localName = e.toString();
-			PlaceNode variable = null;
-			if (e instanceof Variable) {
-				final Variable v = (Variable) e;
-				localName = names.get(v.getId());
+			final Collection<Variable> variables = getVariables(e);
+			final String localName = replaceVariables(e, names);
+			final List<Pair<PlaceNode, String>> placeNodes = new ArrayList<Pair<PlaceNode, String>>(variables.size());
+			for (final Variable v : variables) {
+				final String variableName = names.get(v.getId());
 				if (refined.containsKey(localName)) {
-					variable = !g.containsKey(localName) ? l.get(localName) : g.get(localName);
+					final PlaceNode placeNode = !g.containsKey(variableName) ? l.get(variableName) : g
+					        .get(variableName);
+					placeNodes.add(Pair.createPair(placeNode, variableName));
 				}
 			}
 			if (SIMPLE_SPLIT) {
@@ -634,28 +641,28 @@ public class Translator {
 				        w);
 				addArc(page, t, myend, "if " + localName + "\nthen empty\nelse 1`" + processVariable);
 				addArc(page, t, myloopstart, "if " + localName + "\nthen 1`" + processVariable + "\nelse empty");
-				if (variable != null) {
-					final String expression = "(" + processVariable + ", " + localName + ")";
-					addArc(page, variable, t, expression, true);
+				for (final Pair<PlaceNode, String> pair : placeNodes) {
+					final String expression = "(" + processVariable + ", " + pair.getSecond() + ")";
+					addArc(page, pair.getFirst(), t, expression, true);
 				}
 			} else {
-				final Transition leave;
-				if (variable != null) {
-					leave = createTransition(page, start, "While not\n" + e, processVariable, null, w);
-					addArc(page, variable, leave, "(" + processVariable + ", false)", true);
-				} else {
-					leave = createTransition(page, start, "While not\n" + e, processVariable, null, w);
-				}
-				addArc(page, leave, myend, processVariable);
-
-				final Transition loop;
-				if (variable != null) {
-					loop = createTransition(page, start, "While\n" + e, processVariable, null, w);
-					addArc(page, variable, loop, "(" + processVariable + ", true)", true);
-				} else {
-					loop = createTransition(page, start, "While\n" + e, processVariable, null, w);
-				}
-				addArc(page, loop, myloopstart, processVariable);
+// final Transition leave;
+// if (variable != null) {
+// leave = createTransition(page, start, "While not\n" + e, processVariable, null, w);
+// addArc(page, variable, leave, "(" + processVariable + ", false)", true);
+// } else {
+// leave = createTransition(page, start, "While not\n" + e, processVariable, null, w);
+// }
+// addArc(page, leave, myend, processVariable);
+//
+// final Transition loop;
+// if (variable != null) {
+// loop = createTransition(page, start, "While\n" + e, processVariable, null, w);
+// addArc(page, variable, loop, "(" + processVariable + ", true)", true);
+// } else {
+// loop = createTransition(page, start, "While\n" + e, processVariable, null, w);
+// }
+// addArc(page, loop, myloopstart, processVariable);
 			}
 			identifier = addStatements(petriNet, page, procedures, pages, g, l, names, w.getStatements(), loopstart,
 			        start, ret, processType, processVariable, globals, refined, iterface, identifier);
@@ -713,6 +720,22 @@ public class Translator {
 			throw new UnsupportedOperationException("Unknown AST node, " + start.getClass());
 		}
 		return identifier;
+	}
+
+	private static String replaceVariables(final Expression e, final HashMap<String, String> names) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	private static Collection<Variable> getVariables(final Expression e) {
+		final Map<String, Variable> result = new HashMap<String, Variable>();
+		addVariables(e, result);
+		return result.values();
+	}
+
+	private static void addVariables(final Expression e, final Map<String, Variable> result) {
+		// TODO Auto-generated method stub
+
 	}
 
 	private static String negate(final Expression condition) {
