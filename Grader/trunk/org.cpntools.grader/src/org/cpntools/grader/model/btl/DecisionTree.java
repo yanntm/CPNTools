@@ -61,6 +61,6 @@ public class DecisionTree<T> {
 	public String toString() {
 		return "Trace coverage: " + round(root.getCoverage()) + " %\nSatisfaction probability: "
 		        + round(getSatisfactionProbability()) + " %\nTrace satisfaction probability: "
-		        + round(getTraceSatisfactionProbability()) + " %\n" + root;
+		        + round(getTraceSatisfactionProbability()) + " %";// \n" + root;
 	}
 }

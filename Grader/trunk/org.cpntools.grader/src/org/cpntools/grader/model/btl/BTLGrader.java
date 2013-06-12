@@ -186,6 +186,7 @@ public class BTLGrader extends AbstractGrader {
 				final Set<Instance<Transition>> allowed = new HashSet<Instance<Transition>>();
 				final List<Instance<Transition>> enabled = getEnabledAndAllowed(model, simulator, names,
 				        allTransitionInstances, ec, toSatisfy, allowed);
+// System.out.println(enabled);
 				if (allowed.isEmpty()) {
 					if (toSatisfy.canTerminate(model, simulator, names, EmptyEnvironment.INSTANCE)) {
 						node.validate();
@@ -236,15 +237,18 @@ public class BTLGrader extends AbstractGrader {
 			toSatisfy.prestep(model, simulator, names, EmptyEnvironment.INSTANCE);
 		}
 		List<Instance<Transition>> enabled = getEnabled(simulator, allTransitionInstances, ec);
+// System.out.println(enabled);
 		while (enabled.isEmpty() && simulator.increaseTime() == null) {
+// System.out.println("Increasing time");
 			enabled = (List) simulator.isEnabled(allTransitionInstances);
+// System.out.println(enabled);
 		}
 		allowed.addAll(toSatisfy.force(new HashSet(enabled), model, simulator, names, EmptyEnvironment.INSTANCE));
 		boolean changed = true;
 		while (allowed.isEmpty() && changed) {
 			changed = false;
-			final Set<Instance<Transition>> oldEnabled = new HashSet<Instance<Transition>>();
-			oldEnabled.addAll(enabled);
+// final Set<Instance<Transition>> oldEnabled = new HashSet<Instance<Transition>>();
+// oldEnabled.addAll(enabled);
 			for (final Instance<Transition> ti : allTransitionInstances) {
 				if (enabled.contains(ti)) {
 					ec.disable(ti);
@@ -258,16 +262,22 @@ public class BTLGrader extends AbstractGrader {
 			}
 			simulator.initialiseSimulationScheduler();
 			enabled = (List) simulator.isEnabled(allTransitionInstances);
+// System.out.println("Updating " + enabled);
 			while (enabled.isEmpty() && simulator.increaseTime() == null) {
 				changed = true;
 				enabled = (List) simulator.isEnabled(allTransitionInstances);
+// System.out.println("Updating & Increasing " + enabled);
 			}
 			allowed.clear();
 			allowed.addAll(toSatisfy.force(new HashSet(enabled), model, simulator, names, EmptyEnvironment.INSTANCE));
-			oldEnabled.addAll(enabled);
-			enabled.clear();
-			enabled.addAll(oldEnabled);
+// System.out.println("Old " + oldEnabled);
+
+// oldEnabled.addAll(enabled);
+// enabled.clear();
+// enabled.addAll(oldEnabled);
+// System.out.println("Old and enabled " + enabled);
 		}
+// System.out.println("Returning " + enabled);
 		return enabled;
 	}
 
