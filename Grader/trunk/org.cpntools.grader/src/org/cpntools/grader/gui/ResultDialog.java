@@ -39,37 +39,37 @@ import org.cpntools.grader.signer.gui.FileChooser;
 import org.cpntools.grader.tester.Report;
 import org.cpntools.grader.utils.TextUtils;
 
-
 /**
  * @author michael
  */
 public class ResultDialog extends JDialog implements Observer {
 	private static final String ERRORS = "Errors";
-	private static final String SCORE = "Score";
-	private static final String STUDENT_ID = "StudentID";
 	private static final String FILE = "File";
+	private static final String SCORE = "Score";
 	/**
      * 
      */
 	private static final long serialVersionUID = 1533651130078221593L;
+	private static final String STUDENT_ID = "StudentID";
 	protected static final Color COLOR_ERROR = new Color(255, 127, 127);
-	static final Color ERROR_DARKER = COLOR_ERROR.darker();
-	protected static final Color COLOR_WARN = new Color(255, 255, 127);
-	static final Color WARN_DARKER = COLOR_WARN.darker();
 	protected static final Color COLOR_OK = new Color(127, 255, 127);
-	static final Color OK_DARKER = COLOR_OK.darker();
-	private final DefaultTableModel tableModel;
+	protected static final Color COLOR_WARN = new Color(255, 255, 127);
+	static final Color ERROR_DARKER = ResultDialog.COLOR_ERROR.darker();
+	static final Color OK_DARKER = ResultDialog.COLOR_OK.darker();
+	static final Color WARN_DARKER = ResultDialog.COLOR_WARN.darker();
 	private final JTextArea log;
 	private JProgressBar progressBar;
-	boolean cancelled = false;
+	private final DefaultTableModel tableModel;
 	JPanel cancelArea;
+	boolean cancelled = false;
 
 	public ResultDialog(final Observable o, final int count) {
 		setTitle("Results");
 		setLayout(new BorderLayout());
 		log = new JTextArea();
 		log.setEditable(false);
-		tableModel = new DefaultTableModel(new Object[] { FILE, STUDENT_ID, SCORE, ERRORS }, 0) {
+		tableModel = new DefaultTableModel(new Object[] { ResultDialog.FILE, ResultDialog.STUDENT_ID,
+		        ResultDialog.SCORE, ResultDialog.ERRORS }, 0) {
 			/**
              * 
              */
@@ -81,7 +81,7 @@ public class ResultDialog extends JDialog implements Observer {
 			}
 		};
 		final JTable table = new JTable(tableModel);
-		table.getColumn(ERRORS).setCellRenderer(new DefaultTableCellRenderer() {
+		table.getColumn(ResultDialog.ERRORS).setCellRenderer(new DefaultTableCellRenderer() {
 			/**
              * 
              */
@@ -95,9 +95,9 @@ public class ResultDialog extends JDialog implements Observer {
 					final Component component = super.getTableCellRendererComponent(table, c.size(), isSelected,
 					        hasFocus, row, column);
 					if (c.isEmpty()) {
-						component.setBackground(isSelected ? OK_DARKER : COLOR_OK);
+						component.setBackground(isSelected ? ResultDialog.OK_DARKER : ResultDialog.COLOR_OK);
 					} else {
-						component.setBackground(isSelected ? ERROR_DARKER : COLOR_ERROR);
+						component.setBackground(isSelected ? ResultDialog.ERROR_DARKER : ResultDialog.COLOR_ERROR);
 					}
 					component.setForeground(Color.BLACK);
 					if (component instanceof JComponent) {
@@ -129,7 +129,7 @@ public class ResultDialog extends JDialog implements Observer {
 				} else {
 					final Component component = super.getTableCellRendererComponent(table, errors, isSelected,
 					        hasFocus, row, column);
-					component.setBackground(isSelected ? WARN_DARKER : COLOR_WARN);
+					component.setBackground(isSelected ? ResultDialog.WARN_DARKER : ResultDialog.COLOR_WARN);
 					component.setForeground(Color.BLACK);
 					if (component instanceof JComponent) {
 						final JComponent jcomponent = (JComponent) component;
@@ -144,7 +144,7 @@ public class ResultDialog extends JDialog implements Observer {
 				}
 			}
 		});
-		table.getColumn(SCORE).setCellRenderer(new DefaultTableCellRenderer() {
+		table.getColumn(ResultDialog.SCORE).setCellRenderer(new DefaultTableCellRenderer() {
 			/**
              * 
              */
@@ -158,10 +158,10 @@ public class ResultDialog extends JDialog implements Observer {
 					final Component component = super.getTableCellRendererComponent(table, r.getResult(), isSelected,
 					        hasFocus, row, column);
 					if (r.getResult() < 0) {
-						component.setBackground(isSelected ? ERROR_DARKER : COLOR_ERROR);
+						component.setBackground(isSelected ? ResultDialog.ERROR_DARKER : ResultDialog.COLOR_ERROR);
 						component.setForeground(Color.BLACK);
 					} else if (r.getResult() > 0) {
-						component.setBackground(isSelected ? OK_DARKER : COLOR_OK);
+						component.setBackground(isSelected ? ResultDialog.OK_DARKER : ResultDialog.COLOR_OK);
 						component.setForeground(Color.BLACK);
 					} else if (!isSelected) {
 						component.setBackground(Color.WHITE);
@@ -200,7 +200,7 @@ public class ResultDialog extends JDialog implements Observer {
 				} else {
 					final Component component = super.getTableCellRendererComponent(table, o, isSelected, hasFocus,
 					        row, column);
-					component.setBackground(isSelected ? WARN_DARKER : COLOR_WARN);
+					component.setBackground(isSelected ? ResultDialog.WARN_DARKER : ResultDialog.COLOR_WARN);
 					component.setForeground(Color.BLACK);
 					if (component instanceof JComponent) {
 						if (component instanceof JLabel) {
@@ -261,8 +261,9 @@ public class ResultDialog extends JDialog implements Observer {
 						        .getValueAt(row, 1), tableModel.getValueAt(row, 0), (List<?>) tableModel.getValueAt(
 						        row, 3), null));
 					} catch (final ClassCastException _) {
-						reports.add(new PDFExport.ReportItem(null, tableModel.getValueAt(row, 1), tableModel.getValueAt(row, 0),
-						        (List<?>) tableModel.getValueAt(row, 3), tableModel.getValueAt(row, 2)));
+						reports.add(new PDFExport.ReportItem(null, tableModel.getValueAt(row, 1), tableModel
+						        .getValueAt(row, 0), (List<?>) tableModel.getValueAt(row, 3), tableModel.getValueAt(
+						        row, 2)));
 					}
 				}
 
@@ -280,23 +281,27 @@ public class ResultDialog extends JDialog implements Observer {
 		setVisible(true);
 	}
 
-	public synchronized void setProgress(final int progress) {
-		progressBar.setValue(progress);
-		if (progressBar.getValue() == progressBar.getMaximum()) {
-			cancelArea.setVisible(false);
-		}
-	}
-
-	public synchronized void addReport(final File f, final Report r) {
-		tableModel.addRow(new Object[] { f.getName(), r.getStudentId(), r, r.getErrors() });
+	public synchronized void addError(final File f, final String error) {
+		tableModel.addRow(new Object[] { f.getName(), "<none>", 0.0, Collections.singletonList(error) });
 	}
 
 	public synchronized void addError(final StudentID s) {
 		tableModel.addRow(new Object[] { "<none>", s, 0.0, Collections.singletonList("No model found for S" + s) });
 	}
 
-	public synchronized void addError(final File f, final String error) {
-		tableModel.addRow(new Object[] { f.getName(), "<none>", 0.0, Collections.singletonList(error) });
+	public synchronized void addReport(final File f, final Report r) {
+		tableModel.addRow(new Object[] { f.getName(), r.getStudentId(), r, r.getErrors() });
+	}
+
+	public boolean isCancelled() {
+		return cancelled;
+	}
+
+	public synchronized void setProgress(final int progress) {
+		progressBar.setValue(progress);
+		if (progressBar.getValue() == progressBar.getMaximum()) {
+			cancelArea.setVisible(false);
+		}
 	}
 
 	@Override
@@ -307,9 +312,5 @@ public class ResultDialog extends JDialog implements Observer {
 			log.setCaretPosition(log.getText().length());
 		}
 
-	}
-
-	public boolean isCancelled() {
-		return cancelled;
 	}
 }

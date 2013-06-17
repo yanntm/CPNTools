@@ -32,47 +32,16 @@ public class SetupDialog extends JDialog {
      */
 	private static final long serialVersionUID = -7081862886519471794L;
 
-	protected File base = null;
-	private String textIds = "";
+	private final JPanel files;
 
-	String getTextIds() {
-		return textIds;
-	}
-
-	/**
-	 * @return the base
-	 */
-	public File getBase() {
-		return base;
-	}
-
-	/**
-	 * @return the models
-	 */
-	public File getModels() {
-		return models;
-	}
-
-	/**
-	 * @return the secret
-	 */
-	public String getSecret() {
-		return secret;
-	}
-
-	/**
-	 * @return the ids_u
-	 */
-	public List<StudentID> getStudentIds() {
-		return ids_u;
-	}
-
-	protected File models = null;
-	protected String secret = null;
 	protected final List<StudentID> ids = new ArrayList<StudentID>();
+	private String textIds = "";
 	private final List<StudentID> ids_u = Collections.unmodifiableList(ids);
 
-	private final JPanel files;
+	protected File base = null;
+	protected File models = null;
+
+	protected String secret = null;
 
 	public SetupDialog(final String modelFile, final String modelDirectory, final String studentIds) {
 		setModal(true);
@@ -99,6 +68,11 @@ public class SetupDialog extends JDialog {
 		final FileChooser baseModel = new FileChooser("Base model", modelFile, true);
 		getFiles().add(baseModel, BorderLayout.NORTH);
 		final FileChooser outputDir = new FileChooser("Model directory", modelDirectory, true, false) {
+			/**
+			 * 
+			 */
+			private static final long serialVersionUID = 1L;
+
 			@Override
 			protected void updated() {
 				if (baseModel.getSelected().getName().equals("")) {
@@ -159,11 +133,43 @@ public class SetupDialog extends JDialog {
 		pack();
 	}
 
-	protected void update(final File selected) {
-
+	/**
+	 * @return the base
+	 */
+	public File getBase() {
+		return base;
 	}
 
 	public JPanel getFiles() {
 		return files;
+	}
+
+	/**
+	 * @return the models
+	 */
+	public File getModels() {
+		return models;
+	}
+
+	/**
+	 * @return the secret
+	 */
+	public String getSecret() {
+		return secret;
+	}
+
+	/**
+	 * @return the ids_u
+	 */
+	public List<StudentID> getStudentIds() {
+		return ids_u;
+	}
+
+	protected void update(final File selected) {
+
+	}
+
+	String getTextIds() {
+		return textIds;
 	}
 }
