@@ -38,12 +38,6 @@ import org.cpntools.grader.tester.Tester;
  */
 public class Grader {
 
-	private static final String MODEL_FILE = "base_model_file";
-	private static final String MODEL_DIR = "model_directory";
-	private static final String STUDENT_IDS = "student_ids";
-	private static final String CONFIG = "config";
-	private static int progress;
-
 	public static class ResultData {
 		private final File file;
 		private final List<Report> result;
@@ -63,6 +57,17 @@ public class Grader {
 		}
 	}
 
+	private static final String CONFIG = "config";
+	private static final String MODEL_DIR = "model_directory";
+	private static final String MODEL_FILE = "base_model_file";
+	private static int progress;
+
+	private static final String STUDENT_IDS = "student_ids";
+
+	public static void incrementProgress(final ResultDialog resultDialog) {
+		resultDialog.setProgress(++Grader.progress);
+	}
+
 	/**
 	 * @param args
 	 */
@@ -70,8 +75,14 @@ public class Grader {
 		System.setProperty("apple.laf.useScreenMenuBar", "true");
 		System.setProperty("com.apple.mrj.application.apple.menu.about.name", "Grade/CPN");
 		final Preferences p = Preferences.userNodeForPackage(Grader.class);
-		final FileChooser configuration = new FileChooser("Configuration", p.get(CONFIG, ""), true);
-		final SetupDialog setup = new SetupDialog(p.get(MODEL_FILE, ""), p.get(MODEL_DIR, ""), p.get(STUDENT_IDS, "")) {
+		final FileChooser configuration = new FileChooser("Configuration", p.get(Grader.CONFIG, ""), true);
+		final SetupDialog setup = new SetupDialog(p.get(Grader.MODEL_FILE, ""), p.get(Grader.MODEL_DIR, ""), p.get(
+		        Grader.STUDENT_IDS, "")) {
+			/**
+			 * 
+			 */
+			private static final long serialVersionUID = 1L;
+
 			@Override
 			protected void update(final File outputDir) {
 				if (configuration.getSelected().getName().equals("")) {
@@ -96,10 +107,10 @@ public class Grader {
 		threads.add(noThreads);
 		threads.add(new JLabel("Number of grader threads"));
 		setup.setVisible(true);
-		p.put(MODEL_FILE, setup.getBase().getAbsolutePath());
-		p.put(MODEL_DIR, setup.getModels().getAbsolutePath());
-		p.put(STUDENT_IDS, setup.getTextIds());
-		p.put(CONFIG, configuration.getSelected().getAbsolutePath());
+		p.put(Grader.MODEL_FILE, setup.getBase().getAbsolutePath());
+		p.put(Grader.MODEL_DIR, setup.getModels().getAbsolutePath());
+		p.put(Grader.STUDENT_IDS, setup.getTextIds());
+		p.put(Grader.CONFIG, configuration.getSelected().getAbsolutePath());
 
 		if (setup.getBase() != null) {
 
@@ -147,7 +158,7 @@ public class Grader {
 			});
 
 			final List<PetriNet> models = new ArrayList<PetriNet>();
-			progress = 0;
+			Grader.progress = 0;
 			final StringBuilder failed = new StringBuilder();
 			for (final File file : files) {
 				try {
@@ -190,9 +201,9 @@ public class Grader {
 										resultDialog.addReport(f, r);
 									} else {
 										final Report or = old.remove(r.getStudentId());
-										markCheater(f, r);
+										Grader.markCheater(f, r);
 										if (or != null) {
-											markCheater(oldfiles.get(or.getStudentId()), or);
+											Grader.markCheater(oldfiles.get(or.getStudentId()), or);
 										}
 										resultDialog.addReport(f, r);
 									}
@@ -200,7 +211,7 @@ public class Grader {
 							}
 						} else {
 							try {
-								sleep(100);
+								Thread.sleep(100);
 							} catch (final InterruptedException e) {
 								// Ignore interrupt
 							}
@@ -243,7 +254,7 @@ public class Grader {
 							e.printStackTrace();
 							resultDialog.addError(f, "Error loading model! " + e.getMessage());
 						}
-						incrementProgress(resultDialog);
+						Grader.incrementProgress(resultDialog);
 						final long end = new Date().getTime() - d.getTime();
 						resultDialog.update(null, "Checking took " + end / 1000.0 + " seconds.");
 						running.decrementAndGet();
@@ -308,10 +319,6 @@ public class Grader {
 
 		}
 // System.exit(0);
-	}
-
-	public static void incrementProgress(final ResultDialog resultDialog) {
-		resultDialog.setProgress(++progress);
 	}
 
 	static void markCheater(final File f, final Report r) {

@@ -30,6 +30,9 @@ public class Report implements Comparable<Report> {
 
 	}
 
+	/**
+	 * @param error
+	 */
 	public void addError(final String error) {
 		errors.add(error);
 	}

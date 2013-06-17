@@ -69,17 +69,15 @@ import org.cpntools.grader.tester.EnablingControl;
 import org.cpntools.grader.tester.EnablingControlAdapterFactory;
 import org.xml.sax.SAXException;
 
+/**
+ * @author michael
+ */
 public class BTLTester extends JDialog {
-	private static final Color NO = new Color(255, 151, 148);
-	private static final Color YES = new Color(144, 255, 176);
-	private static final Color MAYBE = new Color(247, 255, 119);
-	DecisionTree<Instance<Transition>> decisionTree = new DecisionTree<Instance<Transition>>();
-
 	public static class Snapshot {
 
-		private final String time;
 		private final Binding be;
 		private final Guide guide;
+		private final String time;
 
 		public Snapshot(final String time, final Binding be, final Guide guide) {
 			this.time = time;
@@ -87,12 +85,12 @@ public class BTLTester extends JDialog {
 			this.guide = guide;
 		}
 
-		public Guide getGuide() {
-			return guide;
-		}
-
 		public Binding getBinding() {
 			return be;
+		}
+
+		public Guide getGuide() {
+			return guide;
 		}
 
 		/**
@@ -110,38 +108,54 @@ public class BTLTester extends JDialog {
 
 	}
 
+	private static final Color MAYBE = new Color(247, 255, 119);
+	private static final Color NO = new Color(255, 151, 148);
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	private static final Color YES = new Color(144, 255, 176);
+
+	public static void main(final String... args) throws FileNotFoundException, NetCheckException, SAXException,
+	        IOException, ParserConfigurationException {
+		System.setProperty("apple.laf.useScreenMenuBar", "true");
+		System.setProperty("com.apple.mrj.application.apple.menu.about.name", "BTL Tester");
+		final JFileChooser load = new JFileChooser();
+		final int result = load.showOpenDialog(null);
+		if (result == JFileChooser.APPROVE_OPTION) {
+			new BTLTester(load.getSelectedFile());
+		} else {
+			System.exit(0);
+		}
+	}
+
+	private final List<Instance<Transition>> allTransitionInstances;
+	private final JTextArea currentFormula;
+	private final JTextArea decision;
+	private final DefaultListModel disallowed;
+	private final EnablingControl ec;
+	private Guide init;
+	private final DefaultTableModel mapping;
+	private final JTextArea marking;
+	private final ModelInstance modelInstances;
+	private final NameHelper nameHelper;
+	private final JTextArea parsedFormula;
+	private final PetriNet petriNet;
 	private int runs = 0;
 	private final JLabel runsLabel;
-	private final PetriNet petriNet;
-	private final JTextArea marking;
 	private HighLevelSimulator simulator;
-	Guide current = null;
-	private final JTextArea currentFormula;
-	private final JTextArea parsedFormula;
 	private final JComboBox strategy;
-	final JTextArea initFormula;
-	private final ModelInstance modelInstances;
-	private final List<Instance<Transition>> allTransitionInstances;
-	private final NameHelper nameHelper;
-	private final EnablingControl ec;
-	private final DefaultListModel disallowed;
-	final DefaultListModel enabled;
 	private final DefaultTableModel trace;
-	private final DefaultTableModel mapping;
-	private Guide init;
-	private final JTextArea decision;
+	Guide current = null;
+	DecisionTree<Instance<Transition>> decisionTree = new DecisionTree<Instance<Transition>>();
+	final DefaultListModel enabled;
+
+	final JTextArea initFormula;
 
 	public BTLTester(final File selectedFile) throws FileNotFoundException, NetCheckException, SAXException,
 	        IOException, ParserConfigurationException {
 		this(DOMParser.parse(new FileInputStream(selectedFile),
 		        selectedFile.getName().replaceFirst("[.][cC][pP][nN]$", "")), selectedFile.getParentFile(), false);
-	}
-
-	public BTLTester(final PetriNet net, final File parentFile, final Guide g) throws FileNotFoundException,
-	        NetCheckException, SAXException, IOException, ParserConfigurationException {
-		this(net, parentFile, true);
-		setFormula(g);
-		initial();
 	}
 
 	public BTLTester(final PetriNet net, final File parentFile, final boolean light) throws FileNotFoundException,
@@ -290,7 +304,7 @@ public class BTLTester extends JDialog {
 		marking.setEditable(false);
 		marking.setLineWrap(true);
 		marking.setWrapStyleWord(true);
-		marking.setText("Waiting for syntax check…");
+		marking.setText("Waiting for syntax check...");
 		final JScrollPane markingScroller = new JScrollPane(marking);
 		markingScroller.setBorder(BorderFactory.createTitledBorder("Current Marking"));
 		modelData.setLeftComponent(markingScroller);
@@ -348,24 +362,137 @@ public class BTLTester extends JDialog {
 		}
 	}
 
-	protected void refreshDecision() {
-		setColor(currentFormula, decisionTree.getSatisfactionProbability());
-		setColor(decision, decisionTree.getCoverage());
-		decision.setText(decisionTree.toString());
-		decision.setCaretPosition(0);
-		runsLabel.setText("Runs: " + runs);
+	public BTLTester(final PetriNet net, final File parentFile, final Guide g) throws FileNotFoundException,
+	        NetCheckException, SAXException, IOException, ParserConfigurationException {
+		this(net, parentFile, true);
+		setFormula(g);
+		initial();
+	}
+
+	public void initializeEnablingControl() {
+		EnablingControlAdapterFactory.getInstance().adapt(petriNet, EnablingControl.class);
+	}
+
+	public void initializeTransitionList(final DefaultListModel transitionListModel) {
+		final SortedSet<String> transitionNames = new TreeSet<String>();
+		for (final Instance<Transition> ti : allTransitionInstances) {
+			transitionNames.add(ti.toString());
+		}
+		for (final String name : transitionNames) {
+			transitionListModel.addElement(name);
+		}
+	}
+
+	public void setFormula(final Guide g) {
+		initFormula.setText("");
+		init = g;
+		current = g;
+	}
+
+	private void addToTrace(final String time, final Binding be, final Guide guide) {
+		trace.addRow(new Object[] { time, new Snapshot(time, be, guide) });
+	}
+
+	private void clearTrace() {
+		while (trace.getRowCount() > 0) {
+			trace.removeRow(trace.getRowCount() - 1);
+		}
+	}
+
+	private void refreshCurrent() {
+		if (current == null) {
+			currentFormula.setText("");
+		} else {
+			currentFormula.setText(current.toString());
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	private void refreshEnabling() {
+		try {
+			final Set<Instance<Transition>> allowed = new HashSet<Instance<Transition>>();
+			List<Instance<Transition>> enabled;
+			if (current != null && current != True.INSTANCE) {
+				enabled = BTLGrader.getEnabledAndAllowed(petriNet, simulator, nameHelper, allTransitionInstances, ec,
+				        current, allowed);
+			} else {
+				enabled = BTLGrader.getEnabled(simulator, allTransitionInstances, ec);
+				allowed.addAll(enabled);
+			}
+			final SortedMap<String, Instance<? extends Transition>> sortedNames = new TreeMap<String, Instance<? extends Transition>>();
+			for (final Instance<? extends Transition> ti : enabled) {
+				Instance<? extends Transition> old = sortedNames.put(ti.toString(), ti);
+				while (old != null) {
+					old = sortedNames.put(old.toString() + "#", old);
+				}
+			}
+			this.enabled.clear();
+			disallowed.clear();
+			for (final Instance<? extends Transition> ti : sortedNames.values()) {
+				if (allowed.contains(ti)) {
+					for (final Binding b : simulator.getBindings(ti)) {
+						this.enabled.addElement(b);
+					}
+				} else {
+					disallowed.addElement(ti);
+				}
+			}
+		} catch (final IOException e) {
+			e.printStackTrace();
+		}
+
+	}
+
+	private void refreshMapping(final Guide parsed) {
+		if (parsed != null) {
+			while (mapping.getRowCount() > 0) {
+				mapping.removeRow(mapping.getRowCount() - 1);
+			}
+			for (final String ap : new TreeSet<String>(parsed.getAtomic())) {
+				mapping.addRow(new Object[] { ap, nameHelper.getTransitionInstance(ap) });
+			}
+		}
+	}
+
+	private void reparse() {
+		try {
+			currentFormula.setBackground(Color.WHITE);
+			if (init == null) {
+				final Guide parsed = CupParser.parse(initFormula.getText());
+				parsedFormula.setText(parsed.toString());
+				currentFormula.setText(parsed.toString());
+				current = parsed;
+			} else {
+				parsedFormula.setText(init.toString());
+				currentFormula.setText(init.toString());
+				current = init;
+			}
+			refreshMapping(current);
+		} catch (final Exception e) {
+			parsedFormula.setText("Could not parse formula: " + e);
+		}
+	}
+
+	private void reparseCurrent() {
+		try {
+			current = CupParser.parse(currentFormula.getText());
+		} catch (final Exception e) {
+			currentFormula.setText("Could not parse current formula: " + e);
+		}
 	}
 
 	private void setColor(final JComponent component, double p) {
 		if (p < 0.5) {
-			component.setBackground(new Color((int) ((1 - 2 * p) * NO.getRed() + 2 * p * MAYBE.getRed()),
-			        (int) ((1 - 2 * p) * NO.getGreen() + 2 * p * MAYBE.getGreen()),
-			        (int) ((1 - 2 * p) * NO.getBlue() + 2 * p * MAYBE.getBlue())));
+			component.setBackground(new Color((int) ((1 - 2 * p) * BTLTester.NO.getRed() + 2 * p
+			        * BTLTester.MAYBE.getRed()), (int) ((1 - 2 * p) * BTLTester.NO.getGreen() + 2 * p
+			        * BTLTester.MAYBE.getGreen()), (int) ((1 - 2 * p) * BTLTester.NO.getBlue() + 2 * p
+			        * BTLTester.MAYBE.getBlue())));
 		} else {
 			p = p - 0.5;
-			component.setBackground(new Color((int) ((1 - 2 * p) * MAYBE.getRed() + 2 * p * YES.getRed()),
-			        (int) ((1 - 2 * p) * MAYBE.getGreen() + 2 * p * YES.getGreen()), (int) ((1 - 2 * p)
-			                * MAYBE.getBlue() + 2 * p * YES.getBlue())));
+			component.setBackground(new Color((int) ((1 - 2 * p) * BTLTester.MAYBE.getRed() + 2 * p
+			        * BTLTester.YES.getRed()), (int) ((1 - 2 * p) * BTLTester.MAYBE.getGreen() + 2 * p
+			        * BTLTester.YES.getGreen()), (int) ((1 - 2 * p) * BTLTester.MAYBE.getBlue() + 2 * p
+			        * BTLTester.YES.getBlue())));
 
 		}
 
@@ -380,7 +507,7 @@ public class BTLTester extends JDialog {
 		        .getSelectedItem();
 		Node<Instance<Transition>> node = decisionTree.getRoot();
 
-		currentFormula.setBackground(MAYBE);
+		currentFormula.setBackground(BTLTester.MAYBE);
 		for (int i = 0; i < 25000 && current != null; i++) {
 			try {
 				final Set<Instance<Transition>> allowed = new HashSet<Instance<Transition>>();
@@ -440,65 +567,12 @@ public class BTLTester extends JDialog {
 
 	}
 
-	private void addToTrace(final String time, final Binding be, final Guide guide) {
-		trace.addRow(new Object[] { time, new Snapshot(time, be, guide) });
-	}
-
-	@SuppressWarnings("unchecked")
-	private void refreshEnabling() {
-		try {
-			final Set<Instance<Transition>> allowed = new HashSet<Instance<Transition>>();
-			List<Instance<Transition>> enabled;
-			if (current != null && current != True.INSTANCE) {
-				enabled = BTLGrader.getEnabledAndAllowed(petriNet, simulator, nameHelper, allTransitionInstances, ec,
-				        current, allowed);
-			} else {
-				enabled = BTLGrader.getEnabled(simulator, allTransitionInstances, ec);
-				allowed.addAll(enabled);
-			}
-			final SortedMap<String, Instance<? extends Transition>> sortedNames = new TreeMap<String, Instance<? extends Transition>>();
-			for (final Instance<? extends Transition> ti : enabled) {
-				Instance<? extends Transition> old = sortedNames.put(ti.toString(), ti);
-				while (old != null) {
-					old = sortedNames.put(old.toString() + "#", old);
-				}
-			}
-			this.enabled.clear();
-			disallowed.clear();
-			for (final Instance<? extends Transition> ti : sortedNames.values()) {
-				if (allowed.contains(ti)) {
-					for (final Binding b : simulator.getBindings(ti)) {
-						this.enabled.addElement(b);
-					}
-				} else {
-					disallowed.addElement(ti);
-				}
-			}
-		} catch (final IOException e) {
-			e.printStackTrace();
-		}
-
-	}
-
-	public void initializeTransitionList(final DefaultListModel transitionListModel) {
-		final SortedSet<String> transitionNames = new TreeSet<String>();
-		for (final Instance<Transition> ti : allTransitionInstances) {
-			transitionNames.add(ti.toString());
-		}
-		for (final String name : transitionNames) {
-			transitionListModel.addElement(name);
-		}
-	}
-
-	public void initializeEnablingControl() {
-		EnablingControlAdapterFactory.getInstance().adapt(petriNet, EnablingControl.class);
-	}
-
-	void refresh() {
-		reparseCurrent();
-		refreshEnabling();
-		refreshMarking();
-		refreshCurrent();
+	protected void refreshDecision() {
+		setColor(currentFormula, decisionTree.getSatisfactionProbability());
+		setColor(decision, decisionTree.getCoverage());
+		decision.setText(decisionTree.toString());
+		decision.setCaretPosition(0);
+		runsLabel.setText("Runs: " + runs);
 	}
 
 	void initial() {
@@ -513,62 +587,11 @@ public class BTLTester extends JDialog {
 		refresh();
 	}
 
-	private void clearTrace() {
-		while (trace.getRowCount() > 0) {
-			trace.removeRow(trace.getRowCount() - 1);
-		}
-	}
-
-	private void reparseCurrent() {
-		try {
-			current = CupParser.parse(currentFormula.getText());
-		} catch (final Exception e) {
-			currentFormula.setText("Could not parse current formula: " + e);
-		}
-	}
-
-	private void refreshCurrent() {
-		if (current == null) {
-			currentFormula.setText("");
-		} else {
-			currentFormula.setText(current.toString());
-		}
-	}
-
-	public void setFormula(final Guide g) {
-		initFormula.setText("");
-		init = g;
-		current = g;
-	}
-
-	private void reparse() {
-		try {
-			currentFormula.setBackground(Color.WHITE);
-			if (init == null) {
-				final Guide parsed = CupParser.parse(initFormula.getText());
-				parsedFormula.setText(parsed.toString());
-				currentFormula.setText(parsed.toString());
-				current = parsed;
-			} else {
-				parsedFormula.setText(init.toString());
-				currentFormula.setText(init.toString());
-				current = init;
-			}
-			refreshMapping(current);
-		} catch (final Exception e) {
-			parsedFormula.setText("Could not parse formula: " + e);
-		}
-	}
-
-	private void refreshMapping(final Guide parsed) {
-		if (parsed != null) {
-			while (mapping.getRowCount() > 0) {
-				mapping.removeRow(mapping.getRowCount() - 1);
-			}
-			for (final String ap : new TreeSet<String>(parsed.getAtomic())) {
-				mapping.addRow(new Object[] { ap, nameHelper.getTransitionInstance(ap) });
-			}
-		}
+	void refresh() {
+		reparseCurrent();
+		refreshEnabling();
+		refreshMarking();
+		refreshCurrent();
 	}
 
 	void refreshMarking() {
@@ -576,20 +599,7 @@ public class BTLTester extends JDialog {
 			marking.setText(simulator.getMarking().toString()
 			        .replaceAll(".*[.]Enabling_Control_[0-9]+: 1`..[\\r\\n]*", ""));
 		} catch (final Exception e) {
-			marking.setText("Failed getting marking; try hitting refresh or loading another model…");
-		}
-	}
-
-	public static void main(final String... args) throws FileNotFoundException, NetCheckException, SAXException,
-	        IOException, ParserConfigurationException {
-		System.setProperty("apple.laf.useScreenMenuBar", "true");
-		System.setProperty("com.apple.mrj.application.apple.menu.about.name", "BTL Tester");
-		final JFileChooser load = new JFileChooser();
-		final int result = load.showOpenDialog(null);
-		if (result == JFileChooser.APPROVE_OPTION) {
-			new BTLTester(load.getSelectedFile());
-		} else {
-			System.exit(0);
+			marking.setText("Failed getting marking; try hitting refresh or loading another model...");
 		}
 	}
 }

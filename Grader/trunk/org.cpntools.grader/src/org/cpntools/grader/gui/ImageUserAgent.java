@@ -14,6 +14,8 @@ import com.lowagie.text.BadElementException;
 
 public class ImageUserAgent extends ITextUserAgent {
 
+	Map<String, Image> images = new HashMap<String, Image>();
+
 	public ImageUserAgent(final ITextOutputDevice outputDevice) {
 		super(outputDevice);
 	}
@@ -30,8 +32,6 @@ public class ImageUserAgent extends ITextUserAgent {
 		}
 		return super.getImageResource(uri);
 	}
-
-	Map<String, Image> images = new HashMap<String, Image>();
 
 	public void register(final String name, final Image img) {
 		images.put(name, img);

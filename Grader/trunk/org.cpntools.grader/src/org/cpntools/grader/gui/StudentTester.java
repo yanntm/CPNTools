@@ -53,38 +53,95 @@ public class StudentTester extends JDialog implements Observer {
 			this.grader = grader;
 		}
 
+		public BTLGrader getGrader() {
+			return grader;
+		}
+
 		@Override
 		public String toString() {
 			return getGrader().getName();
 		}
 
-		public BTLGrader getGrader() {
-			return grader;
-		}
-
 	}
 
 	private static final int PROGRESS_MAX = 10;
-	private final JTextArea log;
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+
+	public static void main(final String... args) {
+		final InputStream baseStream = StudentTester.getResource("/base.cpn");
+		if (baseStream == null) {
+			JOptionPane
+			        .showMessageDialog(
+			                null,
+			                "Could not find the base model.\n\nPlease contact your teacher and not\nthe author of this program for help..",
+			                "Error", JOptionPane.ERROR_MESSAGE);
+			System.exit(1);
+		}
+		final InputStream configStream = StudentTester.getResource("/config.cfg");
+		if (configStream == null) {
+			JOptionPane
+			        .showMessageDialog(
+			                null,
+			                "Could not find the configuration file.\n\nPlease contact your teacher and not\nthe author of this program for help..",
+			                "Error", JOptionPane.ERROR_MESSAGE);
+			System.exit(1);
+		}
+		final JFileChooser load = new JFileChooser();
+		final int result = load.showOpenDialog(null);
+		if (result == JFileChooser.APPROVE_OPTION) {
+			final File model = load.getSelectedFile();
+			if (!model.isFile()) {
+				JOptionPane.showMessageDialog(null, "Selected file could no be found or is not a file.", "Error",
+				        JOptionPane.ERROR_MESSAGE);
+				System.exit(1);
+			}
+			final StudentTester studentTester = new StudentTester(baseStream, configStream, load.getSelectedFile());
+			studentTester.setup();
+			studentTester.runTest();
+			studentTester.finish();
+		} else {
+			System.exit(0);
+		}
+	}
+
+	private static InputStream getResource(final String resource) {
+		InputStream result = StudentTester.class.getResourceAsStream(resource);
+		if (result != null) { return result; }
+		result = StudentTester.class.getResourceAsStream("../../../.." + resource);
+		if (result != null) { return result; }
+		result = StudentTester.class.getResourceAsStream("../../../../.." + resource);
+		if (result != null) { return result; }
+		result = StudentTester.class.getResourceAsStream("../../../../../bin" + resource);
+		if (result != null) { return result; }
+		return result;
+	}
+
 	private final InputStream baseStream;
-	private final InputStream configStream;
-	private final File model;
-	private PetriNet petriNet;
-	private final JProgressBar progressBar;
-	private TestSuite suite;
-	private int progress = 0;
-	private Tester tester;
 	private final JButton cancelButton;
-	private final JButton exportButton;
-	List<Report> testResult;
+	private final InputStream configStream;
 	private final JPanel errorPanel;
 	private final DefaultListModel errors;
+	private final JButton exportButton;
+	private final JTextArea log;
+	private final File model;
+	private PetriNet petriNet;
+	private int progress = 0;
+	private final JProgressBar progressBar;
+	private TestSuite suite;
+
+	private Tester tester;
+
+	List<Report> testResult;
 
 	public StudentTester(final InputStream baseStream, final InputStream configStream, final File model) {
 		this.baseStream = baseStream;
 		this.configStream = configStream;
 		this.model = model;
-		setTitle("Grade/CPN Student Tester Ñ " + model.getName().replaceAll("[.][cC][pP][nN]$", ""));
+		setTitle("Grade/CPN Student Tester - " + model.getName().replaceAll("[.][cC][pP][nN]$", ""));
 		setLayout(new BorderLayout());
 
 		log = new JTextArea();
@@ -139,7 +196,7 @@ public class StudentTester extends JDialog implements Observer {
 		buttons.add(exportButton);
 		buttons.add(cancelButton);
 
-		progressBar = new JProgressBar(0, PROGRESS_MAX);
+		progressBar = new JProgressBar(0, StudentTester.PROGRESS_MAX);
 		progressBar.setStringPainted(true);
 		add(progressBar, BorderLayout.NORTH);
 
@@ -169,6 +226,11 @@ public class StudentTester extends JDialog implements Observer {
 		pack();
 		setVisible(true);
 
+	}
+
+	public void log(final String message) {
+		log.append(message + "\n");
+		log.setCaretPosition(log.getText().length());
 	}
 
 	public void setup() {
@@ -208,40 +270,10 @@ public class StudentTester extends JDialog implements Observer {
 		progressBar.setValue(++progress);
 	}
 
-	public static void main(final String... args) {
-		final InputStream baseStream = getResource("/base.cpn");
-		if (baseStream == null) {
-			JOptionPane
-			        .showMessageDialog(
-			                null,
-			                "Could not find the base model.\n\nPlease contact your teacher and not\nthe author of this program for help..",
-			                "Error", JOptionPane.ERROR_MESSAGE);
-			System.exit(1);
-		}
-		final InputStream configStream = getResource("/config.cfg");
-		if (configStream == null) {
-			JOptionPane
-			        .showMessageDialog(
-			                null,
-			                "Could not find the configuration file.\n\nPlease contact your teacher and not\nthe author of this program for help..",
-			                "Error", JOptionPane.ERROR_MESSAGE);
-			System.exit(1);
-		}
-		final JFileChooser load = new JFileChooser();
-		final int result = load.showOpenDialog(null);
-		if (result == JFileChooser.APPROVE_OPTION) {
-			final File model = load.getSelectedFile();
-			if (!model.isFile()) {
-				JOptionPane.showMessageDialog(null, "Selected file could no be found or is not a file.", "Error",
-				        JOptionPane.ERROR_MESSAGE);
-				System.exit(1);
-			}
-			final StudentTester studentTester = new StudentTester(baseStream, configStream, load.getSelectedFile());
-			studentTester.setup();
-			studentTester.runTest();
-			studentTester.finish();
-		} else {
-			System.exit(0);
+	@Override
+	public void update(final Observable arg0, final Object arg1) {
+		if (arg1 instanceof String) {
+			log((String) arg1);
 		}
 	}
 
@@ -261,7 +293,7 @@ public class StudentTester extends JDialog implements Observer {
 		}
 		errorPanel.setVisible(errors);
 
-		progressBar.setValue(PROGRESS_MAX);
+		progressBar.setValue(StudentTester.PROGRESS_MAX);
 		progressBar.setVisible(false);
 		cancelButton.setText("Quit");
 		exportButton.setEnabled(true);
@@ -288,30 +320,6 @@ public class StudentTester extends JDialog implements Observer {
 			progressBar.setIndeterminate(false);
 			progressBar.setValue(progress += 5);
 		}
-	}
-
-	private static InputStream getResource(final String resource) {
-		InputStream result = StudentTester.class.getResourceAsStream(resource);
-		if (result != null) { return result; }
-		result = StudentTester.class.getResourceAsStream("../../../.." + resource);
-		if (result != null) { return result; }
-		result = StudentTester.class.getResourceAsStream("../../../../.." + resource);
-		if (result != null) { return result; }
-		result = StudentTester.class.getResourceAsStream("../../../../../bin" + resource);
-		if (result != null) { return result; }
-		return result;
-	}
-
-	@Override
-	public void update(final Observable arg0, final Object arg1) {
-		if (arg1 instanceof String) {
-			log((String) arg1);
-		}
-	}
-
-	public void log(final String message) {
-		log.append(message + "\n");
-		log.setCaretPosition(log.getText().length());
 	}
 
 }
