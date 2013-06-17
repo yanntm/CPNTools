@@ -5,8 +5,13 @@ package org.cpntools.grader.model;
  */
 public class ParserException extends Exception {
 
-	private final int lineNumber;
+	/**
+     * 
+     */
+	private static final long serialVersionUID = 7807763406411898579L;
 	private final String line;
+
+	private final int lineNumber;
 
 	/**
 	 * @param lineNumber
@@ -26,10 +31,5 @@ public class ParserException extends Exception {
 	public int getLineNumber() {
 		return lineNumber;
 	}
-
-	/**
-     * 
-     */
-	private static final long serialVersionUID = 7807763406411898579L;
 
 }

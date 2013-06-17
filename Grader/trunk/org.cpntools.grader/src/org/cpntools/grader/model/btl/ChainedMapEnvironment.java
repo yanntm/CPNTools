@@ -13,13 +13,6 @@ public class ChainedMapEnvironment extends FunctionalChainedMapEnvironment {
 	}
 
 	/**
-	 * @param elements
-	 */
-	public ChainedMapEnvironment(final Map<String, String> elements) {
-		this(null, elements);
-	}
-
-	/**
 	 * @param parent
 	 * @param elements
 	 */
@@ -28,6 +21,13 @@ public class ChainedMapEnvironment extends FunctionalChainedMapEnvironment {
 		if (elements != null) {
 			values.putAll(elements);
 		}
+	}
+
+	/**
+	 * @param elements
+	 */
+	public ChainedMapEnvironment(final Map<String, String> elements) {
+		this(null, elements);
 	}
 
 	/**

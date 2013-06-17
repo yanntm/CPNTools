@@ -7,15 +7,9 @@ import java.text.DecimalFormat;
  * @param <T>
  */
 public class DecisionTree<T> {
+	private final DecimalFormat f = new DecimalFormat("#.#");
+
 	Node<T> root = new RootNode<T>();
-
-	public Node<T> getRoot() {
-		return root;
-	}
-
-	public Node<T> addChild(final T child) {
-		return addChild(null, child);
-	}
 
 	public Node<T> addChild(final Node<T> parent, final T child) {
 		final Node<T> n = new SimpleNode<T>(child);
@@ -24,6 +18,21 @@ public class DecisionTree<T> {
 		} else {
 			return parent.addNode(n);
 		}
+	}
+
+	public Node<T> addChild(final T child) {
+		return addChild(null, child);
+	}
+
+	/**
+	 * @return
+	 */
+	public double getCoverage() {
+		return root.getCoverage();
+	}
+
+	public Node<T> getRoot() {
+		return root;
 	}
 
 	/**
@@ -40,18 +49,9 @@ public class DecisionTree<T> {
 	/**
 	 * @return
 	 */
-	public double getCoverage() {
-		return root.getCoverage();
-	}
-
-	/**
-	 * @return
-	 */
 	public double getTraceSatisfactionProbability() {
 		return root.getTraceSatisfactionProbability();
 	}
-
-	private final DecimalFormat f = new DecimalFormat("#.#");
 
 	public String round(final double d) {
 		return f.format(d * 100);

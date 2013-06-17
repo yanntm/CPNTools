@@ -24,8 +24,8 @@ public class CoverageMaximizer<T> implements Strategy<T> {
 				possible.add(child.getBranch());
 			}
 		}
-		if (possible.size() > 0) { return possible.get(r.nextInt(possible.size())); }
-		return candidates.get(r.nextInt(candidates.size()));
+		if (possible.size() > 0) { return possible.get(CoverageMaximizer.r.nextInt(possible.size())); }
+		return candidates.get(CoverageMaximizer.r.nextInt(candidates.size()));
 	}
 
 	@Override

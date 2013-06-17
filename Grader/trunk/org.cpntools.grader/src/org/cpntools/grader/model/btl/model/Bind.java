@@ -24,67 +24,10 @@ public class Bind implements Guide {
 		this.vars = vars;
 	}
 
-	public Guide getG() {
-		return g;
-	}
-
-	public Map<String, String> getVars() {
-		return vars;
-	}
-
-	@Override
-	public String toString() {
-		return "bind " + vars + " (" + g + ")";
-	}
-
-	@Override
-	public Set<Instance<org.cpntools.accesscpn.model.Transition>> force(
-	        final Set<Instance<org.cpntools.accesscpn.model.Transition>> candidates, final PetriNet model,
-	        final HighLevelSimulator simulator, final NameHelper names, final Environment environment) {
-		final HashSet<Instance<org.cpntools.accesscpn.model.Transition>> set = new HashSet<Instance<org.cpntools.accesscpn.model.Transition>>();
-		set.addAll(g.force(candidates, model, simulator, names, new FunctionalChainedMapEnvironment(environment, vars)));
-		return set;
-	}
-
-	@Override
-	public Guide progress(final Instance<Transition> ti, final PetriNet model, final HighLevelSimulator simulator,
-	        final NameHelper names, final Environment environment) throws Unconsumed {
-		final Guide newg = g.progress(ti, model, simulator, names, new FunctionalChainedMapEnvironment(environment,
-		        vars));
-		if (newg == null) { return null; }
-		if (newg == Failure.INSTANCE) { return Failure.INSTANCE; }
-		if (newg == g) { return this; }
-		return new Bind(vars, newg);
-
-	}
-
 	@Override
 	public boolean canTerminate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
 	        final Environment environment) {
 		return g.canTerminate(model, simulator, names, new FunctionalChainedMapEnvironment(environment, vars));
-	}
-
-	@Override
-	public Set<String> getAtomic() {
-		return g.getAtomic();
-	}
-
-	@Override
-	public void prestep(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
-	        final Environment environment) {
-		g.prestep(model, simulator, names, new FunctionalChainedMapEnvironment(environment, vars));
-	}
-
-	/**
-	 * @see java.lang.Object#hashCode()
-	 */
-	@Override
-	public int hashCode() {
-		final int prime = 137;
-		int result = 1;
-		result = prime * result + (g == null ? 0 : g.hashCode());
-		result = prime * result + (vars == null ? 0 : vars.hashCode());
-		return result;
 	}
 
 	/**
@@ -103,6 +46,63 @@ public class Bind implements Guide {
 			if (other.vars != null) { return false; }
 		} else if (!vars.equals(other.vars)) { return false; }
 		return true;
+	}
+
+	@Override
+	public Set<Instance<org.cpntools.accesscpn.model.Transition>> force(
+	        final Set<Instance<org.cpntools.accesscpn.model.Transition>> candidates, final PetriNet model,
+	        final HighLevelSimulator simulator, final NameHelper names, final Environment environment) {
+		final HashSet<Instance<org.cpntools.accesscpn.model.Transition>> set = new HashSet<Instance<org.cpntools.accesscpn.model.Transition>>();
+		set.addAll(g.force(candidates, model, simulator, names, new FunctionalChainedMapEnvironment(environment, vars)));
+		return set;
+	}
+
+	@Override
+	public Set<String> getAtomic() {
+		return g.getAtomic();
+	}
+
+	public Guide getG() {
+		return g;
+	}
+
+	public Map<String, String> getVars() {
+		return vars;
+	}
+
+	/**
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		final int prime = 137;
+		int result = 1;
+		result = prime * result + (g == null ? 0 : g.hashCode());
+		result = prime * result + (vars == null ? 0 : vars.hashCode());
+		return result;
+	}
+
+	@Override
+	public void prestep(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
+	        final Environment environment) {
+		g.prestep(model, simulator, names, new FunctionalChainedMapEnvironment(environment, vars));
+	}
+
+	@Override
+	public Guide progress(final Instance<Transition> ti, final PetriNet model, final HighLevelSimulator simulator,
+	        final NameHelper names, final Environment environment) throws Unconsumed {
+		final Guide newg = g.progress(ti, model, simulator, names, new FunctionalChainedMapEnvironment(environment,
+		        vars));
+		if (newg == null) { return null; }
+		if (newg == Failure.INSTANCE) { return Failure.INSTANCE; }
+		if (newg == g) { return this; }
+		return new Bind(vars, newg);
+
+	}
+
+	@Override
+	public String toString() {
+		return "bind " + vars + " (" + g + ")";
 	}
 
 }

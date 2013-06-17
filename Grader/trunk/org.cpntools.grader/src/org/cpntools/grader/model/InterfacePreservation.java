@@ -24,20 +24,20 @@ public class InterfacePreservation extends AbstractGrader {
 	public static final Grader INSTANCE = new InterfacePreservation(0, 0, true, false,
 	        Collections.<String> emptyList(), Collections.<String> emptyList());
 
-	Pattern p = Pattern
-	        .compile(
-	                "^interface-preservation(, *partial=(-?[0-9.]+))?(, *addpages(=(true|false))?)?(, *initmark(=(true|false))?)?(, *subset=([a-z0-9. _']+(; *[a-z0-9. _']+)*))?(, *ignore=([a-z0-9. _']+(; *[a-z0-9. _']+)*))?$",
-	                Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
-
-	private final double partial;
-
 	private final boolean addpages;
-
-	private final List<String> subset;
 
 	private final List<String> exclude;
 
 	private final boolean initmark;
+
+	private final double partial;
+
+	private final List<String> subset;
+
+	Pattern p = Pattern
+	        .compile(
+	                "^interface-preservation(, *partial=(-?[0-9.]+))?(, *addpages(=(true|false))?)?(, *initmark(=(true|false))?)?(, *subset=([a-z0-9. _']+(; *[a-z0-9. _']+)*))?(, *ignore=([a-z0-9. _']+(; *[a-z0-9. _']+)*))?$",
+	                Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
 
 	/**
 	 * @param maxPoints
@@ -94,21 +94,6 @@ public class InterfacePreservation extends AbstractGrader {
 			return new InterfacePreservation(maxPoints, partial, addpages, initmark, subset, exclude);
 		}
 		return null;
-	}
-
-	private List<String> tokenize(final String group) {
-		final List<String> result = new ArrayList<String>();
-		if (group != null) {
-			for (final String child : group.split(";")) {
-				if (child != null) {
-					final String token = child.trim().toLowerCase();
-					if (!token.isEmpty()) {
-						result.add(token);
-					}
-				}
-			}
-		}
-		return result;
 	}
 
 	@Override
@@ -213,6 +198,21 @@ public class InterfacePreservation extends AbstractGrader {
 			nodes2.remove(key);
 		}
 		return nodes2;
+	}
+
+	private List<String> tokenize(final String group) {
+		final List<String> result = new ArrayList<String>();
+		if (group != null) {
+			for (final String child : group.split(";")) {
+				if (child != null) {
+					final String token = child.trim().toLowerCase();
+					if (!token.isEmpty()) {
+						result.add(token);
+					}
+				}
+			}
+		}
+		return result;
 	}
 
 }

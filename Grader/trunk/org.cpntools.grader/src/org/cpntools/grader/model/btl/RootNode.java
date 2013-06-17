@@ -14,19 +14,19 @@ public class RootNode<T> extends SimpleNode<T> {
 	}
 
 	/**
-	 * @see org.cpntools.grader.model.btl.AbstractNode#hashCode()
-	 */
-	@Override
-	public int hashCode() {
-		return 7;
-	}
-
-	/**
 	 * @see org.cpntools.grader.model.btl.AbstractNode#equals(java.lang.Object)
 	 */
 	@Override
 	public boolean equals(final Object other) {
 		return this == other;
+	}
+
+	/**
+	 * @see org.cpntools.grader.model.btl.AbstractNode#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		return 7;
 	}
 
 }

@@ -18,10 +18,35 @@ import org.cpntools.grader.model.TestSuite;
  * @author michael
  */
 public class Tester extends Observable {
-	private final TestSuite suite;
-	private final List<StudentID> ids;
+	public static HighLevelSimulator checkModel(final PetriNet model, final File output, final File modelPath,
+	        final StudentID studentid) throws Exception {
+		final HighLevelSimulator simulator = HighLevelSimulator.getHighLevelSimulator();
+// simulator.getSimulator().addObserver(new PacketPrinter(simulator));
+		final Checker checker = new Checker(model, new File(output, model.getName().getText()), simulator);
+		try {
+			// Explicitly ignore localcheck here!
+			checker.checkInitializing(
+			        modelPath.getAbsolutePath(),
+			        new File(new File(modelPath, "simout"), studentid.toString()).getAbsolutePath().replaceFirst(
+			                "[.][cC][pP][nN]$", ""));
+			checker.checkDeclarations();
+			checker.generateSerializers();
+			checker.checkPages();
+			checker.generatePlaceInstances();
+			checker.checkMonitors();
+			simulator.setConfidenceIntervals(95);
+			checker.generateNonPlaceInstances();
+			checker.initialiseSimulationScheduler();
+		} catch (final ErrorInitializingSMLInterface _) {
+		}
+		return simulator;
+	}
+
 	private final PetriNet base;
+	private final List<StudentID> ids;
 	private final File output;
+
+	private final TestSuite suite;
 
 	public Tester(final TestSuite suite, final List<StudentID> ids, final PetriNet base, final File output) {
 		this.suite = suite;
@@ -77,7 +102,7 @@ public class Tester extends Observable {
 		notify("Checking " + model.getName().getText());
 		HighLevelSimulator simulator = null;
 		try {
-			simulator = checkModel(model, output, modelPath, studentid);
+			simulator = Tester.checkModel(model, output, modelPath, studentid);
 		} catch (final Exception e) {
 			notify("Error checking model " + e.getMessage());
 			e.printStackTrace();
@@ -99,29 +124,5 @@ public class Tester extends Observable {
 			}
 		}
 		return result;
-	}
-
-	public static HighLevelSimulator checkModel(final PetriNet model, final File output, final File modelPath,
-	        final StudentID studentid) throws Exception {
-		final HighLevelSimulator simulator = HighLevelSimulator.getHighLevelSimulator();
-// simulator.getSimulator().addObserver(new PacketPrinter(simulator));
-		final Checker checker = new Checker(model, new File(output, model.getName().getText()), simulator);
-		try {
-			// Explicitly ignore localcheck here!
-			checker.checkInitializing(
-			        modelPath.getAbsolutePath(),
-			        new File(new File(modelPath, "simout"), studentid.toString()).getAbsolutePath().replaceFirst(
-			                "[.][cC][pP][nN]$", ""));
-			checker.checkDeclarations();
-			checker.generateSerializers();
-			checker.checkPages();
-			checker.generatePlaceInstances();
-			checker.checkMonitors();
-			simulator.setConfidenceIntervals(95);
-			checker.generateNonPlaceInstances();
-			checker.initialiseSimulationScheduler();
-		} catch (final ErrorInitializingSMLInterface _) {
-		}
-		return simulator;
 	}
 }

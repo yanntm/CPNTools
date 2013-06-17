@@ -18,7 +18,7 @@ public class NullGrader extends AbstractGrader {
 	 */
 	@Override
 	public Grader configure(final double maxPoints, final String configuration) {
-		return INSTANCE;
+		return NullGrader.INSTANCE;
 	}
 
 	/**

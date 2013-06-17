@@ -11,19 +11,11 @@ import javax.swing.JComponent;
 
 public class Detail {
 	private final String header;
+	private final Image image;
 	protected final List<String> strings = new ArrayList<String>();
 	private final List<String> u_strings = Collections.unmodifiableList(strings);
-	private final Image image;
 
 	public Detail(final String header, final Iterable<String> details) {
-		this.header = header;
-		for (final String detail : details) {
-			strings.add(detail);
-		}
-		image = null;
-	}
-
-	public Detail(final String header, final String... details) {
 		this.header = header;
 		for (final String detail : details) {
 			strings.add(detail);
@@ -47,15 +39,23 @@ public class Detail {
 		image = bi;
 	}
 
+	public Detail(final String header, final String... details) {
+		this.header = header;
+		for (final String detail : details) {
+			strings.add(detail);
+		}
+		image = null;
+	}
+
 	public String getHeader() {
 		return header;
 	}
 
-	public List<String> getStrings() {
-		return u_strings;
-	}
-
 	public Image getImage() {
 		return image;
+	}
+
+	public List<String> getStrings() {
+		return u_strings;
 	}
 }

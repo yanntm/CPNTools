@@ -14,13 +14,9 @@ import org.cpntools.grader.model.btl.Environment;
 public class Binding extends Transition {
 	private final Map<String, String> vars;
 
-	/**
-	 * @see java.lang.Object#hashCode()
-	 */
-	@Override
-	public int hashCode() {
-		final int result = super.hashCode();
-		return result;
+	public Binding(final String name, final Map<String, String> vars) {
+		super(name);
+		this.vars = vars;
 	}
 
 	/**
@@ -33,14 +29,13 @@ public class Binding extends Transition {
 		return true;
 	}
 
-	public Binding(final String name, final Map<String, String> vars) {
-		super(name);
-		this.vars = vars;
-	}
-
+	/**
+	 * @see java.lang.Object#hashCode()
+	 */
 	@Override
-	public String toString() {
-		return super.toString() + ' ' + vars;
+	public int hashCode() {
+		final int result = super.hashCode();
+		return result;
 	}
 
 	@Override
@@ -51,6 +46,11 @@ public class Binding extends Transition {
 			// TODO scrape variables
 		}
 		return s;
+	}
+
+	@Override
+	public String toString() {
+		return super.toString() + ' ' + vars;
 	}
 
 }

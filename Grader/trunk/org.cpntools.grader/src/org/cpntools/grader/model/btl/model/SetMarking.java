@@ -18,16 +18,16 @@ public class SetMarking implements Guide {
 	private final String name;
 	private final String value;
 
-	/**
-	 * @see java.lang.Object#hashCode()
-	 */
+	public SetMarking(final String name, final String value) {
+		this.value = value;
+		this.name = NameHelper.cleanup(name);
+
+	}
+
 	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + (name == null ? 0 : name.hashCode());
-		result = prime * result + (value == null ? 0 : value.hashCode());
-		return result;
+	public boolean canTerminate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
+	        final Environment environment) {
+		return true;
 	}
 
 	/**
@@ -48,21 +48,6 @@ public class SetMarking implements Guide {
 		return true;
 	}
 
-	public SetMarking(final String name, final String value) {
-		this.value = value;
-		this.name = NameHelper.cleanup(name);
-
-	}
-
-	public String getName() {
-		return name;
-	}
-
-	@Override
-	public String toString() {
-		return name + " := \"" + value.replaceAll("\"", "\\\\\"") + "\"";
-	}
-
 	@Override
 	public Set<Instance<org.cpntools.accesscpn.model.Transition>> force(
 	        final Set<Instance<org.cpntools.accesscpn.model.Transition>> candidates, final PetriNet model,
@@ -71,25 +56,28 @@ public class SetMarking implements Guide {
 	}
 
 	@Override
-	public Guide progress(final Instance<org.cpntools.accesscpn.model.Transition> ti, final PetriNet model,
-	        final HighLevelSimulator simulator, final NameHelper names, final Environment environment)
-	        throws Unconsumed {
-		throw new Unconsumed();
+	public Set<String> getAtomic() {
+		return Collections.emptySet();
+	}
+
+	public String getName() {
+		return name;
 	}
 
 	public String getValue() {
 		return value;
 	}
 
+	/**
+	 * @see java.lang.Object#hashCode()
+	 */
 	@Override
-	public boolean canTerminate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
-	        final Environment environment) {
-		return true;
-	}
-
-	@Override
-	public Set<String> getAtomic() {
-		return Collections.emptySet();
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + (name == null ? 0 : name.hashCode());
+		result = prime * result + (value == null ? 0 : value.hashCode());
+		return result;
 	}
 
 	@Override
@@ -104,6 +92,18 @@ public class SetMarking implements Guide {
 			}
 		} catch (final Exception e) {
 		}
+	}
+
+	@Override
+	public Guide progress(final Instance<org.cpntools.accesscpn.model.Transition> ti, final PetriNet model,
+	        final HighLevelSimulator simulator, final NameHelper names, final Environment environment)
+	        throws Unconsumed {
+		throw new Unconsumed();
+	}
+
+	@Override
+	public String toString() {
+		return name + " := \"" + value.replaceAll("\"", "\\\\\"") + "\"";
 	}
 
 }

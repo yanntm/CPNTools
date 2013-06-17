@@ -2,6 +2,22 @@ package org.cpntools.grader.model.btl;
 
 public interface Node<T> extends Iterable<Node<T>> {
 	/**
+	 * @param node
+	 * @return
+	 */
+	Node<T> addNode(Node<T> node);
+
+	/**
+	 * @return
+	 */
+	T getBranch();
+
+	/**
+	 * @return
+	 */
+	double getCoverage();
+
+	/**
 	 * @return
 	 * @throws Unsatisfied
 	 */
@@ -13,25 +29,9 @@ public interface Node<T> extends Iterable<Node<T>> {
 	double getTraceSatisfactionProbability();
 
 	/**
-	 * @param node
-	 * @return
-	 */
-	Node<T> addNode(Node<T> node);
-
-	/**
 	 * 
 	 */
 	void invalidate();
-
-	/**
-	 * 
-	 */
-	void validate();
-
-	/**
-	 * @return
-	 */
-	double getCoverage();
 
 	/**
 	 * @return
@@ -39,8 +39,8 @@ public interface Node<T> extends Iterable<Node<T>> {
 	boolean isExpanded();
 
 	/**
-	 * @return
+	 * 
 	 */
-	T getBranch();
+	void validate();
 
 }

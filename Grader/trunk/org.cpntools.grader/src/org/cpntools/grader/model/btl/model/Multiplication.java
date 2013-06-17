@@ -12,16 +12,14 @@ import org.cpntools.grader.model.btl.Environment;
  * @author michael
  */
 public class Multiplication extends IExpression {
-	/**
-	 * @see java.lang.Object#hashCode()
-	 */
-	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + (e1 == null ? 0 : e1.hashCode());
-		result = prime * result + (e2 == null ? 0 : e2.hashCode());
-		return result;
+	private final IExpression e1;
+
+	private final IExpression e2;
+
+	public Multiplication(final IExpression e1, final IExpression e2) {
+		this.e1 = e1;
+		this.e2 = e2;
+
 	}
 
 	/**
@@ -42,28 +40,6 @@ public class Multiplication extends IExpression {
 		return true;
 	}
 
-	private final IExpression e1;
-	private final IExpression e2;
-
-	public Multiplication(final IExpression e1, final IExpression e2) {
-		this.e1 = e1;
-		this.e2 = e2;
-
-	}
-
-	public IExpression getE2() {
-		return e2;
-	}
-
-	public IExpression getE1() {
-		return e1;
-	}
-
-	@Override
-	public String toString() {
-		return "(" + e1 + ") * (" + e2 + ")";
-	}
-
 	@Override
 	public int evaluate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
 	        final Environment environment) {
@@ -78,11 +54,36 @@ public class Multiplication extends IExpression {
 		return result;
 	}
 
+	public IExpression getE1() {
+		return e1;
+	}
+
+	public IExpression getE2() {
+		return e2;
+	}
+
+	/**
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + (e1 == null ? 0 : e1.hashCode());
+		result = prime * result + (e2 == null ? 0 : e2.hashCode());
+		return result;
+	}
+
 	@Override
 	public void prestep(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
 	        final Environment environment) {
 		e1.prestep(model, simulator, names, environment);
 		e2.prestep(model, simulator, names, environment);
+	}
+
+	@Override
+	public String toString() {
+		return "(" + e1 + ") * (" + e2 + ")";
 	}
 
 }

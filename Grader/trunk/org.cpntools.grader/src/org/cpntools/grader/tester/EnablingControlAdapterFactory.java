@@ -33,7 +33,7 @@ public class EnablingControlAdapterFactory extends ModelAdapterFactory {
 	 * @return
 	 */
 	public static EnablingControlAdapterFactory getInstance() {
-		return instance;
+		return EnablingControlAdapterFactory.instance;
 	}
 
 	protected EnablingControlAdapterFactory() {

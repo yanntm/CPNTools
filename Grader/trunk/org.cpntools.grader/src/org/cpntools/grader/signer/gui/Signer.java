@@ -39,6 +39,16 @@ public class Signer extends JDialog {
      */
 	private static final long serialVersionUID = -4634356481967680322L;
 
+	/**
+	 * @param args
+	 */
+	public static void main(final String[] args) {
+		System.setProperty("apple.laf.useScreenMenuBar", "true");
+		System.setProperty("com.apple.mrj.application.apple.menu.about.name", "Signer");
+		new Signer().setVisible(true);
+
+	}
+
 	protected Signer() {
 		setTitle("Sign Base Models");
 		setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
@@ -95,6 +105,12 @@ public class Signer extends JDialog {
 		pack();
 	}
 
+	private int generate(final String secret, final StudentID studentID, final PetriNetImpl model, final File output)
+	        throws OperationNotSupportedException, TransformerException, ParserConfigurationException, IOException {
+		return org.cpntools.grader.signer.Signer.checkSignature(Generator.generate(output, model, secret, studentID),
+		        secret, studentID);
+	}
+
 	protected void generate(final String secret, final File base, final File output, final String ids) {
 		final List<StudentID> idList = new ArrayList<StudentID>();
 		for (final String s : ids.split("[\n\r]")) {
@@ -147,22 +163,6 @@ public class Signer extends JDialog {
 		        + " completed.\nThreshold for signatures: " + min + " - " + max, "Generation Complete",
 		        JOptionPane.INFORMATION_MESSAGE);
 		System.exit(0);
-	}
-
-	private int generate(final String secret, final StudentID studentID, final PetriNetImpl model, final File output)
-	        throws OperationNotSupportedException, TransformerException, ParserConfigurationException, IOException {
-		return org.cpntools.grader.signer.Signer.checkSignature(Generator.generate(output, model, secret, studentID),
-		        secret, studentID);
-	}
-
-	/**
-	 * @param args
-	 */
-	public static void main(final String[] args) {
-		System.setProperty("apple.laf.useScreenMenuBar", "true");
-		System.setProperty("com.apple.mrj.application.apple.menu.about.name", "Signer");
-		new Signer().setVisible(true);
-
 	}
 
 }

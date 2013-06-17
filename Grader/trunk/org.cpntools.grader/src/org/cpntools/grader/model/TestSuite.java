@@ -20,15 +20,15 @@ public class TestSuite {
 	/**
 	 * @return
 	 */
-	public Grader getMatcher() {
-		return matcher;
+	public List<Grader> getGraders() {
+		return graders_u;
 	}
 
 	/**
 	 * @return
 	 */
-	public List<Grader> getGraders() {
-		return graders_u;
+	public Grader getMatcher() {
+		return matcher;
 	}
 
 }

@@ -14,9 +14,9 @@ import java.util.regex.Pattern;
  */
 public class Parser {
 
-	protected static final Pattern points = Pattern.compile("^[ \\t]*(-?[0-9.]+)[ \\t]*:[ \\t]*(.*)$");
-	protected static final Pattern nextLine = Pattern.compile("^[ \\t]*\\+[ \\t]*(.*)$");
 	protected static final Pattern comment = Pattern.compile("^[ \\t]*(//|#)");
+	protected static final Pattern nextLine = Pattern.compile("^[ \\t]*\\+[ \\t]*(.*)$");
+	protected static final Pattern points = Pattern.compile("^[ \\t]*(-?[0-9.]+)[ \\t]*:[ \\t]*(.*)$");
 
 	public synchronized static List<Grader> parse(final InputStream i, final String section, final GraderFactory factory)
 	        throws IOException, ParserException {
@@ -42,7 +42,7 @@ public class Parser {
 		}
 
 		while (line != null && !line.matches("^ *\\[.*\\] *$")) {
-			final Matcher m = points.matcher(line);
+			final Matcher m = Parser.points.matcher(line);
 			if (m.matches()) {
 				double points = 0.0;
 				if (m.group(1) != null && m.group(1).length() > 0) {
@@ -58,7 +58,7 @@ public class Parser {
 				// Include next line if this ends on \ or if next starts with +
 				line = reader.readLine();
 				lineNumber++;
-				Matcher m2 = line == null ? null : nextLine.matcher(line);
+				Matcher m2 = line == null ? null : Parser.nextLine.matcher(line);
 				boolean backslash = configuration.endsWith("\\");
 				boolean matches = m2 == null ? false : m2.matches() && m2.group(1) != null;
 				while (line != null && (backslash || matches)) {
@@ -70,7 +70,7 @@ public class Parser {
 
 					line = reader.readLine();
 					lineNumber = lineNumber++;
-					m2 = line == null ? null : nextLine.matcher(line);
+					m2 = line == null ? null : Parser.nextLine.matcher(line);
 					backslash = configuration.endsWith("\\");
 					matches = m2 == null ? false : m2.matches() && m2.group(1) != null;
 				}
@@ -90,8 +90,8 @@ public class Parser {
 					                + " following line(s))" : ""), firstLine, exception);
 				}
 			} else {
-				if (!comment.matcher(line).matches() && !line.trim().isEmpty()) { throw new ParserException(lineNumber,
-				        "I do not understand this line", line, null); }
+				if (!Parser.comment.matcher(line).matches() && !line.trim().isEmpty()) { throw new ParserException(
+				        lineNumber, "I do not understand this line", line, null); }
 				line = reader.readLine();
 				lineNumber = lineNumber++;
 

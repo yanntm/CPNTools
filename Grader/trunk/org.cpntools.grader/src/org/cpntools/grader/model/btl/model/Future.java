@@ -25,13 +25,10 @@ public class Future implements Guide {
 
 	}
 
-	public Guide getConstraint() {
-		return constraint;
-	}
-
 	@Override
-	public String toString() {
-		return "--> (" + constraint + ")";
+	public boolean canTerminate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
+	        final Environment environment) {
+		return constraint.canTerminate(model, simulator, names, environment);
 	}
 
 	@Override
@@ -39,6 +36,21 @@ public class Future implements Guide {
 	        final Set<Instance<org.cpntools.accesscpn.model.Transition>> candidates, final PetriNet model,
 	        final HighLevelSimulator simulator, final NameHelper names, final Environment environment) {
 		return candidates;
+	}
+
+	@Override
+	public Set<String> getAtomic() {
+		return constraint.getAtomic();
+	}
+
+	public Guide getConstraint() {
+		return constraint;
+	}
+
+	@Override
+	public void prestep(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
+	        final Environment environment) {
+		constraint.prestep(model, simulator, names, environment);
 	}
 
 	/**
@@ -57,20 +69,8 @@ public class Future implements Guide {
 	}
 
 	@Override
-	public boolean canTerminate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
-	        final Environment environment) {
-		return constraint.canTerminate(model, simulator, names, environment);
-	}
-
-	@Override
-	public Set<String> getAtomic() {
-		return constraint.getAtomic();
-	}
-
-	@Override
-	public void prestep(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
-	        final Environment environment) {
-		constraint.prestep(model, simulator, names, environment);
+	public String toString() {
+		return "--> (" + constraint + ")";
 	}
 
 }

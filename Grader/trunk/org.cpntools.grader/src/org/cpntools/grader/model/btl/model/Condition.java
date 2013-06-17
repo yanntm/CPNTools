@@ -15,17 +15,17 @@ public interface Condition {
 	public void prestep(final PetriNet model, HighLevelSimulator simulator, final NameHelper names,
 	        Environment environment);
 
+	boolean canTerminate(PetriNet model, HighLevelSimulator simulator, NameHelper names, Environment environment);
+
 	Set<Instance<org.cpntools.accesscpn.model.Transition>> force(
 	        Set<Instance<org.cpntools.accesscpn.model.Transition>> candidates, PetriNet model,
 	        HighLevelSimulator simulator, NameHelper names, Environment environment);
-
-	Condition progress(Instance<org.cpntools.accesscpn.model.Transition> ti, PetriNet model,
-	        HighLevelSimulator simulator, NameHelper names, Environment environment) throws Unconsumed;
-
-	boolean canTerminate(PetriNet model, HighLevelSimulator simulator, NameHelper names, Environment environment);
 
 	/**
 	 * @return
 	 */
 	Set<String> getAtomic();
+
+	Condition progress(Instance<org.cpntools.accesscpn.model.Transition> ti, PetriNet model,
+	        HighLevelSimulator simulator, NameHelper names, Environment environment) throws Unconsumed;
 }

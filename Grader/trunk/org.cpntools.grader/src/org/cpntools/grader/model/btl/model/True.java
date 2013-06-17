@@ -17,8 +17,14 @@ public final class True extends Simple {
 	}
 
 	@Override
-	public String toString() {
-		return "true";
+	public boolean canTerminate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
+	        final Environment environment) {
+		return false; // a true step means any step (just not empty step)
+	}
+
+	@Override
+	public boolean equals(final Object o) {
+		return o instanceof True;
 	}
 
 	@Override
@@ -29,13 +35,19 @@ public final class True extends Simple {
 	}
 
 	@Override
-	public boolean equals(final Object o) {
-		return o instanceof True;
+	public Set<String> getAtomic() {
+		return Collections.emptySet();
 	}
 
 	@Override
 	public int hashCode() {
 		return 7;
+	}
+
+	@Override
+	public void prestep(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
+	        final Environment environment) {
+
 	}
 
 	@Override
@@ -45,20 +57,8 @@ public final class True extends Simple {
 	}
 
 	@Override
-	public boolean canTerminate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
-	        final Environment environment) {
-		return false; // a true step means any step (just not empty step)
-	}
-
-	@Override
-	public Set<String> getAtomic() {
-		return Collections.emptySet();
-	}
-
-	@Override
-	public void prestep(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
-	        final Environment environment) {
-
+	public String toString() {
+		return "true";
 	}
 
 }

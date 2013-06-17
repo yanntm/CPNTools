@@ -34,18 +34,22 @@ import org.eclipse.emf.common.notify.Notifier;
  * @author michael
  */
 public class EnablingControl extends PetriNetDataAdapter {
-	private static final String ENABLING_CONTROL = "ENABLING_CONTROL";
-	Map<String, Place> enablingPlaces = new HashMap<String, Place>();
-
 	private final static class HashableInstance {
+		private final int hashCode;
+
 		final int i;
 
-		/**
-		 * @see java.lang.Object#hashCode()
-		 */
-		@Override
-		public int hashCode() {
-			return hashCode;
+		final String id;
+
+		public HashableInstance(final Instance<Transition> ti) {
+			id = ti.getNode().getId();
+			i = ti.getInstanceNumber();
+
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + i;
+			result = prime * result + (id == null ? 0 : id.hashCode());
+			hashCode = result;
 		}
 
 		/**
@@ -64,37 +68,83 @@ public class EnablingControl extends PetriNetDataAdapter {
 			return true;
 		}
 
-		final String id;
-		private final int hashCode;
-
-		public HashableInstance(final Instance<Transition> ti) {
-			id = ti.getNode().getId();
-			i = ti.getInstanceNumber();
-
-			final int prime = 31;
-			int result = 1;
-			result = prime * result + i;
-			result = prime * result + (id == null ? 0 : id.hashCode());
-			hashCode = result;
+		/**
+		 * @see java.lang.Object#hashCode()
+		 */
+		@Override
+		public int hashCode() {
+			return hashCode;
 		}
-	};
+	}
 
-	Set<HashableInstance> disabled = new HashSet<HashableInstance>();
+	private static final String ENABLING_CONTROL = "ENABLING_CONTROL";
 
-	@Override
-	public void setTarget(final Notifier target) {
-		super.setTarget(target);
-		if (petriNet != null && target == petriNet) {
-			addTypeDeclaration();
+	Set<HashableInstance> disabled = new HashSet<HashableInstance>();;
 
-			int id = 0;
-			for (final Page p : petriNet.getPage()) {
-				for (final Transition t : list(p.transition())) {
-					final Place place = createPlace(id++, p);
-					enablingPlaces.put(t.getId(), place);
-					createArc(id++, p, t, place);
-				}
-			}
+	Map<String, Place> enablingPlaces = new HashMap<String, Place>();
+
+	public void addTypeDeclaration() {
+		final TypeDeclaration color = DeclarationFactory.INSTANCE.createTypeDeclaration();
+		final CPNUnit bool = CpntypesFactory.INSTANCE.createCPNUnit();
+		color.setSort(bool);
+		color.setTypeName(EnablingControl.ENABLING_CONTROL);
+		final HLDeclaration decl = ModelFactory.INSTANCE.createHLDeclaration();
+		decl.setStructure(color);
+		decl.setId("enabling0");
+		petriNet.getLabel().add(decl);
+	}
+
+	public void createArc(final int id, final Page p, final Transition t, final Place place) {
+		final Arc arc = ModelFactory.INSTANCE.createArc();
+		arc.setId("enabling" + id);
+		arc.setSource(t);
+		arc.setTarget(place);
+		arc.setKind(HLArcType.TEST);
+		final HLAnnotation expr = ModelFactory.INSTANCE.createHLAnnotation();
+		expr.setText("()");
+		arc.setHlinscription(expr);
+		arc.setPage(p);
+	}
+
+	public Place createPlace(final int id, final Page p) {
+		final Name name = ModelFactory.INSTANCE.createName();
+		final Sort type = ModelFactory.INSTANCE.createSort();
+		final HLMarking initmark = ModelFactory.INSTANCE.createHLMarking();
+		name.setText("Enabling Control " + id);
+		type.setText(EnablingControl.ENABLING_CONTROL);
+		initmark.setText("()");
+		final Place place = ModelFactory.INSTANCE.createPlace();
+		place.setId("enabling" + id);
+		place.setName(name);
+		place.setSort(type);
+		place.setInitialMarking(initmark);
+		place.setPage(p);
+		return place;
+	}
+
+	public void disable(final Instance<Transition> ti) {
+		final HashableInstance hi = new HashableInstance(ti);
+		if (!disabled.contains(hi)) {
+			setMarking(ti, "");
+			disabled.add(hi);
+		}
+	}
+
+	public void enable(final Instance<Transition> ti) {
+		final HashableInstance hi = new HashableInstance(ti);
+		if (disabled.contains(hi)) {
+			setMarking(ti, "()");
+			disabled.remove(hi);
+		}
+	}
+
+	public Instance<Place> getPlaceInstance(final Instance<Transition> ti) {
+		final Place p = enablingPlaces.get(ti.getNode().getId());
+		if (p == null) { return null; }
+		if (ti.getTransitionPath() != null) {
+			return InstanceFactory.INSTANCE.createInstance(p, ti.getInstanceNumber(), ti.getTransitionPath());
+		} else {
+			return InstanceFactory.INSTANCE.createInstance(p, ti.getInstanceNumber());
 		}
 	}
 
@@ -115,28 +165,10 @@ public class EnablingControl extends PetriNetDataAdapter {
 
 	}
 
-	private Collection<Transition> list(final Iterable<Transition> transition) {
-		final ArrayList<Transition> result = new ArrayList<Transition>();
-		for (final Transition t : transition) {
-			result.add(t);
-		}
-		return result;
-	}
-
-	public void enable(final Instance<Transition> ti) {
-		final HashableInstance hi = new HashableInstance(ti);
-		if (disabled.contains(hi)) {
-			setMarking(ti, "()");
-			disabled.remove(hi);
-		}
-	}
-
-	public void disable(final Instance<Transition> ti) {
-		final HashableInstance hi = new HashableInstance(ti);
-		if (!disabled.contains(hi)) {
-			setMarking(ti, "");
-			disabled.add(hi);
-		}
+	public HighLevelSimulator getSimulator(final Instance<Transition> ti) {
+		final HighLevelSimulator simulator = (HighLevelSimulator) SimulatorModelAdapterFactory.getInstance().adapt(
+		        ti.getNode().getPage().getPetriNet(), HighLevelSimulator.class);
+		return simulator;
 	}
 
 	public void setMarking(final Instance<Transition> ti, final String marking) {
@@ -151,58 +183,28 @@ public class EnablingControl extends PetriNetDataAdapter {
 		}
 	}
 
-	public HighLevelSimulator getSimulator(final Instance<Transition> ti) {
-		final HighLevelSimulator simulator = (HighLevelSimulator) SimulatorModelAdapterFactory.getInstance().adapt(
-		        ti.getNode().getPage().getPetriNet(), HighLevelSimulator.class);
-		return simulator;
-	}
+	@Override
+	public void setTarget(final Notifier target) {
+		super.setTarget(target);
+		if (petriNet != null && target == petriNet) {
+			addTypeDeclaration();
 
-	public Instance<Place> getPlaceInstance(final Instance<Transition> ti) {
-		final Place p = enablingPlaces.get(ti.getNode().getId());
-		if (p == null) { return null; }
-		if (ti.getTransitionPath() != null) {
-			return InstanceFactory.INSTANCE.createInstance(p, ti.getInstanceNumber(), ti.getTransitionPath());
-		} else {
-			return InstanceFactory.INSTANCE.createInstance(p, ti.getInstanceNumber());
+			int id = 0;
+			for (final Page p : petriNet.getPage()) {
+				for (final Transition t : list(p.transition())) {
+					final Place place = createPlace(id++, p);
+					enablingPlaces.put(t.getId(), place);
+					createArc(id++, p, t, place);
+				}
+			}
 		}
 	}
 
-	public void createArc(final int id, final Page p, final Transition t, final Place place) {
-		final Arc arc = ModelFactory.INSTANCE.createArc();
-		arc.setId("enabling" + id);
-		arc.setSource(t);
-		arc.setTarget(place);
-		arc.setKind(HLArcType.TEST);
-		final HLAnnotation expr = ModelFactory.INSTANCE.createHLAnnotation();
-		expr.setText("()");
-		arc.setHlinscription(expr);
-		arc.setPage(p);
-	}
-
-	public Place createPlace(final int id, final Page p) {
-		final Name name = ModelFactory.INSTANCE.createName();
-		final Sort type = ModelFactory.INSTANCE.createSort();
-		final HLMarking initmark = ModelFactory.INSTANCE.createHLMarking();
-		name.setText("Enabling Control " + id);
-		type.setText(ENABLING_CONTROL);
-		initmark.setText("()");
-		final Place place = ModelFactory.INSTANCE.createPlace();
-		place.setId("enabling" + id);
-		place.setName(name);
-		place.setSort(type);
-		place.setInitialMarking(initmark);
-		place.setPage(p);
-		return place;
-	}
-
-	public void addTypeDeclaration() {
-		final TypeDeclaration color = DeclarationFactory.INSTANCE.createTypeDeclaration();
-		final CPNUnit bool = CpntypesFactory.INSTANCE.createCPNUnit();
-		color.setSort(bool);
-		color.setTypeName(ENABLING_CONTROL);
-		final HLDeclaration decl = ModelFactory.INSTANCE.createHLDeclaration();
-		decl.setStructure(color);
-		decl.setId("enabling0");
-		petriNet.getLabel().add(decl);
+	private Collection<Transition> list(final Iterable<Transition> transition) {
+		final ArrayList<Transition> result = new ArrayList<Transition>();
+		for (final Transition t : transition) {
+			result.add(t);
+		}
+		return result;
 	}
 }
