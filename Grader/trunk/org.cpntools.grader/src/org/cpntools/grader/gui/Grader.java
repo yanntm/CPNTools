@@ -1,6 +1,7 @@
 package org.cpntools.grader.gui;
 
 import java.awt.BorderLayout;
+import java.awt.FlowLayout;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -15,8 +16,12 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.prefs.Preferences;
 
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JTextField;
 
 import org.cpntools.accesscpn.model.PetriNet;
 import org.cpntools.accesscpn.model.importer.DOMParser;
@@ -33,7 +38,10 @@ import org.cpntools.grader.tester.Tester;
  */
 public class Grader {
 
-	private static final int MAX_THREADS = 1;
+	private static final String MODEL_FILE = "base_model_file";
+	private static final String MODEL_DIR = "model_directory";
+	private static final String STUDENT_IDS = "student_ids";
+	private static final String CONFIG = "config";
 	private static int progress;
 
 	public static class ResultData {
@@ -61,8 +69,9 @@ public class Grader {
 	public static void main(final String[] args) {
 		System.setProperty("apple.laf.useScreenMenuBar", "true");
 		System.setProperty("com.apple.mrj.application.apple.menu.about.name", "Grade/CPN");
-		final FileChooser configuration = new FileChooser("Configuration", true);
-		final SetupDialog setup = new SetupDialog() {
+		final Preferences p = Preferences.userNodeForPackage(Grader.class);
+		final FileChooser configuration = new FileChooser("Configuration", p.get(CONFIG, ""), true);
+		final SetupDialog setup = new SetupDialog(p.get(MODEL_FILE, ""), p.get(MODEL_DIR, ""), p.get(STUDENT_IDS, "")) {
 			@Override
 			protected void update(final File outputDir) {
 				if (configuration.getSelected().getName().equals("")) {
@@ -78,8 +87,19 @@ public class Grader {
 				}
 			}
 		};
-		setup.getFiles().add(configuration, BorderLayout.SOUTH);
+		final JPanel bottom = new JPanel(new BorderLayout());
+		setup.getFiles().add(bottom, BorderLayout.SOUTH);
+		bottom.add(configuration);
+		final JPanel threads = new JPanel(new FlowLayout());
+		bottom.add(threads, BorderLayout.SOUTH);
+		final JTextField noThreads = new JTextField("" + Runtime.getRuntime().availableProcessors(), 4);
+		threads.add(noThreads);
+		threads.add(new JLabel("Number of grader threads"));
 		setup.setVisible(true);
+		p.put(MODEL_FILE, setup.getBase().getAbsolutePath());
+		p.put(MODEL_DIR, setup.getModels().getAbsolutePath());
+		p.put(STUDENT_IDS, setup.getTextIds());
+		p.put(CONFIG, configuration.getSelected().getAbsolutePath());
 
 		if (setup.getBase() != null) {
 
@@ -188,11 +208,12 @@ public class Grader {
 					}
 				}
 			}.start();
+			final int maxThreads = Integer.parseInt(noThreads.getText());
 			for (final File f : files) {
 				if (resultDialog.isCancelled()) {
 					break;
 				}
-				while (running.get() >= MAX_THREADS) {
+				while (running.get() >= maxThreads) {
 					if (resultDialog.isCancelled()) {
 						break;
 					}
