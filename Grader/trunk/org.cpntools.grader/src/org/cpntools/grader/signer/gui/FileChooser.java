@@ -24,16 +24,24 @@ public class FileChooser extends JPanel {
 		this(labelText, load, true);
 	}
 
+	public FileChooser(final String labelText, final String defaultText, final boolean load) {
+		this(labelText, defaultText, load, true);
+	}
+
+	public FileChooser(final String labelText, final boolean load, final boolean file) {
+		this(labelText, "", load, true);
+	}
+
 	/**
 	 * @param labelText
 	 * @param file
 	 * @param load
 	 */
-	public FileChooser(final String labelText, final boolean load, final boolean file) {
+	public FileChooser(final String labelText, final String defaultText, final boolean load, final boolean file) {
 		super(new BorderLayout());
 		final JLabel label = new JLabel(labelText);
 		add(label, BorderLayout.WEST);
-		fileName = new JTextField();
+		fileName = new JTextField(defaultText);
 		label.setLabelFor(fileName);
 		add(fileName, BorderLayout.CENTER);
 		browse = new JButton("Browse...");

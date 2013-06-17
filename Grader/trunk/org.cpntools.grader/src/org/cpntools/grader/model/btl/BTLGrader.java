@@ -198,10 +198,11 @@ public class BTLGrader extends AbstractGrader {
 					        + unparsed, "Parsed Formula:\n" + getGuide(), "Formula at error:\n" + toSatisfy,
 					        "Marking at error:\n" + simulator.getMarking(false));
 				}
-				for (final Instance<Transition> ti : enabled) {
+				for (final Instance<Transition> ti : allowed) {
 					decisionTree.addChild(node, ti);
 				}
-				final Binding binding = simulator.executeAndGet(strategy.getOne(decisionTree, node, enabled));
+				final Binding binding = simulator.executeAndGet(strategy.getOne(decisionTree, node, new ArrayList(
+				        allowed)));
 				node = decisionTree.addChild(node, binding.getTransitionInstance());
 				bindings.add(binding);
 				toSatisfy = toSatisfy.progress(binding.getTransitionInstance(), model, simulator, names,
@@ -243,12 +244,13 @@ public class BTLGrader extends AbstractGrader {
 			enabled = (List) simulator.isEnabled(allTransitionInstances);
 // System.out.println(enabled);
 		}
+// System.out.println("Formula: " + toSatisfy);
 		allowed.addAll(toSatisfy.force(new HashSet(enabled), model, simulator, names, EmptyEnvironment.INSTANCE));
 		boolean changed = true;
 		while (allowed.isEmpty() && changed) {
 			changed = false;
-// final Set<Instance<Transition>> oldEnabled = new HashSet<Instance<Transition>>();
-// oldEnabled.addAll(enabled);
+			final Set<Instance<Transition>> oldEnabled = new HashSet<Instance<Transition>>();
+			oldEnabled.addAll(enabled);
 			for (final Instance<Transition> ti : allTransitionInstances) {
 				if (enabled.contains(ti)) {
 					ec.disable(ti);
@@ -272,9 +274,9 @@ public class BTLGrader extends AbstractGrader {
 			allowed.addAll(toSatisfy.force(new HashSet(enabled), model, simulator, names, EmptyEnvironment.INSTANCE));
 // System.out.println("Old " + oldEnabled);
 
-// oldEnabled.addAll(enabled);
-// enabled.clear();
-// enabled.addAll(oldEnabled);
+			oldEnabled.addAll(enabled);
+			enabled.clear();
+			enabled.addAll(oldEnabled);
 // System.out.println("Old and enabled " + enabled);
 		}
 // System.out.println("Returning " + enabled);

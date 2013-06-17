@@ -33,6 +33,11 @@ public class SetupDialog extends JDialog {
 	private static final long serialVersionUID = -7081862886519471794L;
 
 	protected File base = null;
+	private String textIds = "";
+
+	String getTextIds() {
+		return textIds;
+	}
 
 	/**
 	 * @return the base
@@ -69,7 +74,7 @@ public class SetupDialog extends JDialog {
 
 	private final JPanel files;
 
-	public SetupDialog() {
+	public SetupDialog(final String modelFile, final String modelDirectory, final String studentIds) {
 		setModal(true);
 		setTitle("Setup Grading");
 		setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
@@ -91,9 +96,9 @@ public class SetupDialog extends JDialog {
 		add(buttons, BorderLayout.SOUTH);
 
 		files = new JPanel(new BorderLayout());
-		final FileChooser baseModel = new FileChooser("Base model", true);
+		final FileChooser baseModel = new FileChooser("Base model", modelFile, true);
 		getFiles().add(baseModel, BorderLayout.NORTH);
-		final FileChooser outputDir = new FileChooser("Model directory", true, false) {
+		final FileChooser outputDir = new FileChooser("Model directory", modelDirectory, true, false) {
 			@Override
 			protected void updated() {
 				if (baseModel.getSelected().getName().equals("")) {
@@ -129,15 +134,17 @@ public class SetupDialog extends JDialog {
 
 		final JPanel ids = new JPanel(new BorderLayout());
 		ids.add(new JLabel("Student ids"), BorderLayout.NORTH);
-		final JTextArea idField = new JTextArea();
+		final JTextArea idField = new JTextArea(studentIds);
 		ids.add(idField);
 		add(ids);
 		okButton.addActionListener(new ActionListener() {
+
 			@Override
 			public void actionPerformed(final ActionEvent e) {
 				SetupDialog.this.secret = secretField.getText().trim();
 				base = baseModel.getSelected();
 				models = outputDir.getSelected();
+				textIds = idField.getText();
 				SetupDialog.this.ids.clear();
 				for (final String s : idField.getText().trim().split("[\n\r]")) {
 					final String idText = s.trim();
