@@ -21,11 +21,6 @@ public class Time extends IExpression {
 	}
 
 	@Override
-	public String toString() {
-		return "time";
-	}
-
-	@Override
 	public int evaluate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
 	        final Environment environment) {
 		try {
@@ -53,5 +48,10 @@ public class Time extends IExpression {
 	public void prestep(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
 	        final Environment environment) {
 
+	}
+
+	@Override
+	public String toString() {
+		return "time";
 	}
 }

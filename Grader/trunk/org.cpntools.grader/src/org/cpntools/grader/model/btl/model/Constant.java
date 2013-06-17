@@ -12,15 +12,14 @@ import org.cpntools.grader.model.btl.Environment;
  * @author michael
  */
 public class Constant extends IExpression {
+	private final int value;
+
 	/**
-	 * @see java.lang.Object#hashCode()
+	 * @param value
 	 */
-	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + value;
-		return result;
+	public Constant(final int value) {
+		this.value = value;
+
 	}
 
 	/**
@@ -36,25 +35,6 @@ public class Constant extends IExpression {
 		return true;
 	}
 
-	private final int value;
-
-	/**
-	 * @param value
-	 */
-	public Constant(final int value) {
-		this.value = value;
-
-	}
-
-	public int getValue() {
-		return value;
-	}
-
-	@Override
-	public String toString() {
-		return "" + value;
-	}
-
 	@Override
 	public int evaluate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
 	        final Environment environment) {
@@ -66,10 +46,30 @@ public class Constant extends IExpression {
 		return Collections.emptySet();
 	}
 
+	public int getValue() {
+		return value;
+	}
+
+	/**
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + value;
+		return result;
+	}
+
 	@Override
 	public void prestep(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
 	        final Environment environment) {
 
+	}
+
+	@Override
+	public String toString() {
+		return "" + value;
 	}
 
 }

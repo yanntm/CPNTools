@@ -9,28 +9,21 @@ import org.cpntools.grader.model.btl.BTLGrader;
  * @author michael
  */
 public class GraderFactory {
-	protected List<Grader> graders = new ArrayList<Grader>();
-
 	/**
 	 * 
 	 */
 	public static final GraderFactory INSTANCE = new GraderFactory();
 
 	static {
-		INSTANCE.register(NameCategorizer.INSTANCE);
-		INSTANCE.register(SignatureGrader.INSTANCE);
-		INSTANCE.register(DeclarationSubset.INSTANCE);
-		INSTANCE.register(InterfacePreservation.INSTANCE);
-		INSTANCE.register(BTLGrader.INSTANCE);
-		INSTANCE.register(MonitoringGrader.INSTANCE);
+		GraderFactory.INSTANCE.register(NameCategorizer.INSTANCE);
+		GraderFactory.INSTANCE.register(SignatureGrader.INSTANCE);
+		GraderFactory.INSTANCE.register(DeclarationSubset.INSTANCE);
+		GraderFactory.INSTANCE.register(InterfacePreservation.INSTANCE);
+		GraderFactory.INSTANCE.register(BTLGrader.INSTANCE);
+		GraderFactory.INSTANCE.register(MonitoringGrader.INSTANCE);
 	}
 
-	/**
-	 * @param g
-	 */
-	public void register(final Grader g) {
-		graders.add(g);
-	}
+	protected List<Grader> graders = new ArrayList<Grader>();
 
 	/**
 	 * @param points
@@ -44,5 +37,12 @@ public class GraderFactory {
 			if (result != null) { return result; }
 		}
 		return NullGrader.INSTANCE;
+	}
+
+	/**
+	 * @param g
+	 */
+	public void register(final Grader g) {
+		graders.add(g);
 	}
 }

@@ -14,6 +14,11 @@ import org.cpntools.grader.model.btl.Environment;
 public class Binder extends And {
 	private final Map<String, String> vars;
 
+	public Binder(final String name, final Map<String, String> vars, final Guide g) {
+		super(new Transition(name), g);
+		this.vars = vars;
+	}
+
 	/**
 	 * @see java.lang.Object#equals(java.lang.Object)
 	 */
@@ -29,16 +34,6 @@ public class Binder extends And {
 		return true;
 	}
 
-	public Binder(final String name, final Map<String, String> vars, final Guide g) {
-		super(new Transition(name), g);
-		this.vars = vars;
-	}
-
-	@Override
-	public String toString() {
-		return "new " + getG1().toString() + ' ' + vars + " (" + getG2().toString() + ')';
-	}
-
 	@Override
 	public Guide progress(final Instance<org.cpntools.accesscpn.model.Transition> ti, final PetriNet model,
 	        final HighLevelSimulator simulator, final NameHelper names, final Environment environment)
@@ -48,6 +43,11 @@ public class Binder extends And {
 			// TODO scrape variables
 		}
 		return g;
+	}
+
+	@Override
+	public String toString() {
+		return "new " + getG1().toString() + ' ' + vars + " (" + getG2().toString() + ')';
 	}
 
 }

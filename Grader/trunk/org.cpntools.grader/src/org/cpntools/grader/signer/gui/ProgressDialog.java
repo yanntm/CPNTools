@@ -17,9 +17,9 @@ public class ProgressDialog extends JDialog {
 	/**
      * 
      */
-    private static final long serialVersionUID = -708273440254619104L;
-	final JLabel caption;
+	private static final long serialVersionUID = -708273440254619104L;
 	private final JProgressBar progressBar;
+	final JLabel caption;
 
 	public ProgressDialog(final String title, final int max) {
 		setTitle(title);
@@ -45,6 +45,13 @@ public class ProgressDialog extends JDialog {
 	}
 
 	/**
+	 * @return
+	 */
+	public boolean isCancelled() {
+		return !isVisible();
+	}
+
+	/**
 	 * @param caption
 	 */
 	public void updateCaption(final String caption) {
@@ -65,12 +72,5 @@ public class ProgressDialog extends JDialog {
 			invalidate();
 			repaint();
 		}
-	}
-
-	/**
-	 * @return
-	 */
-	public boolean isCancelled() {
-		return !isVisible();
 	}
 }

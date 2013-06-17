@@ -12,15 +12,14 @@ import org.cpntools.grader.model.btl.Environment;
  * @author michael
  */
 public class Place extends IExpression {
+	private final String name;
+
 	/**
-	 * @see java.lang.Object#hashCode()
+	 * @param name
 	 */
-	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + (name == null ? 0 : name.hashCode());
-		return result;
+	public Place(final String name) {
+		this.name = NameHelper.cleanup(name);
+
 	}
 
 	/**
@@ -38,25 +37,6 @@ public class Place extends IExpression {
 		return true;
 	}
 
-	private final String name;
-
-	/**
-	 * @param name
-	 */
-	public Place(final String name) {
-		this.name = NameHelper.cleanup(name);
-
-	}
-
-	public String getName() {
-		return name;
-	}
-
-	@Override
-	public String toString() {
-		return "|" + name + "|";
-	}
-
 	@Override
 	public int evaluate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
 	        final Environment environment) {
@@ -72,10 +52,30 @@ public class Place extends IExpression {
 		return Collections.emptySet();
 	}
 
+	public String getName() {
+		return name;
+	}
+
+	/**
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + (name == null ? 0 : name.hashCode());
+		return result;
+	}
+
 	@Override
 	public void prestep(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
 	        final Environment environment) {
 
+	}
+
+	@Override
+	public String toString() {
+		return "|" + name + "|";
 	}
 
 }

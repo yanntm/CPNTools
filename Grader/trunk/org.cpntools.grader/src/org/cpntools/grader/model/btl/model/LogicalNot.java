@@ -11,15 +11,14 @@ import org.cpntools.grader.model.btl.Environment;
  * @author michael
  */
 public class LogicalNot extends BExpression {
+	private final BExpression b;
+
 	/**
-	 * @see java.lang.Object#hashCode()
+	 * @param b
 	 */
-	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + (b == null ? 0 : b.hashCode());
-		return result;
+	public LogicalNot(final BExpression b) {
+		this.b = b;
+
 	}
 
 	/**
@@ -37,25 +36,6 @@ public class LogicalNot extends BExpression {
 		return true;
 	}
 
-	private final BExpression b;
-
-	/**
-	 * @param b
-	 */
-	public LogicalNot(final BExpression b) {
-		this.b = b;
-
-	}
-
-	public BExpression getB() {
-		return b;
-	}
-
-	@Override
-	public String toString() {
-		return "!(" + b + ")";
-	}
-
 	@Override
 	public boolean evaluate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
 	        final Environment environment) {
@@ -67,10 +47,30 @@ public class LogicalNot extends BExpression {
 		return b.getAtomic();
 	}
 
+	public BExpression getB() {
+		return b;
+	}
+
+	/**
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + (b == null ? 0 : b.hashCode());
+		return result;
+	}
+
 	@Override
 	public void prestep(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
 	        final Environment environment) {
 
+	}
+
+	@Override
+	public String toString() {
+		return "!(" + b + ")";
 	}
 
 }

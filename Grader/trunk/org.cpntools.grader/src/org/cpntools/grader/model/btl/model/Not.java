@@ -13,15 +13,17 @@ import org.cpntools.grader.model.btl.Environment;
  * @author michael
  */
 public class Not extends Simple {
-	/**
-	 * @see java.lang.Object#hashCode()
-	 */
+	private final Simple child;
+
+	public Not(final Simple child) {
+		this.child = child;
+
+	}
+
 	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + (child == null ? 0 : child.hashCode());
-		return result;
+	public boolean canTerminate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
+	        final Environment environment) {
+		return !child.canTerminate(model, simulator, names, environment);
 	}
 
 	/**
@@ -39,22 +41,6 @@ public class Not extends Simple {
 		return true;
 	}
 
-	private final Simple child;
-
-	public Not(final Simple child) {
-		this.child = child;
-
-	}
-
-	public Simple getChild() {
-		return child;
-	}
-
-	@Override
-	public String toString() {
-		return "!(" + child + ")";
-	}
-
 	@Override
 	public Set<Instance<org.cpntools.accesscpn.model.Transition>> force(
 	        final Set<Instance<org.cpntools.accesscpn.model.Transition>> candidates, final PetriNet model,
@@ -66,6 +52,32 @@ public class Not extends Simple {
 	}
 
 	@Override
+	public Set<String> getAtomic() {
+		return child.getAtomic();
+	}
+
+	public Simple getChild() {
+		return child;
+	}
+
+	/**
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + (child == null ? 0 : child.hashCode());
+		return result;
+	}
+
+	@Override
+	public void prestep(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
+	        final Environment environment) {
+
+	}
+
+	@Override
 	public Simple progress(final Instance<org.cpntools.accesscpn.model.Transition> transition, final PetriNet model,
 	        final HighLevelSimulator simulator, final NameHelper names, final Environment environment) {
 		final Simple newchild = child.progress(transition, model, simulator, names, environment);
@@ -74,20 +86,8 @@ public class Not extends Simple {
 	}
 
 	@Override
-	public boolean canTerminate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
-	        final Environment environment) {
-		return !child.canTerminate(model, simulator, names, environment);
-	}
-
-	@Override
-	public Set<String> getAtomic() {
-		return child.getAtomic();
-	}
-
-	@Override
-	public void prestep(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
-	        final Environment environment) {
-
+	public String toString() {
+		return "!(" + child + ")";
 	}
 
 }

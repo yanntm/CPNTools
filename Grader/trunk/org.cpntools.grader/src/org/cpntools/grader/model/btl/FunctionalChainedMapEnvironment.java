@@ -16,13 +16,6 @@ public class FunctionalChainedMapEnvironment implements Environment {
 	}
 
 	/**
-	 * @param elements
-	 */
-	public FunctionalChainedMapEnvironment(final Map<String, String> elements) {
-		this(null, elements);
-	}
-
-	/**
 	 * @param parent
 	 * @param elements
 	 */
@@ -33,6 +26,13 @@ public class FunctionalChainedMapEnvironment implements Environment {
 		} else {
 			values = Collections.emptyMap();
 		}
+	}
+
+	/**
+	 * @param elements
+	 */
+	public FunctionalChainedMapEnvironment(final Map<String, String> elements) {
+		this(null, elements);
 	}
 
 	/**

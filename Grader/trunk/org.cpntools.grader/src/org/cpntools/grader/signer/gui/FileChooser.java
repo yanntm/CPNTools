@@ -17,19 +17,19 @@ public class FileChooser extends JPanel {
      * 
      */
 	private static final long serialVersionUID = 1021409666534371348L;
-	final JTextField fileName;
 	private final JButton browse;
+	final JTextField fileName;
 
 	public FileChooser(final String labelText, final boolean load) {
 		this(labelText, load, true);
 	}
 
-	public FileChooser(final String labelText, final String defaultText, final boolean load) {
-		this(labelText, defaultText, load, true);
-	}
-
 	public FileChooser(final String labelText, final boolean load, final boolean file) {
 		this(labelText, "", load, true);
+	}
+
+	public FileChooser(final String labelText, final String defaultText, final boolean load) {
+		this(labelText, defaultText, load, true);
 	}
 
 	/**
@@ -78,14 +78,6 @@ public class FileChooser extends JPanel {
 		});
 	}
 
-	protected void updated() {
-
-	}
-
-	public void openDialog() {
-		browse.doClick();
-	}
-
 	/**
 	 * @return
 	 */
@@ -93,7 +85,15 @@ public class FileChooser extends JPanel {
 		return new File(fileName.getText());
 	}
 
+	public void openDialog() {
+		browse.doClick();
+	}
+
 	public void setSelected(final File file) {
 		fileName.setText(file.getAbsolutePath());
+	}
+
+	protected void updated() {
+
 	}
 }

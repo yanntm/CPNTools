@@ -13,15 +13,17 @@ import org.cpntools.grader.model.btl.Environment;
  * @author michael
  */
 public class ConditionGuide implements Guide {
-	/**
-	 * @see java.lang.Object#hashCode()
-	 */
+	private final Condition c;
+
+	public ConditionGuide(final Condition c) {
+		this.c = c;
+
+	}
+
 	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + (c == null ? 0 : c.hashCode());
-		return result;
+	public boolean canTerminate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
+	        final Environment environment) {
+		return c.canTerminate(model, simulator, names, environment);
 	}
 
 	/**
@@ -39,27 +41,37 @@ public class ConditionGuide implements Guide {
 		return true;
 	}
 
-	private final Condition c;
+	@Override
+	public Set<Instance<org.cpntools.accesscpn.model.Transition>> force(
+	        final Set<Instance<org.cpntools.accesscpn.model.Transition>> candidates, final PetriNet model,
+	        final HighLevelSimulator simulator, final NameHelper names, final Environment environment) {
+		return candidates;
+	}
 
-	public ConditionGuide(final Condition c) {
-		this.c = c;
-
+	@Override
+	public Set<String> getAtomic() {
+		return c.getAtomic();
 	}
 
 	public Condition getC() {
 		return c;
 	}
 
+	/**
+	 * @see java.lang.Object#hashCode()
+	 */
 	@Override
-	public String toString() {
-		return "[" + c + "]";
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + (c == null ? 0 : c.hashCode());
+		return result;
 	}
 
 	@Override
-	public Set<Instance<org.cpntools.accesscpn.model.Transition>> force(
-	        final Set<Instance<org.cpntools.accesscpn.model.Transition>> candidates, final PetriNet model,
-	        final HighLevelSimulator simulator, final NameHelper names, final Environment environment) {
-		return candidates;
+	public void prestep(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
+	        final Environment environment) {
+		c.prestep(model, simulator, names, environment);
 	}
 
 	@Override
@@ -73,20 +85,8 @@ public class ConditionGuide implements Guide {
 	}
 
 	@Override
-	public boolean canTerminate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
-	        final Environment environment) {
-		return c.canTerminate(model, simulator, names, environment);
-	}
-
-	@Override
-	public Set<String> getAtomic() {
-		return c.getAtomic();
-	}
-
-	@Override
-	public void prestep(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
-	        final Environment environment) {
-		c.prestep(model, simulator, names, environment);
+	public String toString() {
+		return "[" + c + "]";
 	}
 
 }

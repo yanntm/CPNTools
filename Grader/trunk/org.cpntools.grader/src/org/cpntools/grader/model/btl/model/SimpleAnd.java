@@ -13,16 +13,25 @@ import org.cpntools.grader.model.btl.Environment;
  * @author michael
  */
 public class SimpleAnd extends Simple {
+	private final Simple s1;
+
+	private final Simple s2;
+
 	/**
-	 * @see java.lang.Object#hashCode()
+	 * @param s1
+	 * @param s2
 	 */
+	public SimpleAnd(final Simple s1, final Simple s2) {
+		this.s1 = s1;
+		this.s2 = s2;
+
+	}
+
 	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + (s1 == null ? 0 : s1.hashCode());
-		result = prime * result + (s2 == null ? 0 : s2.hashCode());
-		return result;
+	public boolean canTerminate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
+	        final Environment environment) {
+		return s1.canTerminate(model, simulator, names, environment)
+		        && s2.canTerminate(model, simulator, names, environment);
 	}
 
 	/**
@@ -43,17 +52,22 @@ public class SimpleAnd extends Simple {
 		return true;
 	}
 
-	private final Simple s1;
-	private final Simple s2;
+	@Override
+	public Set<Instance<org.cpntools.accesscpn.model.Transition>> force(
+	        final Set<Instance<org.cpntools.accesscpn.model.Transition>> candidates, final PetriNet model,
+	        final HighLevelSimulator simulator, final NameHelper names, final Environment environment) {
+		final HashSet<Instance<org.cpntools.accesscpn.model.Transition>> set = new HashSet<Instance<org.cpntools.accesscpn.model.Transition>>();
+		set.addAll(s1.force(candidates, model, simulator, names, environment));
+		set.retainAll(s2.force(candidates, model, simulator, names, environment));
+		return set;
+	}
 
-	/**
-	 * @param s1
-	 * @param s2
-	 */
-	public SimpleAnd(final Simple s1, final Simple s2) {
-		this.s1 = s1;
-		this.s2 = s2;
-
+	@Override
+	public Set<String> getAtomic() {
+		final Set<String> result = new HashSet<String>();
+		result.addAll(s1.getAtomic());
+		result.addAll(s2.getAtomic());
+		return result;
 	}
 
 	public Simple getS1() {
@@ -64,19 +78,23 @@ public class SimpleAnd extends Simple {
 		return s2;
 	}
 
+	/**
+	 * @see java.lang.Object#hashCode()
+	 */
 	@Override
-	public String toString() {
-		return "(" + s1 + ") & (" + s2 + ")";
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + (s1 == null ? 0 : s1.hashCode());
+		result = prime * result + (s2 == null ? 0 : s2.hashCode());
+		return result;
 	}
 
 	@Override
-	public Set<Instance<org.cpntools.accesscpn.model.Transition>> force(
-	        final Set<Instance<org.cpntools.accesscpn.model.Transition>> candidates, final PetriNet model,
-	        final HighLevelSimulator simulator, final NameHelper names, final Environment environment) {
-		final HashSet<Instance<org.cpntools.accesscpn.model.Transition>> set = new HashSet<Instance<org.cpntools.accesscpn.model.Transition>>();
-		set.addAll(s1.force(candidates, model, simulator, names, environment));
-		set.retainAll(s2.force(candidates, model, simulator, names, environment));
-		return set;
+	public void prestep(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
+	        final Environment environment) {
+		s1.prestep(model, simulator, names, environment);
+		s2.prestep(model, simulator, names, environment);
 	}
 
 	@Override
@@ -92,25 +110,8 @@ public class SimpleAnd extends Simple {
 	}
 
 	@Override
-	public boolean canTerminate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
-	        final Environment environment) {
-		return s1.canTerminate(model, simulator, names, environment)
-		        && s2.canTerminate(model, simulator, names, environment);
-	}
-
-	@Override
-	public Set<String> getAtomic() {
-		final Set<String> result = new HashSet<String>();
-		result.addAll(s1.getAtomic());
-		result.addAll(s2.getAtomic());
-		return result;
-	}
-
-	@Override
-	public void prestep(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
-	        final Environment environment) {
-		s1.prestep(model, simulator, names, environment);
-		s2.prestep(model, simulator, names, environment);
+	public String toString() {
+		return "(" + s1 + ") & (" + s2 + ")";
 	}
 
 }

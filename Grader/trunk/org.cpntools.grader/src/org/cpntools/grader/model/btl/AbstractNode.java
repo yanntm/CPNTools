@@ -10,53 +10,10 @@ import java.util.Map;
  */
 public abstract class AbstractNode<T> implements Node<T>, Iterable<Node<T>> {
 	private final T branch;
-	protected boolean expanded = false;
-	protected boolean valid = true;
-
-	/**
-	 * @see org.cpntools.grader.model.btl.Node#getBranch()
-	 */
-	@Override
-	public T getBranch() {
-		return branch;
-	}
-
-	/**
-	 * @see org.cpntools.grader.model.btl.Node#isExpanded()
-	 */
-	@Override
-	public boolean isExpanded() {
-		return expanded;
-	}
-
-	/**
-	 * @see java.lang.Object#hashCode()
-	 */
-	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + (branch == null ? 0 : branch.hashCode());
-		return result;
-	}
-
-	/**
-	 * @see java.lang.Object#equals(java.lang.Object)
-	 */
-	@SuppressWarnings("rawtypes")
-	@Override
-	public boolean equals(final Object obj) {
-		if (this == obj) { return true; }
-		if (obj == null) { return false; }
-		if (!(obj instanceof AbstractNode)) { return false; }
-		final AbstractNode other = (AbstractNode) obj;
-		if (branch == null) {
-			if (other.branch != null) { return false; }
-		} else if (!branch.equals(other.branch)) { return false; }
-		return true;
-	}
-
 	private final Map<Node<T>, Node<T>> children = new HashMap<Node<T>, Node<T>>();
+	protected boolean expanded = false;
+
+	protected boolean valid = true;
 
 	/**
 	 * @param branch
@@ -77,11 +34,48 @@ public abstract class AbstractNode<T> implements Node<T>, Iterable<Node<T>> {
 	}
 
 	/**
-	 * @see java.lang.Iterable#iterator()
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@SuppressWarnings("rawtypes")
+	@Override
+	public boolean equals(final Object obj) {
+		if (this == obj) { return true; }
+		if (obj == null) { return false; }
+		if (!(obj instanceof AbstractNode)) { return false; }
+		final AbstractNode other = (AbstractNode) obj;
+		if (branch == null) {
+			if (other.branch != null) { return false; }
+		} else if (!branch.equals(other.branch)) { return false; }
+		return true;
+	}
+
+	/**
+	 * @see org.cpntools.grader.model.btl.Node#getBranch()
 	 */
 	@Override
-	public Iterator<Node<T>> iterator() {
-		return children.keySet().iterator();
+	public T getBranch() {
+		return branch;
+	}
+
+	/**
+	 * @see org.cpntools.grader.model.btl.Node#getCoverage()
+	 */
+	@Override
+	public double getCoverage() {
+		double result = 0;
+		int count = 0;
+		for (final Node<T> child : this) {
+			result += child.getCoverage();
+			count++;
+		}
+		if (count == 0) {
+			if (expanded) {
+				return 1;
+			} else {
+				return 0;
+			}
+		}
+		return result / count;
 	}
 
 	/**
@@ -107,24 +101,14 @@ public abstract class AbstractNode<T> implements Node<T>, Iterable<Node<T>> {
 	}
 
 	/**
-	 * @see org.cpntools.grader.model.btl.Node#getCoverage()
+	 * @see java.lang.Object#hashCode()
 	 */
 	@Override
-	public double getCoverage() {
-		double result = 0;
-		int count = 0;
-		for (final Node<T> child : this) {
-			result += child.getCoverage();
-			count++;
-		}
-		if (count == 0) {
-			if (expanded) {
-				return 1;
-			} else {
-				return 0;
-			}
-		}
-		return result / count;
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + (branch == null ? 0 : branch.hashCode());
+		return result;
 	}
 
 	/**
@@ -137,12 +121,19 @@ public abstract class AbstractNode<T> implements Node<T>, Iterable<Node<T>> {
 	}
 
 	/**
-	 * @see org.cpntools.grader.model.btl.Node#validate()
+	 * @see org.cpntools.grader.model.btl.Node#isExpanded()
 	 */
 	@Override
-	public void validate() {
-		expanded = true;
-		valid = true;
+	public boolean isExpanded() {
+		return expanded;
+	}
+
+	/**
+	 * @see java.lang.Iterable#iterator()
+	 */
+	@Override
+	public Iterator<Node<T>> iterator() {
+		return children.keySet().iterator();
 	}
 
 	@Override
@@ -178,5 +169,14 @@ public abstract class AbstractNode<T> implements Node<T>, Iterable<Node<T>> {
 			}
 		}
 		return sb.toString();
+	}
+
+	/**
+	 * @see org.cpntools.grader.model.btl.Node#validate()
+	 */
+	@Override
+	public void validate() {
+		expanded = true;
+		valid = true;
 	}
 }

@@ -14,9 +14,9 @@ import org.cpntools.grader.model.btl.Environment;
  * @author michael
  */
 public class Always implements Guide {
-	private final Simple s;
 	private final BExpression b;
 	private final boolean conjunction;
+	private final Simple s;
 
 	public Always(final BExpression b, final Simple s, final boolean conjunction) {
 		this.b = b;
@@ -25,20 +25,10 @@ public class Always implements Guide {
 
 	}
 
-	public Simple getS() {
-		return s;
-	}
-
 	@Override
-	public String toString() {
-		if (b == null) {
-			if (s == null) { return "true"; }
-			return "@ (" + s + ")";
-		} else {
-			if (s == null) { return "@ (" + b + ")"; }
-			if (conjunction) { return "@ (" + b + " & " + s + ")"; }
-			return "@ (" + b + " | " + s + ")";
-		}
+	public boolean canTerminate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
+	        final Environment environment) {
+		return true;
 	}
 
 	@Override
@@ -63,6 +53,25 @@ public class Always implements Guide {
 	}
 
 	@Override
+	public Set<String> getAtomic() {
+		return s.getAtomic();
+	}
+
+	public BExpression getB() {
+		return b;
+	}
+
+	public Simple getS() {
+		return s;
+	}
+
+	@Override
+	public void prestep(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
+	        final Environment environment) {
+		s.prestep(model, simulator, names, environment);
+	}
+
+	@Override
 	public Guide progress(final Instance<Transition> ti, final PetriNet model, final HighLevelSimulator simulator,
 	        final NameHelper names, final Environment environment) throws Unconsumed {
 		Simple newb = b;
@@ -81,24 +90,15 @@ public class Always implements Guide {
 	}
 
 	@Override
-	public boolean canTerminate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
-	        final Environment environment) {
-		return true;
-	}
-
-	@Override
-	public Set<String> getAtomic() {
-		return s.getAtomic();
-	}
-
-	@Override
-	public void prestep(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
-	        final Environment environment) {
-		s.prestep(model, simulator, names, environment);
-	}
-
-	public BExpression getB() {
-		return b;
+	public String toString() {
+		if (b == null) {
+			if (s == null) { return "true"; }
+			return "@ (" + s + ")";
+		} else {
+			if (s == null) { return "@ (" + b + ")"; }
+			if (conjunction) { return "@ (" + b + " & " + s + ")"; }
+			return "@ (" + b + " | " + s + ")";
+		}
 	}
 
 }

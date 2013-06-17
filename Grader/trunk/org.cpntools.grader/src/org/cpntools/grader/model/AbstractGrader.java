@@ -16,27 +16,7 @@ public abstract class AbstractGrader implements Grader {
 		this.maxPoints = maxPoints;
 	}
 
-	/**
-	 * @see org.cpntools.grader.model.Grader#grade(org.cpntools.grader.model.StudentID,
-	 *      org.cpntools.accesscpn.model.PetriNet, org.cpntools.accesscpn.model.PetriNet,
-	 *      org.cpntools.accesscpn.engine.highlevel.HighLevelSimulator)
-	 */
 	@Override
-	public Message grade(final StudentID id, final PetriNet base, final PetriNet model,
-	        final HighLevelSimulator simulator) {
-		return Message.NULL;
-	}
-
-	public double getMaxPoints() {
-		if (maxPoints > 0) { return maxPoints; }
-		return 0.0;
-	}
-
-	public double getMinPoints() {
-		if (maxPoints < 0) { return maxPoints; }
-		return 0.0;
-	}
-
 	public int compareTo(final Grader g) {
 		int result;
 		result = Double.valueOf(getMinPoints()).compareTo(Double.valueOf(g.getMinPoints()));
@@ -46,5 +26,28 @@ public abstract class AbstractGrader implements Grader {
 		result = getClass().getCanonicalName().compareTo(g.getClass().getCanonicalName());
 		if (result != 0) { return result; }
 		return hashCode() - g.hashCode();
+	}
+
+	@Override
+	public double getMaxPoints() {
+		if (maxPoints > 0) { return maxPoints; }
+		return 0.0;
+	}
+
+	@Override
+	public double getMinPoints() {
+		if (maxPoints < 0) { return maxPoints; }
+		return 0.0;
+	}
+
+	/**
+	 * @see org.cpntools.grader.model.Grader#grade(org.cpntools.grader.model.StudentID,
+	 *      org.cpntools.accesscpn.model.PetriNet, org.cpntools.accesscpn.model.PetriNet,
+	 *      org.cpntools.accesscpn.engine.highlevel.HighLevelSimulator)
+	 */
+	@Override
+	public Message grade(final StudentID id, final PetriNet base, final PetriNet model,
+	        final HighLevelSimulator simulator) {
+		return Message.NULL;
 	}
 }

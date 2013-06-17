@@ -13,15 +13,17 @@ import org.cpntools.grader.model.btl.Environment;
  * @author michael
  */
 public class Repeat implements Guide {
-	/**
-	 * @see java.lang.Object#hashCode()
-	 */
+	private final Simple s;
+
+	public Repeat(final Simple s) {
+		this.s = s;
+
+	}
+
 	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + (s == null ? 0 : s.hashCode());
-		return result;
+	public boolean canTerminate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
+	        final Environment environment) {
+		return true;
 	}
 
 	/**
@@ -39,27 +41,37 @@ public class Repeat implements Guide {
 		return true;
 	}
 
-	private final Simple s;
+	@Override
+	public Set<Instance<org.cpntools.accesscpn.model.Transition>> force(
+	        final Set<Instance<org.cpntools.accesscpn.model.Transition>> candidates, final PetriNet model,
+	        final HighLevelSimulator simulator, final NameHelper names, final Environment environment) {
+		return candidates;
+	}
 
-	public Repeat(final Simple s) {
-		this.s = s;
-
+	@Override
+	public Set<String> getAtomic() {
+		return s.getAtomic();
 	}
 
 	public Simple getS() {
 		return s;
 	}
 
+	/**
+	 * @see java.lang.Object#hashCode()
+	 */
 	@Override
-	public String toString() {
-		return "* (" + s + ")";
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + (s == null ? 0 : s.hashCode());
+		return result;
 	}
 
 	@Override
-	public Set<Instance<org.cpntools.accesscpn.model.Transition>> force(
-	        final Set<Instance<org.cpntools.accesscpn.model.Transition>> candidates, final PetriNet model,
-	        final HighLevelSimulator simulator, final NameHelper names, final Environment environment) {
-		return candidates;
+	public void prestep(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
+	        final Environment environment) {
+		s.prestep(model, simulator, names, environment);
 	}
 
 	@Override
@@ -73,20 +85,8 @@ public class Repeat implements Guide {
 	}
 
 	@Override
-	public boolean canTerminate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
-	        final Environment environment) {
-		return true;
-	}
-
-	@Override
-	public Set<String> getAtomic() {
-		return s.getAtomic();
-	}
-
-	@Override
-	public void prestep(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
-	        final Environment environment) {
-		s.prestep(model, simulator, names, environment);
+	public String toString() {
+		return "* (" + s + ")";
 	}
 
 }

@@ -34,16 +34,88 @@ import org.cpntools.grader.tester.EnablingControlAdapterFactory;
 public class BTLGrader extends AbstractGrader {
 	public static final Grader INSTANCE = new BTLGrader(0, false, 0, 0, 0, "", "<null>", True.INSTANCE);
 
+	@SuppressWarnings("unchecked")
+	public static List<Instance<Transition>> getEnabled(final HighLevelSimulator simulator,
+	        final List<Instance<Transition>> allTransitionInstances, final EnablingControl ec) throws IOException {
+		for (final Instance<Transition> ti : allTransitionInstances) {
+			ec.enable(ti);
+		}
+		simulator.initialiseSimulationScheduler();
+		final List<Instance<? extends Transition>> enabled = simulator.isEnabled(allTransitionInstances);
+		return (List) enabled;
+	}
+
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	public static List<Instance<Transition>> getEnabledAndAllowed(final PetriNet model,
+	        final HighLevelSimulator simulator, final NameHelper names,
+	        final List<Instance<Transition>> allTransitionInstances, final EnablingControl ec,
+	        final Condition toSatisfy, final Set<Instance<Transition>> allowed) throws IOException {
+		if (toSatisfy != null) {
+			toSatisfy.prestep(model, simulator, names, EmptyEnvironment.INSTANCE);
+		}
+		List<Instance<Transition>> enabled = BTLGrader.getEnabled(simulator, allTransitionInstances, ec);
+// System.out.println(enabled);
+		while (enabled.isEmpty() && simulator.increaseTime() == null) {
+// System.out.println("Increasing time");
+			enabled = (List) simulator.isEnabled(allTransitionInstances);
+// System.out.println(enabled);
+		}
+// System.out.println("Formula: " + toSatisfy);
+		allowed.addAll(toSatisfy.force(new HashSet(enabled), model, simulator, names, EmptyEnvironment.INSTANCE));
+		boolean changed = true;
+		while (allowed.isEmpty() && changed) {
+			changed = false;
+			final Set<Instance<Transition>> oldEnabled = new HashSet<Instance<Transition>>();
+			oldEnabled.addAll(enabled);
+			for (final Instance<Transition> ti : allTransitionInstances) {
+				if (enabled.contains(ti)) {
+					ec.disable(ti);
+				} else {
+					ec.enable(ti);
+				}
+			}
+			for (final Instance<? extends Transition> ti : enabled) { // It seems the hash function is not correct for
+// instances
+				ec.disable((Instance<Transition>) ti);
+			}
+			simulator.initialiseSimulationScheduler();
+			enabled = (List) simulator.isEnabled(allTransitionInstances);
+// System.out.println("Updating " + enabled);
+			while (enabled.isEmpty() && simulator.increaseTime() == null) {
+				changed = true;
+				enabled = (List) simulator.isEnabled(allTransitionInstances);
+// System.out.println("Updating & Increasing " + enabled);
+			}
+			allowed.clear();
+			allowed.addAll(toSatisfy.force(new HashSet(enabled), model, simulator, names, EmptyEnvironment.INSTANCE));
+// System.out.println("Old " + oldEnabled);
+
+			oldEnabled.addAll(enabled);
+			enabled.clear();
+			enabled.addAll(oldEnabled);
+// System.out.println("Old and enabled " + enabled);
+		}
+// System.out.println("Returning " + enabled);
+		return enabled;
+	}
+
+	private final boolean anti;
 	private final Guide guide;
-	private final int repeats;
+
 	private final int maxSteps;
+
+	private final String name;
+
+	private final int repeats;
+
 	private final int threshold;
 
 	private final String unparsed;
 
-	private final String name;
-
-	private final boolean anti;
+	Pattern p = Pattern
+	        .compile(
+	                "^btl(, *anti)?(, *repeats? *= *([1-9][0-9]*))?(, *max-?steps? *= *([1-9][0-9]*))?(, *threshold *= *([1-9][0-9]*))?(, *name *= *\"([^\"]*)\")?, *test *=(.*)$",
+	                Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
 
 	public BTLGrader(final double maxPoints, final boolean anti, final int repeats, final int maxSteps,
 	        final int threshold, final String friendlyName, final String unparsed, final Guide guide) {
@@ -56,11 +128,6 @@ public class BTLGrader extends AbstractGrader {
 		this.unparsed = unparsed;
 		this.guide = guide;
 	}
-
-	Pattern p = Pattern
-	        .compile(
-	                "^btl(, *anti)?(, *repeats? *= *([1-9][0-9]*))?(, *max-?steps? *= *([1-9][0-9]*))?(, *threshold *= *([1-9][0-9]*))?(, *name *= *\"([^\"]*)\")?, *test *=(.*)$",
-	                Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
 
 	@SuppressWarnings("hiding")
 	@Override
@@ -93,6 +160,14 @@ public class BTLGrader extends AbstractGrader {
 			        unparsed.trim(), guide); }
 		}
 		return null;
+	}
+
+	public Guide getGuide() {
+		return guide;
+	}
+
+	public String getName() {
+		return name;
 	}
 
 	@Override
@@ -184,7 +259,7 @@ public class BTLGrader extends AbstractGrader {
 			Node<Instance<Transition>> node = decisionTree.getRoot();
 			for (int i = 0; maxSteps < 0 || i < maxSteps; i++) {
 				final Set<Instance<Transition>> allowed = new HashSet<Instance<Transition>>();
-				final List<Instance<Transition>> enabled = getEnabledAndAllowed(model, simulator, names,
+				final List<Instance<Transition>> enabled = BTLGrader.getEnabledAndAllowed(model, simulator, names,
 				        allTransitionInstances, ec, toSatisfy, allowed);
 // System.out.println(enabled);
 				if (allowed.isEmpty()) {
@@ -229,71 +304,6 @@ public class BTLGrader extends AbstractGrader {
 		}
 	}
 
-	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public static List<Instance<Transition>> getEnabledAndAllowed(final PetriNet model,
-	        final HighLevelSimulator simulator, final NameHelper names,
-	        final List<Instance<Transition>> allTransitionInstances, final EnablingControl ec,
-	        final Condition toSatisfy, final Set<Instance<Transition>> allowed) throws IOException {
-		if (toSatisfy != null) {
-			toSatisfy.prestep(model, simulator, names, EmptyEnvironment.INSTANCE);
-		}
-		List<Instance<Transition>> enabled = getEnabled(simulator, allTransitionInstances, ec);
-// System.out.println(enabled);
-		while (enabled.isEmpty() && simulator.increaseTime() == null) {
-// System.out.println("Increasing time");
-			enabled = (List) simulator.isEnabled(allTransitionInstances);
-// System.out.println(enabled);
-		}
-// System.out.println("Formula: " + toSatisfy);
-		allowed.addAll(toSatisfy.force(new HashSet(enabled), model, simulator, names, EmptyEnvironment.INSTANCE));
-		boolean changed = true;
-		while (allowed.isEmpty() && changed) {
-			changed = false;
-			final Set<Instance<Transition>> oldEnabled = new HashSet<Instance<Transition>>();
-			oldEnabled.addAll(enabled);
-			for (final Instance<Transition> ti : allTransitionInstances) {
-				if (enabled.contains(ti)) {
-					ec.disable(ti);
-				} else {
-					ec.enable(ti);
-				}
-			}
-			for (final Instance<? extends Transition> ti : enabled) { // It seems the hash function is not correct for
-// instances
-				ec.disable((Instance<Transition>) ti);
-			}
-			simulator.initialiseSimulationScheduler();
-			enabled = (List) simulator.isEnabled(allTransitionInstances);
-// System.out.println("Updating " + enabled);
-			while (enabled.isEmpty() && simulator.increaseTime() == null) {
-				changed = true;
-				enabled = (List) simulator.isEnabled(allTransitionInstances);
-// System.out.println("Updating & Increasing " + enabled);
-			}
-			allowed.clear();
-			allowed.addAll(toSatisfy.force(new HashSet(enabled), model, simulator, names, EmptyEnvironment.INSTANCE));
-// System.out.println("Old " + oldEnabled);
-
-			oldEnabled.addAll(enabled);
-			enabled.clear();
-			enabled.addAll(oldEnabled);
-// System.out.println("Old and enabled " + enabled);
-		}
-// System.out.println("Returning " + enabled);
-		return enabled;
-	}
-
-	@SuppressWarnings("unchecked")
-	public static List<Instance<Transition>> getEnabled(final HighLevelSimulator simulator,
-	        final List<Instance<Transition>> allTransitionInstances, final EnablingControl ec) throws IOException {
-		for (final Instance<Transition> ti : allTransitionInstances) {
-			ec.enable(ti);
-		}
-		simulator.initialiseSimulationScheduler();
-		final List<Instance<? extends Transition>> enabled = simulator.isEnabled(allTransitionInstances);
-		return (List) enabled;
-	}
-
 	private String toString(final Collection<?> stuff) {
 		final StringBuilder sb = new StringBuilder();
 		boolean first = true;
@@ -306,14 +316,6 @@ public class BTLGrader extends AbstractGrader {
 			sb.append(o);
 		}
 		return sb.toString();
-	}
-
-	public String getName() {
-		return name;
-	}
-
-	public Guide getGuide() {
-		return guide;
 	}
 
 }

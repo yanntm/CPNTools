@@ -33,22 +33,12 @@ import org.cpntools.accesscpn.model.TransitionNode;
  * @author michael
  */
 public class NameHelper {
-	private final Map<String, Instance<PlaceNode>> placeNames;
-	private final Map<String, Instance<Transition>> transitionNames;
-	private final Map<String, String> placeShortcuts, transitionShortcuts;
-
-	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public NameHelper(final PetriNet petriNet) {
-		placeNames = (Map) extractNodeNames(petriNet, PlaceNode.class);
-		placeShortcuts = extractNodeShortcuts(petriNet, PlaceNode.class);
-		transitionNames = (Map) extractNodeNames(petriNet, Transition.class);
-		transitionShortcuts = extractNodeShortcuts(petriNet, Transition.class);
-	}
+	private static Pattern dotRemover = Pattern.compile("^[^.]*[.](.*)$");
 
 	public static List<String> cleanup(final List<String> strings) {
 		final List<String> result = new ArrayList<String>(strings.size());
 		for (final String string : strings) {
-			final String token = cleanup(string);
+			final String token = NameHelper.cleanup(string);
 			if (!token.isEmpty()) {
 				result.add(token);
 			}
@@ -61,121 +51,6 @@ public class NameHelper {
 		return name;
 	}
 
-	public static Map<String, HasId> getNodes(final Page page, final Collection<? extends Object> collection,
-	        final boolean initmark) {
-		final Set<String> ignore = new HashSet<String>();
-		for (final Object p : collection) {
-			ignore.add(p.getId());
-		}
-		final Map<String, HasId> result = getNodes(page.getObject(), ignore, initmark);
-		for (final Arc a : page.getArc()) {
-			if (!ignore.contains(a.getSource().getId()) && !ignore.contains(a.getTarget().getId())) {
-				final StringBuilder sb = new StringBuilder();
-				sb.append("Source: " + getText(a.getSource().getName()));
-				sb.append("Target: " + getText(a.getTarget().getName()));
-				sb.append("Expression: " + getText(a.getHlinscription()));
-				if (a.getKind() == HLArcType.TEST) {
-					sb.append("Double Arc\n");
-				}
-				result.put(sb.toString(), a);
-			}
-		}
-		return result;
-	}
-
-	public static Map<String, HasId> getNodes(final Collection<? extends Object> list, final Set<String> ignore,
-	        final boolean initmark) {
-		final Map<String, HasId> result = new HashMap<String, HasId>();
-		for (final org.cpntools.accesscpn.model.Object o : list) {
-			final StringBuilder sb = new StringBuilder();
-			if (o instanceof Node && !ignore.contains(o.getId())) {
-				final Node n = (Node) o;
-				if (n instanceof PlaceNode) {
-					final PlaceNode pn = (PlaceNode) n;
-					if (pn instanceof Place) {
-						final Place p = (Place) pn;
-						sb.append("Place\n");
-						if (initmark) {
-							sb.append("Marking: " + getText(p.getInitialMarking()));
-						}
-					} else if (pn instanceof RefPlace) {
-						final RefPlace rp = (RefPlace) pn;
-						if (rp.isFusionGroup()) {
-							sb.append("Fusion Place\n");
-							sb.append("Group: " + getText(rp.getRef().getName()));
-						} else if (rp.isPort()) {
-							sb.append("Port Place\n");
-						} else {
-							assert false;
-						}
-					} else {
-						assert false;
-					}
-					sb.append("Type: " + getText(pn.getSort()));
-				} else if (n instanceof TransitionNode) {
-					final TransitionNode tn = (TransitionNode) n;
-					if (tn instanceof Transition) {
-						final Transition t = (Transition) tn;
-						sb.append("Transition\n");
-						assert t != null; // No special properties, so ignore
-					} else {
-						assert false;
-					}
-					sb.append("Guard: " + getText(tn.getCondition()));
-					sb.append("Code: " + getText(tn.getCode()));
-					sb.append("Time: " + getText(tn.getTime()));
-					sb.append("Priority: " + getText(tn.getPriority()));
-				} else if (n instanceof org.cpntools.accesscpn.model.Instance) {
-				}
-				sb.append("Name: " + getText(n.getName()));
-			}
-			result.put(sb.toString(), o);
-		}
-		return result;
-	}
-
-	public static String getText(final Annotation node) {
-		if (node == null) { return ""; }
-		final String label = node.getText();
-		if (label == null) { return ""; }
-		return label.replaceAll("[ \t\n\r]", "") + "\n";
-	}
-
-	private static Pattern dotRemover = Pattern.compile("^[^.]*[.](.*)$");
-
-	public static Map<String, String> extractShortcuts(final PetriNet model) {
-		final ModelInstance modelInstance = (ModelInstance) ModelInstanceAdapterFactory.getInstance().adapt(model,
-		        ModelInstance.class);
-		final Map<String, String> result = new HashMap<String, String>();
-		for (final Page p : new PageSorter(model.getPage())) {
-			for (final Instance<Page> pi : modelInstance.getAllInstances(p)) {
-				final String name = cleanup(pi.toString());
-				Matcher m = dotRemover.matcher("ignore." + name);
-				m.matches();
-				do {
-					final String token = m.group(1);
-					result.put(token, name);
-					m = dotRemover.matcher(token);
-				} while (m.matches());
-			}
-
-		}
-		return result;
-	}
-
-	public static Map<String, Page> extractPageNames(final PetriNet model) {
-		final ModelInstance modelInstance = (ModelInstance) ModelInstanceAdapterFactory.getInstance().adapt(model,
-		        ModelInstance.class);
-		final Map<String, Page> names = new HashMap<String, Page>();
-		for (final Page p : model.getPage()) {
-			for (final Instance<Page> pi : modelInstance.getAllInstances(p)) {
-				final String name = cleanup(pi.toString());
-				names.put(name, p);
-			}
-		}
-		return names;
-	}
-
 	public static Map<String, Instance<Node>> extractNodeNames(final PetriNet model, final Class<? extends Node> clazz) {
 		final ModelInstance modelInstance = (ModelInstance) ModelInstanceAdapterFactory.getInstance().adapt(model,
 		        ModelInstance.class);
@@ -185,7 +60,7 @@ public class NameHelper {
 				if (clazz.isAssignableFrom(o.getClass())) {
 					final Node n = (Node) o;
 					for (final Instance<Node> ni : modelInstance.getAllInstances(n)) {
-						final String name = cleanup(ni.toString());
+						final String name = NameHelper.cleanup(ni.toString());
 						names.put(name, ni);
 					}
 				}
@@ -203,13 +78,13 @@ public class NameHelper {
 				if (clazz.isAssignableFrom(o.getClass())) {
 					final Node n = (Node) o;
 					for (final Instance<Node> ni : modelInstance.getAllInstances(n)) {
-						final String name = cleanup(ni.toString());
-						Matcher m = dotRemover.matcher("ignore." + name);
+						final String name = NameHelper.cleanup(ni.toString());
+						Matcher m = NameHelper.dotRemover.matcher("ignore." + name);
 						m.matches();
 						do {
 							final String token = m.group(1);
 							result.put(token, name);
-							m = dotRemover.matcher(token);
+							m = NameHelper.dotRemover.matcher(token);
 						} while (m.matches());
 					}
 				}
@@ -218,13 +93,119 @@ public class NameHelper {
 		return result;
 	}
 
+	public static Map<String, Page> extractPageNames(final PetriNet model) {
+		final ModelInstance modelInstance = (ModelInstance) ModelInstanceAdapterFactory.getInstance().adapt(model,
+		        ModelInstance.class);
+		final Map<String, Page> names = new HashMap<String, Page>();
+		for (final Page p : model.getPage()) {
+			for (final Instance<Page> pi : modelInstance.getAllInstances(p)) {
+				final String name = NameHelper.cleanup(pi.toString());
+				names.put(name, p);
+			}
+		}
+		return names;
+	}
+
+	public static Map<String, String> extractShortcuts(final PetriNet model) {
+		final ModelInstance modelInstance = (ModelInstance) ModelInstanceAdapterFactory.getInstance().adapt(model,
+		        ModelInstance.class);
+		final Map<String, String> result = new HashMap<String, String>();
+		for (final Page p : new PageSorter(model.getPage())) {
+			for (final Instance<Page> pi : modelInstance.getAllInstances(p)) {
+				final String name = NameHelper.cleanup(pi.toString());
+				Matcher m = NameHelper.dotRemover.matcher("ignore." + name);
+				m.matches();
+				do {
+					final String token = m.group(1);
+					result.put(token, name);
+					m = NameHelper.dotRemover.matcher(token);
+				} while (m.matches());
+			}
+
+		}
+		return result;
+	}
+
 	public static Collection<String> getNames(final Set<String> names, final PetriNet model,
 	        final Map<String, Page> pages) {
 		final Set<String> pageNames = new TreeSet<String>();
-		for (final Instance<Page> pi : getPages(names, model, pages)) {
+		for (final Instance<Page> pi : NameHelper.getPages(names, model, pages)) {
 			pageNames.add(pi.toString());
 		}
 		return pageNames;
+	}
+
+	public static Map<String, HasId> getNodes(final Collection<? extends Object> list, final Set<String> ignore,
+	        final boolean initmark) {
+		final Map<String, HasId> result = new HashMap<String, HasId>();
+		for (final org.cpntools.accesscpn.model.Object o : list) {
+			final StringBuilder sb = new StringBuilder();
+			if (o instanceof Node && !ignore.contains(o.getId())) {
+				final Node n = (Node) o;
+				if (n instanceof PlaceNode) {
+					final PlaceNode pn = (PlaceNode) n;
+					if (pn instanceof Place) {
+						final Place p = (Place) pn;
+						sb.append("Place\n");
+						if (initmark) {
+							sb.append("Marking: " + NameHelper.getText(p.getInitialMarking()));
+						}
+					} else if (pn instanceof RefPlace) {
+						final RefPlace rp = (RefPlace) pn;
+						if (rp.isFusionGroup()) {
+							sb.append("Fusion Place\n");
+							sb.append("Group: " + NameHelper.getText(rp.getRef().getName()));
+						} else if (rp.isPort()) {
+							sb.append("Port Place\n");
+						} else {
+							assert false;
+						}
+					} else {
+						assert false;
+					}
+					sb.append("Type: " + NameHelper.getText(pn.getSort()));
+				} else if (n instanceof TransitionNode) {
+					final TransitionNode tn = (TransitionNode) n;
+					if (tn instanceof Transition) {
+						final Transition t = (Transition) tn;
+						sb.append("Transition\n");
+						assert t != null; // No special properties, so ignore
+					} else {
+						assert false;
+					}
+					sb.append("Guard: " + NameHelper.getText(tn.getCondition()));
+					sb.append("Code: " + NameHelper.getText(tn.getCode()));
+					sb.append("Time: " + NameHelper.getText(tn.getTime()));
+					sb.append("Priority: " + NameHelper.getText(tn.getPriority()));
+				} else if (n instanceof org.cpntools.accesscpn.model.Instance) {
+				}
+				sb.append("Name: " + NameHelper.getText(n.getName()));
+			}
+			result.put(sb.toString(), o);
+		}
+		return result;
+	}
+
+	public static Map<String, HasId> getNodes(final Page page, final Collection<? extends Object> collection,
+	        final boolean initmark) {
+		final Set<String> ignore = new HashSet<String>();
+		for (final Object p : collection) {
+			ignore.add(p.getId());
+		}
+		final Map<String, HasId> result = NameHelper.getNodes(page.getObject(), ignore, initmark);
+		for (final Arc a : page.getArc()) {
+			if (!ignore.contains(a.getSource().getId()) && !ignore.contains(a.getTarget().getId())) {
+				final StringBuilder sb = new StringBuilder();
+				sb.append("Source: " + NameHelper.getText(a.getSource().getName()));
+				sb.append("Target: " + NameHelper.getText(a.getTarget().getName()));
+				sb.append("Expression: " + NameHelper.getText(a.getHlinscription()));
+				if (a.getKind() == HLArcType.TEST) {
+					sb.append("Double Arc\n");
+				}
+				result.put(sb.toString(), a);
+			}
+		}
+		return result;
 	}
 
 	public static Collection<Instance<Page>> getPages(final Set<String> names, final PetriNet model,
@@ -243,6 +224,27 @@ public class NameHelper {
 			}
 		}
 		return pageSet;
+	}
+
+	public static String getText(final Annotation node) {
+		if (node == null) { return ""; }
+		final String label = node.getText();
+		if (label == null) { return ""; }
+		return label.replaceAll("[ \t\n\r]", "") + "\n";
+	}
+
+	private final Map<String, Instance<PlaceNode>> placeNames;
+
+	private final Map<String, String> placeShortcuts, transitionShortcuts;
+
+	private final Map<String, Instance<Transition>> transitionNames;
+
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	public NameHelper(final PetriNet petriNet) {
+		placeNames = (Map) NameHelper.extractNodeNames(petriNet, PlaceNode.class);
+		placeShortcuts = NameHelper.extractNodeShortcuts(petriNet, PlaceNode.class);
+		transitionNames = (Map) NameHelper.extractNodeNames(petriNet, Transition.class);
+		transitionShortcuts = NameHelper.extractNodeShortcuts(petriNet, Transition.class);
 	}
 
 	/**

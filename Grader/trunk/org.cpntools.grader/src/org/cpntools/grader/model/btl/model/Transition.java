@@ -13,15 +13,17 @@ import org.cpntools.grader.model.btl.Environment;
  * @author michael
  */
 public class Transition extends Simple {
-	/**
-	 * @see java.lang.Object#hashCode()
-	 */
+	private final String name;
+
+	public Transition(final String name) {
+		this.name = NameHelper.cleanup(name);
+
+	}
+
 	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + (name == null ? 0 : name.hashCode());
-		return result;
+	public boolean canTerminate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
+	        final Environment environment) {
+		return false;
 	}
 
 	/**
@@ -39,22 +41,6 @@ public class Transition extends Simple {
 		return true;
 	}
 
-	private final String name;
-
-	public Transition(final String name) {
-		this.name = NameHelper.cleanup(name);
-
-	}
-
-	public String getName() {
-		return name;
-	}
-
-	@Override
-	public String toString() {
-		return name;
-	}
-
 	@Override
 	public Set<Instance<org.cpntools.accesscpn.model.Transition>> force(
 	        final Set<Instance<org.cpntools.accesscpn.model.Transition>> candidates, final PetriNet model,
@@ -65,6 +51,32 @@ public class Transition extends Simple {
 	}
 
 	@Override
+	public Set<String> getAtomic() {
+		return Collections.singleton(name);
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	/**
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + (name == null ? 0 : name.hashCode());
+		return result;
+	}
+
+	@Override
+	public void prestep(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
+	        final Environment environment) {
+
+	}
+
+	@Override
 	public Simple progress(final Instance<org.cpntools.accesscpn.model.Transition> ti, final PetriNet model,
 	        final HighLevelSimulator simulator, final NameHelper names, final Environment environment) {
 		if (ti.equals(names.getTransitionInstance(name))) { return null; }
@@ -72,20 +84,8 @@ public class Transition extends Simple {
 	}
 
 	@Override
-	public boolean canTerminate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
-	        final Environment environment) {
-		return false;
-	}
-
-	@Override
-	public Set<String> getAtomic() {
-		return Collections.singleton(name);
-	}
-
-	@Override
-	public void prestep(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
-	        final Environment environment) {
-
+	public String toString() {
+		return name;
 	}
 
 }

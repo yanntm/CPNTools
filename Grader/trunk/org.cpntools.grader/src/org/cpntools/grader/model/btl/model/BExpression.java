@@ -12,6 +12,12 @@ import org.cpntools.grader.model.btl.Environment;
  * @author michael
  */
 public abstract class BExpression extends Expression {
+	@Override
+	public boolean canTerminate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
+	        final Environment environment) {
+		return evaluate(model, simulator, names, environment);
+	}
+
 	public abstract boolean evaluate(final PetriNet model, HighLevelSimulator simulator, NameHelper names,
 	        Environment environment);
 
@@ -27,11 +33,5 @@ public abstract class BExpression extends Expression {
 	        final HighLevelSimulator simulator, final NameHelper names, final Environment environment) {
 		if (evaluate(model, simulator, names, environment)) { return null; }
 		return Failure.INSTANCE;
-	}
-
-	@Override
-	public boolean canTerminate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
-	        final Environment environment) {
-		return evaluate(model, simulator, names, environment);
 	}
 }

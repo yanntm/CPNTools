@@ -17,8 +17,14 @@ public final class Failure extends Simple {
 	}
 
 	@Override
-	public String toString() {
-		return "failure";
+	public boolean canTerminate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
+	        final Environment environment) {
+		return false;
+	}
+
+	@Override
+	public boolean equals(final Object o) {
+		return o instanceof Failure;
 	}
 
 	@Override
@@ -29,8 +35,8 @@ public final class Failure extends Simple {
 	}
 
 	@Override
-	public boolean equals(final Object o) {
-		return o instanceof Failure;
+	public Set<String> getAtomic() {
+		return Collections.emptySet();
 	}
 
 	@Override
@@ -39,26 +45,20 @@ public final class Failure extends Simple {
 	}
 
 	@Override
-	public Simple progress(final Instance<org.cpntools.accesscpn.model.Transition> transition, final PetriNet model,
-	        final HighLevelSimulator simulator, final NameHelper names, final Environment environment) {
-		return INSTANCE;
-	}
-
-	@Override
-	public boolean canTerminate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
-	        final Environment environment) {
-		return false;
-	}
-
-	@Override
-	public Set<String> getAtomic() {
-		return Collections.emptySet();
-	}
-
-	@Override
 	public void prestep(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
 	        final Environment environment) {
 
+	}
+
+	@Override
+	public Simple progress(final Instance<org.cpntools.accesscpn.model.Transition> transition, final PetriNet model,
+	        final HighLevelSimulator simulator, final NameHelper names, final Environment environment) {
+		return Failure.INSTANCE;
+	}
+
+	@Override
+	public String toString() {
+		return "failure";
 	}
 
 }

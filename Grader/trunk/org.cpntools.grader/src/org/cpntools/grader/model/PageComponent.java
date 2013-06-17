@@ -41,15 +41,68 @@ import org.cpntools.accesscpn.model.graphics.Coordinate;
 import org.cpntools.accesscpn.model.graphics.NodeGraphics;
 
 public class PageComponent extends JComponent {
-	private static final Color TEAL = new Color(0, 0x80, 0x80);
+	private static final Color GREEN = new Color(0, 0x80, 0);
+	private static final Color MAROON = new Color(0x80, 0, 0);
 	private static final Color NAVY = new Color(0, 0, 0x80);
 	private static final Color OLIVE = new Color(0x80, 0x80, 0);
-	private static final Color GREEN = new Color(0, 0x80, 0);
 	private static final Color PURPLE = new Color(0x80, 0, 0x80);
-	private static final Color MAROON = new Color(0x80, 0, 0);
-	Rectangle2D.Double bounds = null;
-	private final Page page;
+	/**
+     * 
+     */
+	private static final long serialVersionUID = 1L;
+	private static final Color TEAL = new Color(0, 0x80, 0x80);
+
+	public static Color getColor(final String color) {
+		return PageComponent.getColor(color, Color.BLACK);
+	}
+
+	public static Color getColor(final String color, final Color alternative) {
+		if ("black".equalsIgnoreCase(color)) { return Color.BLACK; }
+		if ("white".equalsIgnoreCase(color)) { return Color.WHITE; }
+		if ("silver".equalsIgnoreCase(color)) { return Color.LIGHT_GRAY; }
+		if ("gray".equalsIgnoreCase(color)) { return Color.GRAY; }
+		if ("maroon".equalsIgnoreCase(color)) { return PageComponent.MAROON; }
+		if ("red".equalsIgnoreCase(color)) { return Color.RED; }
+		if ("purple".equalsIgnoreCase(color)) { return PageComponent.PURPLE; }
+		if ("fuchsia".equalsIgnoreCase(color)) { return Color.MAGENTA; }
+		if ("fucia".equalsIgnoreCase(color)) { return Color.MAGENTA; }
+		if ("green".equalsIgnoreCase(color)) { return PageComponent.GREEN; }
+		if ("lime".equalsIgnoreCase(color)) { return Color.GREEN; }
+		if ("olive".equalsIgnoreCase(color)) { return PageComponent.OLIVE; }
+		if ("yellow".equalsIgnoreCase(color)) { return Color.YELLOW; }
+		if ("navy".equalsIgnoreCase(color)) { return PageComponent.NAVY; }
+		if ("blue".equalsIgnoreCase(color)) { return Color.BLUE; }
+		if ("teal".equalsIgnoreCase(color)) { return PageComponent.TEAL; }
+		if ("aqua".equalsIgnoreCase(color)) { return Color.CYAN; }
+		return alternative != null ? alternative : Color.BLACK;
+	}
+
+	private final Path2D arrowhead = new Path2D.Double();
+
 	private final Set<HasId> highlightNodes;
+
+	private final Page page;
+
+	private final Map<Node, Shape> shapes = new HashMap<Node, Shape>();
+
+	protected Font font = new Font("Verdana", Font.PLAIN, 12);
+	protected FontMetrics fm = new FontMetrics(font) {
+
+		/**
+             * 
+             */
+		private static final long serialVersionUID = 1L;
+	};
+
+	Rectangle2D.Double bounds = null;
+
+	{
+		arrowhead.moveTo(0.0, 0.0);
+		arrowhead.lineTo(5.0, 10.0);
+		arrowhead.lineTo(0.0, 8.0);
+		arrowhead.lineTo(-5.0, 10.0);
+		arrowhead.lineTo(0.0, 0.0);
+	}
 
 	public PageComponent(final Instance<Page> pi) {
 		this(pi, Collections.EMPTY_SET);
@@ -69,8 +122,6 @@ public class PageComponent extends JComponent {
 		updateBounds(getGraphics());
 	}
 
-	private final Map<Node, Shape> shapes = new HashMap<Node, Shape>();
-
 	@Override
 	public void paint(final Graphics g) {
 		if (bounds == null) {
@@ -86,6 +137,83 @@ public class PageComponent extends JComponent {
 		}
 		for (final Arc a : page.getArc()) {
 			paint(g2d, a);
+		}
+	}
+
+	private void drawArrowHead(final Graphics2D g, final Point2D s, final Point2D t) {
+		g.translate(s.getX(), s.getY());
+		g.setStroke(new BasicStroke());
+		g.rotate(Math.atan2(s.getX() - t.getX(), t.getY() - s.getY()));
+		g.fill(arrowhead);
+	}
+
+	private Color getColor(final String color, final Color alternative, final boolean contains) {
+		final Color c = PageComponent.getColor(color, alternative);
+		if (!highlightNodes.isEmpty() && !contains) { return new Color(c.getRed(), c.getGreen(), c.getBlue(), 0x50); }
+		return c;
+	}
+
+	private double getHeight(final Annotation a) {
+		double h = 0.0;
+		for (final String line : a.getText().split("\n")) {
+			h += font.getSize2D();
+		}
+		return h;
+	}
+
+	private Point2D getIntersect(final Point2D from, final Point2D to, final Shape shape) {
+		final Rectangle rectangle = shape.getBounds();
+		final double dx = to.getX() - from.getX();
+		final double dy = to.getY() - from.getY();
+		if (dy == 0) {
+			if (dx > 0) {
+				return new Point2D.Double(from.getX() + rectangle.getWidth() / 2.0, from.getY());
+			} else {
+				return new Point2D.Double(from.getX() - rectangle.getWidth() / 2.0, from.getY());
+			}
+		}
+		if (dx == 0) {
+			if (dy > 0) {
+				return new Point2D.Double(from.getX(), from.getY() + rectangle.getHeight() / 2.0);
+			} else {
+				return new Point2D.Double(from.getX(), from.getY() - rectangle.getHeight() / 2.0);
+			}
+		}
+		final double a = dx / dy;
+		if (shape instanceof Rectangle2D) {
+			final double b = rectangle.getWidth() / rectangle.getHeight();
+			if (Math.abs(a) >= b) {
+				final double x = dx > 0 ? rectangle.getWidth() / 2.0 : -rectangle.getWidth() / 2.0;
+				return new Point2D.Double(from.getX() + x, from.getY() + x / a);
+			} else {
+				final double y = dy > 0 ? rectangle.getHeight() / 2.0 : -rectangle.getHeight() / 2.0;
+				return new Point2D.Double(from.getX() + y * a, from.getY() + y);
+			}
+		} else if (shape instanceof Ellipse2D) {
+			final double atan = Math.atan2(dy, dx);
+			return new Point2D.Double(from.getX() + Math.cos(atan) * rectangle.getWidth() / 2.0, from.getY()
+			        + Math.sin(atan) * rectangle.getHeight() / 2.0);
+		}
+		return from;
+	}
+
+	private double getWidth(final Annotation a, final Graphics g) {
+		double w = 0.0;
+		for (final String line : a.getText().split("\n")) {
+			w = Math.max(w, fm.getStringBounds(line.trim(), g).getWidth());
+		}
+		return w;
+	}
+
+	private void paint(final Graphics2D g2d, final Annotation a, final double x, final double y) {
+		if (a == null || a.getText() == null || "".equals(a.getText())) { return; }
+		g2d.translate(x, -y);
+		final double w = getWidth(a, g2d);
+		final double h = getHeight(a);
+		g2d.translate(-w / 2.0, -h / 2.0 + g2d.getFont().getSize2D());
+		for (final String line : a.getText().split("\n")) {
+			g2d.drawString(line, 0, 0);
+			g2d.translate(0, g2d.getFont().getSize2D());
 		}
 	}
 
@@ -138,58 +266,6 @@ public class PageComponent extends JComponent {
 		}
 	}
 
-	private final Path2D arrowhead = new Path2D.Double();
-	{
-		arrowhead.moveTo(0.0, 0.0);
-		arrowhead.lineTo(5.0, 10.0);
-		arrowhead.lineTo(0.0, 8.0);
-		arrowhead.lineTo(-5.0, 10.0);
-		arrowhead.lineTo(0.0, 0.0);
-	}
-
-	private void drawArrowHead(final Graphics2D g, final Point2D s, final Point2D t) {
-		g.translate(s.getX(), s.getY());
-		g.setStroke(new BasicStroke());
-		g.rotate(Math.atan2(s.getX() - t.getX(), t.getY() - s.getY()));
-		g.fill(arrowhead);
-	}
-
-	private Point2D getIntersect(final Point2D from, final Point2D to, final Shape shape) {
-		final Rectangle rectangle = shape.getBounds();
-		final double dx = to.getX() - from.getX();
-		final double dy = to.getY() - from.getY();
-		if (dy == 0) {
-			if (dx > 0) {
-				return new Point2D.Double(from.getX() + rectangle.getWidth() / 2.0, from.getY());
-			} else {
-				return new Point2D.Double(from.getX() - rectangle.getWidth() / 2.0, from.getY());
-			}
-		}
-		if (dx == 0) {
-			if (dy > 0) {
-				return new Point2D.Double(from.getX(), from.getY() + rectangle.getHeight() / 2.0);
-			} else {
-				return new Point2D.Double(from.getX(), from.getY() - rectangle.getHeight() / 2.0);
-			}
-		}
-		final double a = dx / dy;
-		if (shape instanceof Rectangle2D) {
-			final double b = rectangle.getWidth() / rectangle.getHeight();
-			if (Math.abs(a) >= b) {
-				final double x = dx > 0 ? rectangle.getWidth() / 2.0 : -rectangle.getWidth() / 2.0;
-				return new Point2D.Double(from.getX() + x, from.getY() + x / a);
-			} else {
-				final double y = dy > 0 ? rectangle.getHeight() / 2.0 : -rectangle.getHeight() / 2.0;
-				return new Point2D.Double(from.getX() + y * a, from.getY() + y);
-			}
-		} else if (shape instanceof Ellipse2D) {
-			final double atan = Math.atan2(dy, dx);
-			return new Point2D.Double(from.getX() + Math.cos(atan) * rectangle.getWidth() / 2.0, from.getY()
-			        + Math.sin(atan) * rectangle.getHeight() / 2.0);
-		}
-		return from;
-	}
-
 	private void paint(final Graphics2D g2d, final Node o) {
 		final NodeGraphics nodeGraphics = o.getNodeGraphics();
 		if (nodeGraphics != null) {
@@ -231,49 +307,6 @@ public class PageComponent extends JComponent {
 		}
 	}
 
-	private void paint(final Graphics2D g2d, final Annotation a, final double x, final double y) {
-		if (a == null || a.getText() == null || "".equals(a.getText())) { return; }
-		g2d.translate(x, -y);
-		final double w = getWidth(a, g2d);
-		final double h = getHeight(a);
-		g2d.translate(-w / 2.0, -h / 2.0 + g2d.getFont().getSize2D());
-		for (final String line : a.getText().split("\n")) {
-			g2d.drawString(line, 0, 0);
-			g2d.translate(0, g2d.getFont().getSize2D());
-		}
-	}
-
-	private Color getColor(final String color, final Color alternative, final boolean contains) {
-		final Color c = getColor(color, alternative);
-		if (!highlightNodes.isEmpty() && !contains) { return new Color(c.getRed(), c.getGreen(), c.getBlue(), 0x50); }
-		return c;
-	}
-
-	public static Color getColor(final String color) {
-		return getColor(color, Color.BLACK);
-	}
-
-	public static Color getColor(final String color, final Color alternative) {
-		if ("black".equalsIgnoreCase(color)) { return Color.BLACK; }
-		if ("white".equalsIgnoreCase(color)) { return Color.WHITE; }
-		if ("silver".equalsIgnoreCase(color)) { return Color.LIGHT_GRAY; }
-		if ("gray".equalsIgnoreCase(color)) { return Color.GRAY; }
-		if ("maroon".equalsIgnoreCase(color)) { return MAROON; }
-		if ("red".equalsIgnoreCase(color)) { return Color.RED; }
-		if ("purple".equalsIgnoreCase(color)) { return PURPLE; }
-		if ("fuchsia".equalsIgnoreCase(color)) { return Color.MAGENTA; }
-		if ("fucia".equalsIgnoreCase(color)) { return Color.MAGENTA; }
-		if ("green".equalsIgnoreCase(color)) { return GREEN; }
-		if ("lime".equalsIgnoreCase(color)) { return Color.GREEN; }
-		if ("olive".equalsIgnoreCase(color)) { return OLIVE; }
-		if ("yellow".equalsIgnoreCase(color)) { return Color.YELLOW; }
-		if ("navy".equalsIgnoreCase(color)) { return NAVY; }
-		if ("blue".equalsIgnoreCase(color)) { return Color.BLUE; }
-		if ("teal".equalsIgnoreCase(color)) { return TEAL; }
-		if ("aqua".equalsIgnoreCase(color)) { return Color.CYAN; }
-		return alternative != null ? alternative : Color.BLACK;
-	}
-
 	private void updateBounds(final Graphics g) {
 		if (g == null) { return; }
 		bounds = new Rectangle2D.Double();
@@ -300,37 +333,12 @@ public class PageComponent extends JComponent {
 		}
 	}
 
-	private void updateBounds(final java.awt.geom.Rectangle2D.Double bounds, final Node n, final Graphics g) {
-		final NodeGraphics nodeGraphics = n.getNodeGraphics();
-		if (nodeGraphics != null) {
-			updateBounds(bounds, nodeGraphics.getPosition().getX() - nodeGraphics.getDimension().getX() / 2.0,
-			        nodeGraphics.getPosition().getY() - nodeGraphics.getDimension().getY() / 2.0);
-			updateBounds(bounds, nodeGraphics.getPosition().getX() + nodeGraphics.getDimension().getX() / 2.0,
-			        nodeGraphics.getPosition().getY() + nodeGraphics.getDimension().getY() / 2.0);
-			for (final Label l : n.getLabel()) {
-				if (l instanceof Annotation) {
-					updateBounds(bounds, nodeGraphics.getPosition().getX(), nodeGraphics.getPosition().getY(),
-					        (Annotation) l, g);
-				}
-			}
-		}
-	}
-
 	private void updateBounds(final java.awt.geom.Rectangle2D.Double bounds, final double x, final double y) {
 		bounds.x = Math.min(bounds.x, x);
 		bounds.y = Math.min(bounds.y, -y);
 		bounds.width = Math.max(bounds.x + bounds.width, x) - bounds.x;
 		bounds.height = Math.max(bounds.y + bounds.height, -y) - bounds.y;
 	}
-
-	protected Font font = new Font("Verdana", Font.PLAIN, 12);
-	protected FontMetrics fm = new FontMetrics(font) {
-
-		/**
-             * 
-             */
-		private static final long serialVersionUID = 1L;
-	};
 
 	private void updateBounds(final java.awt.geom.Rectangle2D.Double bounds, final double x, final double y,
 	        final Annotation a, final Graphics g) {
@@ -346,25 +354,20 @@ public class PageComponent extends JComponent {
 		}
 	}
 
-	private double getHeight(final Annotation a) {
-		double h = 0.0;
-		for (final String line : a.getText().split("\n")) {
-			h += font.getSize2D();
+	private void updateBounds(final java.awt.geom.Rectangle2D.Double bounds, final Node n, final Graphics g) {
+		final NodeGraphics nodeGraphics = n.getNodeGraphics();
+		if (nodeGraphics != null) {
+			updateBounds(bounds, nodeGraphics.getPosition().getX() - nodeGraphics.getDimension().getX() / 2.0,
+			        nodeGraphics.getPosition().getY() - nodeGraphics.getDimension().getY() / 2.0);
+			updateBounds(bounds, nodeGraphics.getPosition().getX() + nodeGraphics.getDimension().getX() / 2.0,
+			        nodeGraphics.getPosition().getY() + nodeGraphics.getDimension().getY() / 2.0);
+			for (final Label l : n.getLabel()) {
+				if (l instanceof Annotation) {
+					updateBounds(bounds, nodeGraphics.getPosition().getX(), nodeGraphics.getPosition().getY(),
+					        (Annotation) l, g);
+				}
+			}
 		}
-		return h;
 	}
-
-	private double getWidth(final Annotation a, final Graphics g) {
-		double w = 0.0;
-		for (final String line : a.getText().split("\n")) {
-			w = Math.max(w, fm.getStringBounds(line.trim(), g).getWidth());
-		}
-		return w;
-	}
-
-	/**
-     * 
-     */
-	private static final long serialVersionUID = 1L;
 
 }

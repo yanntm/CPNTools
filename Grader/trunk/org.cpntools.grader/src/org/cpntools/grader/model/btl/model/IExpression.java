@@ -12,6 +12,12 @@ import org.cpntools.grader.model.btl.Environment;
  * @author michael
  */
 public abstract class IExpression extends Expression {
+	@Override
+	public boolean canTerminate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
+	        final Environment environment) {
+		throw new UnsupportedOperationException("You should never call canTerminate on IExpressions");
+	}
+
 	public abstract int evaluate(final PetriNet model, HighLevelSimulator simulator, NameHelper names,
 	        Environment environment);
 
@@ -27,12 +33,6 @@ public abstract class IExpression extends Expression {
 	        final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
 	        final Environment environment) {
 		throw new UnsupportedOperationException("You should never call progress on IExpressions");
-	}
-
-	@Override
-	public boolean canTerminate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
-	        final Environment environment) {
-		throw new UnsupportedOperationException("You should never call canTerminate on IExpressions");
 	}
 
 }

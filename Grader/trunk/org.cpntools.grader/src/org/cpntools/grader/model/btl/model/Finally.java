@@ -14,16 +14,25 @@ import org.cpntools.grader.model.btl.Environment;
  * @author michael
  */
 public class Finally implements Guide {
+	private final Guide condition;
+
+	private final Condition constraint;
+
 	/**
-	 * @see java.lang.Object#hashCode()
+	 * @param condition
+	 * @param constraint
 	 */
+	public Finally(final Guide condition, final Condition constraint) {
+		this.condition = condition;
+		this.constraint = constraint;
+
+	}
+
 	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + (condition == null ? 0 : condition.hashCode());
-		result = prime * result + (constraint == null ? 0 : constraint.hashCode());
-		return result;
+	public boolean canTerminate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
+	        final Environment environment) {
+		if (condition == null) { return constraint.canTerminate(model, simulator, names, environment); }
+		return true;
 	}
 
 	/**
@@ -44,17 +53,19 @@ public class Finally implements Guide {
 		return true;
 	}
 
-	private final Condition constraint;
-	private final Guide condition;
+	@Override
+	public Set<Instance<org.cpntools.accesscpn.model.Transition>> force(
+	        final Set<Instance<org.cpntools.accesscpn.model.Transition>> candidates, final PetriNet model,
+	        final HighLevelSimulator simulator, final NameHelper names, final Environment environment) {
+		return candidates;
+	}
 
-	/**
-	 * @param condition
-	 * @param constraint
-	 */
-	public Finally(final Guide condition, final Condition constraint) {
-		this.condition = condition;
-		this.constraint = constraint;
-
+	@Override
+	public Set<String> getAtomic() {
+		final Set<String> result = new HashSet<String>();
+		result.addAll(condition.getAtomic());
+		result.addAll(constraint.getAtomic());
+		return result;
 	}
 
 	public Guide getCondition() {
@@ -65,16 +76,24 @@ public class Finally implements Guide {
 		return constraint;
 	}
 
+	/**
+	 * @see java.lang.Object#hashCode()
+	 */
 	@Override
-	public String toString() {
-		return "(" + condition + ") ===> [" + constraint + "]";
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + (condition == null ? 0 : condition.hashCode());
+		result = prime * result + (constraint == null ? 0 : constraint.hashCode());
+		return result;
 	}
 
 	@Override
-	public Set<Instance<org.cpntools.accesscpn.model.Transition>> force(
-	        final Set<Instance<org.cpntools.accesscpn.model.Transition>> candidates, final PetriNet model,
-	        final HighLevelSimulator simulator, final NameHelper names, final Environment environment) {
-		return candidates;
+	public void prestep(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
+	        final Environment environment) {
+		if (condition != null) {
+			condition.prestep(model, simulator, names, environment);
+		}
 	}
 
 	@Override
@@ -95,26 +114,8 @@ public class Finally implements Guide {
 	}
 
 	@Override
-	public boolean canTerminate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
-	        final Environment environment) {
-		if (condition == null) { return constraint.canTerminate(model, simulator, names, environment); }
-		return true;
-	}
-
-	@Override
-	public Set<String> getAtomic() {
-		final Set<String> result = new HashSet<String>();
-		result.addAll(condition.getAtomic());
-		result.addAll(constraint.getAtomic());
-		return result;
-	}
-
-	@Override
-	public void prestep(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
-	        final Environment environment) {
-		if (condition != null) {
-			condition.prestep(model, simulator, names, environment);
-		}
+	public String toString() {
+		return "(" + condition + ") ===> [" + constraint + "]";
 	}
 
 }

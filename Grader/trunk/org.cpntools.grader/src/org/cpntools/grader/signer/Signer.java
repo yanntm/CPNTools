@@ -34,75 +34,10 @@ public class Signer {
 	 * @param model
 	 * @param secret
 	 * @param studentId
-	 * @return
-	 */
-	@SuppressWarnings("unchecked")
-	static public PetriNet sign(final PetriNetImpl model, final String secret, final StudentID studentId) {
-		final PetriNet result = EcoreUtil.copy(model);
-		final ModelData modelData = (ModelData) ModelDataAdapterFactory.getInstance().adapt(result, ModelData.class);
-		for (final Monitor m : result.getMonitors()) {
-			final Collection<Object> nodes = new ArrayList<Object>(m.getNodes());
-			m.getNodes().clear();
-			for (final Object o : nodes) {
-				final org.cpntools.accesscpn.engine.highlevel.instance.Instance<Node> i = (org.cpntools.accesscpn.engine.highlevel.instance.Instance<Node>) o;
-				m.getNodes().add(remap(i, modelData));
-			}
-		}
-		final Random random = getRandom(secret, studentId);
-		final Set<String> usedIds = new HashSet<String>();
-		final Map<String, String> idMap = new HashMap<String, String>();
-		for (final HLDeclaration d : result.declaration()) {
-			replaceId(random, usedIds, idMap, d);
-		}
-		for (final Page p : result.getPage()) {
-			replaceId(random, usedIds, idMap, p);
-			for (final org.cpntools.accesscpn.model.Object o : p.getObject()) {
-				replaceId(random, usedIds, idMap, o);
-			}
-			for (final Arc a : p.getArc()) {
-				replaceId(random, usedIds, idMap, a);
-			}
-		}
-		for (final Page p : result.getPage()) {
-			for (final Instance i : p.instance()) {
-				i.setSubPageID(idMap.get(i.getSubPageID()));
-				for (final ParameterAssignment pa : i.getParameterAssignment()) {
-					pa.setParameter(idMap.get(pa.getParameter()));
-					pa.setValue(idMap.get(pa.getValue()));
-				}
-			}
-		}
-		return result;
-	}
-
-	@SuppressWarnings("unchecked")
-	private static <T extends Node> org.cpntools.accesscpn.engine.highlevel.instance.Instance<T> remap(
-	        final org.cpntools.accesscpn.engine.highlevel.instance.Instance<T> i, final ModelData modelData) {
-		if (i == null) { return null; }
-		final org.cpntools.accesscpn.engine.highlevel.instance.Instance<Node> result = InstanceFactory.INSTANCE
-		        .createInstance(modelData.getNode(i.getNode().getId()), i.getInstanceNumber());
-		result.setTransitionPath(remap(i.getTransitionPath(), modelData));
-		return (org.cpntools.accesscpn.engine.highlevel.instance.Instance<T>) result;
-	}
-
-	private static Random getRandom(final String secret, final StudentID studentId) {
-		try {
-			final SecureRandom securerandom = SecureRandom.getInstance("SHA1PRNG");
-			securerandom.setSeed((secret + "//" + studentId.getId()).getBytes());
-			return securerandom;
-		} catch (final NoSuchAlgorithmException _) {
-			return new Random((secret + "//" + studentId.getId()).hashCode());
-		}
-	}
-
-	/**
-	 * @param model
-	 * @param secret
-	 * @param studentId
 	 * @return how many nodes matched the signature; typically this is not all
 	 */
 	public static int checkSignature(final PetriNet model, final String secret, final StudentID studentId) {
-		final Random random = getRandom(secret, studentId);
+		final Random random = Signer.getRandom(secret, studentId);
 		final Set<String> usedIds = new HashSet<String>();
 		final Set<String> ids = new HashSet<String>();
 		for (final HLDeclaration d : model.declaration()) {
@@ -119,7 +54,7 @@ public class Signer {
 		}
 		int count = 0;
 		for (int i = 0; i < ids.size(); i++) {
-			final String id = getId(random, usedIds);
+			final String id = Signer.getId(random, usedIds);
 			if (ids.contains(id)) {
 				count++;
 			}
@@ -127,9 +62,74 @@ public class Signer {
 		return count;
 	}
 
+	/**
+	 * @param model
+	 * @param secret
+	 * @param studentId
+	 * @return
+	 */
+	@SuppressWarnings("unchecked")
+	static public PetriNet sign(final PetriNetImpl model, final String secret, final StudentID studentId) {
+		final PetriNet result = EcoreUtil.copy(model);
+		final ModelData modelData = (ModelData) ModelDataAdapterFactory.getInstance().adapt(result, ModelData.class);
+		for (final Monitor m : result.getMonitors()) {
+			final Collection<Object> nodes = new ArrayList<Object>(m.getNodes());
+			m.getNodes().clear();
+			for (final Object o : nodes) {
+				final org.cpntools.accesscpn.engine.highlevel.instance.Instance<Node> i = (org.cpntools.accesscpn.engine.highlevel.instance.Instance<Node>) o;
+				m.getNodes().add(Signer.remap(i, modelData));
+			}
+		}
+		final Random random = Signer.getRandom(secret, studentId);
+		final Set<String> usedIds = new HashSet<String>();
+		final Map<String, String> idMap = new HashMap<String, String>();
+		for (final HLDeclaration d : result.declaration()) {
+			Signer.replaceId(random, usedIds, idMap, d);
+		}
+		for (final Page p : result.getPage()) {
+			Signer.replaceId(random, usedIds, idMap, p);
+			for (final org.cpntools.accesscpn.model.Object o : p.getObject()) {
+				Signer.replaceId(random, usedIds, idMap, o);
+			}
+			for (final Arc a : p.getArc()) {
+				Signer.replaceId(random, usedIds, idMap, a);
+			}
+		}
+		for (final Page p : result.getPage()) {
+			for (final Instance i : p.instance()) {
+				i.setSubPageID(idMap.get(i.getSubPageID()));
+				for (final ParameterAssignment pa : i.getParameterAssignment()) {
+					pa.setParameter(idMap.get(pa.getParameter()));
+					pa.setValue(idMap.get(pa.getValue()));
+				}
+			}
+		}
+		return result;
+	}
+
+	private static Random getRandom(final String secret, final StudentID studentId) {
+		try {
+			final SecureRandom securerandom = SecureRandom.getInstance("SHA1PRNG");
+			securerandom.setSeed((secret + "//" + studentId.getId()).getBytes());
+			return securerandom;
+		} catch (final NoSuchAlgorithmException _) {
+			return new Random((secret + "//" + studentId.getId()).hashCode());
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	private static <T extends Node> org.cpntools.accesscpn.engine.highlevel.instance.Instance<T> remap(
+	        final org.cpntools.accesscpn.engine.highlevel.instance.Instance<T> i, final ModelData modelData) {
+		if (i == null) { return null; }
+		final org.cpntools.accesscpn.engine.highlevel.instance.Instance<Node> result = InstanceFactory.INSTANCE
+		        .createInstance(modelData.getNode(i.getNode().getId()), i.getInstanceNumber());
+		result.setTransitionPath(Signer.remap(i.getTransitionPath(), modelData));
+		return (org.cpntools.accesscpn.engine.highlevel.instance.Instance<T>) result;
+	}
+
 	private static void replaceId(final Random random, final Set<String> usedIds, final Map<String, String> idMap,
 	        final HasId o) {
-		final String id = getId(random, usedIds);
+		final String id = Signer.getId(random, usedIds);
 		idMap.put(o.getId(), id);
 		o.setId(id);
 	}
@@ -137,7 +137,7 @@ public class Signer {
 	static protected String getId(final Random random, final Set<String> used) {
 		final int number = random.nextInt() & 0xfffffff;
 		final String id = "id" + number;
-		if (!used.add(id)) { return getId(random, used); }
+		if (!used.add(id)) { return Signer.getId(random, used); }
 		return id;
 	}
 }

@@ -12,16 +12,18 @@ import org.cpntools.grader.model.btl.Environment;
  * @author michael
  */
 public class LogicalAnd extends BExpression {
+	private final BExpression b1;
+
+	private final BExpression b2;
+
 	/**
-	 * @see java.lang.Object#hashCode()
+	 * @param b1
+	 * @param b2
 	 */
-	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + (b1 == null ? 0 : b1.hashCode());
-		result = prime * result + (b2 == null ? 0 : b2.hashCode());
-		return result;
+	public LogicalAnd(final BExpression b1, final BExpression b2) {
+		this.b1 = b1;
+		this.b2 = b2;
+
 	}
 
 	/**
@@ -42,32 +44,6 @@ public class LogicalAnd extends BExpression {
 		return true;
 	}
 
-	private final BExpression b1;
-	private final BExpression b2;
-
-	/**
-	 * @param b1
-	 * @param b2
-	 */
-	public LogicalAnd(final BExpression b1, final BExpression b2) {
-		this.b1 = b1;
-		this.b2 = b2;
-
-	}
-
-	public BExpression getB2() {
-		return b2;
-	}
-
-	public BExpression getB1() {
-		return b1;
-	}
-
-	@Override
-	public String toString() {
-		return "(" + b1 + ") & (" + b2 + ")";
-	}
-
 	@Override
 	public boolean evaluate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
 	        final Environment environment) {
@@ -82,11 +58,36 @@ public class LogicalAnd extends BExpression {
 		return result;
 	}
 
+	public BExpression getB1() {
+		return b1;
+	}
+
+	public BExpression getB2() {
+		return b2;
+	}
+
+	/**
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + (b1 == null ? 0 : b1.hashCode());
+		result = prime * result + (b2 == null ? 0 : b2.hashCode());
+		return result;
+	}
+
 	@Override
 	public void prestep(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
 	        final Environment environment) {
 		b1.prestep(model, simulator, names, environment);
 		b2.prestep(model, simulator, names, environment);
+	}
+
+	@Override
+	public String toString() {
+		return "(" + b1 + ") & (" + b2 + ")";
 	}
 
 }

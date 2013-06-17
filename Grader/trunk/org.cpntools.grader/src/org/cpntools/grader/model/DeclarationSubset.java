@@ -18,15 +18,80 @@ import org.cpntools.accesscpn.model.declaration.GlobalReferenceDeclaration;
 import org.cpntools.accesscpn.model.declaration.VariableDeclaration;
 
 public class DeclarationSubset extends AbstractGrader {
-	public static final Grader INSTANCE = new DeclarationSubset(0, false, 0, false);
+	/**
+	 * @author michael
+	 * @param <E>
+	 */
+	private static final class PowerSet<E> implements Iterator<Set<E>>, Iterable<Set<E>> {
+		private Object[] arr = null;
+		private BitSet bset = null;
 
-	Pattern p = Pattern.compile("^declaration-preservation(, *subset(=(-?[0-9.]+))?)?(, *globref(=(true|false))?)?$",
-	        Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+		/**
+		 * @param set
+		 */
+		public PowerSet(final Set<E> set) {
+			arr = set.toArray();
+			bset = new BitSet(arr.length + 1);
+		}
+
+		/**
+		 * @see java.util.Iterator#hasNext()
+		 */
+		@Override
+		public boolean hasNext() {
+			return !bset.get(arr.length);
+		}
+
+		/**
+		 * @see java.lang.Iterable#iterator()
+		 */
+		@Override
+		public Iterator<Set<E>> iterator() {
+			return this;
+		}
+
+		/**
+		 * @see java.util.Iterator#next()
+		 */
+		@SuppressWarnings("unchecked")
+		@Override
+		public Set<E> next() {
+			final Set<E> returnSet = new TreeSet<E>();
+			for (int i = 0; i < arr.length; i++) {
+				if (bset.get(i)) {
+					returnSet.add((E) arr[i]);
+				}
+			}
+			for (int i = 0; i < bset.size(); i++) {
+				if (!bset.get(i)) {
+					bset.set(i);
+					break;
+				} else {
+					bset.clear(i);
+				}
+			}
+
+			return returnSet;
+		}
+
+		/**
+		 * @see java.util.Iterator#remove()
+		 */
+		@Override
+		public void remove() {
+			throw new UnsupportedOperationException("Not Supported!");
+		}
+	}
+
+	public static final Grader INSTANCE = new DeclarationSubset(0, false, 0, false);
+	private final boolean globref;
+
 	private final boolean subset;
 
 	private final double subsetPoints;
 
-	private final boolean globref;
+	Pattern p = Pattern.compile("^declaration-preservation(, *subset(=(-?[0-9.]+))?)?(, *globref(=(true|false))?)?$",
+	        Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
 
 	public DeclarationSubset(final double maxPoints, final boolean subset, final double subsetPoints,
 	        final boolean globref) {
@@ -74,10 +139,8 @@ public class DeclarationSubset extends AbstractGrader {
 		        + Math.abs(getMaxPoints() - (subsetPoints < 0 ? 0 : subsetPoints)) + ").", addedDetail);
 	}
 
-	private void remove(final Map<String, String> baseDecl, final Map<String, String> modelDecl) {
-		for (final String key : modelDecl.keySet()) {
-			baseDecl.remove(key);
-		}
+	private void addSubsets(final Map<String, String> declarations, final String typeName, final SortedSet<String> names) {
+
 	}
 
 	private Map<String, String> getDeclarations(final PetriNet model) {
@@ -98,72 +161,9 @@ public class DeclarationSubset extends AbstractGrader {
 		return declarations;
 	}
 
-	/**
-	 * @author michael
-	 * @param <E>
-	 */
-	private static final class PowerSet<E> implements Iterator<Set<E>>, Iterable<Set<E>> {
-		private Object[] arr = null;
-		private BitSet bset = null;
-
-		/**
-		 * @param set
-		 */
-		public PowerSet(final Set<E> set) {
-			arr = set.toArray();
-			bset = new BitSet(arr.length + 1);
+	private void remove(final Map<String, String> baseDecl, final Map<String, String> modelDecl) {
+		for (final String key : modelDecl.keySet()) {
+			baseDecl.remove(key);
 		}
-
-		/**
-		 * @see java.util.Iterator#hasNext()
-		 */
-		@Override
-		public boolean hasNext() {
-			return !bset.get(arr.length);
-		}
-
-		/**
-		 * @see java.util.Iterator#next()
-		 */
-		@SuppressWarnings("unchecked")
-		@Override
-		public Set<E> next() {
-			final Set<E> returnSet = new TreeSet<E>();
-			for (int i = 0; i < arr.length; i++) {
-				if (bset.get(i)) {
-					returnSet.add((E) arr[i]);
-				}
-			}
-			for (int i = 0; i < bset.size(); i++) {
-				if (!bset.get(i)) {
-					bset.set(i);
-					break;
-				} else {
-					bset.clear(i);
-				}
-			}
-
-			return returnSet;
-		}
-
-		/**
-		 * @see java.util.Iterator#remove()
-		 */
-		@Override
-		public void remove() {
-			throw new UnsupportedOperationException("Not Supported!");
-		}
-
-		/**
-		 * @see java.lang.Iterable#iterator()
-		 */
-		@Override
-		public Iterator<Set<E>> iterator() {
-			return this;
-		}
-	}
-
-	private void addSubsets(final Map<String, String> declarations, final String typeName, final SortedSet<String> names) {
-
 	}
 }

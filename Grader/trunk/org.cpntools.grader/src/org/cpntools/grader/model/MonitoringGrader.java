@@ -24,14 +24,14 @@ public class MonitoringGrader extends AbstractGrader {
 	public static final Grader INSTANCE = new MonitoringGrader(0, 10, -1, -1,
 	        Collections.<String, List<String>> emptyMap());
 
+	private final Map<String, List<String>> parameters;
+	private final int replications, steps, time;
 	Pattern p = Pattern
 	        .compile(
 	                "^monitoring(, *replications=([1-9][0-9]*))?(, *steps=([1-9][0-9]*))?(, *time=([1-9][0-9]*))?(, *parameters=\\[((([\\p{Alpha}][\\p{Alnum}'_]*)=\\[([1-9][0-9.]*(, *[1-9][0-9.]*)*)\\])((, *([\\p{Alpha}][\\p{Alnum}'_]*)=\\[([1-9][0-9.]*(, *[1-9][0-9.]*)*)\\])*))\\])?$",
 	                Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
 	Pattern params = Pattern.compile("([\\p{Alpha}][\\p{Alnum}'_]*)=\\[([1-9][0-9.]*(, *[1-9][0-9.]*)*)\\](, *(.*))?",
 	        Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
-	private final int replications, steps, time;
-	private final Map<String, List<String>> parameters;
 
 	public MonitoringGrader(final double maxPoints, final int replications, final int steps, final int time,
 	        final Map<String, List<String>> parameters) {
@@ -99,24 +99,6 @@ public class MonitoringGrader extends AbstractGrader {
 		} catch (final Exception e) {
 			return new Message(getMinPoints(), "An error occurred during grading.", new Detail("Monitoring Error",
 			        e.toString()));
-		}
-	}
-
-	private Detail[] simulate(final HighLevelSimulator simulator, final Map<String, String> values,
-	        final Map<String, List<String>> parameters) throws FileNotFoundException, IOException, Exception {
-		if (parameters.isEmpty()) {
-			return simulate(simulator, values);
-		} else {
-			final ArrayList<Detail> result = new ArrayList<Detail>();
-			final Map<String, List<String>> copy = new HashMap<String, List<String>>(parameters);
-			final String name = parameters.keySet().iterator().next();
-			final List<String> vs = copy.remove(name);
-			for (final String value : vs) {
-				final Map<String, String> v = new HashMap<String, String>(values);
-				v.put(name, value);
-				result.addAll(Arrays.asList(simulate(simulator, v, copy)));
-			}
-			return result.toArray(new Detail[result.size()]);
 		}
 	}
 
@@ -218,5 +200,23 @@ public class MonitoringGrader extends AbstractGrader {
 		sb.append(table);
 		sb.append("</html>");
 		return sb.toString();
+	}
+
+	private Detail[] simulate(final HighLevelSimulator simulator, final Map<String, String> values,
+	        final Map<String, List<String>> parameters) throws FileNotFoundException, IOException, Exception {
+		if (parameters.isEmpty()) {
+			return simulate(simulator, values);
+		} else {
+			final ArrayList<Detail> result = new ArrayList<Detail>();
+			final Map<String, List<String>> copy = new HashMap<String, List<String>>(parameters);
+			final String name = parameters.keySet().iterator().next();
+			final List<String> vs = copy.remove(name);
+			for (final String value : vs) {
+				final Map<String, String> v = new HashMap<String, String>(values);
+				v.put(name, value);
+				result.addAll(Arrays.asList(simulate(simulator, v, copy)));
+			}
+			return result.toArray(new Detail[result.size()]);
+		}
 	}
 }

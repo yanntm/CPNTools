@@ -12,7 +12,7 @@ public class RandomStrategy<T> implements Strategy<T> {
 	@SuppressWarnings("javadoc")
 	@Override
 	public T getOne(final DecisionTree<T> decisionTree, final Node<T> current, final List<T> candidates) {
-		return candidates.get(r.nextInt(candidates.size()));
+		return candidates.get(RandomStrategy.r.nextInt(candidates.size()));
 	}
 
 	@Override

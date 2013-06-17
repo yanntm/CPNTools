@@ -13,17 +13,17 @@ import org.cpntools.grader.signer.Signer;
 public class SignatureGrader extends AbstractGrader {
 	public static Grader INSTANCE = new SignatureGrader(0, Integer.MAX_VALUE, "##");
 
-	private final int threshold;
 	private String secret;
+	private final int threshold;
+
+	Pattern p = Pattern.compile("^signature, *threshold=([1-9][0-9]*)(, *secret=([^,]))?$", Pattern.CASE_INSENSITIVE
+	        | Pattern.DOTALL);
 
 	protected SignatureGrader(final double maxPoints, final int threshold, final String secret) {
 		super(maxPoints);
 		this.threshold = threshold;
 		setSecret(secret);
 	}
-
-	Pattern p = Pattern.compile("^signature, *threshold=([1-9][0-9]*)(, *secret=([^,]))?$", Pattern.CASE_INSENSITIVE
-	        | Pattern.DOTALL);
 
 	/**
 	 * @see org.cpntools.grader.model.Grader#configure(double, java.lang.String)
@@ -33,6 +33,13 @@ public class SignatureGrader extends AbstractGrader {
 		final Matcher m = p.matcher(configuration);
 		if (!m.matches()) { return null; }
 		return new SignatureGrader(maxPoints, Integer.parseInt(m.group(1)), m.group(3));
+	}
+
+	/**
+	 * @return
+	 */
+	public String getSecret() {
+		return secret;
 	}
 
 	/**
@@ -52,12 +59,5 @@ public class SignatureGrader extends AbstractGrader {
 	 */
 	public void setSecret(final String secret) {
 		this.secret = secret == null ? "" : secret;
-	}
-
-	/**
-	 * @return
-	 */
-	public String getSecret() {
-		return secret;
 	}
 }

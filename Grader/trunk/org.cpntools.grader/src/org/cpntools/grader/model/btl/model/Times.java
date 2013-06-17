@@ -13,16 +13,20 @@ import org.cpntools.grader.model.btl.Environment;
  * @author michael
  */
 public class Times implements Guide {
-	/**
-	 * @see java.lang.Object#hashCode()
-	 */
+	private final int count;
+
+	private final Guide g;
+
+	public Times(final int count, final Guide g) {
+		this.count = count;
+		this.g = g;
+	}
+
 	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + count;
-		result = prime * result + (g == null ? 0 : g.hashCode());
-		return result;
+	public boolean canTerminate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
+	        final Environment environment) {
+		if (count == 0) { return true; }
+		return g.canTerminate(model, simulator, names, environment);
 	}
 
 	/**
@@ -41,12 +45,16 @@ public class Times implements Guide {
 		return true;
 	}
 
-	private final int count;
-	private final Guide g;
+	@Override
+	public Set<Instance<org.cpntools.accesscpn.model.Transition>> force(
+	        final Set<Instance<org.cpntools.accesscpn.model.Transition>> candidates, final PetriNet model,
+	        final HighLevelSimulator simulator, final NameHelper names, final Environment environment) {
+		return g.force(candidates, model, simulator, names, environment);
+	}
 
-	public Times(final int count, final Guide g) {
-		this.count = count;
-		this.g = g;
+	@Override
+	public Set<String> getAtomic() {
+		return g.getAtomic();
 	}
 
 	public int getCount() {
@@ -57,16 +65,22 @@ public class Times implements Guide {
 		return g;
 	}
 
+	/**
+	 * @see java.lang.Object#hashCode()
+	 */
 	@Override
-	public String toString() {
-		return count + " * (" + g + ")";
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + count;
+		result = prime * result + (g == null ? 0 : g.hashCode());
+		return result;
 	}
 
 	@Override
-	public Set<Instance<org.cpntools.accesscpn.model.Transition>> force(
-	        final Set<Instance<org.cpntools.accesscpn.model.Transition>> candidates, final PetriNet model,
-	        final HighLevelSimulator simulator, final NameHelper names, final Environment environment) {
-		return g.force(candidates, model, simulator, names, environment);
+	public void prestep(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
+	        final Environment environment) {
+		g.prestep(model, simulator, names, environment);
 	}
 
 	@Override
@@ -87,20 +101,7 @@ public class Times implements Guide {
 	}
 
 	@Override
-	public boolean canTerminate(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
-	        final Environment environment) {
-		if (count == 0) { return true; }
-		return g.canTerminate(model, simulator, names, environment);
-	}
-
-	@Override
-	public Set<String> getAtomic() {
-		return g.getAtomic();
-	}
-
-	@Override
-	public void prestep(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
-	        final Environment environment) {
-		g.prestep(model, simulator, names, environment);
+	public String toString() {
+		return count + " * (" + g + ")";
 	}
 }
