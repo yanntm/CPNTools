@@ -110,11 +110,12 @@ public class MonitoringGrader extends AbstractGrader {
 		}
 		simulator.evaluate("Replications.nreplications " + replications);
 		File repsDir = null;
-		int number = 0;
+		int number = 1;
 		do {
 			repsDir = new File(simulator.getOutputDir(), "reps_" + ++number);
 		} while (repsDir.exists() && repsDir.isDirectory());
 		repsDir = new File(simulator.getOutputDir(), "reps_" + --number);
+		System.out.println("reading report from "+repsDir.getAbsolutePath());
 		return new Detail[] {
 		        new Detail("Monitoring Results " + values, extractAndCleanTable(new Scanner(new File(repsDir,
 		                "PerfReportIID.html")).useDelimiter("\\Z").next(), values)),

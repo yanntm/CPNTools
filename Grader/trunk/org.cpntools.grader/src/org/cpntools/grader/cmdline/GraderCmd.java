@@ -1,14 +1,15 @@
-package org.cpntools.grader.gui;
+package org.cpntools.grader.cmdline;
 
-import java.awt.BorderLayout;
-import java.awt.FlowLayout;
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -21,13 +22,10 @@ import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.prefs.Preferences;
 
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JTextField;
-
 import org.cpntools.accesscpn.model.PetriNet;
 import org.cpntools.accesscpn.model.importer.DOMParser;
+import org.cpntools.grader.cmdline.ResultDialogCmd;
+import org.cpntools.grader.gui.Grader;
 import org.cpntools.grader.model.ConfigurationTestSuite;
 import org.cpntools.grader.model.ParserException;
 import org.cpntools.grader.model.StudentID;
@@ -39,7 +37,7 @@ import org.cpntools.grader.tester.Tester;
 /**
  * @author michael
  */
-public class Grader {
+public class GraderCmd {
 
 	public static class ResultData {
 		private final File file;
@@ -67,93 +65,64 @@ public class Grader {
 
 	private static final String STUDENT_IDS = "student_ids";
 
-	public static void incrementProgress(final ResultDialog resultDialog) {
-		resultDialog.setProgress(++Grader.progress);
+	public static void incrementProgress(final ResultDialogCmd resultDialog) {
+		resultDialog.setProgress(++GraderCmd.progress);
+	}
+	
+	public static void printUsage() {
+		System.out.println("command line parameters: <baseFile> <modelDirectory> <idFile> <configFile> <secret> <noThreads>");
 	}
 
 	/**
 	 * @param args
 	 */
 	public static void main(final String[] args) {
-		System.setProperty("apple.laf.useScreenMenuBar", "true");
-		System.setProperty("com.apple.mrj.application.apple.menu.about.name", "Grade/CPN");
-		final Preferences p = Preferences.userNodeForPackage(Grader.class);
-		final FileChooser configuration = new FileChooser("Configuration", p.get(Grader.CONFIG, ""), true);
-		final SetupDialog setup = new SetupDialog(p.get(Grader.MODEL_FILE, ""), p.get(Grader.MODEL_DIR, ""), p.get(
-		        Grader.STUDENT_IDS, "")) {
-			/**
-			 * 
-			 */
-			private static final long serialVersionUID = 1L;
+		
+		if (args.length != 6) {
+			printUsage();
+			return;
+		}
 
-			@Override
-			protected void update(final File outputDir) {
-				if (configuration.getSelected().getName().equals("")) {
-					for (final File f : outputDir.listFiles(new FilenameFilter() {
-						@Override
-						public boolean accept(final File arg0, final String arg1) {
-							return arg1.endsWith(".cfg");
-						}
+		final String baseFile = args[0];
+		final File modelDirectory = new File(args[1]); 
+		final String idFileName = args[2];
+		final File configFile = new File(args[3]); 
+		final String secret = args[4];
+		final String noThreads = args[5];
 
-					})) {
-						configuration.setSelected(f);
-					}
-				}
-			}
-		};
-		final JPanel bottom = new JPanel(new BorderLayout());
-		setup.getFiles().add(bottom, BorderLayout.SOUTH);
-		bottom.add(configuration);
-		final JPanel threads = new JPanel(new FlowLayout());
-		bottom.add(threads, BorderLayout.SOUTH);
-		final JTextField noThreads = new JTextField("" + Runtime.getRuntime().availableProcessors(), 4);
-		threads.add(noThreads);
-		threads.add(new JLabel("Number of grader threads"));
-		setup.setVisible(true);
-		p.put(Grader.MODEL_FILE, setup.getBase().getAbsolutePath());
-		p.put(Grader.MODEL_DIR, setup.getModels().getAbsolutePath());
-		p.put(Grader.STUDENT_IDS, setup.getTextIds());
-		p.put(Grader.CONFIG, configuration.getSelected().getAbsolutePath());
-
-		if (setup.getBase() != null) {
+		if (baseFile != null) {
 
 			TestSuite suite;
 			try {
-				suite = new ConfigurationTestSuite(configuration.getSelected(), setup.getSecret());
+				suite = new ConfigurationTestSuite(configFile, secret);
 			} catch (final ParserException e) {
-				JOptionPane.showMessageDialog(null, e.getMessage() + ":\n" + e.getLine()
-				        + (e.getCause() == null ? "" : "\nCaused by:\n" + e.getCause()),
-				        "Error loading configuration!", JOptionPane.ERROR_MESSAGE);
+				System.err.println("Error loading configuration\n"+e.getMessage() + ":\n" + e.getLine() + (e.getCause() == null ? "" : "\nCaused by:\n" + e.getCause()));
 				e.printStackTrace();
 				return;
 			} catch (final FileNotFoundException e) {
-				JOptionPane.showMessageDialog(null, "Configuration file not found!\n" + e,
-				        "Error loading configuration!", JOptionPane.ERROR_MESSAGE);
+				System.err.println("Configuration file not found!\n" + e);
 				e.printStackTrace();
 				return;
 			} catch (final IOException e) {
-				JOptionPane.showMessageDialog(null, "Reading configuration file failed!\n" + e,
-				        "Error loading configuration!", JOptionPane.ERROR_MESSAGE);
+				System.err.println("Reading configuration file failed!\n" + e);
 				e.printStackTrace();
 				return;
 			}
 
 			PetriNet petriNet;
 			try {
-				petriNet = DOMParser.parse(new FileInputStream(setup.getBase()), "base");
+				petriNet = DOMParser.parse(new FileInputStream(baseFile), "base");
 			} catch (final Exception e) {
-				JOptionPane.showMessageDialog(null, "Error loading base model!", "Error Loading",
-				        JOptionPane.ERROR_MESSAGE);
+				System.err.println("Error loading base model!\n"+e);
 				return;
 			}
 
-			if (!setup.getModels().isDirectory()) {
-				JOptionPane.showMessageDialog(null, "Model directory is not a directory!", "Invalid Model Directory",
-				        JOptionPane.ERROR_MESSAGE);
+			if (!modelDirectory.isDirectory()) {
+				System.err.println("Model directory is not a directory!");
 				return;
 			}
 
-			final File[] files = setup.getModels().listFiles(new FilenameFilter() {
+			final File[] files = modelDirectory.listFiles(new FilenameFilter() {
 				@Override
 				public boolean accept(final File arg0, final String arg1) {
 					return arg1.endsWith("cpn");
@@ -161,7 +130,7 @@ public class Grader {
 			});
 
 			final List<PetriNet> models = new ArrayList<PetriNet>();
-			Grader.progress = 0;
+			GraderCmd.progress = 0;
 			final StringBuilder failed = new StringBuilder();
 			for (final File file : files) {
 				try {
@@ -172,15 +141,24 @@ public class Grader {
 				}
 			}
 			if (failed.length() != 0) {
-				if (JOptionPane.showConfirmDialog(null, "The following files failed loading:\n" + failed,
-				        "Error Loading", JOptionPane.OK_CANCEL_OPTION) != JOptionPane.OK_OPTION) { return; }
+				System.out.println("The following files failed loading:\n" + failed);
 			}
 
-			final Tester tester = new Tester(suite, setup.getStudentIds(), petriNet, new File(setup.getModels(),
-			        "outputs"));
-			final ResultDialog resultDialog = new ResultDialog(tester, files.length, new File(setup.getModels(), "reports"));
+			List<StudentID> studentIDs;
+			try {
+				studentIDs = getStudentIDs(idFileName);
+			} catch (FileNotFoundException e) {
+				System.err.println("Could not find student id file!\n"+e);
+				return;
+			} catch (IOException e) {
+				System.err.println("Error reading student id file!\n"+e);
+				return;
+			}
+			
+			final Tester tester = new Tester(suite, studentIDs, petriNet, new File(modelDirectory, "outputs"));
+			final ResultDialogCmd resultDialog = new ResultDialogCmd(tester, files.length, new File(modelDirectory, "reports"));
 
-			final TreeSet<StudentID> unused = new TreeSet<StudentID>(setup.getStudentIds());
+			final TreeSet<StudentID> unused = new TreeSet<StudentID>(studentIDs);
 			final Map<StudentID, Report> old = new HashMap<StudentID, Report>();
 			final Map<StudentID, File> oldfiles = new HashMap<StudentID, File>();
 			final AtomicInteger running = new AtomicInteger(0);
@@ -204,9 +182,9 @@ public class Grader {
 										resultDialog.addReport(f, r);
 									} else {
 										final Report or = old.remove(r.getStudentId());
-										Grader.markCheater(f, r);
+										GraderCmd.markCheater(f, r);
 										if (or != null) {
-											Grader.markCheater(oldfiles.get(or.getStudentId()), or);
+											GraderCmd.markCheater(oldfiles.get(or.getStudentId()), or);
 										}
 										resultDialog.addReport(f, r);
 									}
@@ -222,7 +200,7 @@ public class Grader {
 					}
 				}
 			}.start();
-			final int maxThreads = Integer.parseInt(noThreads.getText());
+			final int maxThreads = Integer.parseInt(noThreads);
 			for (final File f : files) {
 				if (resultDialog.isCancelled()) {
 					break;
@@ -241,6 +219,7 @@ public class Grader {
 					@Override
 					public void run() {
 						final Date d = new Date();
+						
 						File fDoneEarlier = new File(f.getAbsolutePath()+".done");
 						if (!fDoneEarlier.exists()) {
 							resultDialog.update(null, "Loading " + f);
@@ -249,22 +228,28 @@ public class Grader {
 								        f.getName().replace("[.]cpn$", ""));
 								try {
 	
-									final List<Report> test = tester.test(net, setup.getModels());
+									final List<Report> test = tester.test(net, modelDirectory);
 									result.add(new ResultData(f, test));
-								} catch (final Exception e2) {
+								} catch (final Throwable e2) {
 									e2.printStackTrace();
 									resultDialog.addError(f, "Error testing model! " + e2.getMessage());
 								}
-							} catch (final Exception e) {
+							} catch (final Throwable e) {
 								e.printStackTrace();
 								resultDialog.addError(f, "Error loading model! " + e.getMessage());
+	//							
+	//							Report errorReport = new Report(new StudentID(f.getName()));
+	//							errorReport.addError(e.getMessage());
+	//							List<Report> errorList = new ArrayList<Report>();
+	//							errorList.add(errorReport);
+	//							result.add(new ResultData(f, errorList));
 							}
-							Grader.incrementProgress(resultDialog);
+							GraderCmd.incrementProgress(resultDialog);
 							final long end = new Date().getTime() - d.getTime();
 							resultDialog.update(null, "Checking took " + end / 1000.0 + " seconds.");
 							writeDoneFile(f.getAbsolutePath()+".done");
 						} else {
-							Grader.incrementProgress(resultDialog);
+							GraderCmd.incrementProgress(resultDialog);
 							resultDialog.update(null, "Skipping "+f);
 						}
 						running.decrementAndGet();
@@ -282,7 +267,6 @@ public class Grader {
 				resultDialog.addError(sid);
 			}
 			resultDialog.update(null, "Done.");
-			resultDialog.setModal(true);
 
 // int lazies = 0;
 // final Map<StudentID, Integer> cheaters = new HashMap<StudentID, Integer>();
@@ -328,7 +312,7 @@ public class Grader {
 // }
 
 		}
-// System.exit(0);
+		System.exit(0);
 	}
 	
 	static void writeDoneFile(String file) {
@@ -341,6 +325,20 @@ public class Grader {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+	}
+	
+	static LinkedList<StudentID> getStudentIDs(String idFileName) throws IOException {
+		  FileInputStream fstream = new FileInputStream(idFileName);
+		  DataInputStream in = new DataInputStream(fstream);
+		  BufferedReader br = new BufferedReader(new InputStreamReader(in));
+		  String strLine;
+		  
+		  LinkedList<StudentID> ids = new LinkedList<StudentID>();
+		  while ((strLine = br.readLine()) != null)   {
+			  ids.add(new StudentID(strLine));
+		  }
+		  in.close();
+		  return ids;
 	}
 
 	static void markCheater(final File f, final Report r) {

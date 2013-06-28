@@ -8,10 +8,12 @@ import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Observable;
@@ -62,8 +64,13 @@ public class ResultDialog extends JDialog implements Observer {
 	private final DefaultTableModel tableModel;
 	JPanel cancelArea;
 	boolean cancelled = false;
+	
+	private File reportDirectory;
 
-	public ResultDialog(final Observable o, final int count) {
+	public ResultDialog(final Observable o, final int count, final File reportDirectoy) {
+		this.reportDirectory = reportDirectoy;
+		this.reportDirectory.mkdirs();
+		
 		setTitle("Results");
 		setLayout(new BorderLayout());
 		log = new JTextArea();
@@ -283,16 +290,43 @@ public class ResultDialog extends JDialog implements Observer {
 
 	public synchronized void addError(final File f, final String error) {
 		tableModel.addRow(new Object[] { f.getName(), "<none>", 0.0, Collections.singletonList(error) });
+		writeReport( f.getName(), null, new StudentID("<none>"), Collections.singletonList(error), 0.0);
 	}
 
 	public synchronized void addError(final StudentID s) {
 		tableModel.addRow(new Object[] { "<none>", s, 0.0, Collections.singletonList("No model found for S" + s) });
+		writeReport("<none>", null, s, Collections.singletonList("No model found for " + s), 0.0);
 	}
 
 	public synchronized void addReport(final File f, final Report r) {
 		tableModel.addRow(new Object[] { f.getName(), r.getStudentId(), r, r.getErrors() });
+		writeReport(f.getName(), r, r.getStudentId(), r.getErrors(), r.getResult());
 	}
 
+	public synchronized void writeReport(final String fileName, final Report r, final StudentID studentID, final List<String> errors, final double result) {
+		
+		PDFExport.ReportItem report;
+		try {
+			// file, id, score, errors
+			report = new PDFExport.ReportItem(r, studentID, fileName, errors, null);
+		} catch (final ClassCastException _) {
+			report = new PDFExport.ReportItem(null, studentID, fileName, errors, result);
+		}
+		
+		List<PDFExport.ReportItem> reports = new LinkedList<PDFExport.ReportItem>();
+		reports.add(report);
+		
+		try {
+			PDFExport.exportReports(reportDirectory, reports);
+		} catch (FileNotFoundException e) {
+			System.err.println("Could not find report directory!\n"+e);
+			e.printStackTrace();
+		} catch (IOException e) {
+			System.err.println("Could not write report!\n"+e);
+			e.printStackTrace();
+		}
+	}
+	
 	public boolean isCancelled() {
 		return cancelled;
 	}

@@ -62,20 +62,24 @@ public abstract class AbstractNode<T> implements Node<T>, Iterable<Node<T>> {
 	 */
 	@Override
 	public double getCoverage() {
-		double result = 0;
-		int count = 0;
-		for (final Node<T> child : this) {
-			result += child.getCoverage();
-			count++;
-		}
-		if (count == 0) {
-			if (expanded) {
-				return 1;
-			} else {
-				return 0;
+		try {
+			double result = 0;
+			int count = 0;
+			for (final Node<T> child : this) {
+				result += child.getCoverage();
+				count++;
 			}
+			if (count == 0) {
+				if (expanded) {
+					return 1;
+				} else {
+					return 0;
+				}
+			}
+			return result / count;
+		} catch (Throwable e) {
+			return 0;
 		}
-		return result / count;
 	}
 
 	/**
@@ -83,21 +87,25 @@ public abstract class AbstractNode<T> implements Node<T>, Iterable<Node<T>> {
 	 */
 	@Override
 	public double getTraceSatisfactionProbability() {
-		if (!valid) { return 0; }
-		double result = 0;
-		int count = 0;
-		for (final Node<T> child : this) {
-			result += child.getTraceSatisfactionProbability();
-			count++;
-		}
-		if (count == 0) {
-			if (expanded) {
-				return 1.0;
-			} else {
-				return 0.0;
+		try {
+			if (!valid) { return 0; }
+			double result = 0;
+			int count = 0;
+			for (final Node<T> child : this) {
+				result += child.getTraceSatisfactionProbability();
+				count++;
 			}
+			if (count == 0) {
+				if (expanded) {
+					return 1.0;
+				} else {
+					return 0.0;
+				}
+			}
+			return result / count;
+		} catch (Throwable e) {
+			return 0;
 		}
-		return result / count;
 	}
 
 	/**
