@@ -18,7 +18,7 @@ public class Generator {
 	public static PetriNet generate(final File dir, final PetriNetImpl model, final String secret, final StudentID id)
 	        throws OperationNotSupportedException, TransformerException, ParserConfigurationException, IOException {
 		final PetriNet signedModel = Signer.sign(model, secret, id);
-		final OutputStream outputStream = new FileOutputStream(new File(dir, model.getName().getText() + "_"
+		final OutputStream outputStream = new FileOutputStream(new File(dir, model.getName().getText() 
 		        + id.getId() + ".cpn"));
 		DOMGenerator.export(signedModel, outputStream);
 		outputStream.close();

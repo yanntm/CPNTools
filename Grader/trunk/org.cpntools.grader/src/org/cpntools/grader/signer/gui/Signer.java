@@ -14,6 +14,7 @@ import java.util.List;
 import javax.naming.OperationNotSupportedException;
 import javax.swing.JButton;
 import javax.swing.JDialog;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -33,7 +34,7 @@ import org.cpntools.grader.signer.Generator;
 /**
  * @author michael
  */
-public class Signer extends JDialog {
+public class Signer extends JFrame {
 	/**
      * 
      */
@@ -51,6 +52,7 @@ public class Signer extends JDialog {
 
 	protected Signer() {
 		setTitle("Sign Base Models");
+		addWindowListener(new org.cpntools.grader.gui.BasicWindowMonitor());
 		setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
 		setLayout(new BorderLayout());
 		final JPanel buttons = new JPanel(new FlowLayout(FlowLayout.CENTER));

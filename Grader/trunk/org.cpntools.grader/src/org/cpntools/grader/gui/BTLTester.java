@@ -29,6 +29,7 @@ import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPanel;
@@ -72,7 +73,7 @@ import org.xml.sax.SAXException;
 /**
  * @author michael
  */
-public class BTLTester extends JDialog {
+public class BTLTester extends JFrame {
 	public static class Snapshot {
 
 		private final Binding be;
@@ -161,6 +162,7 @@ public class BTLTester extends JDialog {
 	public BTLTester(final PetriNet net, final File parentFile, final boolean light) throws FileNotFoundException,
 	        NetCheckException, SAXException, IOException, ParserConfigurationException {
 		petriNet = net;
+		addWindowListener(new BasicWindowMonitor());
 		setTitle("BTL Tester - " + petriNet.getName().getText());
 		setLayout(new BorderLayout());
 		final JPanel buttons = new JPanel();

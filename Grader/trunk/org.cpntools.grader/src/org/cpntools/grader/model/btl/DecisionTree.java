@@ -28,7 +28,11 @@ public class DecisionTree<T> {
 	 * @return
 	 */
 	public double getCoverage() {
-		return root.getCoverage();
+		try {
+			return root.getCoverage();
+		} catch (Throwable e) {
+			return 0;
+		}
 	}
 
 	public Node<T> getRoot() {

@@ -18,20 +18,24 @@ public class SimpleNode<T> extends AbstractNode<T> {
 	 */
 	@Override
 	public double getSatisfactionProbability() throws Unsatisfied {
-		if (!valid) { throw new Unsatisfied(); }
-		double result = 0;
-		int count = 0;
-		for (final Node<T> child : this) {
-			result += child.getSatisfactionProbability();
-			count++;
-		}
-		if (count == 0) {
-			if (expanded) {
-				return 1.0;
-			} else {
-				return 0.0;
+		try {
+			if (!valid) { throw new Unsatisfied(); }
+			double result = 0;
+			int count = 0;
+			for (final Node<T> child : this) {
+				result += child.getSatisfactionProbability();
+				count++;
 			}
+			if (count == 0) {
+				if (expanded) {
+					return 1.0;
+				} else {
+					return 0.0;
+				}
+			}
+			return result / count;
+		} catch (Throwable e) {
+			return 0;
 		}
-		return result / count;
 	}
 }
