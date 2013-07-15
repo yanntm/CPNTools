@@ -311,6 +311,7 @@ CpnSheet: HighlightableSheet
      TabType:: GroupTab;
      SimulationLayer: SheetLayer (# #);
      simlayer: ^Layer;
+     labellayer: ^Layer;
      thePatternLayer: ^PatternLayer;
      patternSize: (# exit 42 #);
      guidelinelayer: ^Layer;
@@ -332,6 +333,11 @@ CpnSheet: HighlightableSheet
              scanElements:
                (# current: ^ContentItem;
                do mainlayer.content.scan
+                  (#
+                  do current[] -> THIS(scanElements).current[];
+                     INNER scanElements;
+                  #);
+                  labellayer.content.scan
                   (#
                   do current[] -> THIS(scanElements).current[];
                      INNER scanElements;

@@ -890,7 +890,7 @@ do getMLReserved -> reserved[];
            (if pginst.thePage.status = unchecked then
                (unchecked,checking) -> pginst.thePage.changeStatus;
 		   (ml[], theGlobals.getColorNames) -> pginst.thePage.syntaxCheck;
-		   (if (pginst.thePage.status = checked) then
+		   (if pginst.thePage.status = checked then
 		       ml[] -> pginst.thePage.checkDeclare;
 		   if);
                (if debugging then
@@ -1780,14 +1780,11 @@ do (# thePort: @integer;
       &|System
       (# temp,temp2:^text;
      theCpnWorkSpace: ^CpnWorkspace;
-     remote, extensions: ^BooleanOption;
+     remote: ^BooleanOption;
      host, runtime, image: ^text;
      port: ^IntegerObject;
-     useExtension: @boolean;
       do 
          THIS(Workspace)[] -> theCpnWorkspace[]; 
-         'extensions' -> (theCpnWorkSpace.getGlobalOptions).find -> extensions[];
-	   extensions.theValue -> useExtension;
          'remote' -> (theCpnWorkSpace.getGlobalOptions).find -> remote[];
          (if remote.theValue then
          ('host' -> (theCpnWorkSpace.getGlobalOptions).find).theValue[] -> host[];
@@ -1800,9 +1797,6 @@ do (# thePort: @integer;
          'cpnsim/cpn.ML' -> relativeFile -> cygwinify -> temp[] -> temp2[];
              ('localhost', 2098, 'cpn2000', '', './',temp[],(this(CPNet).private.timestampOption.theValue), true) -> initML;
 		 if);
-	   (if useExtension then
-	      enableExtensions;
-         if);
 	   (private.fairBEOption.thevalue, private.globalFairnessOption.thevalue) -> setFairnessOption;
          (if this(CPNet).private.timestampOption.theValue then
             'real' -> this(CPNet).private.currentTimeType[];
@@ -2130,12 +2124,19 @@ do &BendPointList[] -> new[];
    lolited: @boolean;
    loliteStyle: ^Style;
    hiliteStyle: ^Style;
+   theExternalLabels: @ExternalLabelList;
+
+   init:< (#
+   do
+	  theExternalLabels.init;
+	  #);
    
    (*This apparentyly doesn't work for guidelines*)
    getElementsToHiOrLowLiteWithThisElement:
      (# theList: ^PageElementList;
      do &PageElementList[] -> theList[];
         (gethierarchyinfos).scan(# do current[] -> theList.append; #);
+        (getExternalLabels).scan(# do current[] -> theList.append; #);
         THIS(PageElement)[] -> theList.append;
      exit theList[]
      #);
@@ -2171,6 +2172,9 @@ do (if qerror[] <> NONE then
    
 -- PageElementSetCPNPage:doPart --
 do theCPNPage[] -> private.theCPNPage[];
+   private.theExternalLabels.scan (#
+     do theCPNPage[] -> current.setCPNPage;
+   #);
    inner;
 
 -- PageElementGetCPNPage:doPart --
@@ -2226,8 +2230,15 @@ do &InscriptionList[] -> theList[];
 do &HierarchyInfoList[] -> theList[];
    INNER;
 
+-- PageElementGetExternalLabels: doPart --
+do private.theExternalLabels -> theList[];
+   INNER;
+
 -- PageElementGetSlaves: doPart --
 do &PageElementList[] -> theList[];   
+   private.theExternalLabels.scan (#
+   do current[] -> theList.append;
+   #);
    INNER;
    
 -- PageElementGetRegions:doPart --
@@ -2236,6 +2247,10 @@ do (getInscriptions).scan
    do current[] -> theList.append;
    #);
    (gethierarchyinfos).scan
+   (#
+   do current[] -> theList.append;
+   #);
+   (getExternalLabels).scan
    (#
    do current[] -> theList.append;
    #);
@@ -2294,10 +2309,12 @@ do (if linecolor[] <> NONE then
    strokeWidth -> new.strokeWidth;
    dx -> new.dx;
    dy -> new.dy;
+
    INNER;
    
 -- PageElementinit: doPArt --
-do black[] -> lineColor[];
+do private.init;
+   black[] -> lineColor[];
    white[] -> fillColor[];
    black[] -> textcolor[];
    'Solid' -> linetype[];
@@ -2335,6 +2352,14 @@ do x -> xmin -> xmax;
 do (# tmpX1,tmpY1,tmpX2,tmpY2: @Real
     do bounds -> (boundX1,boundX2,boundY1,boundY2);
        (gethierarchyinfos).scan
+       (#
+       do current.recursiveBounds -> (tmpX1,tmpX2,tmpY1,tmpY2);
+          (boundX1,tmpX1) -> min -> boundX1;
+          (boundY1,tmpY1) -> min -> boundY1;
+          (boundX2,tmpX2) -> max -> boundX2;
+          (boundY2,tmpY2) -> max -> boundY2;
+       #);
+       (getExternalLabels).scan
        (#
        do current.recursiveBounds -> (tmpX1,tmpX2,tmpY1,tmpY2);
           (boundX1,tmpX1) -> min -> boundX1;
@@ -2639,3 +2664,11 @@ do
 	 op[] -> options.add;
    if);
    #);
+
+-- NodeAddExternalLabel: DoPart --
+do theExternalLabel[] -> private.theExternalLabels.append;
+   THIS(PageElement)[] -> changed;
+
+-- NodeRemoveExternalLabel: DoPart --
+do theExternalLabel[] -> private.theExternalLabels.at -> private.theExternalLabels.delete;
+   THIS(PageElement)[] -> changed;

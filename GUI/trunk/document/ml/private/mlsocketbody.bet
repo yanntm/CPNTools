@@ -545,13 +545,15 @@ do (if MLPrivate.currentErrorHandler[] <> NONE then
    Continue;
    
 --- MLSocketLocalException:DoPart ---
-do (if THIS(LocalException)## = LocalException## then
+do 
+   (if THIS(LocalException)## = LocalException## then
        THIS(MLSocket).onError;
     else
        failureTrace->termCode;
        INNER;
        (if not continue then
            '**** Exception processing\n'->msg.prepend;
+   'Kill' -> putline;
            (termCode, msg[])->Stop;
        if);
    if);

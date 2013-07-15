@@ -310,6 +310,7 @@ MLSetExtensionLocation: CPNMLCommand
 
 MLPingExtension: CPNMLCommand
 (# 
+	couldNotConnect:< (# do INNER #);
 	Send::
        (# 
        do (if debugging then 'mlcommands.bet: MLPingExtension: Ping extension'->debugDocument; if);
@@ -324,7 +325,8 @@ MLPingExtension: CPNMLCommand
      onError::
        (#
 		 do (if debugging then 'Ping extension (FAILED)'->debugDocument; if);
-		    true->continue;
+		    true->continue-> handled;
+		    couldNotConnect;
        #);
  #);
 

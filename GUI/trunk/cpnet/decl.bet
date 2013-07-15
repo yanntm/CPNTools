@@ -286,6 +286,34 @@ ColorSetDecl: Decl
             <<SLOT mlIntColorPutOnBIS:doPart>>
             #);
        #);
+      IntInfColorSetDecl: InternalDecl
+       (# low: ^Text;
+          high: ^Text;
+          
+          print:: 
+            (# 
+            <<SLOT mlIntInfColorPrint:doPart>>  
+            #);
+          
+          putOnBIS:: 
+            (# 
+            <<SLOT mlIntInfColorPutOnBIS:doPart>>
+            #);
+       #);
+       TimeColorSetDecl: InternalDecl
+       (# low: ^Text;
+          high: ^Text;
+          
+          print:: 
+            (# 
+            <<SLOT mlTimeColorPrint:doPart>>  
+            #);
+          
+          putOnBIS:: 
+            (# 
+            <<SLOT mlTimeColorPutOnBIS:doPart>>
+            #);
+       #);
      
      StringColorSetDecl: InternalDecl
        (# low: ^Text;

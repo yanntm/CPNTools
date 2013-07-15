@@ -1073,11 +1073,14 @@ CPNetLoader: Loader
                                                      restart l;
                                                  if);
                                           if);
+							'arrow' -> current.lookupInt -> theLineShape.arrow;
+							'curvature' -> current.lookupInt -> theLineShape.curvature;
                                           theLineShape[]->obj.theShape[];
                                        //'box'->current.tag.equalNCS then
                                           &obj.BoxShape[]->theBoxShape[];
                                           'w'->current.lookupReal->scale->theBoxShape.width;
-                                          'h'->current.lookupReal->scale->theBoxShape.height;
+							'h'->current.lookupReal->scale->theBoxShape.height;
+							'curvature' -> current.lookupInt -> theBoxShape.curvature;
                                           theBoxShape[]->obj.theShape[];
                                        //'ellipse'->current.tag.equalNCS then
                                           &obj.EllipseShape[]->theEllipseShape[];
@@ -1962,6 +1965,34 @@ GlobalsLoader: Loader
                                                   #);
                                                #);
                                           #);
+                                         
+                                        IntInfColorSetDeclLoader: InternalDeclLoader
+                                          (# Type:: obj.IntInfColorSetDecl;
+                                             elmName:: (# do 'intinf' -> value[]; #);
+                                             load::
+                                               (#
+                                               do elm.scanElements
+                                                  (# 
+                                                  do (if 'with'->current.tag.equal then
+                                                         current.scanElements
+                                                         (# 
+                                                         do (if 'ml'->current.tag.equal then
+                                                                (if obj.low[] = NONE then
+                                                                    current.getData->obj.low[];
+                                                                 else
+                                                                    current.getData->obj.high[];
+                                                                if);
+                                                            if);
+                                                         #);
+                                                     if);         
+                                                  #);
+                                               #);
+                                          #);
+                                         
+                                        TimeColorSetDeclLoader: InternalDeclLoader
+                                          (# Type:: obj.TimeColorSetDecl;
+                                             elmName:: (# do 'time' -> value[]; #);
+                                          #);
                                         
                                         RealColorSetDeclLoader: InternalDeclLoader
                                           (# Type:: obj.RealColorsetDecl;
@@ -2204,6 +2235,8 @@ GlobalsLoader: Loader
                                           do &UnitColorSetDeclLoader[] -> register;
                                              &BoolColorSetDeclLoader[] -> register;
                                              &IntColorSetDeclLoader[] -> register;
+                                             &IntInfColorSetDeclLoader[] -> register;
+                                             &TimeColorSetDeclLoader[] -> register;
                                              &RealColorSetDeclLoader[] -> register;
                                              &StringColorSetDeclLoader[] -> register;
                                              &EnumColorSetDeclLoader[] -> register;
@@ -2572,8 +2605,36 @@ FolderSaver: NotifierSaver
      'zorder' -> theXML.createElement -> zorderElm[] -> elm.addElement;
      obj.zorder.scan
      (# posElm: ^theXML.Element;
-     do 'position' -> theXML.createElement -> posElm[] -> zorderElm.addElement;
-        ('value',current[] -> obj.sheets.getIndexOf) -> posElm.createIntAttribute;
+	  theCPNSheet: ^CPNSheet;
+	  ignore: @boolean;
+	  ignoredBelow: (#
+		  theSheet: ^sheet;
+		  result:@integer;
+		  acpnsheet: ^CPNSheet;
+		  enter theSheet[]
+		  do
+		  L: obj.sheets.scan (#
+		     do (if current[] = theSheet[] then leave L; if);
+			  (if current## <= CPNSheet## then
+				  current[] -> aCPNSheet[];
+				  (if aCPNSheet.content.thePage.isCanvas then
+					  result + 1 -> result;
+				  if);
+			  if);
+		  #);
+		  exit result
+		  #);
+	  do false -> ignore;
+	     (if current## <= CPNSheet## then
+              current[] -> theCPNSheet[];
+		  (if theCPNSheet.content.thePage.isCanvas then
+		     true -> ignore;
+		  if);
+	     if);
+	     (if not ignore then 
+	         'position' -> theXML.createElement -> posElm[] -> zorderElm.addElement;
+		   ('value', (current[] -> obj.sheets.getIndexOf) - (current[] -> ignoredBelow)) -> posElm.createIntAttribute;
+	     if);
      #);
   #);
 
@@ -2602,30 +2663,41 @@ ToolSheetLoader: Loader
        (# theType: ^Text;
           theCPNWorkspace: ^CPNWorkspace;
           theCollection: ^ToolCollection;
+	    theCollectionKey: ^text;
        do &ToolSheet[] -> obj[];
           obj.init;
           this(Workspace)[] -> theCPNWorkspace[];
           
-          'collection' -> elm.lookupText -> theCPNWorkspace.theToolCollectionList.lookup -> theCollection[];
+          'collection' -> elm.lookupText -> theCollectionKey[];
+	    (if theCollectionKey[] <> NONE then
+	    theCollectionKey[] -> theCPNWorkspace.theToolCollectionList.lookup -> theCollection[];
+	    (if theCollection[] <> NONE then
           theCollection.onChanged;
           theCollection[] -> obj.setContent;
           obj.toptab.label[] -> theCPNWorkspace.theIndex.getShortName -> obj.toptab.label[];
           obj.toptab.changed;
+	    if);
+	    if);
        #);
   #);
 
 ToolSheetSaver: NotifierSaver
   (# Type:: ToolSheet;
      elmName:: (# do 'toolsheet' -> value[]; #);
+     found: @boolean;
   do (# theCPNWorkspace: ^CPNWorkspace;
      do this(Workspace)[] -> theCPNWorkspace[];
         theCPNWorkspace.theToolCollectionList.scanAssociations
         (#
         do (if e[] = obj.content[] then
+	     (if (not (k.length >= 10)) OR (NOT ('extension.' -> ((1, 10) -> k.sub).equal)) then
                ('collection',k[]) -> elm.createTextAttribute;
+		   true -> found;
            if);
+	     if);
         #);
      #);
+  exit found
   #);
 
 CpnSheetSaver: SheetSaver
@@ -2644,17 +2716,31 @@ CpnBinderSaver: FolderSaver
   (# Type::< CpnBinder;
      elmName:: (# do 'cpnbinder' -> value[]; #);
   do obj.sheets.scan
-     (#
+     (# found: @boolean;
      do (if true
          // current## <= CpnSheet## then
-            current[] -> CpnSheetSaver -> sheetsElm.addElement;
+	      (# theCPNSheet: ^CPNSheet;
+		do current[] -> theCPNSheet[];
+               (if not theCPNSheet.content.thePage.isCanvas then
+		       current[] -> CpnSheetSaver -> sheetsElm.addElement;
+		   if);
+		#);
          // current## <= TextSheet## then
             current[] -> TextSheetSaver -> sheetsElm.addElement;
          // current## <= ToolSheet## then
-            current[] -> ToolSheetSaver -> sheetsElm.addElement;
+	      (# newElm: ^theXML.Element;
+		   found: @boolean;
+		do current[] -> ToolSheetSaver -> (newElm[], found);
+		   (if found then
+		      newElm[] -> sheetsElm.addElement;
+	         if);
+		#);
         if);
      #);
-  #);
+     (if sheetsElm.children[] = NONE then
+         'emptybinder' -> elm.tag[]
+     if);
+   #);
 
 IndexNodeSaver: Saver
   (# Type:: IndexNode;

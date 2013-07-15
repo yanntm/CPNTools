@@ -1,0 +1,126 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2013 AIS Group, Eindhoven University of Technology         *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../cpnet';
+
+-- ExternalLabelPrivate:Descriptor --
+(# theLabel: ^Text;
+   theItem: ^TextItem;
+   theSnap: @integer;
+   thePageElement: ^PageElement;
+   init:
+     (# enter theSnap
+     do &Text[] -> theLabel[];
+        &TextItem[] -> theItem[];
+        theItem.init;
+     #);
+#)
+
+-- ExternalLabelBounds:doPart --
+do present;
+   presentation.bounds -> (xmin,xmax,ymin,ymax);
+   
+-- ExternalLabelOnChanged:doPart --
+do (if presentation[] <> NONE then
+       update;
+   if);
+   (if private.thePageElement[] <> NONE then (* if it is in a hand *)
+       THIS(ExternalLabel)[] -> private.thePageElement.changed;
+   if);
+   INNER;
+   
+   
+-- ExternalLabelClone:doPart --
+do (if private.theLabel[] <> NONE then
+       private.theLabel.copy -> new.setText;
+   if);
+   INNER;
+
+-- ExternalLabelSetText:doPart --
+do theText[] -> private.theLabel[] -> private.theItem.content[];
+   update;
+   
+-- ExternalLabelGetText:doPart --
+do private.theLabel[] -> theText[];
+   
+-- ExternalLabelInit:doPart -- 
+do theSnap -> private.init;
+   red[] -> StrokeStyle -> private.theItem.theStyle[];
+   theRect.init;
+   &CompositeStyle[] -> theCompStyle[] -> theRect.theStyle[];
+   red[] -> StrokeStyle -> theCompStyle.add;
+   white[] -> RectColor[];
+   RectColor.lighten -> FillStyle -> theCompStyle.add;
+   this(ExternalLabel)[] -> private.theItem.owner[];
+   this(ExternalLabel)[] -> theRect.owner[];
+   INNER;
+
+--ExternalLabelUpdate:doPart--
+do (*presentation.clear;*)
+   theRect[] -> presentation.add;
+   private.theLabel[] -> private.theItem.content[];
+   (# setRect: 
+        (# theText: ^Text;
+        enter theText[] 
+        do theText[] -> arial.measureText -> (w, h);
+           (w + 5, h/2 + 5) -> (theRect.width, theRect.height);
+        #);
+   do 
+          (if private.theItem.content[] <> none then
+              private.theItem.content[] -> setRect;
+           else
+              14 -> theRect.width;
+              9 -> theRect.height;
+          if);
+   #);
+   - theRect.width/2 + 2 -> private.theItem.x;
+   theRect.height/2 - 2 -> private.theItem.y;
+   private.theItem[] -> presentation.add;
+
+-- ExternalLabelDefaultSnap:doPart --
+do theRect.width -> w;
+   theRect.height -> h;
+   private.theSnap -> snap_id;
+   INNER;
+
+-- PageElementCreateExternalLabel: dopart --
+do ('creating a label from something', theText[] <> NONE) -> assert (# #);
+   &ExternalLabel[] -> theExternalLabel[];
+   theLocation -> theExternalLabel.init;
+   theText[] -> theExternalLabel.setText;
+   this(PageElement)[] -> theExternalLabel.setPageElement;
+   getCPNPage -> theExternalLabel.setCPNPage;
+   theExternalLabel.defaultSnap;
+
+-- ExternalLabelDelete: DoPart --
+do
+
+-- ExternalLabelGetPageElement: DoPart --
+do private.thePageElement[] -> thePageElement[];
+
+-- ExternalLabelSetPageElement: DoPart --
+do thePageElement[] -> private.thePageElement[];
+
+-- ExternalLabelDefaultSnapToElement:doPart --
+do private.thePageElement[] -> elm[];
+
+-- ExternalLabelSnap:doPart --
+do THIS(ExternalLabel)[] -> private.thePageElement.snapTo -> (dx, dy);
+
+

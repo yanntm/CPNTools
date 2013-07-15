@@ -329,6 +329,40 @@ do 'int' -> output.puttext;
 do 3 -> bis.putInt;
    low[] -> bis.putString;
    high[] -> bis.putString;
+    
+-- mlIntInfColorPrint:doPart --
+do 'intinf' -> output.puttext;
+   (if low[] <> NONE then
+       ' with '-> output.puttext;
+       low[] -> output.PutText;
+       '..' -> output.PutText;
+       high[] -> output.PutText;
+   if);
+      
+-- mlIntInfColorPutOnBIS:doPart --
+do 24 -> bis.putInt;
+   low[] -> bis.putString;
+   high[] -> bis.putString;
+    
+-- mlRealColorPrint:doPart --
+do 'real' -> output.puttext;
+   (if low[] <> NONE then
+       ' with '-> output.puttext;
+       low[] -> output.PutText;
+       '..' -> output.PutText;
+       high[] -> output.PutText;
+   if);
+      
+-- mlRealColorPutOnBIS:doPart --
+do 4 -> bis.putInt;
+   low[] -> bis.putString;
+   high[] -> bis.putString;
+  
+-- mlTimeColorPrint:doPart --
+do 'time' -> output.puttext;
+      
+-- mlTimeColorPutOnBIS:doPart --
+do 14 -> bis.putInt;
    
 -- mlStringColorPrint:doPart --
 do 'string' -> output.PutText;
