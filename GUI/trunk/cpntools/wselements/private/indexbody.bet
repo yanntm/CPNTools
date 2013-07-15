@@ -331,6 +331,100 @@ do (if net[]<>NONE then
            '' -> theTip[];
        if);
        net.name->theTip.puttext;
+	 (if net.getOutputDir <> NONE then
+		 '\nLogging to: ' -> theTip.puttext;
+		 net.getOutputDir -> theTip.puttext;
+	 if);
+	 (# p, t, a, pi, ti, ai: @integer;
+	    c, ci, pp, ppi: @integer;
+	    cs, v, m, d: @integer;
+	 do 
+	    net.theGlobals.scanDeclTree (#
+	       theVarDecl: ^VarDecl;
+	    do d + 1 -> d;
+	       (if current## <= ColorSetDecl## then
+		    cs + 1 -> cs;
+		 if);
+	       (if current## <= VarDecl## then
+		    current[] -> theVarDecl[];
+		    v + theVarDecl.idlist.size -> v;
+		 if);
+	    #);
+
+          net.theGlobalMonitor.scanMonitorTree (#
+	    do m + 1 -> m;
+	    #);
+
+	    net.scanCPNPages (#
+	       instances: @integer;
+		 page: ^CPNPage;
+	    do current[] -> page[];
+	       0 -> instances;
+	       current.scanInstances (#
+	       do instances + 1 -> instances;
+	       #);
+	       pp + 1 -> pp; ppi + instances -> ppi;
+	       current.scanTransitions (#
+		 do (if current.isRegularTransition then
+			     t + 1 -> t; ti + instances -> ti;
+			     current.scanConstraintInscriptions (#
+				     do c + 1 -> c; ci + instances -> ci;
+			     #);
+		    if);
+		 #);
+	       current.scanPlaces (#
+		 do p + 1 -> p;
+		    (if ((current.getPortType = NONE) or (page.isPrime)) AND NOT (current.isFusionPlace) then
+		        pi + instances -> pi;
+		    if);
+		 #);
+	       current.scanArcs (#
+		 do a + 1 -> a; 
+		    (if NOT ((current.getTransEnd).isSubstitutionTransition) then
+		          ai + instances -> ai;
+		    if);
+		 #);
+	       current.scanConstraintArcs (#
+		 do c + 1 -> c; ci + instances -> ci;
+		 #);
+		 current.scanFusionPlaces (# #);
+	    #);
+	    net.scanFusionSets (# do pi + 1 -> pi; #);
+
+	    '\n' -> theTip.puttext;
+	    '\nPlaces: ' -> theTip.putText;
+	    p -> theTip.putint;
+	    '; Transitions: ' -> theTip.puttext;
+	    t -> theTip.putint;
+	    '; Arcs: ' -> theTip.puttext;
+	    a -> theTip.putint;
+
+	    '\nPlace instances: ' -> theTip.putText;
+	    pi -> theTip.putint;
+	    '; Transition instances: ' -> theTip.puttext;
+	    ti -> theTip.putint;
+	    '; Arc instances: ' -> theTip.puttext;
+	    ai -> theTip.putint;
+
+          '\nConstraints: ' -> theTip.puttext;
+	    c -> theTip.putint;
+          '; Constraint instances: ' -> theTip.puttext;
+	    ci -> theTip.putint;
+
+          '\nPages: ' -> theTip.puttext;
+	    pp -> theTip.putint;
+          '; Page instances: ' -> theTip.puttext;
+	    ppi -> theTip.putint;
+          '; Monitors: ' -> theTip.puttext;
+	    m -> theTip.putint;
+
+          '\nDeclarations: ' -> theTip.puttext;
+	    d -> theTip.putint;
+          '; Types: ' -> theTip.puttext;
+	    cs -> theTip.putint;
+          '; Variables: ' -> theTip.puttext;
+	    v -> theTip.putint;
+	 #);
    if);
    
 -- CPNIndexNetNodeGetInstanceNodePosition:doPart --
@@ -1017,6 +1111,7 @@ do THIS(DeclarationNode)[] -> content.attach;
    
 -- CPNIndexToolBoxNodeInit:doPart --
 do THIS(ToolBoxNode)[] -> tools.attach;
+   true -> expanded;
    tools.tools.scan
    (# node: ^ToolNode;
    do &ToolNode[] -> node[];

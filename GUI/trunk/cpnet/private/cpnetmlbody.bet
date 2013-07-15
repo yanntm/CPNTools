@@ -350,6 +350,10 @@ do setBusyCursor; (*** LOCK-INTERACTION ***)
         if);
         
      #);
+
+        (if ML.Initialized then
+         enableExtensions;
+	   if);
    
    unsetBusyCursor; (*** UNLOCK-INTERACTION ***)
    'done initializing'->debugMLInit;
@@ -360,14 +364,50 @@ do
 (# host: ^text;
    port: ^IntegerObject;
    theCpnWorkSpace: ^CpnWorkspace;
+   external: ^booleanObject;
+   retries: @integer;
 do 
    THIS(Workspace)[] -> theCpnWorkspace[]; 
    ('exthost' -> (theCpnWorkSpace.getGlobalOptions).find).theValue[] -> host[];
    ('extport' -> (theCpnWorkSpace.getGlobalOptions).find).theValue[] -> port[];
-   (ML[], host[], port) -> MLSetExtensionLocation;
-   ML[] -> MLPingExtension;
-
-   
+   ('remoteExtensions' -> (theCpnWorkSpace.getGlobalOptions).find).theValue[] -> external[];
+   (if external then
+       0 -> retries;
+   else
+       10 -> retries;
+   if);
+   (if external then
+	   (ML[], host[], port) -> MLSetExtensionLocation;
+   else
+	   (ML[], 'localhost', 1998) -> MLSetExtensionLocation;
+   if);
+   L: (# r: @boolean;
+         daemon: ^process;
+   do  false -> r;
+       ML[] -> MLPingExtension (#
+	 couldNotConnect:: (# t: ^text;
+	 do 
+	    (if not external and (retries > 0) then
+	           (if daemon[] = NONE then
+		          &process[] -> daemon[];
+                      'java' -> daemon.init;
+			    '-jar' -> daemon.argument.append;
+			    &text[] -> t[];
+                            '"' -> t.puttext;
+			    'extensions/SimulatorExtensions.jar' -> relativefile -> t.puttext;
+                            '"' -> t.puttext;
+			    t[] -> daemon.argument.append;
+			    '-s' -> daemon.argument.append;
+			    daemon.start;
+		     if);
+		     1 -> sleep;
+		     retries - 1 -> retries;
+		     true -> r;
+	    if);
+	 #);
+	 #);
+	 (if r then restart L; if);
+	 #);
 #);
 
  
@@ -381,11 +421,23 @@ do (if debugging then
    if);
    true -> continue;  
    
--- MLCPNetCompileDeclarationSend:DoPart --  
+-- MLCPNetExportPNMLSend:DoPart --  
+do 10000 -> bis.putInt; (* external *)
+   10003 -> bis.putInt; (* export *)
+   1 -> bis.putInt; (* cpn2pnml *)
+   THIS(CPNet)[] -> ExportXML -> bis.putString;
+   
+-- MLCPNetExportPNMLReceive:DoPart --  
+do bis.getString -> result[];
+
+-- MLCPNetExportPNMLonError:DoPart --  
+do NONE -> result[];
+
+-- MLCPNetCompileDeclarationSend:DoPart --
 do 300 -> bis.putInt;
    1 -> bis.putInt;
    bis[] -> declaration.putOnBIS;
-   
+
 -- MLCompileDeclarationReceive:DoPart --
 do (# theNet: ^CPNet;
       decls: @Integer;
@@ -1305,7 +1357,7 @@ do (# numerrors, decls: @Integer;
                       bis.getString -> theFusionSet.scanFusionSet
                       (# txt: ^Text; enter txt[] do txt[] -> (current.getInitMark).setAST #);
                    else
-                      'unknow id return in AST processing ' -> FIXME;
+                      'unknown id return in AST processing ' -> FIXME;
                   if);
               if);
      for);

@@ -1423,6 +1423,23 @@ do
 -- mlCPNPageCheckDeclareError: DoPart --
 do
 
+-- mlCheckDeclare: DoPart --
+do (# constraintsFound: @boolean;
+  do 
+   THIS(CPNPage).private.constraintArcs.size > 0 -> constraintsFound;
+   (if NOT constraintsFound then
+   search: scanTransitions (#
+   do current.scanConstraintInscriptions (#
+      do true -> constraintsFound;
+	   leave search;
+      #);
+   #);
+   if);
+   (if constraintsFound then
+	    theML[] -> checkDeclareConstraints;
+   if);
+#);
+
 -- mlCPNPageCheckDeclareSend: DoPart --
 do (#
    foundConstraintInscriptions: @ConstraintInscriptionList;

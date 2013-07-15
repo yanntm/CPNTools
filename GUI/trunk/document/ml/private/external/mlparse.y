@@ -57,7 +57,7 @@ extern FILE *yyout;
 
 %token tVAR tMSVAR tGLOBREF tUSE tCOLOR tMS tINVARIANT tCHANNEL
 %token tERROR tDOTDOT 
-%token tWITH tDECLARE tTIMED tUNIT tINT tBOOL
+%token tWITH tDECLARE tTIMED tUNIT tINT tBOOL tTIME tINTINF
 %token tREAL tSTRING tINDEX tPRODUCT tRECORD tLIST
 %token tUNION tSUBSET tAND tBY tHACK
 
@@ -140,6 +140,10 @@ csspec : tUNIT { starttag("unit", 1); } withunitopt
        | tBOOL { starttag("bool", 1); } withboolopt
          { closetag(); }
        | tINT { starttag("int", 1); } withintopt
+         { closetag(); } 
+       | tINTINF { starttag("intinf", 1); } withintopt
+         { closetag(); } 
+       | tTIME { starttag("time", 1); }
          { closetag(); } 
        | tREAL { starttag("real", 1); } withrealopt
          { closetag(); }

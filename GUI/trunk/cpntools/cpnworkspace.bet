@@ -605,7 +605,7 @@ CPNWorkSpace: Workspace
 	    THIS(Workspace)[] -> background.owner[];
           (#
 		    entry: @diskentry;
-		do  init;
+		do  
 		    'images/logoblue.png' -> relativeFile -> entry.path;
 		    (if entry.exists then
 		          &ImageItem[] -> logo[];
@@ -630,7 +630,7 @@ CPNWorkSpace: Workspace
        #);
      init::<
        (#
-	 do (0xa1 / 255, 0xca / 255, 0xf1 / 255) -> &Color -> backgroundColor[];
+		 do (0xa1 / 255, 0xca / 255, 0xf1 / 255) -> &Color -> backgroundColor[];
        #);   
      onSheetDropped:: (# <<SLOT OnSheetDropped:doPart>> #);     
      onKeyDown::

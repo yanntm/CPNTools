@@ -384,6 +384,7 @@ do (if presentation[] <> NONE then
 do ('source[] <> NONE', source[] <> NONE) -> assert (# #);
    (# theInscription: ^Inscription;
       theHierarchyInfo: ^HierarchyInfo;
+      theExternalLabel: ^ExternalLabel;
    do (if source[] = THIS(Node)[] then (* we move this node *)
            formatRegions;
       if);
@@ -396,6 +397,11 @@ do ('source[] <> NONE', source[] <> NONE) -> assert (# #);
           source[] -> theHierarchyInfo[];
           theHierarchyInfo.x - x -> theHierarchyInfo.dx;
           theHierarchyInfo.y - y -> theHierarchyInfo.dy;
+      if);
+      (if source## <= ExternalLabel## then (* we move the hierarchyinfo *)
+          source[] -> theExternalLabel[];
+          theExternalLabel.x - x -> theExternalLabel.dx;
+          theExternalLabel.y - y -> theExternalLabel.dy;
       if);
    #);
    INNER;
@@ -419,36 +425,6 @@ do 'Nodeonadded: should never be called ' -> debugtemp;
 (*      if);*)
 (*   #);*)
    INNER;
-
--- NodeformatInscriptions: doPart --
-do (# anchors: ^PointList;
-      pos: ^Point2d;
-   do getAnchors -> anchors[];
-      (getInscriptions).scan
-      (# 
-      do (if current.snap_id <> 0 then
-             current.snap_id -> anchors.get -> pos[];
-             (pos.x, pos.y) -> current.position;
-          else
-             (x + current.dx, y + current.dy) -> current.position;
-         if);
-      #);
-   #);
-
--- NodeformatHierarchyInfos: doPart --
-do (# anchors: ^PointList;
-      pos: ^Point2d;
-   do getAnchors -> anchors[];
-      (getHierarchyinfos).scan
-      (# 
-      do (if current.snap_id <> 0 then
-             current.snap_id -> anchors.get -> pos[];
-             (pos.x, pos.y) -> current.position;
-          else
-             (x + current.dx, y + current.dy) -> current.position;
-         if);
-      #);
-   #);
 
 -- NodeSnapCollectSnapList:doPart -- 
 do (if snaplist[]=NONE then

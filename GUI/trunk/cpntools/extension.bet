@@ -1,0 +1,92 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2013 AIS Group, Eindhoven University of Technology         *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../cpnet/cpnet';
+INCLUDE 'cpntools';
+INCLUDE 'instruments/binderinstruments';
+INCLUDE 'instruments/extensioninstruments';
+
+-- CPNetRegisterExtensionInstrument: DoPart --
+do (# w: ^program;
+do THIS(Workspace)[] -> w[];
+   (# cell: ^ToolCell; instrument: ^w.ExtensionInstrument;
+	theCollection: ^ToolCollection;
+	fullKey: ^text;
+	xmax, ymax, ytmp: @integer;
+   do &text[] -> fullKey[];
+      extension -> fullKey.putInt;
+      '.' -> fullKey.puttext;
+	key[] -> fullKey.puttext;
+	(if (fullKey[] -> w.theInstrumentList.lookup) = NONE then
+      &ToolCell[] -> cell[];
+      &w.ExtensionInstrument[] -> instrument[];
+      (extension, key[], name[], toolTip[], targetType) -> instrument.init;
+	(fullKey[], instrument[]) -> w.theInstrumentList.associate;
+      (instrument[], key[]) -> cell.init;
+      toolBox[] -> w.theToolCollectionList.lookup -> theCollection[];
+	(if theCollection[] = NONE then
+	   &text[] -> fullKey[];
+	   'extension.' -> fullKey.puttext;
+	   toolBox[] -> fullKey.puttext;
+	   fullKey[] -> w.theToolCollectionList.lookup -> theCollection[];
+	if);
+	(if theCollection[] = NONE then
+	   &w.CPNToolCollection[]->theCollection[];
+	   theCollection.init;
+	   toolBox[] -> theCollection.name[] -> theCollection.helpname[];
+	   PaletteMode -> theCollection.mode;
+	   (fullKey[], theCollection[]) -> w.theToolCollectionList.associate;
+	   theCollection[] -> w.theToolBox.add;
+	   cell[] -> theCollection.add;
+      else
+	   -10000 -> xmax -> ymax;
+	   theCollection.cells.scan (# x, y: @integer;
+         do current.position -> (x, y);
+	      (if x > xmax then x -> xmax; if);
+	      (if y > ymax then y -> ymax; if);
+         #);
+	   theCollection.cells.scan (# x, y: @integer;
+         do current.position -> (x, y);
+	      (if x = xmax then
+	      (if y > ytmp then y -> ytmp; if);
+		if);
+         #);
+	   (if ymax = ytmp then
+		   (xmax + cell.width, 0) -> cell.position;
+	   else
+		   (xmax, ytmp + cell.height) -> cell.position;
+	   if);
+	   cell[] -> theCollection.add;
+
+	   folderManager.theToolLayer.folders.scan (#
+	      theFolder: ^Folder;
+	   do current[] -> theFolder[];
+	      theFolder.sheets.scan (#
+	   do 
+	      (if current.content[] = theCollection[] then
+		   current[] -> qua (# as:: ToolSheet do thisObj.layoutContent; #);
+		   current.changed;
+		   theFolder.arrangeSheets;
+	      if);
+	      #);
+	   #);
+	if);
+	if);
+#);
+#);

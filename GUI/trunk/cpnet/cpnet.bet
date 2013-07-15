@@ -73,6 +73,7 @@ BODY 'private/cpnetabstracttransitiondialogbody';
 BODY 'private/cpnetbindingdialogbody';
 BODY 'private/cpnetportsocketdialogbody';
 BODY 'private/cpnetcpnpagebody';
+BODY 'private/cpnetexternallabelbody';
 BODY 'private/guidelinebody';
 BODY 'private/cpnetgroup';
 BODY 'private/cpnetplacebody';
@@ -261,6 +262,7 @@ PageElementList: SmartList
        <<SLOT PageElementListSetCPNPage:DoPart>>
        #);
   #);
+ExternalLabelList: List (# Element:: ExternalLabel; #);
 HierarchyInfoList: List (# Element:: HierarchyInfo; #);
 HighlightableList: List (# Element:: Highlightable; #);
 PageInstanceList: List (# Element:: PageInstance #);
@@ -334,8 +336,10 @@ Aux: GuideLineSnapable
        #);
 
      Shape: 
-       (# width, height: @Real;
-          snaplist: ^Pointlist;
+     (# width, height: @Real;
+	    curvature: @Real;
+	    snaplist: ^Pointlist;
+	    arrow: @integer;
           snap:<
             (# dx,dy : @Real;
                snappedDistance: @Real;
@@ -360,7 +364,8 @@ Aux: GuideLineSnapable
           makeShape:< 
             (# ItemType:< Item;
                theItem: ^ItemType;
-               theStyle: ^BasicStyle;
+		   theStyle: ^BasicStyle;
+		   theCompositeStyle: ^CompositeStyle;
             <<SLOT AuxShapemakeShape:doPart>>
             exit theItem[]
             #);
@@ -386,7 +391,7 @@ Aux: GuideLineSnapable
 
      BoxShape: Shape
        (# makeShape::< 
-            (# ItemType:: Rect;
+            (#
             <<SLOT AuxBoxShapemakeShape:doPart>>
             #);
           getAnchors::<
@@ -430,6 +435,17 @@ Aux: GuideLineSnapable
 
      theShape: ^Shape;
 
+     moving: @boolean;
+
+     startMove::< (#
+     do true -> moving;
+        INNER;
+     #);
+
+     stopMove::< (#
+     do false -> moving;
+        INNER;
+     #);
      
      makeShape:< 
        (# theItem: ^Item;
@@ -779,13 +795,16 @@ CPNet: Highlightable
 	    // 101 then
 	       (# extId: @integer;
 		    extName: ^text;
-		    noOptions: @integer;
+		    noOptions, noInstruments: @integer;
 		    extensionNode: ^OptionList;
 		    prefix: @text;
 		    tag: ^text;
 		    key: ^text;
-		    theType: @integer;
+		    theType, theTargetType: @integer;
 		    theOName: ^text;
+		    theToolbox: ^text;
+		    theIName: ^text;
+		    theITip: ^text;
 		    theOption: ^Option;
 		 do 
 		    bis.getInt -> extId;
@@ -816,11 +835,247 @@ CPNet: Highlightable
 			    theOption.init;
 			    theOption[] -> extensionNode.add;
 		    for);
+		    bis.getInt -> noInstruments;
+		    (for noInstruments repeat
+		         bis.getString -> theIName[];
+		         bis.getString -> theITip[];
+			   bis.getString -> key[];
+			   bis.getString -> theToolbox[];
+			   bis.getInt -> theTargetType;
+			   (theToolbox[], extId, key[], theIName[], theITip[], theTargetType) -> registerExtensionInstrument;
+		    for);
 		 #);
 	       1 -> reply.putInt;
 	    else
 	       -1 -> reply.putInt;
         if);
+     #);
+     CanvasCreater: @MLDispatch (#
+	     saved, raise: @boolean;
+	     name, id: ^text;
+	     canvases: @NotifierIdDictionary (# Element:: CPNPage; #);
+	do
+	     bis.reset;
+	     bis.getInt; (* Command = 2 *)
+           bis.getBool -> saved;
+	     bis.getBool -> raise;
+	     bis.getString -> name[];
+	     (#
+		     <<SLOT CreateCanvas:DoPart>>
+	     #);
+	     1 -> reply.putInt;
+	     id[] -> reply.putString;
+	     #);
+     ElementCreater: @MLDispatch (#
+	     type: @integer;
+	     canvasID: ^text;
+	     canvas: ^CPNPage;
+	     elements: @NotifierIdDictionary (# Element:: Aux; #);
+	 do
+	     bis.reset;
+	     bis.getInt; (* Command = 3 *)
+           bis.getString -> canvasID[];
+	     canvasID[] -> CanvasCreater.canvases.lookup -> canvas[];
+	     (if canvas[] <> NONE then
+	      bis.getInt -> type;
+            (# <<SLOT CreateElement:DoPart>> #);
+	      1 -> reply.putInt;
+	     else
+	     	-1 -> reply.putInt;
+	     if);
+	     #);
+     ElementStyler: MLDispatch (#
+	     elementID: ^text;
+	     element: ^Aux;
+	     filled: @boolean;
+	     r1, g1, b1, r2, g2, b2, linewidth, lineStyle, curvature: @integer;
+	 do
+	     bis.reset;
+	     bis.getInt; (* Command = 4 *)
+           bis.getString -> elementID[];
+	     elementID[] -> ElementCreater.elements.lookup -> element[];
+	     (if element[] <> NONE then
+ 	      bis.getInt -> r1;
+ 	      bis.getInt -> g1;
+ 	      bis.getInt -> b1;
+ 	      bis.getInt -> r2;
+ 	      bis.getInt -> g2;
+ 	      bis.getInt -> b2;
+ 	      bis.getInt -> linewidth;
+ 	      bis.getInt -> curvature;
+ 	      bis.getInt -> lineStyle;
+		bis.getBool -> filled;
+            (# <<SLOT StyleElement:DoPart>> #);
+	      1 -> reply.putInt;
+	     else
+	     	-1 -> reply.putInt;
+	     if);
+	     #);
+     ElementMover: MLDispatch (#
+	     elementID: ^text;
+	     element: ^Aux;
+	     x, y, w, h: @integer;
+	 do
+	     bis.reset;
+	     bis.getInt; (* Command = 5 *)
+           bis.getString -> elementID[];
+	     elementID[] -> ElementCreater.elements.lookup -> element[];
+	     (if element[] <> NONE then
+	     bis.getInt -> x;
+	     bis.getInt -> y;
+	     bis.getInt -> w;
+	     bis.getInt -> h;
+	     (# <<SLOT MoveElement:DoPart>> #);
+	      1 -> reply.putInt;
+	     else
+	     	-1 -> reply.putInt;
+	     if);
+	     #);
+     ElementDeleter: MLDispatch (#
+	     elementID: ^text;
+	     element: ^Aux;
+	     erase: @boolean;
+	 do
+	     bis.reset;
+	     bis.getInt; (* Command = 6 *)
+           bis.getString -> elementID[];
+	     elementID[] -> ElementCreater.elements.lookup -> element[];
+	     (if element[] <> NONE then
+	     bis.getBool -> erase;
+	     (# <<SLOT DeleteElement:DoPart>> #);
+	      1 -> reply.putInt;
+	     else
+	     	-1 -> reply.putInt;
+	     if);
+	     #);
+     ElementSubscriber: @MLDispatch (#
+	     elementID: ^text;
+	     element: ^Aux;
+           updateSubscription: (#
+		     MLUpdateSubscription: CPNMLCommand
+			(# send:: (# <<SLOT MLUpdateSubscriptionSend:DoPart>> #);
+			   receive:: (# <<SLOT MLUpdateSubscriptionReceive:DoPart>> #);
+			   onError:: (# <<SLOT MLUpdateSubscriptionError:DoPart>> #);
+			   theElement: ^PageElement;
+			   enter theElement[]
+			#);
+		  theElement: ^PageElement;
+		  enter theElement[]
+		  do  'Moving ' -> puttext;
+		      theElement.x -> putint;
+			', ' -> puttext;
+			theElement.y -> putint;
+			putline;
+		      (ML[], theElement[]) -> MLUpdateSubscription;
+		  #);
+	     listener: @THIS(World).Element (#
+	       onChanged:: (#
+		    thePageElement: ^PageElement;
+		    theAux: ^Aux;
+		 do (if source## <= Aux## then
+		        source[] -> theAux[];
+			  (if not (theAux.moving) then
+				  source[] -> UpdateSubscription;
+			  if);
+		    if);
+		 #);
+	     #);
+	 do
+	     bis.reset;
+	     bis.getInt; (* Command = 7 *)
+           bis.getString -> elementID[];
+	     elementID[] -> ElementCreater.elements.lookup -> element[];
+	     (if element[] <> NONE then
+	     (# <<SLOT SubscribeElement:DoPart>> #);
+	      1 -> reply.putInt;
+	     else
+	     	-1 -> reply.putInt;
+	     if);
+	     #);
+     Zoomer: MLDispatch (#
+	     elementID: ^text;
+	     canvasID: ^text;
+	     canvas: ^CPNPage;
+	     element: ^Aux;
+	     zoom, raise: @boolean;
+	 do
+	     bis.reset;
+	     bis.getInt; (* Command = 9 *)
+           bis.getString -> canvasID[];
+	     canvasID[] -> CanvasCreater.canvases.lookup -> canvas[];
+	     (if canvas[] <> NONE then
+		bis.getBool -> zoom;
+		bis.getBool -> raise;
+	     (# 
+		<<SLOT ZoomCanvas:DoPart>> #);
+	      1 -> reply.putInt;
+	     else
+	     	-1 -> reply.putInt;
+	     if);
+	     #);
+     LabelAdder: @MLDispatch (#
+	     labels: @NotifierIdDictionary (# Element:: PageElement; #);
+	     count: @integer;
+	     location: @integer;
+	     elementID: ^text;
+	     label: ^text;
+	 do
+	     bis.reset;
+	     bis.getInt; (* Command = 10 *)
+	     bis.getInt-> count;
+	     1 -> reply.putInt;
+	     (for count repeat
+		     bis.getString -> elementID[];
+		     bis.getString -> label[];
+		     bis.getInt -> location;
+		     (# theLabel: ^ExternalLabel;
+			  error: ^text;
+			  theElement: ^PageElement;
+			  do findElement: scanCPNPages (#
+				  do elementID[] -> current.lookupPageElement -> theElement[];
+				     (if theElement[] <> NONE then leave findElement if);
+				     #);
+				     (if theElement[] <> NONE then
+					     (label[], location) -> theElement.createExternalLabel -> theLabel[];
+					     theLabel[] -> theElement.addExternalLabel;
+				     else
+					     'PageElement not found' -> error[];
+				     if);
+				  (if theLabel[] = NONE then
+				  	false -> reply.putBool;
+					error[] -> reply.putString;
+				   else
+				  	true -> reply.putBool;
+					theLabel.id[] -> reply.putString;
+					(theLabel.id[], theLabel[]) -> labels.associate;
+				  if);
+			#);
+	     for);
+     #);
+     LabelRemover: MLDispatch (#
+	     count: @integer;
+	     elementID: ^text;
+	 do
+	     bis.reset;
+	     bis.getInt; (* Command = 11 *)
+	     bis.getInt -> count;
+	     1 -> reply.putInt;
+	     (for count repeat
+		     bis.getString -> elementID[];
+		     (# theLabel: ^ExternalLabel;
+			     do elementID[] -> LabelAdder.labels.lookup -> theLabel[];
+			        (if theLabel[] <> NONE then
+				  theLabel[] -> (theLabel.getPageElement).removeExternalLabel;
+				  if);
+			#);
+		for);
+     #);
+     
+     registerExtensionInstrument: (#
+	     toolBox, key, name, toolTip: ^text;
+	     extension, targetType: @integer;
+	     enter (toolBox[], extension, key[], name[], toolTip[], targetType)
+	     <<SLOT CPNetRegisterExtensionInstrument: DoPart>>
      #);
 
      registerExtensionOptions: (#
@@ -847,6 +1102,15 @@ CPNet: Highlightable
 		   #);          
 		   init:: (#
 			   do (1, &MLUpdateMarkingAndStep[]) -> Dispatcher.register;
+			      (2, CanvasCreater[]) -> Dispatcher.register;
+			      (3, ElementCreater[]) -> Dispatcher.register;
+			      (4, &ElementStyler[]) -> Dispatcher.register;
+			      (5, &ElementMover[]) -> Dispatcher.register;
+			      (6, &ElementDeleter[]) -> Dispatcher.register;
+			      (7, ElementSubscriber[]) -> Dispatcher.register;
+			      (9, &Zoomer[]) -> Dispatcher.register;
+				(10, LabelAdder[]) -> Dispatcher.register;
+				(11, &LabelRemover[]) -> Dispatcher.register;
 			      (10000, &MLExtensionHandler[]) -> Dispatcher.register;
 			   #);
           daemon: @process;
@@ -1028,7 +1292,7 @@ CPNet: Highlightable
        #);
      mlInitialized: @boolean;
      enableExtensions: (#
-     <<SLOT CPNetenableExtensions:DoPart>>
+	     <<SLOT CPNetenableExtensions:DoPart>>
      #);
      initML: 
        (# host: ^Text;
@@ -1037,7 +1301,7 @@ CPNet: Highlightable
           password: ^Text;
           path: ^Text;
           image: ^Text;
-          daemon: @process;
+	    daemon: @process;
           allreadyRetried: @boolean;
           isRealTimeStamp: @boolean;
        enter (host[], port, user[], password[], path[], image[], isRealTimeStamp, localsim)
@@ -1243,6 +1507,17 @@ CPNet: Highlightable
      lastLegalName: ^Text;
      onAdded:: (# <<SLOT CPNetOnAdded:DoPart>> #);
      onChanged:: (# <<SLOT CPNetOnChanged:DoPart>> #);
+
+     exportPNML: CPNMLCommand
+       (# 
+          Send:: (# <<SLOT mlCPNetExportPNMLSend:DoPart>> #);
+          Receive:: (# <<SLOT mlCPNetExportPNMLReceive:DoPart>> #);
+          onError:: (# <<SLOT mlCPNetExportPNMLonError:DoPart>> #);
+
+          result: ^text;
+          exit result[]
+         #);
+
   #);
 
 Autosave:
@@ -1262,6 +1537,27 @@ DeleteAutosave:
   <<SLOT DeleteAutosave: doPart>>
   #);
 
+ExportXML:
+(# theNet: ^CPNet;
+   theXML: @text;	
+  enter theNet[]
+  <<SLOT ExportNet: doPart>>
+  exit theXML[]
+  #);
+
+SavePNML:
+  (# theNet: ^CPNet;
+     savename: ^Text;
+
+     myError:< 
+       (# msg: ^Text;
+       enter msg[]
+       do INNER; 
+       #);
+
+  enter (theNet[], savename[])
+  <<SLOT SavePNML: doPart>>
+  #);
 
 SaveNet:
   (# theNet: ^CPNet;
@@ -1727,7 +2023,9 @@ CPNPage: Highlightable
      
      addSuper: (# <<SLOT CPNPageaddSuper:doPart>> #);
      numberOfTimesThisPageBeenChecked: @integer; (* for debugging /krell *)
-     checkDeclare: CPNMLCommand
+     checkDeclare:
+       (#
+	checkDeclareConstraints: CPNMLCommand
        (# send::
 	     (#
 	        addConstraintArc: (#
@@ -1745,6 +2043,11 @@ CPNPage: Highlightable
 	     #);
           Receive:: (# <<SLOT mlCPNPageCheckDeclareReceive:DoPart>> #);
           onError:: (# <<SLOT mlCPNPageCheckDeclareError:DoPart>> #);
+	    #);
+	    theML: ^MLCom;
+	enter theML[]
+	<<SLOT mlCheckDeclare:DoPart>>
+
 	 #);
      syntaxCheck: CPNMLCommand
        (# Send:: 
@@ -2778,9 +3081,32 @@ PageElement: Snapable
        exit theList[]
        #);
      
+     addExternalLabel:
+       (# theExternalLabel: ^ExternalLabel;
+       enter theExternalLabel[]
+       <<SLOT NodeAddExternalLabel:doPart>>
+       #);
+     removeExternalLabel:
+       (# theExternalLabel: ^ExternalLabel;
+       enter theExternalLabel[]
+       <<SLOT NodeRemoveExternalLabel:doPart>>
+       #);
+     createExternalLabel:
+       (# theExternalLabel: ^ExternalLabel;
+          theText: ^Text;
+	    theLocation: @integer;   
+	 enter (theText[], theLocation)
+       <<SLOT PageElementCreateExternalLabel:doPart>>
+       exit theExternalLabel[]
+       #);
      GetHierarchyInfos:<
        (# theList: ^HierarchyInfoList;
        <<SLOT PageElementGetHierarchyInfos:doPart>>
+       exit theList[]
+       #);
+     GetExternalLabels:<
+       (# theList: ^ExternalLabelList;
+       <<SLOT PageElementGetExternalLabels:doPart>>
        exit theList[]
        #);
      getRegions::<
@@ -3035,9 +3361,6 @@ Node: GuideLineSnapable
      getTextItem:: (# <<SLOT NodegetTextItem:doPart>> #);
      onChanged::< (# <<SLOT NodeonChanged:doPart>> #);
      onAdded::< (# <<SLOT NodeonAdded:doPart>> #);
-     
-     formatInscriptions: (# <<SLOT NodeformatInscriptions:doPart>> #);
-     formatHierarchyInfos: (# <<SLOT NodeformatHierarchyInfos:doPart>> #);
      
      snap::< 
        (# snapList: ^PointList;
@@ -4375,6 +4698,43 @@ InitMark: PlaceInscription
      setPlace:: (# <<SLOT InitMarkSetPlace:doPart>> #);
      getPlace:: (# <<SLOT InitMarkGetPlace:doPart>> #);
      onSemanticChanged:: (# <<SLOT InitMarkOnSemanticChanged:doPart>> #); 
+  #);
+
+ExternalLabel: PageElement
+  (# private: @<<SLOT ExternalLabelPrivate:Descriptor>>;
+     theRect: @Rect;
+     theCompStyle: ^CompositeStyle;
+     DefaultSnap::< (# w, h: @Real; <<SLOT ExternalLabelDefaultSnap:doPart>> #);
+     defaultSnapToElement:: (# <<SLOT ExternalLabelDefaultSnapToElement:doPart>> #);     
+     clone::< (# Type:: ExternalLabel; <<SLOT ExternalLabelClone:doPart>> #);
+     delete::< (# <<SLOT ExternalLabelDelete:doPart>> #);
+     setPageElement: 
+       (# thePageElement: ^PageElement;
+       enter thePageElement[] 
+	 <<SLOT ExternalLabelSetPageElement:doPart>> #);
+     getPageElement: 
+       (# thePageElement: ^PageElement;
+       <<SLOT ExternalLabelGetPageElement:doPart>> 
+       exit thePageElement[] 
+       #);
+     update::< 
+       (# w, h: @real;
+       <<SLOT ExternalLabelUpdate:doPart>>
+       #);     
+     bounds:: (# <<SLOT ExternalLabelBounds:doPart>> #);     
+     init::< (# w, h: @real; RectColor: ^Color; theSnap: @integer; enter theSnap <<SLOT ExternalLabelInit:doPart>> #);     
+     onChanged::< (# <<SLOT ExternalLabelOnChanged:doPart>> #);
+     setText:
+       (# theText: ^Text;
+       enter theText[]
+       <<SLOT ExternalLabelSetText:doPart>>
+       #);
+     getText:
+       (# theText: ^Text;
+       <<SLOT ExternalLabelGetText:doPart>>          
+       exit theText[]
+       #);
+     snap:: (# <<SLOT ExternalLabelSnap:doPart>> #);
   #);
 
 HierarchyInfo: PageElement

@@ -101,6 +101,9 @@ do (# processHighlightable:
 do &SimulationLayer[] -> simlayer[];
    simlayer.init;
 
+   &SheetLayer[] -> labellayer[];
+   labellayer.init;
+
    (if canvas then
 	   ((1.0, 0.80, 0.60) -> Color -> (patternSize -> &SquarePattern).init -> &PatternLayer).init -> thePatternLayer[];
 	    (1.0, 1.00, 0.80) -> Color -> theSheetColor[];
@@ -114,6 +117,9 @@ do &SimulationLayer[] -> simlayer[];
    true  -> simlayer.clipping;
    true -> simlayer.clickable;
    simlayer[] -> add;
+   true  -> labellayer.clipping;
+   true -> labellayer.clickable;
+   labellayer[] -> add;
    true  -> guidelinelayer.clipping;
    true -> guidelinelayer.clickable;
    guidelinelayer[] -> add;
@@ -135,9 +141,12 @@ do (if true
        source.id[]
          -> content.lookupPlaceinstance
          -> showPlaceInstance;
-    // (source## <= Arc##) AND (not (source## <= SSArc##))  then
+    // (source## <= Arc##) AND (not (source## <= SSArc##)) AND (not (source## <= ConstraintArc##))  then
        source.id[]
          -> content.lookupArcInstance
+         -> simlayer.show;
+    // (source## <= ConstraintArc##) then
+       source[]
          -> simlayer.show;
     // source## <= Inscription## then
        source[] -> QUA
@@ -148,8 +157,13 @@ do (if true
               source[] -> mainlayer.hide;
           if);
        #);
-    // source## <= HierarchyInfo## then
+    // ((source## <= HierarchyInfo##) and (NOT (source## <= ConstraintInscription##))) then
        source[] -> mainlayer.show;
+    // source## <= ConstraintInscription## then
+       source[] -> labellayer.show;
+    // source## <= ExternalLabel## then
+       source[] -> labellayer.show;
+	 else
    if);
    
 -- CPNSheetHide:doPart --
@@ -159,8 +173,14 @@ do (if source## <= Guideline## then
    (if source## <= Inscription## then
        source[] -> mainlayer.hide;
    if);
-   (if source## <= HierarchyInfo## then
+   (if (source## <= HierarchyInfo##) and (NOT (source## <= ConstraintInscription##)) then
        source[] -> mainlayer.hide;
+    if);
+   (if source## <= ConstraintInscription## then
+       source[] -> labellayer.hide;
+   if);
+   (if source## <= ExternalLabel## then
+       source[] -> labellayer.hide;
    if);
    (if source## <= Arc## then
        refreshSimLayer;
@@ -232,7 +252,8 @@ do (# ShowVisitor: NetVisitor
         (# 
            visitCPNPage::< 
              (#
-             do current.scanPlaces
+             do 
+		    current.scanPlaces
                 (#
                 do current[] -> visitPlace;
                 #);
@@ -243,6 +264,10 @@ do (# ShowVisitor: NetVisitor
                 current.scanArcs
                 (#
                 do current[] -> visitArc;
+                #);
+                current.scanConstraintArcs
+                (#
+                do current[] -> visitConstraintArc;
                 #);
                 current.scanSSNodes
                 (#
@@ -274,10 +299,23 @@ do (# ShowVisitor: NetVisitor
                 (if current.getPlaceKind <> NONE then
                     current.getPlaceKind -> visitPlaceKind;
                 if);
+		    (current.getExternalLabels).scan (#
+		    do current[] -> visitExternalLabel;
+		    #);
+             #);
+           visitConstraintArc::<
+             (#
+             do current[] -> show;
+		    (current.getExternalLabels).scan (#
+		    do current[] -> visitExternalLabel;
+		    #);
              #);
            visitSSNode::<
              (#
              do current[] -> show;
+		    (current.getExternalLabels).scan (#
+		    do current[] -> visitExternalLabel;
+		    #);
              #);
            visitPlaceType::< 
              (# 
@@ -291,6 +329,7 @@ do (# ShowVisitor: NetVisitor
                     current[] -> show;
                 if);
              #);
+           visitExternalLabel::< (# do current[] -> show; #);
            visitPortType::< (# do current[] -> show; #);
            visitPlaceKind::< (# do current[] -> show; #);
            visitFusionInfo::< (# do current[] -> show; #);
@@ -305,6 +344,9 @@ do (# ShowVisitor: NetVisitor
                 (if current.getSubPageInfo <> NONE then
                     current.getSubpageInfo -> visitSubpageInfo;
                 if);
+		    (current.getExternalLabels).scan (#
+		    do current[] -> visitExternalLabel;
+		    #);
 		    current.scanConstraintInscriptions (#
 		    do current[] -> visitConstraintInscription;
 		    #);
@@ -348,12 +390,18 @@ do (# ShowVisitor: NetVisitor
                 current.getAnnotation -> visitAnnotation;
                 current.scanBendPoints
                 (# do current[] -> visitBendPoint; #);
+		    (current.getExternalLabels).scan (#
+		    do current[] -> visitExternalLabel;
+		    #);
              #);
            visitSSArc::< 
              (# 
              do current[] -> show; 
                 current.scanBendPoints
                 (# do current[] -> visitBendPoint; #);
+		    (current.getExternalLabels).scan (#
+		    do current[] -> visitExternalLabel;
+		    #);
              #);
            visitAnnotation::< 
              (# 
@@ -362,7 +410,12 @@ do (# ShowVisitor: NetVisitor
                 if);
              #);
            visitBendPoint::< (# do current[] -> show; #);
-           visitAux::< (# do current[] -> show; #);
+           visitAux::< (#
+	     do current[] -> show;
+		    (current.getExternalLabels).scan (#
+		    do current[] -> visitExternalLabel;
+		    #);
+	     #);
         #);
    do (# theVisitor: ^ShowVisitor;
       do &ShowVisitor[] -> theVisitor[];
@@ -405,12 +458,14 @@ do (# theInscription: ^Inscription;
               theInscription[] -> hide;
           if);
       if);
+
       (* To update the graphics for region elements *)
       (if source## <= Place## then
           source[] -> QUA
             (# as:: Place;
                fi: ^FusionInfo;
                pt: ^PortType;
+		   pk: ^PlaceKind;
             do (if thisObj.getFusionInfo = NONE then
                    mainlayer.content.scan
                    (#
@@ -436,6 +491,19 @@ do (# theInscription: ^Inscription;
                    #);
                 else
                    thisObj.getPortType -> mainLayer.show;
+               if);
+               (if thisObj.getPlaceKind = NONE then
+                   mainlayer.content.scan
+                   (#
+                   do (if current## <= PlaceKind## then
+                          current[] -> pk[];
+                          (if pk.getPlace = thisObj[] then
+                              pk[] -> mainlayer.hide;
+                          if);
+                      if);
+                   #);
+                else
+                   thisObj.getPlaceKind -> mainLayer.show;
                if)
             #);
       if);
@@ -443,6 +511,7 @@ do (# theInscription: ^Inscription;
           source[] -> QUA
           (# as:: Transition;
              si: ^SubPageInfo;
+		 ci: ^ConstraintInscription;
           do (if thisObj.getSubPageInfo = NONE then
                  mainlayer.content.scan
                  (#
@@ -466,8 +535,45 @@ do (# theInscription: ^Inscription;
                  #);
                  thisObj.getSubPageInfo -> mainLayer.show;
              if);
+                 labellayer.content.scan
+                 (#
+                 do (if current## <= ConstraintInscription## then
+                        current[] -> ci[];
+                        L: (if (ci.getTransition = thisObj[]) then
+				    thisObj.scanConstraintInscriptions (#
+				    do (if current[] = ci[] then leave L if);
+				    #);
+                            ci[] -> labellayer.hide;
+                        if);
+                    if);
+                 #);
+                 thisObj.scanConstraintInscriptions (#
+		     do current[] -> labelLayer.show;
+		     #);
           #);
       if);
+	(if source## <= PageElement## then
+          source[] -> QUA
+            (# as:: PageElement;
+		   el: ^ExternalLabel;
+		do
+                 labellayer.content.scan
+                 (#
+                 do (if current## <= ExternalLabel## then
+                        current[] -> el[];
+                        L: (if (el.getPageElement = thisObj[]) then
+				    (thisObj.getExternalLabels).scan (#
+				    do (if current[] = el[] then leave L if);
+				    #);
+                            el[] -> labellayer.hide;
+                        if);
+                    if);
+                 #);
+                 (thisObj.getExternalLabels).scan (#
+		     do current[] -> labelLayer.show;
+		     #);
+		#);
+	if);
 
    #);
    

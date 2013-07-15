@@ -51,6 +51,7 @@ INCLUDE 'cursors/creationcursors';
 INCLUDE 'cursors/simulationcursors';
 
 INCLUDE 'instruments/highlightableinstruments';
+INCLUDE 'instruments/extensioninstruments';
 
 INCLUDE 'palettes/floatingview';
 INCLUDE '~beta/process/processmanager';
@@ -67,6 +68,7 @@ INCLUDE '~beta/postwimp/foundation/private/worldbody';
 
 BODY 'private/cpntoolsbody';
 BODY 'instruments/drawingcallbacks';
+BODY 'extension';
 
 -- program: descriptor --
 CpnWorkSpace
@@ -333,15 +335,15 @@ CpnWorkSpace
 		 ('respondedexistence', theConstraintArcInstrument[]) -> theInstrumentList.associate;
 
 		 &ConstraintArcInstrument[] -> theConstraintArcInstrument[];
-		 (NONE, 'co-existence', '( ( <>("A") -> <>( "B" ) ) /\ ( <>("B") -> <>( "A" ) )  )', FILLED_CIRCLE_START + FILLED_CIRCLE_END, SINGLE) -> theConstraintArcInstrument.init;
+		 (NONE, 'co-existence', '( ( <>("A") -> <>( "B" ) ) /\\ ( <>("B") -> <>( "A" ) )  )', FILLED_CIRCLE_START + FILLED_CIRCLE_END, SINGLE) -> theConstraintArcInstrument.init;
 		 ('coexistence', theConstraintArcInstrument[]) -> theInstrumentList.associate;
 
 		 &ConstraintArcInstrument[] -> theConstraintArcInstrument[];
-		 (NONE, 'choice', '<>( ( "A" \/ "B" ) )', 0, SINGLE + DIAMOND) -> theConstraintArcInstrument.init;
+		 (NONE, 'choice', '<>( ( "A" \\/ "B" ) )', 0, SINGLE + DIAMOND) -> theConstraintArcInstrument.init;
 		 ('choice', theConstraintArcInstrument[]) -> theInstrumentList.associate;
 
 		 &ConstraintArcInstrument[] -> theConstraintArcInstrument[];
-		 (NONE, 'exclusive choice', '(  ( <>( "A" ) \/ <>( "B" )  )  /\ !( (  <>( "A" ) /\ <>( "B" ) ) ) )', 0, SINGLE + FILLED_DIAMOND) -> theConstraintArcInstrument.init;
+		 (NONE, 'exclusive choice', '(  ( <>( "A" ) \\/ <>( "B" )  )  /\\ !( (  <>( "A" ) /\\ <>( "B" ) ) ) )', 0, SINGLE + FILLED_DIAMOND) -> theConstraintArcInstrument.init;
 		 ('exclusivechoice', theConstraintArcInstrument[]) -> theInstrumentList.associate;
 
 		 &ConstraintArcInstrument[] -> theConstraintArcInstrument[];
@@ -369,11 +371,11 @@ CpnWorkSpace
 		 ('existence1', theConstraintInscriptionInstrument[]) -> theInstrumentList.associate;
 
 		 &ConstraintInscriptionInstrument[] -> theConstraintInscriptionInstrument[];
-		 ('existence2', '<> ( ( "A" /\ X(<>("A")) ) )', SINGLE, '2..*') -> theConstraintInscriptionInstrument.init;
+		 ('existence2', '<> ( ( "A" /\\ X(<>("A")) ) )', SINGLE, '2..*') -> theConstraintInscriptionInstrument.init;
 		 ('existence2', theConstraintInscriptionInstrument[]) -> theInstrumentList.associate;
 
 		 &ConstraintInscriptionInstrument[] -> theConstraintInscriptionInstrument[];
-		 ('existence3', '<>( "A" /\ X(  <>( "A" /\ X( <> "A" )) ))', SINGLE, '3..*') -> theConstraintInscriptionInstrument.init;
+		 ('existence3', '<>( "A" /\\ X(  <>( "A" /\\ X( <> "A" )) ))', SINGLE, '3..*') -> theConstraintInscriptionInstrument.init;
 		 ('existence3', theConstraintInscriptionInstrument[]) -> theInstrumentList.associate;
 
 		 &ConstraintInscriptionInstrument[] -> theConstraintInscriptionInstrument[];
@@ -381,19 +383,19 @@ CpnWorkSpace
 		 ('absence1', theConstraintInscriptionInstrument[]) -> theInstrumentList.associate;
 
 		 &ConstraintInscriptionInstrument[] -> theConstraintInscriptionInstrument[];
-		 ('absence2', '! ( <> ( ( "A" /\ X(<>("A")) ) ) )', SINGLE, '0..1') -> theConstraintInscriptionInstrument.init;
+		 ('absence2', '! ( <> ( ( "A" /\\ X(<>("A")) ) ) )', SINGLE, '0..1') -> theConstraintInscriptionInstrument.init;
 		 ('absence2', theConstraintInscriptionInstrument[]) -> theInstrumentList.associate;
 
 		 &ConstraintInscriptionInstrument[] -> theConstraintInscriptionInstrument[];
-		 ('absence3', '!(<>( "A" /\ X(  <>( "A" /\ X( <> "A" )) )))', SINGLE, '0..2') -> theConstraintInscriptionInstrument.init;
+		 ('absence3', '!(<>( "A" /\\ X(  <>( "A" /\\ X( <> "A" )) )))', SINGLE, '0..2') -> theConstraintInscriptionInstrument.init;
 		 ('absence3', theConstraintInscriptionInstrument[]) -> theInstrumentList.associate;
 
 		 &ConstraintInscriptionInstrument[] -> theConstraintInscriptionInstrument[];
-		 ('exactly1', '(  <> ("A") /\ ! ( <> ( ( "A" /\ X(<>("A")) ) ) ) )', SINGLE, '1') -> theConstraintInscriptionInstrument.init;
+		 ('exactly1', '(  <> ("A") /\\ ! ( <> ( ( "A" /\\ X(<>("A")) ) ) ) )', SINGLE, '1') -> theConstraintInscriptionInstrument.init;
 		 ('exactly1', theConstraintInscriptionInstrument[]) -> theInstrumentList.associate;
 
 		 &ConstraintInscriptionInstrument[] -> theConstraintInscriptionInstrument[];
-		 ('exactly2', '(<> ( ( "A" /\ X(<>("A")) ) )) /\ (!(<>( "A" /\ X(  <>( "A" /\ X( <> "A" )) ))))', SINGLE, '2') -> theConstraintInscriptionInstrument.init;
+		 ('exactly2', '(<> ( ( "A" /\\ X(<>("A")) ) )) /\\ (!(<>( "A" /\\ X(  <>( "A" /\\ X( <> "A" )) ))))', SINGLE, '2') -> theConstraintInscriptionInstrument.init;
 		 ('exactly2', theConstraintInscriptionInstrument[]) -> theInstrumentList.associate;
 
 		 &ConstraintInscriptionInstrument[] -> theConstraintInscriptionInstrument[];
@@ -516,12 +518,13 @@ CpnWorkSpace
              ('evaluate', theMLEvaluateInscriptionInstrument[]) -> theInstrumentList.associate;
              
              (* State Space Instruments *)
-             &EnterStateSpaceInstrument[] -> theEnterStateSpaceInstrument[];
-             theEnterStateSpaceInstrument.init;
-             ('enterog', theEnterStateSpaceInstrument[]) -> theInstrumentList.associate;
              &CalcStateSpaceInstrument[] -> theCalcStateSpaceInstrument[];
              theCalcStateSpaceInstrument.init;
              ('calcoccgraph', theCalcStateSpaceInstrument[]) -> theInstrumentList.associate;
+
+             &EnterStateSpaceInstrument[] -> theEnterStateSpaceInstrument[];
+             theCalcStateSpaceInstrument.options[] -> theEnterStateSpaceInstrument.init;
+             ('enterog', theEnterStateSpaceInstrument[]) -> theInstrumentList.associate;
              &CalcSccInstrument[] -> theCalcSccInstrument[];
              theCalcSccInstrument.init;
              ('calcsccgraph', theCalcSccInstrument[]) -> theInstrumentList.associate;
@@ -963,9 +966,9 @@ CpnWorkSpace
 	     '  Image path' -> imageOption.setDefaultID;
 	     imageOption[] -> imageOptions.add;
 
-	     ('extensions', 'extensions') -> imageOptions.setAddOptionWithDefault
+	     ('remoteExtensions', 'remoteExtensions') -> imageOptions.setAddOptionWithDefault
              (# OptionType::BooleanOption
-		  (# dname:: (# do 'Extensions' -> value[]; #); 
+		  (# dname:: (# do 'Remote extensions' -> value[]; #); 
                   #); 
              #);
 

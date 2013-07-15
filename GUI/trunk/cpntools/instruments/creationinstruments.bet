@@ -148,7 +148,7 @@ SSNodeClipping: NodeClipping
               
 	  if);
 	  (if (NOT elm.deadInfo) AND ((context.Net.stateSpaceNumber <> ssNumber) 
-              OR (NOT context.net.stateSpaceEntered)) then
+	  OR (context.net.stateSpaceEntered = 0)) then
 	      true -> elm.dead;
 	  if);
        #);
@@ -1963,7 +1963,6 @@ CreatePlace:
         clip[] -> com.apply;
         
         (context.net[],com[]) -> registerCommand;
-        
         thePlace.startTextEditor;
      #);
      exit thePlace[]     

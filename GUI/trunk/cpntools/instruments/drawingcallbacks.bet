@@ -21,12 +21,20 @@ ORIGIN '../../cpnet/cpnet';
 INCLUDE '../cpnworkspace';
 INCLUDE 'instancenodeinstruments';
 INCLUDE 'creationinstruments';
+INCLUDE 'userinterfaceinstruments';
 
 --createcanvas:dopart--
  do (# w: ^CPNWorkspace;
     do
     THIS(Workspace)[] -> w[];
     (# com: ^w.CreatePageCommand;
+       newSheet: ^w.CPNSheet;
+	 theTabClipping: ^w.TabClipping;
+	 binder: ^w.CpnBinder;
+	 oldPanx,oldPany: @Real;
+	 oldwidth,oldheight: @Real;
+	 newx, newy: @integer;
+	 theOpenTabCommand: ^w.OpenTabCommand;
     do &w.CreatePageCommand[] -> com[];
        not saved -> com.canvas;
 	 name[] -> com.name[];
@@ -35,6 +43,25 @@ INCLUDE 'creationinstruments';
 	 (*(THIS(CPNet)[] ,com[]) -> registerCommand;*)
 	 com.theCPNPageClipping.elm.id[] -> id[];
 	 (id[], com.theCPNPageClipping.elm[]) -> canvases.associate;
+
+	 (if raise then
+	     &w.CPNSheet[] -> newSheet[];
+	     not saved -> newSheet.init;
+	     com.getInstance -> newSheet.setContent;
+
+	     (newSheet[], 210, 110) -> folderManager.getFolder -> binder[];
+	     (if (binder[] <> NONE) and (binder.theNet[] = newSheet.getCPNet) then
+		     newSheet[] -> binder.add;
+	     else
+		     NONE -> binder[];
+	     if);
+	     (if binder[] = NONE then
+		     (newSheet[], 200, 100) -> folderManager.createFolder -> binder[];
+	     if);
+	     newSheet.width / 42 -> newx;
+	     newSheet.height / 42 -> newy;
+	     (-newx * 21, newy * 21) -> newSheet.pan;
+	 if);
    #);
    #);
 
@@ -49,10 +76,13 @@ INCLUDE 'creationinstruments';
 	    (bis.getInt, bis.getInt) -> at;
 	    bis.getInt -> prototype.theShape.width;
 	    bis.getInt -> prototype.theShape.height;
+	    bis.getInt -> prototype.theShape.curvature;
+	    bis.getBool -> prototype.filled;
 	 // 2 then w.defaultAuxEllipse.clone -> prototype[];
 	    (bis.getInt, bis.getInt) -> at;
 	    bis.getInt -> prototype.theShape.width;
 	    bis.getInt -> prototype.theShape.height;
+	    bis.getBool -> prototype.filled;
 	 // 3 then w.defaultAuxLabel.clone -> prototype[];
 	    (bis.getInt, bis.getInt) -> at;
 	    bis.getString -> prototype.setText;
@@ -64,6 +94,9 @@ INCLUDE 'creationinstruments';
 	       (bis.getInt, bis.getInt) -> point;
 		 point[] -> prototype.theShape.points.append;
           for);
+	    bis.getInt -> prototype.theShape.curvature;
+	    bis.getInt -> prototype.theShape.arrow;
+	    bis.getBool -> prototype.filled;
 	 // 11 then 
 	    (0, bis.getInt) -> at;
 	    (canvas[], at[]) -> w.CreateHorizontalGuide;
@@ -76,7 +109,6 @@ INCLUDE 'creationinstruments';
 	   'white' -> colorTable.lookup -> prototype.fillColor[];
 	   1 -> prototype.strokeWidth;
 	   'black' -> colorTable.lookup -> prototype.textColor[];
-	   false -> prototype.filled;
 	   'Solid' -> prototype.linetype[];
 	   '' -> prototype.fillpattern[];
 	   at -> prototype.position;
@@ -92,10 +124,24 @@ INCLUDE 'creationinstruments';
     do
     THIS(Workspace)[] -> ws[];
     (#
-    do
-	   bis.getString -> colorTable.lookup -> element.lineColor[];
-	   bis.getString -> colorTable.lookup -> element.fillColor[];
-	  element.changed;
+	    do
+	    (if (r1 >= 0) and (g1 >= 0) and (b1 >= 0) then
+		    (r1 / 255, g1 / 255, b1 / 255) -> &Color -> element.lineColor[] -> element.textColor[];
+          if);
+	    (if (r2 >= 0) and (g2 >= 0) and (b2 >= 0) then
+	       (r2 / 255, g2 / 255, b2 / 255) -> &Color -> element.fillColor[];
+	    if);
+          (if linewidth >= 0 then
+	       linewidth -> element.strokewidth;
+	    if);
+          (if curvature >= 0 then
+	       curvature -> element.theShape.curvature;
+	    if);
+          (if lineStyle >= 0 then
+	       lineStyle -> element.theShape.arrow;
+	    if);
+	    filled -> element.filled;
+	    element.changed;
 #);
 #);
 
@@ -106,8 +152,84 @@ INCLUDE 'creationinstruments';
     (#
     do
         (x, y) -> element.position;
-	  width -> element.theShape.width;
-	  height -> element.theShape.height;
+	  w -> element.theShape.width;
+	  h -> element.theShape.height;
 	  element.changed;
 #);
 #);
+
+-- deleteelement:dopart --
+do elementID[] -> ElementCreater.elements.disassociate;
+   ElementSubscriber.listener[] -> element.detach;
+   (if erase then
+       element.delete;
+   if);
+
+-- subscribeelement:dopart --
+do listener[] -> element.attach;
+
+-- zoomcanvas: dopart --
+ do (# w: ^CPNWorkspace;
+    do
+    THIS(Workspace)[] -> w[];
+    (# 
+	    do w.folderManager.theStandardLayer.folders.scan (#
+		    theBinder: ^w.Folder;
+		    do current[] -> theBinder[];
+		       theBinder.sheets.scan (#
+			    com: ^w.ClickZoomFitSheetCommand;
+			    thePageInstance: ^w.PageInstance;
+			    newZoom: @real;
+			    theSheet: ^HighlightableSheet;
+			 do (if current.content## <= w.PageInstance## then
+			       current.content[] -> thePageInstance[];
+				 (if thePageInstance.thePage[] = canvas[] then
+				     current[] -> theSheet[];
+				     (if zoom then
+				         theSheet.calculateZoomFactor -> newZoom;
+					   (if newZoom<0.33 then 0.33 -> newZoom if);
+					   (if newZoom>10 then 10 -> newZoom if);
+					   newZoom -> theSheet.theZoom;
+				     if);
+                             theSheet.centerContent;
+				     theSheet.changed;
+				     (if raise then
+				         theSheet[] -> theBinder.raise;
+				     if);
+				 if);
+			    if);
+			 #);
+		  #)
+	  #);
+	  #);
+
+-- MLUpdateSubscriptionSend: doPart --
+do 10000 -> bis.putInt; (* Extension command *)
+   401 -> bis.putInt; (* Subscription update *)
+   theElement.id[] -> bis.putString;
+
+   theElement.x -> bis.putInt;
+   theElement.y -> bis.putInt;
+
+   (if theElement## <= Aux## then
+       (# theAux: ^Aux;
+          theLabel: ^Aux.LabelShape;
+       do theElement[] -> theAux[];
+	    (if theAux.theShape## <= theAux.LabelShape## then
+	        theAux.getText -> bis.putString;
+          if);
+	    (if theAux.theShape## <= theAux.LineShape## then
+	        (* Do nothing for now *)
+          if);
+	    (if (theAux.theShape## <= theAux.BoxShape##) or (theAux.theShape## <= theAux.EllipseShape##) then
+	        theAux.theShape.width -> bis.putInt;
+	        theAux.theShape.height -> bis.putInt;
+          if);
+	 #);
+	 if);
+
+-- MLUpdateSubscriptionReceive: doPart --
+do 'Received' -> putline;
+
+-- MLUpdateSubscriptionError: doPart --
+do true -> continue; 'Error' -> putline;

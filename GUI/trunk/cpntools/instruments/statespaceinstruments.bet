@@ -67,13 +67,16 @@ EnterStateSpaceInstrument: CPNInstrument
   (#
      CommandType:: EnterStateSpaceCommand;
      FigureT:: SSEnterFigure;
+     inheritOptions: ^OptionList;
 
      init::
-       (#
+     (# enter inheritOptions[]
        do 'enter_state_space'->helpname[];
-          ('ogpath','enterss.ogpath') -> options.setAddOptionWithDefault(# OptionType:: FilePathOption(# dname::(# do 'State-space tool location' -> value[]; #); #); #);
-          ('ASAP','enterss.asap') -> options.setAddOptionWithDefault(# OptionType:: BooleanOption; #);
-       #);
+	       (if inheritOptions[] <> NONE then
+                  inheritOptions[] -> options[];
+	     if);
+	 #);
+
 
      ToolTip::
        (#
@@ -82,7 +85,8 @@ EnterStateSpaceInstrument: CPNInstrument
   #);
 
 EnterStateSpaceCommand: StateSpaceCommand
-  (# enterStateSpace: (# <<SLOT EnterStateSpaceCommandEnterStateSpace:DoPart>> #);
+(# 
+     enterStateSpace: (# <<SLOT EnterStateSpaceCommandEnterStateSpace:DoPart>> #);
      apply:: (# <<SLOT EnterStateSpaceCommandApply:DoPart>> #);
   #);
 
@@ -121,6 +125,9 @@ CalcStateSpaceInstrument: CPNInstrument
      init::
        (#
        do 'calculate_state_space' -> helpname[];
+          ('ogpath','enterss.ogpath') -> options.setAddOptionWithDefault(# OptionType:: FilePathOption(# dname::(# do 'State-space tool location' -> value[]; #); #); #);
+	    ('ASAP','enterss.asap') -> options.setAddOptionWithDefault(# OptionType:: BooleanOption; #);
+
           ('creationtime','calcss.creationtime') -> insertBooleanOption;
           ('terminationtime','calcss.terminationtime') -> insertBooleanOption (# hide:: trueObject #);
           ('nodesstop','calcss.nodesstop') -> insertIntegerOption;

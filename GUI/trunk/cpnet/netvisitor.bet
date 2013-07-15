@@ -73,6 +73,12 @@ NetVisitor:
        do INNER;
        #);
 
+     visitExternalLabel:<
+       (# current: ^ExternalLabel;
+       enter current[]
+       do INNER;
+       #);
+
      visitPortType:<
        (# current: ^PortType;
        enter current[]
@@ -151,6 +157,11 @@ NetVisitor:
        do INNER;
        #);
      
+     visitConstraintArc:<
+       (# current: ^ConstraintArc;
+       enter current[]
+       do INNER;
+       #);
      visitSSArc:<
        (# current: ^SSArc;
        enter current[]

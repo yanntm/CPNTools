@@ -94,6 +94,8 @@ invariant			return tINVARIANT;
 <MISC>ms			return tMS;
 <MISC>timed			return tTIMED;
 <MISC>int			return tINT;
+<MISC>intinf			return tINTINF;
+<MISC>time			return tTIME;
 <MISC>bool		        return tBOOL;
 <MISC>unit			return tUNIT;
 <MISC>real                 	return tREAL;

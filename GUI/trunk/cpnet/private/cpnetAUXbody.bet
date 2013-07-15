@@ -29,8 +29,27 @@ INCLUDE '../../cpntools/debug';
 (* bodyAUXPostProcessing: doPart is found in cpnetSurvbody.bet *)
 
 -- GuidelineSnapableSnap:doPart --
-do (# snappedHGL: ^HorizontalGuideline;
+do 
+   (# snappedHGL: ^HorizontalGuideline;
       snappedVGL: ^VerticalGuideline;
+	gridSnap:
+	  (# intx, inty: @integer; oldX, oldY: @real;
+	  do
+	  THIS(PageElement).x -> oldX;
+	  THIS(PageElement).y -> oldY;
+	  (oldX / 42.0 + 0.5 -> floor) * 42 -> intx;
+	  (oldY / 42.0 + 0.5 -> floor) * 42 -> inty;
+	  ((oldX - intx) -> fabs) -> oldX;
+	  ((oldY - inty) -> fabs) -> oldY;
+	 (if (oldX < 10) and (oldX < xDistance) then
+		intx -> newx;
+		oldX -> xDistance;
+	 if);
+	 (if (oldY < 10) and (oldY < yDistance) then
+		inty -> newy;
+		oldY -> yDistance;
+	 if);
+	  #);
       guidelineSnap:
         (#
         do 
@@ -81,6 +100,7 @@ do (# snappedHGL: ^HorizontalGuideline;
       15.0 -> yDistance;
       x -> newx;
       y -> newy;
+	gridSnap;
       guidelineSnap;
       
       INNER snap;
@@ -165,7 +185,7 @@ do INNER;
     // theShape## <= labelShape## then
        &new.labelShape[] -> new.theShape[];
        (getText).copy -> new.settext; 
-(*    // theShape## <= pngshape## then
+  (*  // theShape## <= pngshape## then
        &new.pngshape[] -> new.theshape[];
        theShape.thePath.copy -> new.theShape.thePath[];
        theshape.openname.copy -> new.theshape.openname[];*)
@@ -175,6 +195,8 @@ do INNER;
    if);
    theshape.width -> new.theshape.width;
    theshape.height -> new.theshape.height;     
+   theshape.curvature-> new.theshape.curvature;     
+   theshape.arrow-> new.theshape.arrow;     
    
 -- AuxLabelShapemakeShape: doPart --
 do (if label[] = NONE then
@@ -196,22 +218,50 @@ do (if label[] = NONE then
 do &ItemType[] -> theItem[];
    theItem.init;
    &BasicStyle[] -> theStyle[];
+   &CompositeStyle[] -> theCompositeStyle[];
+   theStyle[] -> theCompositeStyle.add;
    INNER;
-   theStyle[] -> theItem.theStyle[];
+   theCompositeStyle[] -> theItem.theStyle[];
    
 -- AuxBoxShapemakeShape: doPart --
-do width -> theItem.width;
-   height -> theItem.height;
+do (# points: ^PointList;
+      theLine: ^Line;
+	theBox: ^Rect;
+   do
+   (if curvature = 0 then
+      &Rect[] -> theBox[] -> theItem[];
+	theBox.init;
+	width -> theBox.width;
+	height -> theBox.height;
+    else
+      &PointList[] -> points[];
+      (0, -height/2) -> makePoint -> points.append;
+      (width/2, -height/2) -> makePoint -> points.append;
+      (width/2, height/2) -> makePoint -> points.append;
+      (0, height/2) -> makePoint -> points.append;
+      (-width/2, height/2) -> makePoint -> points.append;
+      (-width/2, -height/2) -> makePoint -> points.append;
+      (0, -height/2) -> makePoint -> points.append;
+      &Line[] -> theLine[] -> theItem[];
+      theLine.init;
+      points[] -> theLine.points[];
+   if);
    lineColor[] -> theStyle.stroke[];
    strokeWidth -> theStyle.strokewidth;
-   fillColor[] -> theStyle.fill[];
+   (if filled then
+    fillColor[] -> theStyle.fill[];
+   if);
+   curvature -> &CurvatureStyle -> theCompositeStyle.add;
+#);
    
 -- AuxEllipseShapemakeShape: doPart --
 do width -> theItem.width;
    height -> theItem.height;
    lineColor[] -> theStyle.stroke[];
    strokeWidth -> theStyle.strokewidth;
-   fillColor[] -> theStyle.fill[];
+   (if filled then
+    fillColor[] -> theStyle.fill[];
+   if);
 
 -- AuxmakeShape: doPart --
 do (if theShape[] <> NONE then
@@ -312,6 +362,12 @@ do (if thePath[] = NONE then
 do lineColor[] -> theStyle.stroke[];
    strokeWidth -> theStyle.strokewidth;
    points[] -> theItem.points[];
+   (if filled then
+    fillColor[] -> theStyle.fill[];
+   if);
+   curvature -> &CurvatureStyle -> theCompositeStyle.add;
+   1.0 -> &ArrowHeadStyle -> theCompositeStyle.add;
+   arrow -> &ArrowStyle -> theCompositeStyle.add;
    
 -- auxboxgetanchors:dopart --
 do (x + a, y + b) -> MakePoint -> anchors.append;

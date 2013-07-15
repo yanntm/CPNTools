@@ -37,6 +37,25 @@ INCLUDE '~beta/basiclib/regexp';
 INCLUDE '~beta/postwimp/foundation/abstractsurface';
 
 -- Workspacelib: attributes --
+saveFile: fileObject
+  (#
+     myError:< 
+            (# msg: ^Text;
+            enter msg[]
+            do 'Error during save: ' -> msg.prepend;
+               INNER; 
+            #);
+     
+     AccessError:: (# msg: ^Text; do (name).copy->msg[]; ': Insufficient access privilegies.'->msg.append; msg[] -> myError; #);
+     WriteError:: (# msg: ^Text; do (name).copy->msg[]; ': Write error.'->msg.append; msg[] -> myError; #);
+     ReadError:: (# msg: ^Text; do (name).copy->msg[]; ': Read error.'->msg.append; msg[] -> myError; #);
+     EOSerror:: (# msg: ^Text; do (name).copy->msg[]; ': Unexpected end-of-file.'->msg.append; msg[] -> myError; #);
+     NoSuchFileError:: (# msg: ^Text; do (name).copy->msg[]; ': No such file.'->msg.append; msg[] -> myError; #);
+     FileExistsError:: (# msg: ^Text; do (name).copy->msg[]; ': File exists.'->msg.append; msg[] -> myError; #);
+     NoSpaceError:: (# msg: ^Text; do (name).copy->msg[]; ': No space left on device.'->msg.append; msg[] -> myError; #);
+     OtherError:: (# msg: ^Text; do (name).copy->msg[]; ': Unknown error.'->msg.append; msg[] -> myError; #);
+  #);
+
 
 PackVisitor: NetVisitor
   (# elmStack: @Stack(# element:: theXML.Element; #);
@@ -203,6 +222,41 @@ PackVisitor: NetVisitor
        #);
   #);
 
+writeNetXML:
+(#
+      XMLList: List(# Element:: theXML.Element; #);
+      saveList: @XMLList;
+     add:
+       (# xmlElm: ^theXML.Element;
+       enter xmlElm[]
+       do (if xmlElm[] <> none then
+              xmlElm[] -> saveList.append;
+          if);
+       #);
+	    rootElm, generatorElm: ^theXML.Element;
+          tmpFile: ^stream;
+          net: ^CPNet;
+          theSaver: ^PackVisitor;
+
+      enter (net[], tmpFile[])
+     do &PackVisitor[] -> theSaver[];
+	  theSaver.init;
+	  net[] -> theSaver.visitCPNet;
+	  theSaver.getResult -> add;
+          'workspaceElements' -> theXML.createElement -> rootElm[];
+          'generator' -> theXML.createElement -> generatorElm[] -> rootElm.addElement;
+          ('tool',toolname) -> generatorElm.createTextAttribute;
+          ('version',version) -> generatorElm.createTextAttribute;
+          ('format', xmlformat) -> generatorElm.createIntAttribute;
+          saveList.scan(# do current[] -> rootElm.addElement; #);
+ 
+          '<?xml version="1.0" encoding="iso-8859-1"?>' -> tmpFile.putline;
+          '<!DOCTYPE workspaceElements PUBLIC "-//CPN//DTD CPNXML 1.0//EN" "http://cpntools.org/DTD/6/cpn.dtd">' -> tmpFile.putline;
+          (rootElm[], tmpfile[]) -> theXML.print;
+
+#);
+
+
 -- Autosave: doPart --
 do tryAutosave:
      (# status: ^Workspace.StatusBubble;
@@ -242,45 +296,19 @@ do (# theFile: @fileObject;
    #);
    
 -- SaveNetAttributes: attributes --   
-saveFile: fileObject
-  (#
-     myError:< 
-            (# msg: ^Text;
-            enter msg[]
-            do 'Error during save: ' -> msg.prepend;
-               INNER; 
-            #);
-     
-     AccessError:: (# msg: ^Text; do (name).copy->msg[]; ': Insufficient access privilegies.'->msg.append; msg[] -> myError; #);
-     WriteError:: (# msg: ^Text; do (name).copy->msg[]; ': Write error.'->msg.append; msg[] -> myError; #);
-     ReadError:: (# msg: ^Text; do (name).copy->msg[]; ': Read error.'->msg.append; msg[] -> myError; #);
-     EOSerror:: (# msg: ^Text; do (name).copy->msg[]; ': Unexpected end-of-file.'->msg.append; msg[] -> myError; #);
-     NoSuchFileError:: (# msg: ^Text; do (name).copy->msg[]; ': No such file.'->msg.append; msg[] -> myError; #);
-     FileExistsError:: (# msg: ^Text; do (name).copy->msg[]; ': File exists.'->msg.append; msg[] -> myError; #);
-     NoSpaceError:: (# msg: ^Text; do (name).copy->msg[]; ': No space left on device.'->msg.append; msg[] -> myError; #);
-     OtherError:: (# msg: ^Text; do (name).copy->msg[]; ': Unknown error.'->msg.append; msg[] -> myError; #);
-  #);
-
 save:
-  (# XMLList: List(# Element:: theXML.Element; #);
+  (# 
      fileName: ^Text;
-     saveList: @XMLList;
      err: @boolean;
      msg: ^text;
+     net: ^CPNet;
      myError:<
        (# msg: ^Text;
        enter msg[]
        do INNER;
        #);
-     add:<
-       (# xmlElm: ^theXML.Element;
-       enter xmlElm[]
-       do (if xmlElm[] <> none then
-              xmlElm[] -> saveList.append;
-          if);
-       #);
-  enter fileName[]
-  do INNER;
+  enter (net[], fileName[])
+  do
      process_savefile:
        (# 
           mySaveFile: saveFile
@@ -294,9 +322,7 @@ save:
           savetmp, tmp: ^Text;
           tmpFile: ^mySaveFile;
           delFile: ^mySaveFile;
-          rootElm, generatorElm: ^theXML.Element;
        do 
-          
           (* Open file *)
           &mySaveFile[]->tmpFile[];
           fileName.copy->savetmp[];
@@ -305,21 +331,12 @@ save:
           
           (* Build full XML tree*)
           &Text[] -> tmp[];
-          'workspaceElements' -> theXML.createElement -> rootElm[];
-          'generator' -> theXML.createElement -> generatorElm[] -> rootElm.addElement;
-          ('tool',toolname) -> generatorElm.createTextAttribute;
-          ('version',version) -> generatorElm.createTextAttribute;
-          ('format', xmlformat) -> generatorElm.createIntAttribute;
-          saveList.scan(# do current[] -> rootElm.addElement; #);
-          
+         
           (* Write XML info *)               
           tmpFile.openWrite;
-          
-          '<?xml version="1.0" encoding="iso-8859-1"?>' -> tmpFile.putline;
-          '<!DOCTYPE workspaceElements PUBLIC "-//CPN//DTD CPNXML 1.0//EN" "http://cpntools.org/DTD/6/cpn.dtd">' -> tmpFile.putline;
+          (net[], tmpFile[]) -> writeNetXML;
           
           (* Write the XML tree *)
-          (rootElm[], tmpfile[]) -> theXML.print;
           tmpFile.close;
           
           (* Delete old file *)
@@ -336,7 +353,28 @@ save:
        #);
   exit err
   #);
-   
+
+-- ExportNet: doPart --   
+do (theNet[], theXML[]) -> writeNetXML;
+
+-- SavePNML: doPart --   
+do   process_savefile:
+       (# 
+          mySaveFile: saveFile
+            (# myError::
+                 (# 
+                 do msg[] -> THIS(SavePNML).myError;
+                    leave process_savefile;
+                 #);
+            #);
+          outFile: ^mySaveFile;
+       do &mySaveFile[]->outFile[];
+          savename[] -> outFile.name;
+          outFile.openWrite;
+	    theNet.ml[] -> theNet.exportPNML -> outFile.putline;
+          outFile.close;
+	 #);
+ 
 -- SaveNet: doPart --   
 do (# suffix: ^Text;
       theDiskEntry: @diskEntry;
@@ -379,16 +417,11 @@ do (# suffix: ^Text;
             else
                diskPath -> savename[];
            if);
-           savename[] -> save(# myError::
+           (theNet[], savename[]) -> save(# myError::
                                   (#
                                   do msg[] -> THIS(SaveNet).myError;
                                      leave AttemptSave;
                                   #);
-                                theSaver: ^PackVisitor;
-                             do &PackVisitor[] -> theSaver[];
-                                theSaver.init;
-                                theNet[] -> theSaver.visitCPNet;
-                                theSaver.getResult -> add;
                              #);
            (if markNetSaved then
                theNet.saved;
@@ -745,7 +778,9 @@ do (# visitedPages: @IDDictionary (# Element:: CPNPage; #);
         do 'instances' -> theXML.createElement -> elm[];
            current.scanInstanceRoots
            (#
-           do current[] -> saveInstance -> elm.addElement;
+		     do (if not current.thePage.isCanvas then
+		     current[] -> saveInstance -> elm.addElement;
+		     if);
            #);
         exit elm[]
         #);
@@ -842,7 +877,8 @@ do ('globbox', NONE)->createAndPushElm;
    popElm;
 
 --PackVisitorVisitCPNPage: doPart--
-do ('page', current.ID[])->createAndPushElm;
+do (if not current.isCanvas then
+   ('page', current.ID[])->createAndPushElm;
    (if debugging then
        'packing CPNPage %s.'->debugSave(# do current.id[]->s; #);
    if);
@@ -871,6 +907,7 @@ do ('page', current.ID[])->createAndPushElm;
        'done packing CPNPage %s.'->debugSave(# do current.id[]->s; #);
    if);
    popElm;
+   if);
 
 --PackVisitorVisitPlace: doPart--
 do (# dx, dy: @real;
@@ -1153,6 +1190,7 @@ do ('Aux', current.ID[])->createAndPushElm;
            'box'->theXML.createElement->tmpElm[]->(elmStack.top).addElement;
            ('w', (current.theShape.width->unscale))->tmpElm.createRealAttribute;
            ('h', (current.theShape.height->unscale))->tmpElm.createRealAttribute;
+           ('curvature', current.theShape.curvature)->tmpElm.createIntAttribute;
         //current.theShape## <= current.LabelShape## then
            'label'->theXML.createElement->tmpElm[]->(elmStack.top).addElement;
            (*('w', (current.theShape.width->unscale))->tmpElm.createRealAttribute;
@@ -1179,6 +1217,8 @@ do ('Aux', current.ID[])->createAndPushElm;
               #);
 	      ('points', points[])->tmpElm.createTextAttribute;
            #);
+           ('curvature', current.theShape.curvature)->tmpElm.createIntAttribute;
+           ('arrow', current.theShape.arrow)->tmpElm.createIntAttribute;
        if);
    if);
    (if current.getText<> none then
@@ -1373,6 +1413,16 @@ PackIntColorSet: PackInternalDecl
   <<SLOT PackVisitorPackIntColorSet: doPart>>
   #);
 
+PackIntInfColorSet: PackInternalDecl
+  (# Type:: theDecl.IntInfColorSetDecl;
+  <<SLOT PackVisitorPackIntInfColorSet: doPart>>
+  #);
+
+PackTimeColorSet: PackInternalDecl
+  (# Type:: theDecl.TimeColorSetDecl;
+  <<SLOT PackVisitorPackTimeColorSet: doPart>>
+  #);
+
 PackProductColorSet: PackInternalDecl
   (# Type:: theDecl.ProductColorSetDecl;
   <<SLOT PackVisitorPackProductColorSet: doPart>>
@@ -1517,6 +1567,10 @@ do 'color'->elm.tag[];
    do (if true
        //current## <= theDecl.IntColorSetDecl## then
           current[]->PackIntColorSet->elm.addElement;
+       //current## <= theDecl.IntInfColorSetDecl## then
+          current[]->PackIntInfColorSet->elm.addElement;
+       //current## <= theDecl.TimeColorSetDecl## then
+          current[]->PackTimeColorSet->elm.addElement;
        //current## <= theDecl.ProductColorSetDecl## then
           current[]->PackProductColorSet->elm.addElement;
        //current## <= theDecl.EnumColorSetDecl## then
@@ -1556,6 +1610,19 @@ do 'int'->elm.tag[];
        'ml'->theXML.createElement->mlElm[]->xmlElm.addElement;
        theColorSet.high[]->theXML.createDataElement->mlElm.addElement;
    if);
+
+--PackVisitorPackIntInfColorSet: doPart--
+do 'intinf'->elm.tag[];
+   (if (theColorSet.low[] <> none) and (theColorSet.high[] <> none) then
+       'with'->theXML.createElement->xmlElm[]->elm.addElement;
+       'ml'->theXML.createElement->mlElm[]->xmlElm.addElement;
+       theColorSet.low[]->theXML.createDataElement->mlElm.addElement;
+       'ml'->theXML.createElement->mlElm[]->xmlElm.addElement;
+       theColorSet.high[]->theXML.createDataElement->mlElm.addElement;
+   if);
+
+--PackVisitorPackTimeColorSet: doPart--
+do 'time'->elm.tag[];
 
 --PackVisitorPackProductColorSet: doPart--
 do 'product'->elm.tag[];

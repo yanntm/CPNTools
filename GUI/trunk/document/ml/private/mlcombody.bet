@@ -159,8 +159,8 @@ do (if (command[] <> NONE) and (Private.initialized) then
             THIS(MLCom)[]->command.Private.currentMLCom[];
             &onError[]->command.Private.errorHandler[];
             command[]->Private.currentCommand[];
-            (waitForEver, command.Send)->Private.dmo.Put
-            (# onError:: (# do THIS(MLCom).onError; Private.dmo.forceTimeOut; leave ExecuteScope; #); #);
+		(waitForEver, command.Send)->Private.dmo.Put
+		(# onError:: (# do THIS(MLCom).onError; Private.dmo.forceTimeOut; leave ExecuteScope; #); #);
             command.Private.lock.P;
             NONE->command.Private.errorHandler[];
             NONE->command.Private.currentMLCom[];
