@@ -89,6 +89,7 @@ ConstraintArcInstrument: AbstractArcInstrument
 		    do &ConstraintArc[] -> thePrototype[] -> theConstraintArcPrototype[] -> prototype[];
 		       prototype.init;
 			 prototype.setAnnotation;
+			 unchecked -> prototype.status;
 		       ('arrow' -> options.lookupInteger) -> theConstraintArcPrototype.arrowStyle;
 			 ('line' -> options.lookupInteger) -> theConstraintArcPrototype.lineStyle;
 			 formula[] -> theConstraintArcPrototype.theFormula[];

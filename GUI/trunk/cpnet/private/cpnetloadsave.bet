@@ -660,12 +660,6 @@ do (# theArrow, theLine: @integer; (* TODO *)
 	(if (theArrow %band PLUS_END > 0) then
 	       'plus_end' -> theXML.createElement -> tmpElm.addElement;
 	if);
-	(if (theArrow %band DARROW_START > 0) then
-	       'darrow_start' -> theXML.createElement -> tmpElm.addElement;
-	if);
-	(if (theArrow %band DARROW_END > 0) then
-	       'darrow_end' -> theXML.createElement -> tmpElm.addElement;
-	if);
 	(if (theArrow %band CIRCLE_START > 0) then
 	       'circle_start' -> theXML.createElement -> tmpElm.addElement;
 	if);

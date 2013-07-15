@@ -64,6 +64,7 @@ do (# clipping: ^ConstraintArcClipping;
       com: ^CreateCommand;
    do 
     	  thePrototype.clone -> theArc[];
+	  unchecked -> theArc.status;
     	  
     	  &ConstraintArcClipping[] -> clipping[];
     	  context[] -> MakeGroupList -> groups[];

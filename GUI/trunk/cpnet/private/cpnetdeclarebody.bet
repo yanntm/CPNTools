@@ -40,7 +40,7 @@ do ('theTransition[] <> NONE ', private.theTransition[] <> NONE) -> assert (# #)
 do private.theTransition[] -> elm[];
 
 -- ConstraintInscriptionstatus:doPart --
-do 
+do theStatus -> value;
    
 --ConstraintInscriptiondelete: doPart--
 do (if debugging then 'Cpnet: Deleting ConstraintInscription\n' -> debugCPNet if);   
@@ -160,6 +160,7 @@ do
    this(Transition)[] -> theConstraintInscription.setTransition;
    getCPNPage -> theConstraintInscription.setCPNPage;
    theConstraintInscription.defaultSnap;
+   unchecked -> theConstraintInscription.theStatus;
 
 -- ConstraintInscriptionUpdate: doPart --
 do theLabel[] -> theText[];
