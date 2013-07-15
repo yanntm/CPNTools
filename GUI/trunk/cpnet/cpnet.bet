@@ -4900,6 +4900,7 @@ ConstraintInscription: HierarchyInfo
 (# private: @<<SLOT ConstraintInscriptionPrivate:descriptor>>;
      theName, theLabel, theFormula: ^text;
      theLineStyle: @integer;
+     theStatus: @integer;
      init::< (#
 	     enter (theName[], theLabel[], theFormula[], (# enter theLineStyle #))
 	     do theLabel[] -> setCPNML;

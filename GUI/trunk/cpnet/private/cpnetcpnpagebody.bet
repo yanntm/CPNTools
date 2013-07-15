@@ -40,7 +40,8 @@ ORIGIN '../cpnet';
         subpagesStatus.init;
         pageInstances.init;
         SSNodes.init;
-	SSArcs.init;
+	  SSArcs.init;
+	  false -> previouslyConstraints;
      #);
    canvas: @boolean;
    places: @PlaceIDDictionary; 
@@ -48,6 +49,7 @@ ORIGIN '../cpnet';
    SSArcs: @SSArcIDDictionary;
    arcs: @ArcIDDictionary;
    constraintArcs: @ConstraintArcIDDictionary;
+   previouslyConstraints: @boolean;
    guidelines: @GuidelineList;
    auxs: @AuxIDDictionary;
    SSNodes: @SSNodeIDDictionary;
@@ -1418,7 +1420,16 @@ do (# dummyCPNPage, dummyCPNPageClone: ^CPNPage;
    #);
 
 -- mlCPNPageCheckDeclareReceive: DoPart --
-do
+do 
+   scanTransitions (#
+   do current.scanConstraintInscriptions (#
+	   do compiled -> current.theStatus;
+	      current.changed;
+      #);
+   #);
+   THIS(CPNPage).private.constraintArcs.scan (#
+   do compiled -> current.status;
+   #);
 
 -- mlCPNPageCheckDeclareError: DoPart --
 do
@@ -1435,8 +1446,12 @@ do (# constraintsFound: @boolean;
       #);
    #);
    if);
-   (if constraintsFound then
+   (if constraintsFound or THIS(CPNPage).private.previouslyConstraints then
+          true -> THIS(CPNPage).private.previouslyConstraints;
 	    theML[] -> checkDeclareConstraints;
+	    (if not constraintsFound then
+	        false -> THIS(CPNPage).private.previouslyConstraints;
+          if);
    if);
 #);
 
@@ -1457,9 +1472,12 @@ do foundConstraintInscriptions.init;
    foundConstraintInscriptions.size + THIS(CPNPage).private.constraintArcs.size -> bis.putint;
    foundConstraintInscriptions.scan (#
    do current[] -> addConstraintInscription;
+   compiling -> current.theStatus;
+   current.changed;
    #);
    THIS(CPNPage).private.constraintArcs.scan (#
    do current[] -> addConstraintArc;
+      compiling -> current.status;
    #);
 #);
 

@@ -1137,6 +1137,82 @@ CPNetLoader: Loader
 			    (#
 			      elmName:: (# do 'constraints' -> value[]; #);
 			    	load:: (#
+                                   ConstraintArcLoader: @PageElementLoader
+                                     (# Type:: ConstraintArc;
+						    elmName:: (# do 'constraint' -> value; #);
+                                        load::
+						    (# t1, t2: ^Transition;
+							 arcType: @integer;    
+							 lineType: @integer;    
+							do obj.setAnnotation;
+							   getPage -> obj.setCPNPage;
+							   elm.scanElements (#
+							   do (if true
+							   // 'graphics' -> current.tag.equalNCS then
+							      'label' -> current.lookupText -> obj.theLabel[];
+                                                0 -> arcType -> lineType;
+								 current.scanElements(#
+									 do (if true
+									    // 'arrow_start' -> current.tag.equalNCS then
+									       arcType %bor ARROW_START -> arcType;
+									    // 'arrow_end' -> current.tag.equalNCS then
+									       arcType %bor ARROW_END -> arcType;
+									    // 'darrow_start' -> current.tag.equalNCS then
+									       arcType %bor DARROW_START -> arcType;
+									    // 'darrow_end' -> current.tag.equalNCS then
+									       arcType %bor DARROW_END -> arcType;
+									    // 'plus_start' -> current.tag.equalNCS then
+									       arcType %bor PLUS_START -> arcType;
+									    // 'plus_end' -> current.tag.equalNCS then
+									       arcType %bor PLUS_END -> arcType;
+									    // 'circle_start' -> current.tag.equalNCS then
+									       arcType %bor CIRCLE_START -> arcType;
+									    // 'circle_end' -> current.tag.equalNCS then
+									    arcType %bor CIRCLE_END -> arcType;
+									    // 'diamond_start' -> current.tag.equalNCS then
+									       arcType %bor DIAMOND_START -> arcType;
+										 // 'diamond_end' -> current.tag.equalNCS then
+										 arcType %bor DIAMOND_END-> arcType;
+										 // 'filled_circle_start' -> current.tag.equalNCS then
+									       arcType %bor FILLED_CIRCLE_START -> arcType;
+									    // 'filled_circle_end' -> current.tag.equalNCS then
+									       arcType %bor FILLED_CIRCLE_END -> arcType;
+									    // 'double' -> current.tag.equalNCS then
+									       lineType %bor DOUBLE -> lineType;
+									    // 'triple' -> current.tag.equalNCS then
+									    lineType %bor TRIPLE -> lineType;
+									    // 'strike' -> current.tag.equalNCS then
+									       lineType %bor STRIKE -> lineType;
+										 // 'diamond' -> current.tag.equalNCS then
+										 lineType %bor DIAMOND -> lineType;
+									    // 'filled_diamond' -> current.tag.equalNCS then
+									    lineType %bor FILLED_DIAMOND -> lineType;
+									    if);
+								    #);
+                                                 arcType -> obj.arrowStyle;
+								 lineType -> obj.lineStyle;
+							   // 'semantics' -> current.tag.equalNCS then
+							      'name' -> current.lookupText -> obj.theName[];
+								'formula' -> current.lookupText -> obj.theFormula[];
+						         // 'task1' -> current.tag.equalNCS then
+							      'idref' -> current.lookupText -> lookupObject -> t1[]
+						         // 'task2' -> current.tag.equalNCS then
+							      'idref' -> current.lookupText -> lookupObject -> t2[]
+						         if);
+                                            
+							       &Task (# stage:: (# do 1 -> value; #);
+								 do
+							      t1[] -> obj.setSource;
+							      t2[] -> obj.setTarget;
+								obj[] -> t1.addConstraintArc;
+								obj[] -> t2.addConstraintArc;
+								obj[] -> (getPage).addConstraintArc;
+								obj.normalizeOrder;
+								#)[] -> scheduleTask;
+							   #);
+                                          #);
+                                     #);
+
                                    ConstraintInscriptionLoader: @PageElementLoader
                                      (# Type:: ConstraintInscription;
 						    elmName:: (# do 'constraint' -> value; #);
@@ -1183,7 +1259,7 @@ CPNetLoader: Loader
 						     #);
 						     (if type
 						     // 1 then current[] -> ConstraintInscriptionLoader.load;
-						     // 2 then current[];
+						     // 2 then current[] -> ConstraintArcLoader.load;
 						     if);
 						 if);
 						 #);
