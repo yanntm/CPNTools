@@ -415,7 +415,6 @@ PSContext: Context
               (end.x + ux * A, end.y + uy * A) -> MakePoint -> m[];
               B * ux -> rx;
               B * uy -> ry;
-              (end.x + rx * 0.5, end.y + ry * 0.5) -> Point2d;
               (end.x + rx - C * uy, end.y + ry + C * ux) -> MakePoint -> q[];
               (end.x + rx + C * uy, end.y + ry - C * ux) -> MakePoint -> p[];
               doStroke;
@@ -444,7 +443,39 @@ PSContext: Context
                    do m.x -> f;
                       (- m.y) -> f;
                    #);
-              'fill grestore' -> output.putline;
+			 'fill' -> output.putline;
+		   (if not filled then
+			  (end.x + ux*(A-2*theArrowHeadSize), end.y + uy*(A-2*theArrowHeadSize)) -> MakePoint -> m[];
+			  (end.x + rx - (C-2*theArrowHeadSize)*uy, end.y + ry + (C-2*theArrowHeadSize)*ux) -> MakePoint -> q[];
+			  (end.x + rx + (C-2*theArrowHeadSize)*uy, end.y + ry - (C-2*theArrowHeadSize)*ux) -> MakePoint -> p[];
+			  '1.0 1.0 1.0 setrgbcolor\n' -> output.putline;
+			  '%f %f moveto\n' ->
+			     output.putFormat
+				 (#
+				 do p.x -> f;
+				    (- p.y) -> f;
+				 #);
+			  '%f %f lineto\n' ->
+			     output.putFormat
+				 (#
+				 do end.x + THIS(drawDiamond).ux*2*theArrowHeadSize -> f;
+				    -end.y - THIS(drawDiamond).uy*2*theArrowHeadSize -> f;
+				 #);
+			  '%f %f lineto\n' ->
+			     output.putFormat
+				 (#
+				 do q.x -> f;
+				    (- q.y) -> f;
+				 #);
+			  '%f %f lineto\n' ->
+			     output.putFormat
+				 (#
+				 do m.x -> f;
+				    (- m.y) -> f;
+				 #);
+				 'fill' -> output.putline;
+		   if);
+              'grestore' -> output.putline;
 		  if);
 		  exit A
 	    #);

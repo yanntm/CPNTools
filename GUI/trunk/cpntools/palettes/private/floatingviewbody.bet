@@ -377,19 +377,28 @@ do getToolCells->list[];
    CoExistenceCell[] -> NSuccessionCell.setRightCell;
    ChoiceCell[] -> NCSuccessionCell.setRightCell;
 
-   (* IncludeCell[] -> RespondedExistenceCell.setRightCell; *)
-   (* ExcludeCell[] -> CoExistenceCell.setRightCell; *)
-   (* ExclusiveChoiceCell[] -> ChoiceCell.setRightCell; *)
+   (if dcr then
+   IncludeCell[] -> RespondedExistenceCell.setRightCell;
+   ExcludeCell[] -> CoExistenceCell.setRightCell;
+   ExclusiveChoiceCell[] -> ChoiceCell.setRightCell;
+   else
    ExclusiveChoiceCell[] -> RespondedExistenceCell.setRightCell;
+   if);
 
-   (* MilestoneCell[] -> IncludeCell.setRightCell; *)
-   (* InitCell[] -> ExcludeCell.setRightCell; *)
-   (* LastCell[] -> ExclusiveChoiceCell.setRightCell; *)
+   (if dcr then
+   MilestoneCell[] -> IncludeCell.setRightCell;
+   InitCell[] -> ExcludeCell.setRightCell;
+   LastCell[] -> ExclusiveChoiceCell.setRightCell;
+   else
    InitCell[] -> CoExistenceCell.setRightCell;
    LastCell[] -> ChoiceCell.setRightCell;
+   if);
 
-   (*Existence1Cell[] -> MilestoneCell.setRightCell; *)
+   (if dcr then
+   Existence1Cell[] -> MilestoneCell.setRightCell;
+   else
    Existence1Cell[] -> ExclusiveChoiceCell.setRightCell;
+   if);
    Existence2Cell[] -> InitCell.setRightCell;
    Existence3Cell[] -> LastCell.setRightCell;
 

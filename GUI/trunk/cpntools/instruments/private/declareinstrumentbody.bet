@@ -54,14 +54,15 @@ do storage.scanReverse
      #);
 
    elm[] -> context.removeConstraintArc;
-   elm[] -> t1.removeArc;
-   elm[] -> t2.removeArc;
+   elm[] -> t1.removeConstraintArc;
+   elm[] -> t2.removeConstraintArc;
 
  --CreateConstraintArc:doPart--
 do (# clipping: ^ConstraintArcClipping;
       clip: ^PageClip;
       groups: ^GroupList;
       com: ^CreateCommand;
+      slaves: ^PageElementList;
    do 
     	  thePrototype.clone -> theArc[];
 	  unchecked -> theArc.status;
@@ -72,6 +73,31 @@ do (# clipping: ^ConstraintArcClipping;
     	  &PageClip[] -> clip[];
     
 	  clipping[] -> clip.add;
+	      bends.scan
+	      (# theBendPointClipping: ^BendPointClipping;
+		 guides: ^GuideLineList;
+		 i: @integer;
+		 bend: ^BendPoint;
+	      do (if source## = Transition## then
+		     i + 1 -> i;
+		  else
+		     1 -> i;
+		 if);
+		 (context[], current.x, current.y) -> MakeGuideList -> (guides[], current.x, current.y);
+		 &BendPointClipping[] -> theBendPointClipping[];
+		 &BendPoint[] -> bend[];
+		 bend.init;
+		 current -> (bend.x, bend.y);
+		 (bend[], i, guides[]) -> theBendPointClipping.init;
+		 theBendPointClipping[] -> clipping.add;
+	      #);
+	      theArc.getSlaves -> slaves[];
+	      slaves.scanReverse
+	      (#
+	      do (if NOT (current## <= BendPoint##) then
+		     current[] -> ClippingFactory -> clip.add;
+		 if);
+	      #);
     	  
     	  &CreateCommand[] -> com[];
     	  context[] -> com.prepare;

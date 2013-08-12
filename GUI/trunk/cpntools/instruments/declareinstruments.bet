@@ -71,7 +71,7 @@ ConstraintInscriptionClipping: Clipping
 		 #);
   #);
 
-ConstraintArcInstrument: AbstractArcInstrument
+ConstraintArcInstrument: NoSubstitutionArcInstrument
 (#    
 	constraintName: ^text;
 	formula: ^text;
@@ -125,7 +125,7 @@ ConstraintInscriptionInstrument: FigureTInstrument
        #);
      relevant::
        (# 
-		 do true -> value;
+		 do not (target.isSubstitutionTransition) -> value;
        #);
      apply::
        (# theConstraint: ^ConstraintInscription;
@@ -192,4 +192,22 @@ CreateConstraintArc:
   exit theArc[]
   #);
 
+
+CloneConstraintInscriptionInstrument: GenericCursorScalingInstrument
+  (# TargetType:: Transition;
+     FigureT::< PageElementFigure;
+     theFusionInfo: ^ConstraintInscription;
+     theFusionInstrument: ^ConstraintInscriptionInstrument;
+     originalPlace: ^Transition;
+     init::
+       (# tmpFigure: ^FigureT;
+       enter (theFusionInfo[],originalPlace[])
+       do &ConstraintInscriptionInstrument[] -> theFusionInstrument[];
+          (theFusionInfo.theName.copy, theFusionInfo.theFormula.copy, theFusionInfo.theLineStyle, theFusionInfo.theLabel.copy) -> theFusionInstrument.init;
+          theFusionInstrument[] -> register;
+          &FigureT[] -> tmpFigure[];
+          theFusionInfo[] -> tmpFigure.init;
+          tmpFigure[] -> instrumentcursor.setFigure;
+       #);
+  #);
 

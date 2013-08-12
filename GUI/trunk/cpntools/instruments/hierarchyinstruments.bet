@@ -43,6 +43,27 @@ BODY 'private/hierarchyinstrumentsbody'
  * Global methods
  *)
 
+SubstitutionPossible: (#
+	theTransition: ^Transition;
+	value: @boolean;
+	enter	theTransition[]
+	do	false -> value;
+		L: (#
+			do	theTransition.scanConstraintArcs (# do leave L; #);
+				theTransition.scanConstraintInscriptions (# do leave L; #);
+				theTransition.scanArcs (#
+					do	(if current.getOrientation = ResetArc then
+							leave L;
+						if);
+						(if current.getOrientation = Inhibitor then
+							leave L;
+						if);
+				#);
+				true -> value;
+		#);
+	exit	value
+	#);
+
 CreateRemoveMemberFromFusionSetCommand:
   (# thePlace: ^Place;
      theCommand: ^RemoveMemberFromFusionSetCommand;
@@ -476,7 +497,7 @@ SetSubPageInstrument: CPNGenericInstrument
        (# TargetType:: Transition;               
           relevant::
             (# 
-            do theTransition[] = none -> value
+            do (theTransition[] = none) and (target[] -> SubstitutionPossible) -> value
             #);
           apply::
             (# 

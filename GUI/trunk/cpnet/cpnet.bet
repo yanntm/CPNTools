@@ -4901,6 +4901,11 @@ ConstraintInscription: HierarchyInfo
      theName, theLabel, theFormula: ^text;
      theLineStyle: @integer;
      theStatus: @integer;
+     menuName::<
+       (# 
+		 do NamesPageMenuConstraintArc -> getGlobalNames -> txt[];
+		 INNER;
+       #);
      init::< (#
 	     enter (theName[], theLabel[], theFormula[], (# enter theLineStyle #))
 	     do theLabel[] -> setCPNML;
@@ -4931,11 +4936,6 @@ ConstraintInscription: HierarchyInfo
 	 #);
       
      defaultSnapToElement:: (# <<SLOT ConstraintInscriptionDefaultSnapToElement:doPart>> #);
-     menuName::<
-       (# 
-       do NamesPageMenuSubpage -> getGlobalNames -> txt[];
-          INNER;
-       #);
      status:: (# <<SLOT ConstraintInscriptionstatus:doPart>> #);     
      delete:: (# <<SLOT ConstraintInscriptiondelete:doPart>> #);
      next:: (# <<SLOT ConstraintInscriptionNext:doPart>> #);
