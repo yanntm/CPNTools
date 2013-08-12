@@ -42,6 +42,12 @@ do (# slaves: ^PageElementList;
       (#
       do current[] -> ClippingFactory -> clip.add;
       #);
+	(if theNode## <= Transition## then
+      (theNode[] -> QUA (# as:: Transition #)).scanConstraintArcs
+      (#
+      do current[] -> ClippingFactory -> clip.add;
+      #);
+	if);
       (* add members of the same group to the clipping, since the delete
        tool should apply to a whole group. Bug #738 *)
       (* Problems with the following: 1) PageElements are not syntax

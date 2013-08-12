@@ -1423,12 +1423,16 @@ do (# dummyCPNPage, dummyCPNPageClone: ^CPNPage;
 do 
    scanTransitions (#
    do current.scanConstraintInscriptions (#
-	   do compiled -> current.theStatus;
-	      current.changed;
+	   do (if current.theStatus = compiling then
+	         compiled -> current.theStatus;
+		   current.changed;
+		if);
       #);
    #);
    THIS(CPNPage).private.constraintArcs.scan (#
-   do compiled -> current.status;
+   do (if current.status = compiling then
+          compiled -> current.status;
+      if);
    #);
 
 -- mlCPNPageCheckDeclareError: DoPart --

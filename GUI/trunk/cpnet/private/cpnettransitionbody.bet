@@ -723,6 +723,15 @@ do theConstraintArc[] -> private.constraintArcs.append;
    inner;
    (*** onSemanticChanged; ***)
 
+-- TransitionScanConstraintArcs:doPart --
+do private.constraintArcs.scan
+   (# 
+   do 
+          current[] -> this(scanConstraintArcs).current[];
+          inner scanConstraintArcs;
+   #);
+
+
 -- TransitionRemoveConstraintInscription:DoPart --
 do 
    theConstraintInscription[] -> private.constraintInscriptions.at -> private.constraintInscriptions.delete;

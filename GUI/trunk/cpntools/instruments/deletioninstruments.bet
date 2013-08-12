@@ -35,6 +35,7 @@ INCLUDE 'creationinstruments';
 INCLUDE 'hierarchyinstruments';
 INCLUDE 'monitoringinstruments';
 INCLUDE 'declinstruments';
+INCLUDE 'declareinstruments';
 
 BODY 'private/deletioninstrumentsbody';
 
@@ -130,6 +131,14 @@ DeletePageElementInstrument: GenericInstrument
                finish;
             #);
        #);
+     DeleteConstraintInscriptionInstrument: @Instrument
+     (# TargetType:: ConstraintInscription;
+          apply::
+            (# 
+			do target[] -> DeleteConstraintInscription;
+               finish;
+            #);
+       #);
      DeleteNodeInstrument: @Instrument
        (# TargetType:: CPNNode;
           
@@ -194,6 +203,8 @@ DeletePageElementInstrument: GenericInstrument
           DeleteTransChannelInstrument[] -> register;
           DeleteFusionInfoInstrument.init;
           DeleteFusionInfoInstrument[] -> register;
+          DeleteConstraintInscriptionInstrument.init;
+          DeleteConstraintInscriptionInstrument[] -> register;
           DeleteSubpageInfoInstrument.init;
           DeleteSubpageInfoInstrument[] -> register;
           DeleteNodeInstrument.init;
@@ -562,6 +573,20 @@ DeleteFusionInfo:
      #);
   #);
 
+DeleteConstraintInscription:
+  (# theConstraintInscription: ^ConstraintInscription;
+  enter theConstraintInscription[]
+  do (# theClipping: ^ConstraintInscriptionClipping;
+        theCommand: ^DeleteConstraintInscriptionCommand;
+     do theConstraintInscription[] -> ClippingFactory -> theClipping[];
+        &DeleteConstraintInscriptionCommand[] -> theCommand[];
+	  theCommand.init;
+	  theConstraintInscription.getTransition -> theCommand.prepare;
+        theClipping[] -> theCommand.apply;
+        (theConstraintInscription.getCPNet,theCommand[]) -> registerCommand;
+     #);
+  #);
+
 DeleteAnnotationCommand: StandardRemoveCommand
   (# TargetType:: Arc;
      ClippingType:: AnnotationClipping;
@@ -629,6 +654,14 @@ DeleteFusionInfoCommand: StandardRemoveCommand
      getName::
        (#
        do 'Delete fusion info' -> name[];
+       #);
+  #);
+  DeleteConstraintInscriptionCommand: StandardRemoveCommand
+  (# TargetType:: Transition;
+     ClippingType:: ConstraintInscriptionClipping;
+     getName::
+       (#
+       do 'Delete constraint inscription' -> name[];
        #);
   #);
 

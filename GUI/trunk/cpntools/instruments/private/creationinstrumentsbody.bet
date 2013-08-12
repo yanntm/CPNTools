@@ -26,6 +26,7 @@
 ORIGIN '../creationinstruments';
 
 INCLUDE '../deletioninstruments';
+INCLUDE '../declareinstruments';
 
 -- ArcClippingInit:DoPart --
 do (if elm.getOrientation = TtoP then
@@ -222,6 +223,25 @@ do (# createClipping:
            #);
            &BendPointList[] -> elm.setBends;
         #);
+      createConstraintArcClipping: createClipping
+        (# Element:: ConstraintArc;
+           ClippingType:: ConstraintArcClipping;
+	do (elm[], elm[] -> MakeBelongToGroupList, NONE, elm.transEnd[], elm.placeEnd[]) -> theClipping.init;
+           elm.getAnnotation -> ClippingFactory ->  theClipping.add;
+           (elm.getBends).scan
+           (# theBendPointClipping: ^BendPointClipping;
+              guides: ^GuideLineList;
+           do &BendPointClipping[] -> theBendPointClipping[];
+              current[] -> MakeBelongToGuideList -> guides[];
+              (current[], inx, guides[]) -> theBendPointClipping.init;
+              theBendPointClipping[] -> theClipping.add;
+           #);
+           elm.scanBendPoints
+           (#
+           do current[] -> elm.removeBendPoint;
+           #);
+           &BendPointList[] -> elm.setBends;
+        #);
       createSSArcClipping: createClipping
         (# Element:: SSArc;
            ClippingType:: SSArcClipping;
@@ -306,6 +326,11 @@ do (# createClipping:
            ClippingType:: FusionInfoClipping;
         do elm[] -> theClipping.init;
         #);
+      createConstraintInscriptionClipping: createClipping
+        (# Element:: ConstraintInscription;
+           ClippingType:: ConstraintInscriptionClipping;
+        do elm[] -> theClipping.init;
+        #);
       createSubpageInfoClipping: createClipping
         (# Element:: Entity;
            ClippingType:: SubpageInfoClipping;
@@ -326,20 +351,24 @@ do (# createClipping:
           elm[] -> createTransitionClipping -> theClipping[];
        //Place## then
           elm[] -> createPlaceClipping -> theClipping[];
+       //SSArc## then
+          elm[] -> createSSArcClipping -> theClipping[];
+       //ConstraintArc## then
+          elm[] -> createConstraintArcClipping -> theClipping[];
        //Arc## then
           elm[] -> createArcClipping -> theClipping[];
        //Aux## then
           elm[] -> createAuxClipping -> theClipping[];
        //PortType## then
           elm[] -> createPortTypeClipping -> theClipping[];
+       //ConstraintInscription## then
+          elm[] -> createConstraintInscriptionClipping -> theClipping[];
        //FusionInfo## then
           elm[] -> createFusionInfoClipping -> theClipping[];
        //PlaceType## then
           elm[] -> createPlaceTypeClipping -> theClipping[];
        //SSNode## then
           elm[] -> createSSNodeClipping -> theClipping[];
-       //SSArc## then
-          elm[] -> createSSArcClipping -> theClipping[];
        //InitMark## then
           elm[] -> createInitMarkClipping -> theClipping[];
        //Annotation## then
@@ -416,17 +445,30 @@ do (# useGroupElementInstrument:
 	   theGroupElementsInstrument[] -> picker.activateInstrument;
 	#);
       theTarget: ^PageElement;
-      theArcInstrument: ^ArcInstrument;
+      theArcInstrument: ^AbstractArcInstrument;
+	theArc: ^Arc;
+	theConstraintArcInstrument: ^ConstraintArcInstrument;
       theInscriptionInstrument: ^InscriptionInstrument;      
       picker: ^PickInstrument;            
    do prototype.clone -> theTarget[];
       (0, 0) -> theTarget.position;
       theHand.active[] -> picker[];
       (if true
+       // theTarget## <= ConstraintArc## then
+	    &ConstraintArcInstrument[] -> theConstraintArcInstrument[];
+          theTarget[] -> QUA (# as::ConstraintArc;
+		    do (NONE, thisObj.theName.copy, thisObj.theFormula.copy, thisObj.arrowStyle, thisObj.lineStyle) -> theConstraintArcInstrument.init;
+		    #);
+	  theConstraintArcInstrument[] -> picker.activateInstrument;
        // (theTarget## <= Arc##) AND (NOT(theTarget## <= SSArc##)) then
-          &ArcInstrument[] -> theArcInstrument[];
-	  theTarget[] -> theArcInstrument.init;
-	  theArcInstrument[] -> picker.activateInstrument;
+	    theTarget[] -> theArc[];
+	    (if theArc.getOrientation
+	      // ResetArc then &ResetArcInstrument[] -> theArcInstrument[];
+		// Inhibitor then &InhibitorArcInstrument[] -> theArcInstrument[];
+		else &ArcInstrument[] -> theArcInstrument[];
+	    if);
+	    theTarget[] -> theArcInstrument.init;
+	    theArcInstrument[] -> picker.activateInstrument;
        // theTarget## <= Place## then
 	  useGroupElementInstrument;          
        // theTarget## <= Aux## then
@@ -465,6 +507,16 @@ do (# useGroupElementInstrument:
 	  &TransGuardInstrument[] -> theInscriptionInstrument[];
 	  theTarget[] -> theInscriptionInstrument.init;
 	  theInscriptionInstrument[] -> picker.activateInstrument;
+	  // theTarget## <= ConstraintInscription## then
+	  theTarget[] -> QUA 
+	  (# as::ConstraintInscription;
+		  theFusionInstrument: ^CloneConstraintInscriptionInstrument;
+	     fi: ^ConstraintInscription;
+	  do &CloneConstraintInscriptionInstrument[] -> theFusionInstrument[];
+	     prototype[] -> fi[];
+	     (thisObj[],fi.getTransition) -> theFusionInstrument.init;
+	     theFusionInstrument[] -> picker.activateInstrument;
+	  #);
        // theTarget## <= FusionInfo## then
 	  theTarget[] -> QUA 
 	  (# as::FusionInfo;
@@ -1071,6 +1123,7 @@ do (not ((target.getCPNPage).getSelectedGroup).isGlobal) and
 do ((target.getCPNPage).getSelectedGroup).all and
    target.hasArcs 
      -> value;
+   value and (target[] -> SubstitutionPossible) -> value;
       
 -- MoveGroupToSubpage:DoPart --
 do (# theMoveGroupToSubpageCommand: ^MoveGroupToSubpageCommand;
@@ -1561,7 +1614,7 @@ do (# theDeleteGroupCommand: ^GroupRemovalCommand;
       (# 
       do (if true
           // current## <= Place## then current[] -> thePlaceList.append;
-          // current## <= Transition## then current[] -> theTransitionList.append;
+          // (current## <= Transition##) and (current[] -> SubstitutionPossible) then current[] -> theTransitionList.append;
           // not (current## <= Arc##) and
              not (current## <= Bendpoint##) and
              not (current## <= Inscription##) then 

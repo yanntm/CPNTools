@@ -362,7 +362,7 @@ do setBusyCursor; (*** LOCK-INTERACTION ***)
 -- CPNetenableExtensions: doPart --
 do
 (# host: ^text;
-   port: ^IntegerObject;
+   port, memory: ^IntegerObject;
    theCpnWorkSpace: ^CpnWorkspace;
    external: ^booleanObject;
    retries: @integer;
@@ -370,6 +370,7 @@ do
    THIS(Workspace)[] -> theCpnWorkspace[]; 
    ('exthost' -> (theCpnWorkSpace.getGlobalOptions).find).theValue[] -> host[];
    ('extport' -> (theCpnWorkSpace.getGlobalOptions).find).theValue[] -> port[];
+   ('extmem' -> (theCpnWorkSpace.getGlobalOptions).find).theValue[] -> memory[];
    ('remoteExtensions' -> (theCpnWorkSpace.getGlobalOptions).find).theValue[] -> external[];
    (if external then
        0 -> retries;
@@ -389,8 +390,15 @@ do
 	 do 
 	    (if not external and (retries > 0) then
 	           (if daemon[] = NONE then
-		          &process[] -> daemon[];
-                      'java' -> daemon.init;
+		            &process[] -> daemon[];
+			    'java' -> daemon.init;
+
+			    &text[] -> t[];
+			    '-Xmx' -> t.puttext;
+			    memory -> t.putint;
+			    'M' -> t.puttext;
+			    t[] -> daemon.argument.append;
+
 			    '-jar' -> daemon.argument.append;
 			    &text[] -> t[];
                             '"' -> t.puttext;
@@ -398,6 +406,7 @@ do
                             '"' -> t.puttext;
 			    t[] -> daemon.argument.append;
 			    '-s' -> daemon.argument.append;
+
 			    daemon.start;
 		     if);
 		     1 -> sleep;

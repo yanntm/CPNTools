@@ -44,6 +44,7 @@ do theStatus -> value;
    
 --ConstraintInscriptiondelete: doPart--
 do (if debugging then 'Cpnet: Deleting ConstraintInscription\n' -> debugCPNet if);   
+   'Delete me' -> putline;
    
 --ConstraintInscriptionNext:doPart--
 do 
@@ -59,15 +60,6 @@ do (if private.theTransition[] <> NONE then
    
 -- ConstraintInscriptionSnap:doPart --
 do THIS(ConstraintInscription)[] -> private.theTransition.snapTo -> (dx,dy);   
-
--- TransitionScanConstraintArcs:doPart --
-do scanArcs
-   (# 
-   do (if current## <= ConstraintArc## then
-          current[] -> this(scanConstraintArcs).current[];
-          inner scanConstraintArcs;
-      if);
-   #);
 
 -- ConstraintArcInstancePrivate:Descriptor --
 (# simulationError: @boolean;
@@ -114,7 +106,7 @@ do (# showHalo:
    #);
    
 -- ConstraintArcInstanceDelete:DoPart --
-do 
+do 'Delete me 2' -> putline;
    
 -- ConstraintArcInstanceStatus:DoPart --
 do (if true

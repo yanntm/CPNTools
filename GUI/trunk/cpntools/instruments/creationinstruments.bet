@@ -1342,12 +1342,13 @@ AbstractArcInstrument: CPNGenericInstrument
        (#
        do clean;
        #);
-     
-     startArc: @Instrument
+
+     startArcInstrument:< Instrument
        (# TargetType::< CPNNode;
-          relevant::
+          relevant::<
             (#
-            do source[] = NONE -> value;
+			do source[] = NONE -> value;
+			   INNER;
             #);
           apply::
             (# picker: ^PickInstrument;
@@ -1379,6 +1380,7 @@ AbstractArcInstrument: CPNGenericInstrument
                finish;
             #);
        #);
+     startArc: @startArcInstrument;
      createBendPoint: @Instrument
        (# TargetType:: CPNSheet;
           
@@ -1450,9 +1452,9 @@ AbstractArcInstrument: CPNGenericInstrument
 	     do INNER;
      #);
 
-     finishArc: @Instrument
+     finishArcInstrument:< Instrument
        (# TargetType:: CPNNode;
-          relevant::
+          relevant::<
             (#
             do false -> value;
                (if NOT (target## <= BendPoint##) then
@@ -1460,8 +1462,9 @@ AbstractArcInstrument: CPNGenericInstrument
                       (source## <= Transition##) and (target## <= PlaceType##) -> value;
                       ((target## <= Transition##) and (source## <= PlaceType##)) or value -> value;
 			    (target.getCPNPage = source.getCPNPage) and value -> value;
+			    INNER;
                    if);
-               if);
+			 if);
             #);          
           apply::
             (# picker: ^PickInstrument;
@@ -1482,6 +1485,7 @@ AbstractArcInstrument: CPNGenericInstrument
                if);               
             #);
        #);  
+     finishArc: @finishArcInstrument;
      DropAfterFirstInvocation:< BooleanObject;     
      init::<
      (# sr: @StyleRecord;
@@ -1508,7 +1512,32 @@ AbstractArcInstrument: CPNGenericInstrument
 	    #);
  #);
 
+NoSubstitutionArcInstrument: AbstractArcInstrument (#
+	NotSubstitutionTransition: (#
+		theNode: ^CPNNode;
+		value: @boolean;
 
+		enter theNode[]
+		do true-> value;
+		(if theNode## <= Transition## then
+			theNode[] -> QUA(# as:: Transition;
+				do not (thisObj.isSubstitutionTransition) -> value;
+			#);
+		if);
+		exit value
+	#);
+
+	startArcInstrument::< (#
+		relevant::< (#
+			do value and (target[] -> NotSubstitutionTransition) -> value;
+		#);
+	#);
+	finishArcInstrument::< (#
+		relevant::< (#
+			do value and (target[] -> NotSubstitutionTransition) -> value;
+		#);
+	#);
+#);
 ArcInstrument: AbstractArcInstrument (#
 	PlaceType:: Place;
 	LocalCreateArc:: (#
@@ -1516,8 +1545,14 @@ ArcInstrument: AbstractArcInstrument (#
 	(theCPNPage[], source[], destination[], bends[], thePrototype[]) -> CreateArc;
 	#);
 #);
-ResetArcInstrument: ArcInstrument
+
+ResetArcInstrument: NoSubstitutionArcInstrument
 (# 
+	PlaceType:: Place;
+	LocalCreateArc:: (#
+	do
+	(theCPNPage[], source[], destination[], bends[], thePrototype[]) -> CreateArc;
+	#);
      ToolTip::<
        (# 
 		 do NamesCreateResetArc -> getGlobalNames -> theTip[];
@@ -1533,8 +1568,13 @@ ResetArcInstrument: ArcInstrument
 			 (# OptionType::IntegerOption(# invisible:: trueObject; #); #);
 		 #);
  #);
-InhibitorArcInstrument: ArcInstrument
+InhibitorArcInstrument: NoSubstitutionArcInstrument
 (# 
+	PlaceType:: Place;
+	LocalCreateArc:: (#
+	do
+	(theCPNPage[], source[], destination[], bends[], thePrototype[]) -> CreateArc;
+	#);
      ToolTip::<
        (# 
 		 do NamesCreateInhibitorArc -> getGlobalNames -> theTip[];
@@ -2399,7 +2439,6 @@ ClonePortTypeInstrument: CloneHierarchyInfoInstrument
           finish;
        #);
   #);
-
 
 MoveToSubPageInstrument: CPNGenericInstrument
   (# FigureT:: MoveToSubpageFigure;

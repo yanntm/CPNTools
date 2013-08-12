@@ -595,9 +595,16 @@ MoveArcInstrument: MoveInstrument
                       theArc.transIncidentPoint -> arcLine.a;
                       theArc.placeincidentPoint -> arcLine.b;
                       mousePos[] -> arcLine.distanceTo -> distanceToArc;
-                      
+
+			    (if theArc## <= ConstraintArc## then
+                      (if (distanceToArc < -(ArcDistance/2)) or
+                          (distanceToArc > (ArcDistance/2)) then
+				  readdBendPoint;
+			    if);
+			    leave loop;
+			    else
                       (if true 
-                       // distanceToArc < -(ArcDistance/2) then
+			     // distanceToArc < -(ArcDistance/2) then
                           (if theArc.getOrder = 1 then
                               readdBendPoint;
                               leave loop;
@@ -613,7 +620,8 @@ MoveArcInstrument: MoveInstrument
                           if);
                        else
                           leave loop;
-                      if);
+			     if);
+			     if);
                    #);
               #);
            else
