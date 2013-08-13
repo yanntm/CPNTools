@@ -1789,6 +1789,11 @@ CPNPage: Highlightable
        enter theConstraintArc[]
        <<SLOT CPNPageRemoveConstraintArc:doPart>>       
        #);
+     removeConstraintInscription:
+     (# theConstraintInscription: ^ConstraintInscription;
+       enter theConstraintInscription[]
+	 <<SLOT CPNPageRemoveConstraintInscription:doPart>>       
+       #);
      removeGuideline:
        (# theGuideline: ^Guideline;
        enter theGuideline[]
@@ -2024,9 +2029,10 @@ CPNPage: Highlightable
      addSuper: (# <<SLOT CPNPageaddSuper:doPart>> #);
      numberOfTimesThisPageBeenChecked: @integer; (* for debugging /krell *)
      checkDeclare:
-       (#
+       (# refreshEnabling: @boolean;
 	checkDeclareConstraints: CPNMLCommand
-       (# send::
+	(# 
+	 	send::
 	     (#
 	        addConstraintArc: (#
 		     constraint: ^ConstraintArc;
@@ -2047,7 +2053,7 @@ CPNPage: Highlightable
 	    theML: ^MLCom;
 	enter theML[]
 	<<SLOT mlCheckDeclare:DoPart>>
-
+      exit refreshEnabling
 	 #);
      syntaxCheck: CPNMLCommand
        (# Send:: 
@@ -4281,7 +4287,7 @@ Arc: PageElement
 
      SetColor::< (# elm: ^Inscription; <<SLOT ArcSetColor:doPart>> #); 
      deleteFromPage::< (# <<SLOT ArcDeleteFromPage:DoPart>> #);
-     delete:: (# <<SLOT ArcDelete:doPart>> #); 
+     delete::< (# <<SLOT ArcDelete:doPart>> #); 
      Clone::< (# Type::< Arc; <<SLOT ArcClone:doPart>> #);
      toString:: (# <<SLOT ArcToString:doPart>> #);
      setPlaceEnd: 
@@ -4911,6 +4917,7 @@ ConstraintInscription: HierarchyInfo
 	     do theLabel[] -> setCPNML;
 	        INNER;
      #);
+     deleteFromPage:: (# do THIS(ConstraintInscription)[] -> (getCPNPage).removeConstraintInscription; #);
      clone:: (# type:: ConstraintInscription;
      do theName.copy -> new.theName[];
         theLabel.copy -> new.theLabel[] -> new.setCPNML;
@@ -4936,7 +4943,7 @@ ConstraintInscription: HierarchyInfo
 	 #);
       
      defaultSnapToElement:: (# <<SLOT ConstraintInscriptionDefaultSnapToElement:doPart>> #);
-     status:: (# <<SLOT ConstraintInscriptionstatus:doPart>> #);     
+     status:: (# enter theStatus <<SLOT ConstraintInscriptionstatus:doPart>> #);     
      delete:: (# <<SLOT ConstraintInscriptiondelete:doPart>> #);
      next:: (# <<SLOT ConstraintInscriptionNext:doPart>> #);
      onSemanticChanged:: (# <<SLOT ConstraintInscriptionOnSemanticChanged:doPart>> #);
@@ -5976,7 +5983,12 @@ ConstraintArc: Arc
 	     enter placeEnd[]
 	     do TtoP -> setOrientation;
 	     #);
-   deleteFromPage:: (# do THIS(ConstraintArc)[] -> (getCPNPage).removeConstraintArc; #);
+     deleteFromPage:: (# do THIS(ConstraintArc)[] -> (getCPNPage).removeConstraintArc; #);
+     delete:: (#
+	     do 
+	     placeEnd[] -> QUA (# as:: Transition; do THIS(ConstraintArc)[] -> thisObj.removeConstraintArc; #);
+	     transEnd[] -> QUA (# as:: Transition; do THIS(ConstraintArc)[] -> thisObj.removeConstraintArc; #);
+	   #);
    update:: (# <<SLOT ConstraintArcUpdate:doPart>> #);
      makeShape::< (# <<SLOT ConstraintArcmakeShape:doPart>> #);
      clone::< (# Type::< ConstraintArc; <<SLOT ConstraintArcClone:doPart>> #);

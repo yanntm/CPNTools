@@ -32,6 +32,8 @@ ORIGIN '../cpnet';
         transitions.init;
         arcs.init;
         constraintArcs.init;
+        constraintArcsToRemove.init;
+        constraintInscriptionsToRemove.init;
         guidelines.init;
         auxs.init;
         groups.init;
@@ -41,7 +43,6 @@ ORIGIN '../cpnet';
         pageInstances.init;
         SSNodes.init;
 	  SSArcs.init;
-	  false -> previouslyConstraints;
      #);
    canvas: @boolean;
    places: @PlaceIDDictionary; 
@@ -49,7 +50,8 @@ ORIGIN '../cpnet';
    SSArcs: @SSArcIDDictionary;
    arcs: @ArcIDDictionary;
    constraintArcs: @ConstraintArcIDDictionary;
-   previouslyConstraints: @boolean;
+   constraintArcsToRemove: @ConstraintArcIDDictionary;
+   constraintInscriptionsToRemove: @ConstraintInscriptionList;
    guidelines: @GuidelineList;
    auxs: @AuxIDDictionary;
    SSNodes: @SSNodeIDDictionary;
@@ -548,7 +550,11 @@ do THIS(CPNPage)[] -> theArc.detach;
 -- CPNPageRemoveConstraintArc:doPart --   
 do THIS(CPNPage)[] -> theConstraintArc.detach;
    theConstraintArc.id[] -> private.constraintArcs.disassociate;
+   (theConstraintArc.id[], theConstraintArc[])  -> private.constraintArcsToRemove.associate;
    theConstraintArc[] -> removed;
+   
+-- CPNPageRemoveConstraintInscription:doPart --   
+do theConstraintInscription[]  -> private.constraintInscriptionsToRemove.append;
    
 -- CPNPageRemoveSSArc:doPart --
 do THIS(CPNPage)[] -> theSSArc.detach;
@@ -1420,18 +1426,20 @@ do (# dummyCPNPage, dummyCPNPageClone: ^CPNPage;
    #);
 
 -- mlCPNPageCheckDeclareReceive: DoPart --
-do 
+do false -> refreshEnabling;
    scanTransitions (#
    do current.scanConstraintInscriptions (#
 	   do (if current.theStatus = compiling then
 	         compiled -> current.theStatus;
 		   current.changed;
+		   true -> refreshEnabling;
 		if);
       #);
    #);
    THIS(CPNPage).private.constraintArcs.scan (#
    do (if current.status = compiling then
           compiled -> current.status;
+	    true -> refreshEnabling;
       if);
    #);
 
@@ -1440,49 +1448,79 @@ do
 
 -- mlCheckDeclare: DoPart --
 do (# constraintsFound: @boolean;
-  do 
-   THIS(CPNPage).private.constraintArcs.size > 0 -> constraintsFound;
+do THIS(CPNPage).private.constraintArcsToRemove.size > 0 -> constraintsFound;
+   constraintsFound or (THIS(CPNPage).private.constraintInscriptionsToRemove.size > 0) -> constraintsFound;
+   (if NOT constraintsFound then
+   search: scanConstraintArcs (#
+	   do 
+	      (if current.status = unchecked then
+	       true -> constraintsFound;
+		 leave search;
+		if);
+   #);
+   if);
    (if NOT constraintsFound then
    search: scanTransitions (#
    do current.scanConstraintInscriptions (#
-      do true -> constraintsFound;
-	   leave search;
+	   do 
+	      (if current.status = unchecked then
+		   true -> constraintsFound;
+		   leave search;
+		if);
       #);
    #);
    if);
-   (if constraintsFound or THIS(CPNPage).private.previouslyConstraints then
-          true -> THIS(CPNPage).private.previouslyConstraints;
-	    theML[] -> checkDeclareConstraints;
-	    (if not constraintsFound then
-	        false -> THIS(CPNPage).private.previouslyConstraints;
-          if);
+   (if constraintsFound then
+       theML[] -> checkDeclareConstraints;
+       true -> refreshEnabling;
    if);
 #);
 
 -- mlCPNPageCheckDeclareSend: DoPart --
 do (#
-   foundConstraintInscriptions: @ConstraintInscriptionList;
+	foundConstraintInscriptions: @ConstraintInscriptionList;
+	count: @integer;
 do foundConstraintInscriptions.init;
    scanTransitions (#
    do current.scanConstraintInscriptions (#
-      do current[] -> foundConstraintInscriptions.append;
+	   do (if current.status = unchecked then
+		   current[] -> foundConstraintInscriptions.append;
+	      if);
       #);
+   #);
+   foundConstraintInscriptions.size -> count;
+   scanConstraintArcs (#
+	   do (if current.status = unchecked then
+	          count + 1 -> count;
+		if);
    #);
 
    10000 -> bis.putInt; (* external *)
    10001 -> bis.putInt; (* Declare extension *)
    1 -> bis.putInt; (* Check page *)
    id[] -> bis.putString;
-   foundConstraintInscriptions.size + THIS(CPNPage).private.constraintArcs.size -> bis.putint;
+   count -> bis.putint;
+
    foundConstraintInscriptions.scan (#
    do current[] -> addConstraintInscription;
    compiling -> current.theStatus;
    current.changed;
    #);
    THIS(CPNPage).private.constraintArcs.scan (#
-   do current[] -> addConstraintArc;
-      compiling -> current.status;
+	   do (if current.status = unchecked then
+	          current[] -> addConstraintArc;
+		    compiling -> current.status;
+		if);
    #);
+   THIS(CPNPage).private.constraintInscriptionsToRemove.size + THIS(CPNPage).private.constraintArcsToRemove.size -> bis.putint;
+   THIS(CPNPage).private.constraintInscriptionsToRemove.scan (#
+	   do	current.id[] -> bis.putstring;
+   #);
+   THIS(CPNPage).private.constraintArcsToRemove.scan (#
+	   do	current.id[] -> bis.putstring;
+   #);
+   THIS(CPNPage).private.constraintInscriptionsToRemove.clear;
+   THIS(CPNPage).private.constraintArcsToRemove.clear;
 #);
 
 -- mlCPNPageCheckDeclareSendConstraintInscription: DoPart --

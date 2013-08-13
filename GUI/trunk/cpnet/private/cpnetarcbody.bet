@@ -228,6 +228,7 @@ do getAnnotation -> elm[];
    
 -- ArcDeleteFromPage:DoPart --
 do this(Arc)[] -> (getCPNPage).removeArc;
+   INNER;
    
 -- ArcDelete:doPart --
 do (# theBendPoint: ^BendPoint;
@@ -246,6 +247,7 @@ do (# theBendPoint: ^BendPoint;
       THIS(Arc)[]->transEnd.removeArc;
       THIS(Arc)[]->transEnd.detach;
    #);
+   INNER;
 
 -- ArcSetPlaceEnd:doPart --
 do (if newPlaceEnd[] <> placeEnd[] then

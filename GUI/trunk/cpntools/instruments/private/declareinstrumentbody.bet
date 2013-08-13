@@ -45,6 +45,8 @@ do (#
      	#);
       
       (elm.getAnnotation).computePosition;
+	unchecked -> elm.status;
+	elm.semanticChanged;
    #);
    
 -- ConstraintArcClippingRemove:DoPart --
@@ -52,10 +54,8 @@ do storage.scanReverse
      (#
      do elm[] -> current.remove;
      #);
-
-   elm[] -> context.removeConstraintArc;
-   elm[] -> t1.removeConstraintArc;
-   elm[] -> t2.removeConstraintArc;
+   elm.delete;
+   context.semanticChanged;
 
  --CreateConstraintArc:doPart--
 do (# clipping: ^ConstraintArcClipping;
