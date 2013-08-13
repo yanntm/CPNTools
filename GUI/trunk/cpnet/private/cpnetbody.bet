@@ -762,6 +762,7 @@ do getMLReserved -> reserved[];
         debugging: (# exit false #);    
         countBefore, countAfter: @integer;
         thePageInstances: ^PageInstanceList;                
+	  refreshEnabling: @boolean;
      do (if debugging then 
             'cpnet.bet: CPNet.MLcheckerThread: Starting the ML checker loop' -> debugCheckerLoop; 
         if);
@@ -876,6 +877,7 @@ do getMLReserved -> reserved[];
         this(CPNet).private.pagesToBeDeleted.scan
         (# 
         do (ml[], theGlobals.getColorNames) -> current.syntaxCheck;
+	     true -> refreshEnabling;
         #);
         this(CPNet).private.pagesToBeDeleted.clear;
         
@@ -883,6 +885,7 @@ do getMLReserved -> reserved[];
          * Syntax check the pages in a bottom up fashion. 
          *)       
         
+	  false -> refreshEnabling;
         thePageInstances.scan
         (# pginst: ^PageInstance;
         do current[] -> pginst[];
@@ -891,7 +894,7 @@ do getMLReserved -> reserved[];
                (unchecked,checking) -> pginst.thePage.changeStatus;
 		   (ml[], theGlobals.getColorNames) -> pginst.thePage.syntaxCheck;
 		   (if pginst.thePage.status = checked then
-		       ml[] -> pginst.thePage.checkDeclare;
+		       (ml[] -> pginst.thePage.checkDeclare) or refreshEnabling -> refreshEnabling;
 		   if);
                (if debugging then
                    (if true
@@ -1027,7 +1030,7 @@ do getMLReserved -> reserved[];
            #);
            pginst.changed;
         #);
-        
+
         (if this(CPNet).private.simreportOptionsChanged then
             ml[] -> MLSetSimReportOptions;
             false -> this(CPNet).private.simreportOptionsChanged;
@@ -1126,13 +1129,20 @@ do getMLReserved -> reserved[];
 
         (if preenablingsE then this(CPNet).private.preenabledEnabled.init; if);
         (if preenablingsD then this(CPNet).private.preenabledDisabled.init; if);
-	false -> preenablingsE -> preenablingsD;
-        this(CPNet).private.recheckEnablingTransitions.scan
-        (# 
-        do current[] -> checkEnabling;
-           Safepoint;
-        #);
+	  false -> preenablingsE -> preenablingsD;
+
+	  (if refreshEnabling then
+		getAllEnabledTransitions;
+		safePoint;
+		else 
+		this(CPNet).private.recheckEnablingTransitions.scan
+		(# 
+		 do current[] -> checkEnabling;
+		 Safepoint;
+		#);
+        if);
         this(CPNet).private.recheckEnablingTransitions.clear;
+        
         
         (unchecked, compiled) -> THIS(CPNet).changeStatus;
         
@@ -2340,8 +2350,8 @@ do (if getCPNPage <> NONE then
 
 -- PageElementdelete: doPart --
 do INNER;
-   deleteFromPage;
    true -> deleted;
+   deleteFromPage;
    
 -- PageElementBounds: doPart --
 do x -> xmin -> xmax;

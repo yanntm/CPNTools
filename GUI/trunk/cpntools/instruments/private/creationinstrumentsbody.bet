@@ -177,6 +177,9 @@ do (# createClipping:
            elm.getTransAction -> ClippingFactory -> theClipping.add;
            elm.getTransChannel -> ClippingFactory -> theClipping.add;
            elm.getTransPriority -> ClippingFactory -> theClipping.add;
+	     elm.scanConstraintInscriptions (#
+            do current[] -> ClippingFactory -> theClipping.add;
+	     #);
         #);
       createAuxClipping: createClipping
         (# Element:: Aux;

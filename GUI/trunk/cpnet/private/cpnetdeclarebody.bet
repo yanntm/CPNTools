@@ -44,7 +44,7 @@ do theStatus -> value;
    
 --ConstraintInscriptiondelete: doPart--
 do (if debugging then 'Cpnet: Deleting ConstraintInscription\n' -> debugCPNet if);   
-   'Delete me' -> putline;
+   THIS(ConstraintInscription)[] -> private.theTransition.removeConstraintInscription;
    
 --ConstraintInscriptionNext:doPart--
 do 

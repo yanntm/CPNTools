@@ -47,13 +47,15 @@ hidePlaceInstance:
   #);
 refreshSimLayer:
   (# deletionList: @List
-       (# Element:: NodeInstance;
-          
+       (# Element:: Highlightable;
        #);
      
   do simlayer.content.scan
      (#
      do (if current## <= NodeInstance## then
+            current[] -> deletionList.append;
+        if);
+        (if current## <= ConstraintArc## then
             current[] -> deletionList.append;
         if);
      #);
@@ -202,6 +204,7 @@ do (if source## <= Guideline## then
        source[] -> QUA
        (# as:: Transition;
        do (thisObj.getRegions).scan (# do current[] -> mainlayer.hide; #);
+          (thisObj.getRegions).scan (# do current[] -> labellayer.hide; #);
        #);
    if);
    

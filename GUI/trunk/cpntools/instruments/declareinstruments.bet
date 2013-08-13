@@ -60,12 +60,13 @@ ConstraintInscriptionClipping: Clipping
 		 do 
 		 context.getCPNPage -> elm.setCPNPage;
 		 elm[] -> context.addConstraintInscription;
+		 unchecked -> elm.status;
 		 elm.update;
-		 context.changed;
 		 context.semanticChanged;
+		 context.changed;
 	 #);
 	 remove:: (# 
-		 do elm[] -> context.removeConstraintInscription;
+		 do elm.delete;
 		 context.changed;
 		 context.semanticChanged;
 		 #);
