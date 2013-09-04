@@ -31,13 +31,14 @@ do (# sheetPage: ^PageInstance;
       L: (# error_msg: ^Text;
             ogpath, tmpogpath: ^text;
             switchfile: ^text;
-            netHasTransitions, pageNameCollision, invalidMLPageName: @boolean;
+		netHasTransitions, pageNameCollision, invalidMLPageName, netHasConstraints: @boolean;
             table: ^NameTable;
          do CannotEnterStateSpace -> getGlobalNames -> error_msg[];
             error_msg.newline;
             false -> netHasTransitions;
             false -> pageNameCollision;
-            false -> invalidMLPageName;
+		false -> invalidMLPageName;
+		false -> netHasConstraints;
             target.content[] -> sheetPage[];
             &NameTable[] -> table[];
             sheetPage.thePage.net.scanCPNPages
@@ -73,11 +74,22 @@ do (# sheetPage: ^PageInstance;
                    ('Page',theName[]) -> appendIllegalIdentifierTextToErrorAndLeaveLoop;
                if);
 
+		   current.scanConstraintArcs (# do true -> netHasConstraints; #);
+		   (if netHasConstraints then
+		       'Declare constraints not supported with state-space generation' -> error_msg.puttext;
+                   error_msg[] -> status.error;
+                   leave L;
+		   if);
                current.scanTransitions   
                (# theTransition: ^Transition;
                do  (* Nets without transitions cannot enter statespace
                     * (bug 830) *)
                   current[] -> theTransition[];
+			(if theTransition.hasConstraints then
+		       'Declare constraints not supported with state-space generation' -> error_msg.puttext;
+                   error_msg[] -> status.error;
+                   leave L;
+			 if);
                   (if theTransition.status=compiled then
                       true -> netHasTransitions;
                   if);

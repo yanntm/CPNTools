@@ -1647,7 +1647,7 @@ ResizeCommand: GeometryCommand
   #);
 
 MoveInstrument: Instrument
-  (# view: ^Sheet;
+  (# view: ^CpnSheet;
 
      localToGlobal:
        (# x, y: @real;
@@ -1700,7 +1700,7 @@ MoveInstrument: Instrument
             (#
             do current.scan
                (#
-               do (if current## <= Sheet## then
+               do (if current## <= CpnSheet## then
                       current[] -> view[];
                       leave search;
                   if);
@@ -1718,9 +1718,10 @@ MoveInstrument: Instrument
      
      onMouseMove::<
        (# 
-       do (if (target[]<>NONE) and (view[]<>NONE) and 
+		 do 
+		 (if (target[]<>NONE) and (view[]<>NONE) and 
               (target[] -> view.mainlayer.content.has) AND (theHand.distance>1) then
-              target[] -> view.mainlayer.bringToFront;
+              (* target[] -> view.mainlayer.bringToFront; *)
               (if target##<=PageElement## then
                   target[] -> QUA
                   (# as:: PageElement;
@@ -1732,6 +1733,10 @@ MoveInstrument: Instrument
                      #);
                   #);
               if);
+		  if);
+          (if (target[]<>NONE) and (view[]<>NONE) and 
+              (target[] -> view.auxlayer.content.has) AND (theHand.distance>1) then
+		  target[] -> view.auxlayer.bringToFront;
           if);
           INNER;
        #);

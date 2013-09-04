@@ -650,7 +650,8 @@ PSContext: Context
                        if);
                     #);
                if);
-               'stroke grestore' -> output.putline;
+		   doFill;
+		   'stroke grestore' -> output.putline;
 		   #);
 
 		   oldColor: ^color;

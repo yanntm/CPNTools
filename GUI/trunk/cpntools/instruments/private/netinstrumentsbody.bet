@@ -940,11 +940,18 @@ do (# printAbstractWorkspaceIndex:
         #);
       scanPageElementsInLayerOrder:
         (# current: ^PageElement;
-        do target.mainlayer.content.scan
+        do target.auxlayer.content.scan
            (# 
            do (if current##<=PageElement## then
                   current[] -> THIS(scanPageElementsInLayerOrder).current[];
                   INNER scanPageElementsInLayerOrder;
+              if);
+           #);
+           target.mainlayer.content.scan
+           (# 
+           do (if current##<=PageElement## then
+                  current[] -> THIS(scanPageElementsInLayerOrder).current[];
+			INNER scanPageElementsInLayerOrder;
               if);
            #);
         #);

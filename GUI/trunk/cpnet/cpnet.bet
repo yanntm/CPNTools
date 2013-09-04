@@ -636,6 +636,7 @@ CPNet: Highlightable
        #);
      knownFusionSets: @FusionSetIDDictionary;
      statespaceEntered: @integer;
+     partialStatespace: @boolean;
      stateSpaceNumber: @Integer;
      ignoreStateSpaceExit: @boolean;
      options: @OptionList;
@@ -4273,7 +4274,7 @@ Arc: PageElement
        #);
      getOrientation: IntegerValue
        (# <<SLOT ArcGetOrientation:DoPart>> #);
-     startTextEditor:: (# <<SLOT ArcStartTextEditor:doPart>> #);
+     startTextEditor::< (# <<SLOT ArcStartTextEditor:doPart>> #);
      addBendPoint:
        (# theBendPoint: ^BendPoint;
        enter theBendPoint[]
@@ -5975,6 +5976,7 @@ ConstraintArc: Arc
   (#
      theName, theLabel, theFormula: ^text;
      lineStyle, arrowStyle: @integer;
+     startTextEditor:: (# do NONE -> target[] #);
      setSource: (#
 	     enter transEnd[]
 	     do TtoP -> setOrientation;

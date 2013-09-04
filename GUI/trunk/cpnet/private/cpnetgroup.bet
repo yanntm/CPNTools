@@ -301,7 +301,7 @@ do (# appendHighlight:
              do (if thisObj.content.thePage[] = theCPNPage[] then
                     thisObj[] -> theSheet[];
                     current[] -> theSheet.raiseTab;
-                    sendOtherElementsBackInLayer:theCPNPage.scanPageElements
+                    (*sendOtherElementsBackInLayer:theCPNPage.scanPageElements
                       (# 
                       do (if (current.id[] -> private.groupElements.lookup)=NONE then
                              (current.getInscriptions).scan
@@ -313,9 +313,13 @@ do (# appendHighlight:
                                    if)
                                 #);
                              #);
-                             current[] -> theSheet.mainlayer.sendToBack;
+				     (if current## <= Aux## then
+					     current[] -> theSheet.auxlayer.sendToBack;
+				     else
+					     current[] -> theSheet.mainlayer.sendToBack;
+				     if);
                          if);
-                      #);
+                      #);*)
                 if);
              #);
          if);

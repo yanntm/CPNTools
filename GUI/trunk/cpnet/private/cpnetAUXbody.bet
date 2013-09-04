@@ -318,11 +318,17 @@ do &PointList[] -> anchors[];
    INNER;
 
 -- auxbounds:dopart --
-do x - theshape.width / 2 -> xmin;
-   x + theshape.width / 2 -> xmax;
-   y - theshape.height / 2 -> ymin;
-   y + theshape.height / 2 -> ymax; 
-   (if theshape## <= labelShape## then
+do (if true
+    // theShape## <= LineShape## then
+       -2000000000 -> xmax -> ymax;
+       2000000000 -> xmin -> ymin;
+	 theshape.points.scan (#
+	  do (current.x + x, xmax) -> max -> xmax;
+	     (current.x + x, xmin) -> min -> xmin;
+	     (current.y + y, ymax) -> max -> ymax;
+	     (current.y + y, ymin) -> min -> ymin;
+	 #);
+    // theshape## <= labelShape## then
        (# theLabelShape: ^LabelShape;
           w, h: @Real;
        do 'lg' -> arial.measureText -> (w, h);
@@ -343,6 +349,11 @@ do x - theshape.width / 2 -> xmin;
           y - h -> ymin;
           y + theLabelShape.height - h -> ymax;
        #);
+    else
+	    x - theshape.width / 2 -> xmin;
+	    x + theshape.width / 2 -> xmax;
+	    y - theshape.height / 2 -> ymin;
+	    y + theshape.height / 2 -> ymax; 
    if);
    
 (*-- pngItemInit:dopart --

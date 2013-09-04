@@ -347,19 +347,19 @@ CpnWorkSpace
 		 ('exclusivechoice', theConstraintArcInstrument[]) -> theInstrumentList.associate;
 
 		 &ConstraintArcInstrument[] -> theConstraintArcInstrument[];
-		 (NONE, 'include', '', ARROW_END + PLUS_END, SINGLE) -> theConstraintArcInstrument.init;
+		 (NONE, 'include', '.*', ARROW_END + PLUS_END, SINGLE) -> theConstraintArcInstrument.init;
 		 ('include', theConstraintArcInstrument[]) -> theInstrumentList.associate;
 
 		 &ConstraintArcInstrument[] -> theConstraintArcInstrument[];
-		 (NONE, 'exclude', '', ARROW_END + MINUS_END, SINGLE) -> theConstraintArcInstrument.init;
+		 (NONE, 'exclude', '.*', ARROW_END + MINUS_END, SINGLE) -> theConstraintArcInstrument.init;
 		 ('exclude', theConstraintArcInstrument[]) -> theInstrumentList.associate;
 
 		 &ConstraintArcInstrument[] -> theConstraintArcInstrument[];
-		 (NONE, 'milestone', '', ARROW_END + DIAMOND_END, SINGLE) -> theConstraintArcInstrument.init;
+		 (NONE, 'milestone', '.*', ARROW_END + DIAMOND_END, SINGLE) -> theConstraintArcInstrument.init;
 		 ('milestone', theConstraintArcInstrument[]) -> theInstrumentList.associate;
 
 		 &ConstraintInscriptionInstrument[] -> theConstraintInscriptionInstrument[];
-		 ('init', 'A.*', SINGLE, 'init') -> theConstraintInscriptionInstrument.init;
+		 ('init', '(A.*)?', SINGLE, 'init') -> theConstraintInscriptionInstrument.init;
 		 ('init', theConstraintInscriptionInstrument[]) -> theInstrumentList.associate;
 
 		 &ConstraintInscriptionInstrument[] -> theConstraintInscriptionInstrument[];
@@ -399,7 +399,7 @@ CpnWorkSpace
 		 ('exactly2', theConstraintInscriptionInstrument[]) -> theInstrumentList.associate;
 
 		 &ConstraintInscriptionInstrument[] -> theConstraintInscriptionInstrument[];
-		 ('exactly3', '[^A]*A[^A]*A[^A]*A[^A]*', SINGLE, '3') -> theConstraintInscriptionInstrument.init;
+		 ('exactly3', '[^A]*A[^A]*A[[^A]*A[^A]*', SINGLE, '3') -> theConstraintInscriptionInstrument.init;
 		 ('exactly3', theConstraintInscriptionInstrument[]) -> theInstrumentList.associate;
 
              (* Aux Init...*)
