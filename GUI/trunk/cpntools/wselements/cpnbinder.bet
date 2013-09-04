@@ -314,12 +314,13 @@ CpnSheet: HighlightableSheet
      labellayer: ^Layer;
      thePatternLayer: ^PatternLayer;
      patternSize: (# exit 42 #);
+     auxlayer: ^Layer;
      guidelinelayer: ^Layer;
      FatherType:: Folder;
      canvas: @boolean;
      shouldBeInMainLayer:: 
        (# 
-       do not (source## <= guideline##) -> value;
+		 do (not (source## <= guideline##) and not (source## <= Aux##) and not (source## <= ConstraintInscription##) and not (source## <= ExternalLabel##)) -> value;
        #);     
 	 init:: (# 
 		 enter canvas
@@ -332,7 +333,13 @@ CpnSheet: HighlightableSheet
              boing: @boolean;
              scanElements:
                (# current: ^ContentItem;
-               do mainlayer.content.scan
+		   do 
+                  auxlayer.content.scan
+                  (#
+                  do current[] -> THIS(scanElements).current[];
+                     INNER scanElements;
+                  #);
+			mainlayer.content.scan
                   (#
                   do current[] -> THIS(scanElements).current[];
                      INNER scanElements;

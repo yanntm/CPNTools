@@ -263,15 +263,16 @@ do id[] -> private.topCPNPages.lookup -> result[];
 do id[] -> private.pageInstances.lookup -> result[];
    
 -- CPNPageScanNotifiers:doPart --
-do private.places.scan 
+do 
+   private.auxs.scan
+   (# do current[] -> this(scanNotifiers).current[]; inner scanNotifiers; #);
+   private.places.scan 
    (# do current[] -> this(scanNotifiers).current[]; inner scanNotifiers; #);
    private.transitions.scan
    (# do current[] -> this(scanNotifiers).current[]; inner scanNotifiers; #);
    private.arcs.scan
    (# do current[] -> this(scanNotifiers).current[]; inner scanNotifiers; #);
    private.guidelines.scan
-   (# do current[] -> this(scanNotifiers).current[]; inner scanNotifiers; #);
-   private.auxs.scan
    (# do current[] -> this(scanNotifiers).current[]; inner scanNotifiers; #);
    private.groups.scan
    (# do current[] -> this(scanNotifiers).current[]; inner scanNotifiers; #);
@@ -1529,6 +1530,7 @@ do 1 -> bis.putInt; (* parameters *)
    constraint.id[] -> bis.putString;
    constraint.theName[] -> bis.putString;
    constraint.theFormula[] -> bis.putString;
+   '' -> bis.putString;
    (constraint.getTransition).id[] -> bis.putString;
 #);
 
@@ -1538,6 +1540,12 @@ do 2 -> bis.putInt; (* parameters *)
    constraint.id[] -> bis.putString;
    constraint.theName[] -> bis.putString;
    constraint.theFormula[] -> bis.putString;
+   (if not ((constraint.getAnnotation).defaultInscription
+        -> ((constraint.getAnnotation).getInscription).equal) then
+		  (constraint.getAnnotation).getInscription -> bis.putString;
+   else
+	   '' -> bis.putString;
+   if);
    constraint.transEnd.id[] -> bis.putString;
    constraint.placeend.id[] -> bis.putString;
 #);

@@ -789,8 +789,10 @@ PrintCPNSheetCommand: AbstractPrintCommand
                             (if false then
                                 pi.bounds -> addBound;
                              else
-                                (pi.theToken.present).bounds -> addBound;
-                                (pi.thePlaceMarking.present).bounds -> addBound;
+				        (pi.theToken.present).bounds -> addBound;
+                                (if pi.markingVisible then
+						  (pi.thePlaceMarking.present).bounds -> addBound;
+					  if);
                             if);
                         if);
                     if);
@@ -810,6 +812,12 @@ PrintCPNSheetCommand: AbstractPrintCommand
                    #);
                 else
                    false -> useGroup;
+                   target.auxlayer.content.scan
+                   (# 
+                   do (if current##<=PageElement## then
+                          current[] -> theBoundsCalculation;
+                      if);
+                   #);
                    target.mainlayer.content.scan
                    (# 
                    do (if current##<=PageElement## then

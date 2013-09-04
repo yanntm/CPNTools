@@ -213,6 +213,7 @@ CalcStateSpaceCommand: StateSpaceCommand
 		     if);
 		     status.theMessage[] -> oldMessage[];
 		  if);
+		  false -> target.content.thePage.net.partialStateSpace;
               CalcStateSpaceRunning -> 
               getGlobalNames -> fixedStatus.running;
               fixedStatus.start;
@@ -330,6 +331,8 @@ CalcStateSpaceCommand: StateSpaceCommand
                                    CalcStateSpaceErrorStopCritTip -> 
                                    getGlobalNames -> theText.puttext;
                                    (oldMessage[], start[], theText[]) -> appendDifference -> status.warning;
+					     true -> target.content.thePage.net.partialStateSpace;
+					     SSCalculated -> target.content.thePage.net.stateSpaceEntered;
                                 #);
                              else
                                 CalcStateSpaceErrorCalc -> 
@@ -390,7 +393,8 @@ CalcSccCommand: StateSpaceCommand
 		     (target[], theHand[]) -> theCalcStateSpaceInstrument.relevant;
 		     (theHand[], target[]) -> theCalcStateSpaceInstrument.prepare;
 		     theCalcStateSpaceInstrument.apply;
-		     (if target.content.thePage.net.stateSpaceEntered < SSCalculated then
+		     (if (target.content.thePage.net.stateSpaceEntered < SSCalculated) or
+		         target.content.thePage.net.partialStateSpace then
 		         leave Apply;
 		     if);
 		     status.theMessage[] -> oldMessage[];

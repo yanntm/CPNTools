@@ -103,6 +103,9 @@ do (# processHighlightable:
 do &SimulationLayer[] -> simlayer[];
    simlayer.init;
 
+   &SheetLayer[] -> auxlayer[];
+   auxlayer.init;
+
    &SheetLayer[] -> labellayer[];
    labellayer.init;
 
@@ -122,6 +125,10 @@ do &SimulationLayer[] -> simlayer[];
    true  -> labellayer.clipping;
    true -> labellayer.clickable;
    labellayer[] -> add;
+   true  -> auxlayer.clipping;
+   true -> auxlayer.clickable;
+   auxlayer[] -> add;
+   auxlayer[] -> layers.sendToBack;          
    true  -> guidelinelayer.clipping;
    true -> guidelinelayer.clickable;
    guidelinelayer[] -> add;
@@ -132,7 +139,10 @@ do &SimulationLayer[] -> simlayer[];
    canvas -> topTab.init;
    
 -- CPNSheetShow:doPart --
-do (if true
+do  
+    (if true
+    // source## <= Aux## then
+       source[] -> auxlayer.show;
     // source## <= Guideline## then
        source[] -> guidelinelayer.show;
     // source## <= Transition## then
@@ -169,37 +179,33 @@ do (if true
    if);
    
 -- CPNSheetHide:doPart --
-do (if source## <= Guideline## then 
+do (if true
+    // source## <= Aux## then 
+       source[] -> auxlayer.hide;
+    // source## <= Guideline## then 
        source[] -> guidelinelayer.hide;
-   if);
-   (if source## <= Inscription## then
+    // source## <= Inscription## then
        source[] -> mainlayer.hide;
-   if);
-   (if (source## <= HierarchyInfo##) and (NOT (source## <= ConstraintInscription##)) then
+    // (source## <= HierarchyInfo##) and (NOT (source## <= ConstraintInscription##)) then
        source[] -> mainlayer.hide;
-    if);
-   (if source## <= ConstraintInscription## then
+    // source## <= ConstraintInscription## then
        source[] -> labellayer.hide;
-   if);
-   (if source## <= ExternalLabel## then
+    // source## <= ExternalLabel## then
        source[] -> labellayer.hide;
-   if);
-   (if source## <= Arc## then
+    // source## <= Arc## then
        refreshSimLayer;
        source[] -> mainlayer.hide;
        source[] -> QUA
        (# as:: Arc;
        do thisObj.getAnnotation -> mainlayer.hide;
        #);
-   if);
-   (if source## <= Place## then
+    // source## <= Place## then
        refreshSimLayer;
        source[] -> QUA
        (# as:: Place;
        do (thisObj.getRegions).scan (# do current[] -> mainlayer.hide; #);
        #);
-   if);
-   (if source## <= Transition## then
+    // source## <= Transition## then
        refreshSimLayer;
        source[] -> QUA
        (# as:: Transition;
@@ -256,6 +262,12 @@ do (# ShowVisitor: NetVisitor
            visitCPNPage::< 
              (#
              do 
+                current.scanGuideLines
+                (# do current[] -> show; #);
+                current.scanAuxs
+                (# 
+                do current[] -> visitAux;
+                #);
 		    current.scanPlaces
                 (#
                 do current[] -> visitPlace;
@@ -280,13 +292,6 @@ do (# ShowVisitor: NetVisitor
                 (#
                 do current[] -> visitSSArc;
                 #);
-                current.scanGuideLines
-                (# do current[] -> show; #);
-                current.scanAuxs
-                (# 
-                do current[] -> visitAux;
-                #);
-                
              #);
            visitPlace::< 
              (# 
@@ -555,7 +560,8 @@ do (# theInscription: ^Inscription;
 		     #);
           #);
       if);
-	(if source## <= PageElement## then
+	(if true
+	 // source## <= PageElement## then
           source[] -> QUA
             (# as:: PageElement;
 		   el: ^ExternalLabel;

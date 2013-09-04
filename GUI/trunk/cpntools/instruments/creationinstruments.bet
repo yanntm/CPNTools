@@ -660,7 +660,7 @@ SetArcOrientation: CPNCommand
   (# TargetType:: Arc;
      Relevant::
        (# 
-       do ((target## <= Arc##) and not(target## <= SSArc##)) and (target.getOrientation < 4)-> value;
+       do ((target## <= Arc##) and not(target## <= ConstraintArc##) and not(target## <= SSArc##)) and (target.getOrientation < 4)-> value;
        #);
      previousOrientation: @Integer;
      apply::
