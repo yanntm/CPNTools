@@ -1,0 +1,105 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2013 AIS Group, Eindhoven University of Technology         *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../cpnworkspace';
+INCLUDE '../palettes/floatingview';
+
+-- CPNWorkspaceLib:Attributes --
+
+ExtensionInstrument: FigureTInstrument (#
+	key, name, theToolTip: ^text;
+	extension, targetType: @integer;
+	FigureT:: MonitorFigure (#
+		getTitle:: (# do name[] -> title[]; #);
+	#);
+	ToolTip:: (# do theToolTip[] -> theTip[]; #);
+
+	init:: (#
+	enter (extension, key[], name[], theToolTip[], targetType)
+	#);
+
+	relevant:: (#
+		do 
+		false -> value;
+		(if true
+		// (target## <= theIndex.NetNode##) and (targetType %band 0x1 > 0) then
+		   true -> value;
+		// (target## <= CPNSheet##) and (targetType %band 0x3 > 0) then
+		   true -> value;
+		// (target## <= CPNPage##) and (targetType %band 0x3 > 0) then
+		   true -> value;
+		// (target## <= Place##) and (targetType %band 0x4) then
+		   true -> value;
+		// (target## <= Transition##) and (targetType %band 0x8) then
+		   true -> value;
+		// (target## <= Arc##) and (targetType %band 0x70000) then
+		   target[] -> qua
+		   (# as:: Aux;
+			   do (if true
+			   // (thisObj.theShape## <= thisObj.BoxShape##) and (targetType %band 0x10000) then
+			      true -> value;
+			   // (thisObj.theShape## <= thisObj.EllipseShape##) and (targetType %band 0x20000) then
+			      true -> value;
+			   // (thisObj.theShape## <= thisObj.LabelShape##) and (targetType %band 0x40000) then
+			      true -> value;
+			   if);
+		   #);
+	      if);
+	#);
+	apply:: (# id: ^text; theNet: ^CPNet;
+		do 
+		   (if (target## <= theIndex.NetNode##) then
+			target[] -> qua (# as:: theIndex.NetNode do thisObj.net[] -> target[]; #);
+		   if);
+		   (if (target## <= CPNSheet##) then
+			target[] -> qua (# as:: CPNSheet do thisObj.content.thepage[] -> target[]; #);
+		   if);
+		   (if (target## <= CPNPage##) and (targetType %band 0x1 > 0) then
+			target[] -> qua (# as:: CPNPage do thisObj.net[] -> target[]; #);
+		   if);
+		   target[] -> qua (# as:: Highlightable do thisObj.id[] -> id[]; #);
+		   (if true
+			   // (target## <= CPNet##) then
+                        target[] -> theNet[];
+			   // (target## <= CPNPage##) then
+			      target[] -> qua (# as:: CPNPage do thisObj.net[] -> theNet[]; #);
+			   // (target## <= PageElement##) then
+			      target[] -> qua (# as:: PageElement do thisObj.getCPNet -> theNet[]; #);
+		   if);
+		   (theNet.ML[], extension, key[], id[]) -> ExecuteExtensionCommand;
+		   finish;
+	#);
+#);
+
+ExecuteExtensionCommand: CPNMLCommand (#
+	extension: @integer;
+	key, targetId: ^text;
+
+	send:: (#
+		do 10000 -> bis.putInt; (* extnsion *)
+		   202 -> bis.putInt; (* invoke *)
+               extension -> bis.putInt;
+		   key[] -> bis.putString;
+		   targetId[] -> bis.putString;
+		#);
+
+	onError:: (# do true -> continue; #);
+
+	enter (extension, key[], targetId[])
+#);

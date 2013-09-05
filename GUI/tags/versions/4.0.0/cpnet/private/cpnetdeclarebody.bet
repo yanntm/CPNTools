@@ -1,0 +1,206 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../cpnet';
+-- ConstraintInscriptionPrivate:descriptor--
+(#
+   theTransition: ^Transition;
+#)
+   
+-- ConstraintInscriptionSetTransition:doPart--
+do theTransition[] -> private.theTransition[];
+
+-- ConstraintInscriptionGetTransition:doPart--
+do ('theTransition[] <> NONE ', private.theTransition[] <> NONE) -> assert (# #);
+   private.theTransition[] -> theTransition[];
+
+-- ConstraintInscriptionDefaultSnapToElement:doPart --
+do private.theTransition[] -> elm[];
+
+-- ConstraintInscriptionstatus:doPart --
+do theStatus -> value;
+   
+--ConstraintInscriptiondelete: doPart--
+do (if debugging then 'Cpnet: Deleting ConstraintInscription\n' -> debugCPNet if);   
+   THIS(ConstraintInscription)[] -> private.theTransition.removeConstraintInscription;
+   
+--ConstraintInscriptionNext:doPart--
+do 
+
+-- ConstraintInscriptionOnSemanticChanged:doPart --
+do ('private.theTransition[] <> NONE', private.theTransition[] <> NONE) -> assert (# #);
+   private.theTransition.semanticChanged;
+
+-- ConstraintInscriptionOnChanged:doPart --
+do (if private.theTransition[] <> NONE then
+       THIS(ConstraintInscription)[] -> private.theTransition.changed;
+   if); 
+   
+-- ConstraintInscriptionSnap:doPart --
+do THIS(ConstraintInscription)[] -> private.theTransition.snapTo -> (dx,dy);   
+
+-- ConstraintArcInstancePrivate:Descriptor --
+(# simulationError: @boolean;
+   init:
+     (# 
+     do false -> simulationError;
+     #);
+#)
+
+-- ConstraintArcInstanceInit:DoPart --
+do private.init;
+   
+-- ConstraintArcInstanceUpdate:DoPart --
+do (# showHalo:
+        (# theColor: ^Color;
+           halo: ^Line;
+           theStyle: ^CompositeStyle;
+        enter theColor[]
+        do (if (theColor[] <> NONE) and
+               (theConstraintArc.points[] <> NONE) then
+               &Line[] -> halo[];
+               &CompositeStyle[] -> theStyle[];
+               halo.init;
+               theStyle[] -> halo.theStyle[];
+               theConstraintArc.points[] -> halo.points[];
+               (halo_width+theConstraintArc.strokeWidth-1,theColor[]) -> &HaloStyle -> theStyle.add;
+               15 -> &CurvatureStyle -> theStyle.add;
+               halo[] -> presentation.add;
+               theConstraintArc.present -> presentation.add;
+           if);
+        #);
+   do (if presentation[] <> NONE then
+          presentation.clear;
+          (if theConstraintArc.getCurrentHighlight = none then
+              getCurrentHighlight -> showHalo;
+          if);
+          (if (NOT ((theConstraintArc.getCPNPage).getSelectedGroup).all) and
+              (NOT (theConstraintArc[]->((theConstraintArc.getCPNPage).getSelectedGroup).isMember)) then
+              0.1->&AlphaStyle->presentation.theStyle[];
+           else
+              NONE -> presentation.theStyle[];
+          if);
+      if);
+   #);
+   
+-- ConstraintArcInstanceDelete:DoPart --
+do 'Delete me 2' -> putline;
+   
+-- ConstraintArcInstanceStatus:DoPart --
+do (if true
+    // private.simulationError then
+       hasSimulationError -> value;
+    else 
+       noRemarks -> value;
+   if);
+   
+-- ConstraintArcInstanceGetCurrentHighlight:DoPart --
+do status -> getHighlight -> currentHighlight[];
+   
+-- ConstraintArcInstanceSetSimulationError:DoPart --
+do (if error <> private.simulationError then
+       (if error then
+           (status, hasSimulationError) -> thePageInstance.nodeChangedStatus;
+           error -> private.simulationError;       
+        else
+           error -> private.simulationError;                  
+           (hasSimulationError, status) -> thePageInstance.nodeChangedStatus;           
+       if);
+       changed;
+   if);
+         
+-- ConstraintArcInstanceOnChanged:DoPart --
+do (if qerror[] <> none then
+       (theConstraintArc.getAnnotation).changed;
+       qerror.update;
+   if);   
+   update;
+
+-- ConstraintArcMenuName:doPart --
+do NamesPageMenuConstraintArc -> getGlobalNames -> txt[];
+INNER;
+
+-- ConstraintArcUpdate: doPart --
+do 
+
+-- TransitionCreateConstraintInscription:doPart --
+do 
+   &ConstraintInscription[] -> theConstraintInscription[];
+   (theName[], theLabel[], theFormula[], theLineStyle) -> theConstraintInscription.init;
+   this(Transition)[] -> theConstraintInscription.setTransition;
+   getCPNPage -> theConstraintInscription.setCPNPage;
+   theConstraintInscription.defaultSnap;
+   unchecked -> theConstraintInscription.theStatus;
+
+-- ConstraintInscriptionUpdate: doPart --
+do theLabel[] -> theText[];
+   (# theLine: ^Line;
+	point: ^Point2D;
+	theCompletestyle: ^Completestyle; 
+	theStyle: ^CompositeStyle;
+	do  theRect[] -> presentation.remove;
+          &Line[] -> theLine[];
+          &PointList[]->theLine.points[];
+          (for 5 repeat &Point2d[]->point[]->theLine.points.append; for);     
+
+          &Completestyle[]->theCompletestyle[];
+          (Black[],NONE,1,0)->theCompletestyle;
+          theCompletestyle[]->theLine.theStyle[];
+          1->theLine.points.get->point[];
+          (-15,6)->point;          
+          2->theLine.points.get->point[];
+          (-15,-6)->point; 
+          3->theLine.points.get->point[];
+          (0,-14)->point; 
+          4->theLine.points.get->point[];
+          (15,-6)->point; 
+          5->theLine.points.get->point[];
+	    (15,6)->point; 
+          &CompositeStyle[] -> theStyle[] -> theLine.theStyle[];
+          black[] -> StrokeStyle -> theStyle.add;
+          white[] -> FillStyle -> theStyle.add;
+
+	    theLine[] -> presentation.add;
+    #);
+    black[] -> StrokeStyle -> (getTextItem).theStyle[]
+
+-- ConstraintArcmakeShape: doPart --
+do lineStyle -> theStyle.lineStyle;
+   arrowStyle -> theStyle.arrow;
+   INNER;
+
+-- ConstraintArcClone: doPart --
+do lineStyle -> new.lineStyle;
+   arrowStyle -> new.arrowStyle;
+   (if theName[] <> NONE then
+	   theName.copy -> new.theName[];
+   if);
+   (if theLabel[] <> NONE then
+	   theLabel.copy -> new.theLabel[];
+   if);
+   (if theFormula[] <> NONE then
+	   theFormula.copy -> new.theFormula[];
+   if);
+   INNER;

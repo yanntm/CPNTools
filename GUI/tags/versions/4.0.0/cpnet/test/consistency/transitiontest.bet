@@ -1,0 +1,121 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../../private/cpnetbody';
+
+INCLUDE '../../../cpntools/consistency/engine';
+INCLUDE '../../../cpntools/debug';
+
+-- workspacelib: attributes --
+
+TransitionTest: ConsistencyTest
+  (# TargetType::Transition;
+     portSocketPair:^Assignment;
+     SubpageInstancePointsToWrongPageNotification: ConsistencyNotification
+       (# 
+       do 'Transition has subpage and subpageInstance, but subpageInstance points to another page than the subpage - Subpage name: %s - Subpage id: %s - SubpageInstance id: %s - SubpageInstance subpage: %s' -> msg.putformat(# do (target.getSubpage).checkedName[] -> s; (target.getSubpage).id[] -> s; (*target.subpageInstance.id[]*)'DUMMY' -> s; (*target.subpageInstance.thePage.id[]*)'DUMMY' -> s; #);
+       #);
+     SuperpageInstancePointsToWrongPageNotification: ConsistencyNotification
+       (# 
+       do 'Transition has a subpage, but the superpageInstance of its subpageInstance points to another page than the subpage - Subpage name: %s - Subpage id: %s - SubpageInstance id: %s - SuperpageInstance id: %s - SuperpageInstance page name: %s - SuperpageInstance page id: %s' -> msg.putformat(# do (target.getSubpage).checkedName[] -> s; (target.getSubpage).id[] -> s; 'DUMMY'->s;(*target.subpageInstance.id[] -> s;*) (*target.subpageInstance.superpageInstance.id[]*)'DUMMY' -> s; (*target.subpageInstance.superpageInstance.thePage.checkedName[] -> s;*)'DUMMY'->s; (*target.subpageInstance.superpageInstance.thePage.id[]*)'DUMMY' -> s; #);
+       #);
+     NoSubpageForPortSocketPairsNotification: ConsistencyNotification
+       (# 
+       do 'Transition has port/socket pairs, but no subpage' -> msg.puttext;
+       #);
+     NoPortForSocketNotification: ConsistencyNotification
+       (# 
+       do 'Transition has port, but no socket - Port name: %s - Port id: %s' -> msg.putformat(# do (portSocketPair.getPort).theName[] -> s; (portSocketPair.getPort).id[] -> s; #);
+       #);
+     NoSocketForPortNotification: ConsistencyNotification
+       (# 
+       do 'Transition has socket, but no port - Socket name: %s - Socket id: %s' -> msg.putformat(# do (portSocketPair.getSocket).theName[] -> s; (portSocketPair.getSocket).id[] -> s; #);
+       #);
+     PortOnWrongPageNotification: ConsistencyNotification
+       (# 
+       do 'Transition has a port, but the port is located on a different page than the transition\'s subpage - Port id: %s - Port''s page name: %s Port''s page id: %s - Transition''s subpage name: %s - Transition''s subpage id: %s' -> msg.putformat(# do (portSocketPair.getPort).id[] -> s; ((portSocketPair.getPort).getCPNPage).checkedName[] -> s;( (portSocketPair.getPort).getCPNPage).id[] -> s; (target.getSubpage).checkedName[] -> s; (target.getSubpage).id[] -> s; #);
+       #);
+     SocketOnWrongPageNotification: ConsistencyNotification
+       (# 
+       do 'Transition has a socket , but the socket is located on a different page than the transition\'s page ' -> msg.putformat(# do (portSocketPair.getSocket).id[] -> s; ((portSocketPair.getSocket).getCPNPage).checkedName[] -> s; ((portSocketPair.getSocket).getCPNPage).id[] -> s; (target.getCPNPage).checkedName[] -> s; (target.getCPNPage).id[] -> s; #);
+       #);
+     
+     run::
+       (# 
+       do (* If the transition has a subpage, its subpageInstance
+           * must point to the subpage
+           *)
+          (if target.getSubpage <> none then
+              (*(if not (target.subpageInstance.thePage[] = target.getSubpage) then
+                  SubpageInstancePointsToWrongPageNotification;
+              if);*)
+          if);
+          
+          (* If the transition has a subpage, the superpageInstance
+           * of the transition's subpageInstance must point to the
+           * transition's page
+           *)
+          (if target.getSubpage <> none then
+              (*(if not (target.subpageInstance.superpageInstance.thePage[] = target.thePage[]) then
+                  SuperpageInstancePointsToWrongPageNotification;
+              if);*)
+          if);
+          
+          (if not target.SocketPlaces.empty then
+              (* If the transition has port/socket pairs, it must
+               * also have a subpage. 
+               *)
+              (if target.getSubpage = none then
+                  NoSubpageForPortSocketPairsNotification;
+              if);
+              target.SocketPlaces.scan
+              (# 
+                 (* All port/socket pairs must be matched - a socket 
+                  * must have a port and vice versa. 
+                  *)
+              do current[] -> portSocketPair[];
+                 (if (current.getPort <> none) AND (current.getSocket = none) then
+                     NoSocketForPortNotification;
+                 if);
+                 (if (current.getSocket <> none) AND (current.getPort = none) then
+                     NoPortForSocketNotification;
+                 if);
+                 
+                 (* If the transition has port/socket pairs, they must
+                  * be located on the proper pages - ports on the 
+                  * subpage, and sockets on the same page as the 
+                  * transition 
+                  *)
+                 (if (current.getPort <> none) AND ((current.getPort).getCPNPage <> none) AND (target.getSubpage <> none) AND ((current.getPort).getCPNPage <> target.getSubpage) then
+                     PortOnWrongPageNotification;
+                 if);
+                 (if (current.getSocket <> none) AND ((current.getSocket).getCPNPage <> none) AND (target.getCPNPage <> none) AND ((current.getSocket).getCPNPage <> target.getCPNPage) then
+                     SocketOnWrongPageNotification;
+                 if);
+              #);
+          if);
+       #);
+  #);
+

@@ -1,0 +1,413 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '~beta/guienv/guienv';
+INCLUDE '~beta/guienv/private/winnt/guienv_ntiprivate';
+INCLUDE '~beta/guienv/controls';
+INCLUDE '~beta/basiclib/formatio';
+INCLUDE '~beta/postwimp/foundation/private/hapilib';
+INCLUDE '~beta/win32lib/windowmanagement';
+INCLUDE '~beta/guienv/figureitems';
+INCLUDE '~beta/win32lib/dcmanagement';
+INCLUDE '~beta/win32lib/bitmapsupport';
+INCLUDE '~beta/win32lib/wingdi';
+INCLUDE '~beta/basiclib/file';
+INCLUDE '~beta/guienv/graphics';
+INCLUDE 'relfile';
+LINKOPT nti 'user32.lib';
+LINKOPT nti 'gdi32.lib';
+
+RESOURCE nti	'mouseconfig.rc';
+
+--- program: descriptor ---
+(* This program demostrate and configurate
+ * the use of more than one mouse. 
+ *)
+guienv
+  (# TestWindow: @window (* This is the Main-window *)
+       (#
+	  mouse: @integer; (* the number of mice *)
+
+	  label1: @statictext (* ... mice acquired *)
+	    (# open::
+		 (#
+		 do borderStyles.simple -> border.style;
+		    true -> bindRight;
+		    (500, 20) -> size;
+		    (65535, 65535, 65535) -> backgroundColor;
+		    (50, 50) -> position;
+		 #);
+	    #);
+
+	  labelPrimary : @statictext (* a "button" *)
+	    (# open ::
+		 (#
+		 do (600, 62) -> position;
+		    (65535, 60000, 60000) -> backgroundColor;
+		    (100, 100) -> size;
+		    ' Primary ' -> label;
+                 #);
+            #);
+
+	  labelLeft : @statictext (* a "button" *)
+	    (# open ::
+		 (#
+		 do (705, 62) -> position;
+		    (65535, 60000, 60000) -> backgroundColor;
+		    (100, 100) -> size;
+		    ' Left Handed ' -> label;
+                 #);
+            #);
+
+	  labelRight : @statictext (* a "button" *)
+	    (# open ::
+		 (#
+		 do (810, 62) -> position;
+		    (65535, 60000, 60000) -> backgroundColor;
+		    (100, 100) -> size;
+		    ' Right Handed ' -> label;
+                 #);
+            #);
+
+	  mouselabel: canvas
+	    (# number: @integer;     (* the number of the mouse *)
+	       mouseColor : @Color;  (* the color of the mouse cursor *)
+	       whichHand : @boolean; (* indicates which hand mouse it is *)
+	       primary : @boolean;   (* indicates which mouse is the windows mouse*)
+
+	       buttons:
+		 (# new: @int16u;
+		    i: @integer;
+		    tmpButtons, newButtons, theButtons: @int8u;
+		    point : ^hPOINT;
+		    x,y : @integer;
+
+		    compress: (* return all the odd bits *)
+		      (# input: @int16u;
+			 output: @int8u;
+			 i: @integer;
+		      enter input
+		      do ((input %band 0x1) %bor
+			    ((input %band 0x4) %srl 1) %bor
+			    ((input %band 0x10) %srl 3) %bor
+			    ((input %band 0x40) %srl 5) %bor
+			    ((input %band 0x100) %srl 7) %bor
+			    ((input %band 0x400) %srl 9) %bor
+			    ((input %band 0x1000) %srl 11) %bor
+			    ((input %band 0x4000) %srl 13)) -> output;
+		      exit output
+		      #);
+
+		    inside:
+		      (# x,y: @integer;
+			 topx, topy, botx, boty : @integer;
+			 thing : ^statictext;
+			 return : @boolean;
+		      enter ((x,y), thing[])
+		      do false->return;
+			 thing.position->(topx, topy);
+			 thing.size->(botx, boty);
+			 (topx+botx, topy+boty)->(botx, boty);
+			 (if (x > topx) and (x<botx) and (y>topy) and (y<boty) then
+			     true->return;
+                         if);
+		      exit return
+                      #);
+
+		 enter	new
+		 do	(if new <> 0 then (* Only run if any state has changed *)
+			    &hPOINT[]->point[];
+			    (number, point[])->hGetAbsolutePosition;
+			    point.get->(x,y);
+			    ((theButtons (* old buttons *)
+				%band (%bnot (new %srl 1 -> compress))) (* unmask released buttons *)
+			       %bor (new -> compress)) -> tmpButtons; (* mask in pressed buttons *)
+			    (tmpButtons %bxor theButtons) -> newButtons;
+			    tmpButtons -> theButtons;
+			    (for i: 8 repeat (* i'th button *)
+				 (if (newButtons %srl (i - 1)) %band 0x1 = 0x1 then (* only of state has changed *)
+				     (if (theButtons %srl (i - 1)) %band 0x1 = 0x1 then
+					 (if true
+					  // ((x,y), labelPrimary[])->inside then
+					     primaries;
+					  // ((x,y), labelLeft[])->inside then
+					     false-> flipHand;
+					  // ((x,y), labelRight[])->inside then
+					     true-> flipHand;
+					 if);
+				     if);
+				 if);
+			    for);
+			if);
+		 exit	theButtons
+		 #);
+
+	       namelabel: @statictext
+		 (# open::
+		      (#
+		      do borderStyles.simple -> border.style;
+			 (55, 13) -> size;
+			 (65535, 65535, 65535) -> backgroundColor;
+		      #);
+		 #);
+
+	       updatestate:
+		 (# state: ^text;
+		 do '' -> state[];
+		    (if primary then
+			'Primary,' -> state.putText;
+		     else
+			'Secondary,' -> state.putText;
+		    if);
+		    (if whichHand then
+			'Right handed' -> state.putText;
+		     else
+			'Left handed' -> state.putText;
+		    if);
+		    state[] -> statuslabel.label;
+
+		 #);
+
+	       statuslabel: @statictext
+		 (# open::
+		      (#
+		      do borderStyles.simple -> border.style;
+			 (300, 20) -> size;
+			 (65535, 65535, 65535) -> backgroundColor;
+			 (100, 0) -> position;
+		      #);
+		 #);
+
+	       primaries :
+		 (# i : @integer;
+		 do (for i: mouse repeat
+			 false ->mouselabels[i].primary;
+			 mouselabels[i].updatestate;
+			 i->hUnSuspendMouse;
+		    for);
+		    true->primary;
+		    number->hSuspendMouse;
+		    updatestate;
+                 #);
+
+	       flipHand :
+		 (# r,g,b : @integer;
+		 enter whichHand
+		 do mouseColor->(r,g,b);
+		    (if whichHand then (* problem: cursor is sticky *)
+			(number, 0, 0,  (uienvHInstance, 1) -> LoadBitmapByID, r/256, g/256, b/256) -> hSetCursor;
+		     else
+			(number, 17, 0,  (uienvHInstance, 2) -> LoadBitmapByID, r/256, g/256, b/256) -> hSetCursor;
+                    if);
+		    updatestate;
+                 #);
+
+	       open::<
+		 (# name: @text;
+		    bm: @integer;
+		    DC1, DC2: @integer;
+		 do borderStyles.simple -> border.style;
+		    true -> bindRight;
+		    (500, 20) -> size;
+		    (65535, 65535, 65535) -> backgroundColor;
+		    namelabel.open;
+		    'Mouse #'->name.putText;
+		    number -> name.putInt;
+		    ':'->name.putText;
+		    name[] -> namelabel.label;
+		    mouseColor->namelabel.backgroundColor;
+		    statuslabel.open;
+		    true->whichHand;
+		    false->primary;
+		    updatestate;
+
+		    0xaaaa -> buttons; (* Release all buttons *)
+		    hdcScreen -> CreateCompatibleDC -> DC1;
+		    hdcScreen -> CreateCompatibleDC -> DC2;
+		    (hdcScreen, 18, 18) -> CreatecompatibleBitmap -> bm;
+		    (DC1, bm) -> SelectObject;
+		    (hdcScreen, 18, 18) -> CreatecompatibleBitmap -> bm;
+		    (DC2, bm) -> SelectObject; (*before x,y*)
+		    (DC1, 0, 0, 18, 18, hdcScreen, 0, 0, 0x00CC0020) -> BitBlt;
+		    INNER;
+		 #);
+	    enter (number, mouseColor)
+	    #); (* END OF mouselabel *)
+
+	  mouselabels: [1] ^mouselabel;
+
+	  open::< (* start of "program" *)
+	    (# create::<(# do &myWindowMethods[] -> theMethods; #);
+	       mice: @text;
+	       i: @integer;
+	       colors : [16]@color;  (* FIXME: max of 16 mice *)
+	    do 'Mouse Configuration program for the CPN Mice System'->title;
+	       ('DISPLAY', 0, 0, 0) -> CreateDC -> hdcScreen;
+	       (65535, 65535, 65535) -> backgroundColor;
+	       (1024,768)->size;
+	       label1.open;
+	       labelPrimary.open;
+	       labelLeft.open;
+	       labelRight.open;
+	       (0, TestWindow.interfaceObjectID, TestWindow.interfaceObjectID->GetDC, hBUTTONS %bor hMOVEMENT %bor hSUSPEND %bor hACCELERATE %bor hCURSOR %bor hCLIP) -> hInitialise -> mouse;
+
+	       mouse -> mice.putInt;
+	       (if mouse = 1 then
+		   ' mouse' -> mice.putText;
+		else
+		   ' mice' -> mice.putText;
+	       if);
+	       ' acquired.' -> mice.putText;
+	       mice[] -> label1.label;
+
+	       mouse -> mouselabels.new;
+
+	       (65535,     0,     0) -> colors[1];
+	       (    0,     0, 65535) -> colors[2];
+	       (65535, 65535,     0) -> colors[3];
+	       (65535, 60000, 60000) -> colors[4];
+	       (60000, 65535, 60000) -> colors[5];
+	       (60000, 60000, 65535) -> colors[6];
+	       (    0, 65535,     0) -> colors[7];
+	       (65535,     0, 65535) -> colors[8];
+	       (65535,     0, 65535) -> colors[9];
+	       (65535,     0, 65535) -> colors[10];
+	       (65535,     0, 65535) -> colors[11];
+	       (65535,     0, 65535) -> colors[12];
+	       (65535,     0, 65535) -> colors[13];
+	       (65535,     0, 65535) -> colors[14];
+	       (65535,     0, 65535) -> colors[15];
+	       (65535,     0, 65535) -> colors[16];
+
+	       (for i: mouse repeat
+		    &mouselabel[] -> mouselabels[i][];
+		    (i,colors[i]) -> mouselabels[i];
+		    mouselabels[i].open;
+		    (50, 50 + i * 20) -> mouselabels[i].position;
+		    (# r,g,b : @integer;
+		    do colors[i]->(r,g,b);
+		       (if i mod 2 = 0 then
+			   (i, 0, 0,  (uienvHInstance, 1) -> LoadBitmapByID,  r/256, g/256, b/256) -> hSetCursor;
+			else
+			   (i, 17, 0,  (uienvHInstance, 1) -> LoadBitmapByID, r/256, g/256, b/256) -> hSetCursor;
+                       if);
+                    #);
+	       for);
+	    #);
+
+	  myWindowMethods: windowMethods
+	    (#	dxdy: cstruct
+		 (# byteSize:: (# do 4 -> value; #);
+		    dx: signedShort(# pos:: (# do 0 -> value; #); #);
+		    dy: signedShort(# pos:: (# do 2 -> value; #); #);
+		 enter	R[1]
+		 exit	R[1]
+		 #);
+
+	       buttonsnumberflags: cstruct
+		 (# byteSize:: (# do 4 -> value; #);
+		    buttons: Short(# pos:: (# do 0 -> value; #); #);
+		    shortTwo: Short(# pos:: (# do 2 -> value; #); #);
+		    number: (# i: @integer; do shortTwo %srl 8 -> i; exit i #);
+		    flags: (# i: @integer; do shortTwo %band 0xff -> i; exit i #);
+		 enter	R[1]
+		 exit	R[1]
+		 #);
+
+	       dispatchMessage::<
+		 (# lparam: @dxdy;
+		    wparam: @buttonsnumberflags;
+		 do	(if (info.message = WM_USER + 1001) AND (GetActiveWindow <> 0) then
+			    info.lparam -> lparam;
+			    info.wparam -> wparam;
+			    wparam.buttons -> mouselabels[wparam.number].buttons;
+			    true -> info.handled;
+			if);
+		    INNER dispatchMessage;
+		 #);
+	    #);
+
+	  eventHandler::<
+	    (#	onAboutToClose::<
+		 (# outfile : @file;
+		    i : @integer;
+		 do 'config.xml'->relativeFile->outfile.name;
+		    outfile.OpenWrite;
+		    '<?xml version="1.0" encoding="UTF-8"?>\n'->outfile.putText;
+		    '<config>\n<mouseconfig xmlns="http://cpnmouse.sourceforge.net/ns/mouseconfig">\n'->outfile.putText;
+		    (for i: mouse repeat (* what about disabling?!*)
+			 '\t<mouse>\n'->outfile.putText;
+			  '\t\t<number>'->outfile.putText;
+			 i->outfile.putInt;
+			 '</number>\n'->outfile.putText;
+			 '\t\t<primary>'->outfile.putText;
+			 (if mouselabels[i].primary then
+			     'true'->outfile.putText;
+			  else
+			     'false'->outfile.putText;
+			 if);
+			 '</primary>\n'->outfile.putText;
+			 '\t\t<hand>'->outfile.putText;
+			 (if mouselabels[i].whichHand then
+			     'right'->outfile.putText;
+			  else
+			     'left'->outfile.putText;
+			 if);
+			 '</hand>\n'->outfile.putText;
+			 '\t</mouse>\n'->outfile.putText;
+		    for);
+		    '</mouseconfig>\n</config>'->outfile.putText;
+		    outfile.close;
+		    terminate;
+		 #);
+	    #);
+       #); (* end of TestWindow *)
+
+     CreateDC: external
+       (#
+	  in0: [1] @char; (* LPCSTR *)
+	  in1: @integer;
+	  in2: @integer;
+	  in3: @integer; (* const void FAR* *)
+	  out: @integer; (* HDC *)
+       enter (in0,in1,in2,in3)
+       do 'CreateDCA' -> callStd;
+       exit out
+       #);
+
+     loadBitmapById: external
+       (# hInstance: @integer; (* HINSTANCE *)
+	  id: @integer; (* LPCSTR *)
+	  hBitmap: @integer; (* HBITMAP *)
+       enter (hInstance,id)
+       do 'LoadBitmapA' -> callStd;
+       exit hBitmap
+       #);
+
+     hdcScreen: @integer;
+     shadow: @integer;
+  do	TestWindow.open;
+  #)
+

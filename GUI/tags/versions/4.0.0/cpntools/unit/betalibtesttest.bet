@@ -1,0 +1,36 @@
+ORIGIN 'betalibtest';
+-- testProgram: MainPart --
+(#
+   case1: @TestCase (#  do true->assert; false->assert;  #);
+   case2: @TestCase (#  do false->assert; true->assert;  #);
+   suite1: @TestSuite
+     (#
+        T1,T2: @Text;
+        T3: ^Text;
+        setUp::  (#  do T1[]->T3[];  #);
+        case1: @TestCase
+          (#  do T1[] <> T3[]->assert; T2[] <> T3[]->assert;  #);
+        suite1: @TestSuite
+          (#
+             case1: @TestCase (#  do false->assert #);
+             init::<  (#  do '3rd inner test'->case1.init #)
+          #);
+        init::  (#  do 'ref equal'->case1.init; 'suitcase'->suite1.init;  #)
+     #);
+   init:: 
+     (# 
+     do
+        'simple test'->case1.init;
+        case2.init;
+        'Text suite'->suite1.init;
+        
+        '------------- expected output ------------------\n'
+        'Assertion 2 failed in simple test / betalibtesttest\n\n'
+        'Assertion 1 failed in case2 / betalibtesttest\n\n'
+        'Assertion 1 failed in ref equal / Text suite / betalibtesttest\n\n'
+        'Assertion 1 failed in 3rd inner test / suitcase / Text suite / betalibtesttest\n'
+        '------------- produced output ------------------'
+          ->putLine
+     #)
+#)  
+

@@ -1,0 +1,147 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN 'cpnmenu';
+INCLUDE '../instruments/deletioninstruments';
+INCLUDE '../instruments/navigationinstruments';
+INCLUDE '../instruments/toolinstruments';
+INCLUDE '../instruments/helpinstruments';
+INCLUDE '../resources/texts/texts';
+INCLUDE '../instruments/declinstruments';
+
+---cpnworkspacelib:attributes---
+
+TabMenu: CPNMenu
+  (# TargetType::< Tab;
+     
+     getNameForClose:<
+       (# name: ^Text;
+       do INNER;
+       exit name[]
+       #);
+     
+     LeftItem::
+       (# init::
+            (#
+            do &CloseTabInstrument[] -> theInstrument[];
+               theInstrument.init;
+               getNameForClose -> name[];
+            #);
+       #);
+  #);
+
+CPNTabMenu: TabMenu
+  (# TargetType:: CPNTab;
+     
+     getNameForClose::
+       (# 
+       do NamesTabMenuClosePageItem -> getGlobalNames -> name[];
+       #);
+     
+     RightItem::
+       (# init::
+            (#
+            do &TabMover[] -> theInstrument[];
+               theInstrument.init;
+               NamesCPNTabMenuBringToFrontItem -> getGlobalNames -> name[];
+            #);
+       #);
+     
+     DeleteItem::
+       (# init::
+            (#
+            do NamesInstanceNodeMenuDeletePageItem -> getGlobalNames -> name[];
+               &DeletePageInstrument[] -> theInstrument[];     
+               theInstrument.init;
+            #);
+          makeDynamicName::
+            (# theCPNTab: ^CPNTab;
+               thePageInstance: ^PageInstance;
+            do target[] -> theCPNTab[];
+               theCPNTab.theSheet.content[] -> thePageInstance[];
+               (if thePageInstance.getSuperpageInstance = none then
+                   name[] -> txt[];
+                else
+                   (if thePageInstance.thePage.allPageInstancesUnderSameTransition then
+                       'Move Page\nTo Top Level' -> txt[];
+                    else
+                       'Delete\nPage\nInstance' -> txt[];
+                   if);
+               if);               
+            #);          
+       #);     
+  #);
+
+TextTabMenu: TabMenu
+  (# TargetType:: DeclTextTab;
+     
+     getNameForClose::
+       (# 
+       do NamesTabMenuCloseDecl -> getGlobalNames -> name[];
+       #);
+     
+     
+     DeleteItem::
+       (# init::
+            (# 
+            do NamesDeleteDeclItem -> getGlobalNames -> name[];
+               &SimpleDeleteDeclTabInstrument[] -> theInstrument[];
+               theInstrument.init;
+            #);
+       #);
+     
+  #);
+
+AddToToolBoxInstrument: Instrument
+  (# 
+     TargetType:: ToolTab;
+     apply::
+       (# 
+       do (if debugging then
+              'Dette skal laves naar toolset virker igen.'
+                -> debugLoadInstrument;
+          if);
+       #);
+  #);
+
+ToolTabMenu: TabMenu
+  (# TargetType:: ToolTab;
+     
+     getNameForClose::
+       (# 
+       do NamesTabMenuCloseToolItem -> getGlobalNames -> name[];
+       #);
+     
+     RightItem::
+       (# init::
+            (#
+            do &HelpToolCollectionInstrument[] -> theInstrument[];
+               theInstrument.init;
+               NamesTabMenuHelpToolItem -> getGlobalNames -> name[];
+            #);
+       #);
+     
+  #);
+

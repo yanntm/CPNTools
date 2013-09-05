@@ -1,0 +1,261 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../cpnet';
+INCLUDE '../xmlutilities';
+
+-- GuideLineSnapablePrivate:descriptor --
+(#
+   theGuideLine: ^GuideLine; (* FIXME: an element can be on two guidelines *)
+#)
+
+-- GuideLineSnapableGetGuideLine:doPart --
+do private.theGuideline[] -> theGuideline[];
+
+-- GuideLinePrivate:descriptor --
+(#
+   guideElements: @List (# Element:: GuideLineSnapable; #);
+#)
+
+-- GuideLineSetCPNPage:doPart --
+do scanGuideElements
+   (# 
+   do theCPNPage[] -> current.setCPNPage;
+   #);
+
+-- GuidelineAddGuideElement: doPart --
+do (if (elm[]<>NONE) AND NOT (elm[] -> private.guideElements.has) then
+       elm[] -> private.guideElements.append;
+       This(Guideline)[] -> elm.private.theGuideline[];
+   if);
+
+-- GuideLineScanGuideElements:doPart --
+do private.guideElements.scan 
+   (# 
+   do current[] -> this(scanGuideElements).current[];
+      inner scanGuideElements;
+   #);
+
+-- GuideLineHas:dopart --
+do elm[] -> private.guideElements.has -> value;
+
+-- GuidelineRemoveGuideElement: doPart --
+do (if (elm[] -> private.guideElements.has) then
+       elm[] -> private.guideElements.at -> private.guideElements.delete;
+       NONE -> elm.private.theGuideLine[];
+   if);
+
+-- GuideLineDelete:doPart --
+do THIS(GuideLine)[] -> (getCPNPage).removeGuideLine;
+
+-- GuidelinesnaptoSpreadpoint: doPart --
+do false -> snap;
+   0 -> newvalue;
+   (if (target > (spreadoffset - 15)) 
+       and (target < (spreadoffset + 15)) then
+       spreadoffset -> newvalue;
+       true -> snap;
+    else
+       width/(2*spread) -> range;
+       loop:
+         (# 
+         do (if snap then leave loop if);
+            (for i: range repeat
+                 (if ((target > (spreadoffset - i*spread - 15)) and
+                     (target < (spreadoffset - i*spread + 15))) then
+                     true -> snap;
+                     spreadoffset - i*spread -> newvalue;
+                 if);
+                 (if ((target > (spreadoffset + i*spread - 15)) and
+                     (target < (spreadoffset + i*spread + 15))) then
+                     true -> snap;
+                     spreadoffset + i*spread -> newvalue;
+                 if);
+            for);
+         #);
+   if);
+   INNER;
+   
+-- GuidelineChangeSpread:DoPart --
+do update;
+   
+-- GuidelineHiLite:DoPart --
+do 0.6 -> astyle.alpha; update;
+   
+-- GuidelineLoLite:DoPart --
+do 0.2 -> astyle.alpha; update; 
+   
+-- Guidelineinit: doPart --
+do main.init;
+   
+   INNER;
+   shape.init;
+   75 -> defaultSpread;
+   75 -> spread;
+   &CompositeStyle[] -> guideStyle[];
+   0.0 -> &AlphaStyle -> astyle[];
+   0.2 -> astyle.alpha;
+   astyle[] -> guideStyle.add;
+   black[] -> theStyle.stroke[];
+   black[] -> theStyle.fill[];
+   theStyle[] -> guideStyle.add;
+   guideStyle[] -> shape.theStyle[];
+   shape[] -> main.add;
+   THIS(Guideline)[] -> main.owner[];
+   
+   private.guideElements.init;
+   update;
+   
+-- Spreadpointinit: doPart --
+do main.init;
+   &Rect[] -> shape[];
+   shape.init;
+   (2, 2) -> (shape.width, shape.height);
+   shape[] -> main.add;
+   THIS(Spreadpoint)[] -> main.owner[];
+   
+-- HorizontalGuideLineupdate: doPart --
+do main.clear;
+   &HorizontalSpreadpoint[] -> thespreadpoint[];
+   thespreadpoint.init;
+   guideStyle[] -> thespreadpoint.shape.theStyle[];
+   (spreadoffset, y) -> thespreadpoint.Position;
+   (*thespreadpoint.proxy[] -> proxy.add;*)
+   THIS(Guideline)[] -> thespreadpoint.gl[];
+   width/(2*spread) -> range;
+   (*(for i: (range+1) repeat
+        &HorizontalSpreadpoint[] -> thespreadpoint[];
+        thespreadpoint.init;
+        guideStyle[] -> thespreadpoint.shape.theStyle[];
+        (spreadoffset+(i*spread), y) -> thespreadpoint.Position;
+        thespreadpoint.presentation[] -> presentation.add;
+        THIS(Guideline)[] -> thespreadpoint.gl[];
+        &HorizontalSpreadpoint[] -> thespreadpoint[];
+        thespreadpoint.init;
+        guideStyle[] -> thespreadpoint.shape.theStyle[];
+        (spreadoffset-(i*spread), y) -> thespreadpoint.position;
+        thespreadpoint.presentation[] -> presentation.add;
+        THIS(Guideline)[] -> thespreadpoint.gl[];
+   for);*)
+   1 -> shape.points.get -> point[];
+   (-width/2-10000, y) -> point;
+   2 -> shape.points.get -> point[];
+   (width/2+10000, y) -> point;
+   shape[] -> main.add;
+   main.changed;
+   main[] -> presentation.add;
+   
+-- HorizontalGuideLineGetParameter:doPart --
+do y -> parameter;
+   
+-- HorizontalGuideLineSetParameter:doPart --
+do parameter -> y;
+   update;
+   
+-- HorizontalGuideLineisonGuide: doPart --
+do (if (ey < y+1) and (ey > y-1) then
+       true -> ison;
+    else
+       false -> ison;
+   if);
+   
+-- HorizontalGuideLineApply:DoPart --
+do scanGuideElements
+   (#
+   do y -> current.y;
+      current.changed;
+   #);
+   
+-- HorizontalGuideLineinit: doPart --
+do &Line[] -> shape[];
+   &PointList[] -> shape.points[];
+   &Point2d[] -> point[] -> shape.points.append;
+   &Point2d[] -> point[] -> shape.points.append;
+   0 -> spreadoffset;
+   
+-- VerticalGuideLineupdate: doPart --
+do main.clear;
+   &VerticalSpreadpoint[] -> thespreadpoint[];
+   thespreadpoint.init;
+   guideStyle[] -> thespreadpoint.shape.theStyle[];
+   (x, spreadoffset) -> thespreadpoint.position;
+   (*thespreadpoint.presentation[] -> presentation.add;*)
+   THIS(Guideline)[] -> thespreadpoint.gl[];
+   height/(2*spread) -> range;
+   (*(for i: (range+1) repeat
+        &VerticalSpreadpoint[] -> thespreadpoint[];
+        thespreadpoint.init;
+        guideStyle[] -> thespreadpoint.shape.theStyle[];
+        (x, spreadoffset+(i*spread)) -> thespreadpoint.position;
+        thespreadpoint.presentation[] -> presentation.add;
+        THIS(Guideline)[] -> thespreadpoint.gl[];
+        &VerticalSpreadpoint[] -> thespreadpoint[];
+        thespreadpoint.init;
+        guideStyle[] -> thespreadpoint.shape.theStyle[];
+        (x, spreadoffset -(i*spread)) -> thespreadpoint.position;
+        thespreadpoint.presentation[] -> presentation.add;
+        THIS(Guideline)[] -> thespreadpoint.gl[];
+   for);*)
+   1 -> shape.points.get -> point[];
+   (x, -height/2 - 10000) -> point;
+   2 -> shape.points.get -> point[];
+   (x, height/2 + 10000) -> point;
+   shape[] -> main.add;
+   main.changed;
+   main[] -> presentation.add;
+   
+-- VerticalGuideLineGetParameter:doPart --
+do x -> parameter;
+   
+-- VerticalGuideLineSetParameter:doPart --
+do parameter -> x;
+   update;
+   
+-- VerticalGuideLineisonGuide: doPart --
+do (if (ex < x+1) and (ex > x-1) then
+       true -> ison;
+    else
+       false -> ison;
+   if);
+   
+-- VerticalGuideLineIsObjectClose:DoPart --
+do (# d: @real;
+   do target.x - x -> fabs  -> d;
+      (d < 15.0) -> value;
+   #);
+   
+-- VerticalGuideLineApply:DoPart --
+do scanGuideElements
+   (#
+   do x -> current.x;
+      current.changed;
+   #);
+   
+-- VerticalGuideLineinit: doPart --
+do &Line[] -> shape[];
+   &PointList[] -> shape.points[];
+   &Point2d[] -> point[] -> shape.points.append;
+   &Point2d[] -> point[] -> shape.points.append;
+   0 -> spreadoffset;

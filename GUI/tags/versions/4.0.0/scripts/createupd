@@ -1,0 +1,36 @@
+#!/bin/bash
+# Usage createupd <path-with-files> <macro-namespace> <arguments-to-grep> [internal/]
+
+LOCATION="http://www.daimi.au.dk/~cpntools/bin/update/$4"
+A=0
+
+pushd . > /dev/null
+cd "$1"
+
+for file in `find -type f | sed -e "s/ /%/g" -e "s/^[.]\///"`; do
+	FILE="$( echo $file | sed -e "s/%/ /g")"
+
+	if [ "z$( echo $file | grep $3 )" != "z" ]; then
+		echo "0,$2$A,0" >> header
+	else
+		echo "0,$2$A,3" >> header
+	fi
+
+	echo >> footer
+	echo "[$2$A]" >> footer
+	echo "dwnName=$( echo $FILE | sed -e "s/.*\///" )" >> footer
+	echo "dwnCheck=1" >> footer
+	echo "dwnURL=$LOCATION$FILE" >> footer
+	echo "dwnPathType=1" >> footer
+	echo "dwnPath=$( echo $FILE | grep "/" | sed -e "s/\/[^/]*$//" )" >> footer
+	echo "dwnCtrlFunc=ucNET" >> footer
+	echo "dwnSize=$( wc -c "$FILE" | sed -e "s/^[^0123456789]*//" | sed -e "s/[^0123456789].*//" )" >> footer
+	echo "dwnLowDate=$[ ($(date -r "$FILE" +%s) * 10000000 + 116444736000000000) % 4294967296 ]" >> footer
+	echo "dwnHighDate=$[ ($(date -r "$FILE" +%s) * 10000000 + 116444736000000000) / 4294967296 ]" >> footer
+
+	A=$[ $A + 1 ]
+done
+
+unix2dos -D footer header > /dev/null 2>&1
+
+popd > /dev/null

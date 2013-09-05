@@ -1,0 +1,84 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../mldispatcher';
+INCLUDE '~beta/containers/dictionary';
+INCLUDE '../../../cpntools/debug';
+
+--- MLDispatcherAccept:DoPart ---
+do (# subOpcode: @Integer;
+      intObj: ^integerObject;
+   do 
+	(if (bis.Ints >= 1) and (bis.opcode = 3) then
+          bis.GetInt->subOpcode;
+          &integerObject[]->intObj[];
+          subOpcode->intObj;
+          (if (intObj[]->Private.dispatchTable.Lookup) <> NONE then
+              true->value;
+          if);
+      if);
+   #);
+   
+--- MLDispatcherDispatch:DoPart ---
+do (# subOpcode: @Integer;
+      intObj: ^integerObject;
+      dispatch: ^MLDispatch;
+   do (if bis.Ints >= 1 then
+          bis.GetInt->subOpcode;
+          &integerObject[]->intObj[];
+          subOpcode->intObj;
+          intObj[]->Private.dispatchTable.Lookup->dispatch[];
+          (if dispatch[] <> NONE then
+              bis.Reset;
+              bis[]->dispatch->reply[];
+          if);
+      if);
+      (if reply[] = NONE then
+          (* no reply to non-dispatched messages *)
+      if);
+   #);
+   
+--- MLDispatcherRegister:DoPart ---
+do (# intObj: ^integerObject;
+   do &integerObject[]->intObj[];
+      subOpcode->intObj;
+      intObj[]->Private.dispatchTable.disassociate;
+      (intObj[], dispatch[])->Private.dispatchTable.associate;
+   #);
+   
+--- MLDispatcherUnregister:DoPart ---
+do (# intObj: ^integerObject;
+   do &integerObject[]->intObj[];
+      subOpcode->intObj;
+      intObj[]->Private.dispatchTable.disassociate;
+   #);
+   
+--- MLDispatcherPrivate:Descriptor ---
+(# dispatchTable: @Dictionary 
+     (# Key:: integerObject;
+        Element:: MLDispatch;
+        KeyEqual:: (# do (left = right)->value; #);
+     #);
+#)
