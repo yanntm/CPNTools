@@ -1119,9 +1119,9 @@ CPNetLoader: Loader
                               &TransitionLoader[] -> register;
                               &SSNodeLoader[] -> register;
                               &ArcLoader[] -> register;
+					&ConstraintLoader[] -> register;
                               &SSArcLoader[] -> register;
                               &AuxLoader[] -> register;
-					&ConstraintLoader[] -> register;
                            #);
                          
                          createLoader::
@@ -1144,7 +1144,8 @@ CPNetLoader: Loader
 						    (# t1, t2: ^Transition;
 							 arcType: @integer;    
 							 lineType: @integer;    
-							do obj.setAnnotation;
+							do (obj.id[],obj[]) -> registerObject;
+							   obj.setAnnotation;
 							   getPage -> obj.setCPNPage;
 							   elm.scanElements (#
 							   do (if true

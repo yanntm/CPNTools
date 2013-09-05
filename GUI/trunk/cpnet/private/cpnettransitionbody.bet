@@ -83,6 +83,23 @@ do (if theGroup[]<>NONE then
           if);
        #);
    if);
+   (if theGroup[]<>NONE then
+       scanConstraintArcs
+       (# other: ^PageElement;
+       do (if current.placeEnd[] = THIS(Transition)[] then
+	        current.transEnd[] -> other[];
+	    else
+	        current.placeEnd[] -> other[];
+	    if);
+	    (if other[] -> theGroup.isMember then
+              current[] -> theElements.append;
+              (current.getInscriptions).scan
+              (# 
+              do current[] -> theElements.append;
+              #);
+          if);
+       #);
+   if);
    
    
 -- TransitionScanInstances: doPart --
