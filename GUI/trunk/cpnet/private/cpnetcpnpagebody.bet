@@ -418,6 +418,8 @@ do private.places.scan
    (# do current[] -> this(scanPageElements).current[]; inner scanPageElements; #);
    private.arcs.scan 
    (# do current[] -> this(scanPageElements).current[]; inner scanPageElements; #);   
+   private.constraintArcs.scan 
+   (# do current[] -> this(scanPageElements).current[]; inner scanPageElements; #);   
    private.auxs.scan
    (# do current[] -> this(scanPageElements).current[]; inner scanPageElements; #);
  private.ssnodes.scan
@@ -899,6 +901,34 @@ do (# newName: ^text;
                    (current.id[], newarc[]) -> createdPageElements.associate;                   
                 #);
              #);
+           cloneConstraintArcs:
+             (# transEnd, placeEnd: ^Transition;
+                thearc, newarc: ^ConstraintArc;
+		    do thePage.scanConstraintArcs
+                (# 
+                do current[] -> thearc[];
+                   current.clone -> newarc[];
+                   current.transEnd.id[] -> createdPageElements.lookup -> transEnd[];
+                   current.placeEnd.id[] -> createdPageElements.lookup -> placeEnd[];
+                   placeEnd[] -> newarc.setPlaceEnd;
+                   transEnd[] -> newarc.setTransEnd;
+                   newarc[] -> theClonedPage.addConstraintArc;
+                   newarc[] -> placeEnd.addConstraintArc;
+                   newarc[] -> transEnd.addConstraintArc;
+                   
+                   (if not (current.getBends).empty then
+                       (current.getBends).copy -> newarc.setBends;
+                       (newarc.getBends).scan(# do current[] -> newarc.addBendPoint; #);
+                   if);
+                   
+                   newarc.changed;
+                   
+			 transEnd.snap;
+			 placeEnd.snap;
+                   
+                   (current.id[], newarc[]) -> createdPageElements.associate;                   
+                #);
+             #);
            cloneAuxs:
              (# 
              do thePage.scanAuxs
@@ -1012,6 +1042,7 @@ do (# newName: ^text;
            clonePlaces;
            cloneFusionSets;
            cloneArcs;
+	     cloneConstraintArcs;
            cloneAuxs;
            cloneAssignments;
            cloneGroups;
@@ -1140,7 +1171,17 @@ do (if true
        private.pageInstances.scan
        (# do source[] -> current.addPlace; #);
        semanticChanged;
-    // (source## <= Arc##) AND (not (source## <= SSArc##)) then       
+	 // source## <= ConstraintArc## then
+       source[] -> QUA
+       (# as:: ConstraintArc;
+       do (if thisObj.transend[] <> NONE then
+              thisObj.transend.semanticChanged;
+          if);
+          (if thisObj.placeend[] <> NONE then
+              thisObj.placeend.semanticChanged;
+          if);
+       #);
+	 // (source## <= Arc##) AND (not (source## <= SSArc##)) then       
        private.pageInstances.scan
        (# do source[] -> current.addArc; #);       
        source[] -> QUA
@@ -1374,6 +1415,14 @@ do (# dummyCPNPage, dummyCPNPageClone: ^CPNPage;
              dummyCPNPage[] -> current.setCPNPage;
           //current## <= Transition## then
              (current.id[], current[]) -> dummyCPNPage.private.transitions.associate;
+          //current## <= ConstraintArc## then
+             current[] -> QUA
+             (# as::ConstraintArc; (* both ends must be in the list *)
+             do (if (thisObj.placeEnd[] -> has) and
+                    (thisObj.transEnd[] -> has) then
+                    (current.id[], current[]) -> dummyCPNPage.private.constraintarcs.associate;
+                if);
+             #);
           //current## <= Arc## then
              current[] -> QUA
              (# as::Arc; (* both ends must be in the list *)
