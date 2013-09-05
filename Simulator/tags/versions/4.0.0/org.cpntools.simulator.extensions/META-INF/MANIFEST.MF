@@ -1,0 +1,17 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: CPN Simulator Extensions
+Bundle-SymbolicName: org.cpntools.simulator.extensions;singleton:=true
+Bundle-Version: 4.0.0
+Bundle-ActivationPolicy: lazy
+Bundle-Vendor: Michael Westergaard
+Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Require-Bundle: org.cpntools.accesscpn.engine.protocol;bundle-version="3.0.0"
+Export-Package: org.clapper.util.classutil,
+ org.clapper.util.cmdline,
+ org.cpntools.simulator.extensions,
+ org.cpntools.simulator.extensions.scraper,
+ org.cpntools.simulator.extensions.server,
+ org.cpntools.simulator.extensions.server.ui,
+ org.cpntools.simulator.extensions.test,
+ org.cpntools.simulator.extensions.utils
