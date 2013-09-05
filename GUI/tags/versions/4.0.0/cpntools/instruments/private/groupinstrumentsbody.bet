@@ -1,0 +1,201 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../groupinstruments';
+
+-- ToggleGroupInstrumentRelevant:doPart --
+do (not ((target.getCPNPage).getSelectedGroup).all) and
+   (not (target## <= GuideLine##)) and
+   (not (target## <= HierarchyInfo##)) -> value;
+   
+-- ToggleGroupInstrumentApply:doPart --
+do (target[], (target.getCPNPage).getSelectedGroup) -> toogleGroupElement;
+   finish;
+   
+-- ToogleGroupElement:doPart --
+do (# theCommand: ^StandardCommand;
+      theClipping: ^GroupElementClipping;
+   do &GroupElementClipping[] -> theClipping[];
+      theElm[] -> theClipping.init;
+      
+      (if theElm[] -> theGroup.isMember then
+          &RemoveElementFromGroupCommand[] -> theCommand[];
+       else
+          &InsertElementIntoGroupCommand[] -> theCommand[];
+      if);
+      
+      theGroup[] -> theCommand.prepare;
+      theClipping[] -> theCommand.apply;
+      
+      (theGroup.getCPNet,theCommand[]) -> registerCommand;
+   #);
+   
+-- AddSurroundingNodesToGroup:DoPart --
+do (# makeCommand: 
+        (# elm: ^Node;
+           clip: ^GroupElementClipping;
+           com: ^StandardInsertCommand;
+        enter elm[]
+        do &GroupElementClipping[] -> clip[];
+           elm[] -> clip.init;
+           &InsertElementIntoGroupCommand[] -> com[];
+           grp[] -> com.prepare;
+           clip[] -> com.clip[];         
+        exit com[]
+        #);
+      coms: @CommandList;
+      com: ^Command;
+      scanSurroundingNodes:
+        (# elm: ^Node;
+        enter elm[]
+        do elm.scanSurroundingNodes
+           (# 
+           do (if not (current[] -> grp.isMember) then
+                  (if current## = Transition## then
+                      current[] -> qua
+                      (# as:: Transition;
+                      do (if not thisObj.isSubstitutionTransition then
+                             current[] -> makeCommand -> coms.append;
+                         if);
+                      #);
+                   else
+                      current[] -> makeCommand -> coms.append;
+                  if);             
+                  (if (current## = Place##) and grp.isGlobal then
+                      current[] -> qua
+                      (# as:: Place;
+                      do thisObj.scanAllReachablePlaces
+                         (# 
+                         do (if not (current[] -> grp.isMember) then
+                                current[] -> makeCommand -> coms.append;
+                            if);
+                         #);
+                      #);
+                  if);
+              if);
+           #);
+        #);
+   do coms.init;
+      (if (elm## = Place##) and grp.isGlobal then
+          elm[] -> qua
+          (# as:: Place;
+          do thisObj.scanAllReachablePlaces
+             (# 
+             do current[] -> scanSurroundingNodes;
+             #);
+          #);             
+       else
+          elm[] -> scanSurroundingNodes;
+      if);
+      &Command
+      (# getName:: (# do 'Add nodes to group...' -> name[]; #);
+         apply:: (# do redo; #);
+         undo:: (# do coms.undo; #);
+         redo:: (# do coms.redo; #);
+      #)[] -> com[];
+      com.apply;
+      (grp.getCPNet, com[]) -> registerCommand;
+   #);
+   
+   
+-- AddSurroundingNodesToGroupRelevant:doPart --   
+do (not ((target.getCPNPage).getSelectedGroup).all) -> value;
+
+-- GroupElementClippingInsert:doPart --
+do elm[] -> context.addElement;
+   (context[] -> elm.getElementsToAddToGroupWithThisElement).scan
+   (# 
+   do current[] -> context.addElement;
+   #);
+   
+-- GroupElementClippingRemove:doPart --
+do elm[] -> context.removeElement;
+   (context[] -> elm.getElementsToAddToGroupWithThisElement).scan
+   (# 
+   do current[] -> context.removeElement;
+   #);
+   
+-- CreateGroup:DoPart --
+do (# new: ^Group;
+      clip: ^GroupClipping;
+      com: ^GroupInsertionCommand;
+   do &Group[] -> new[];
+      new.init;
+      context.getNewGroupName -> new.name;      
+      
+      &GroupClipping[] -> clip[];
+      (context[], new[]) -> clip.prepare;
+      
+      &GroupInsertionCommand[] -> com[];
+      clip[] -> com.apply;
+      ((new.getCPNPage).net[],com[]) -> registerCommand;
+   #);
+   
+-- CreateGlobalGroup:DoPart --
+do (# new: ^Group;
+      clip: ^GlobalGroupClipping;
+      com: ^GlobalGroupInsertCommand;
+   do &Group[] -> new[];
+      new.init;
+      context[] -> new.setCPNet;
+      context.getNewGroupName -> new.name;
+      
+      &GlobalGroupClipping[] -> clip[];
+      (new[], theCPNPage[]) -> clip.init;
+      
+      &GlobalGroupInsertCommand[] -> com[];
+      context[] -> com.prepare;
+      clip[] -> com.apply;
+      (context[], com[]) -> registerCommand;      
+   #);
+   
+-- DeleteGroup:DoPart --
+do (# theNet: ^CPNet;
+      com1: ^GroupRemovalCommand;
+      com2: ^GlobalGroupRemoveCommand;
+      clip: ^GlobalGroupClipping;
+   do target.getCPNet -> theNet[];
+      
+      (if target.IsGlobal then
+          &GlobalGroupClipping[] -> clip[];
+          (target[], theCPNPage[]) -> clip.init;     
+      
+          &GlobalGroupRemoveCommand[] -> com2[];
+          target.getCPNet -> com2.prepare;
+      
+          clip[] -> com2.apply;
+          (target.getCPNet, com2[]) -> registerCommand;
+       else
+          target[] -> MakeDeleteGroupCommand -> com1[];
+          com1.apply;
+          (theNet[],com1[]) -> registerCommand;
+      if);
+   #);
+   
+-- CreateGlobalGroupInstrumentApply:DoPart --
+do target.father[] -> qua
+   (# as:: CPNSheet;
+   do ((target.getGroup).getCPNet, thisObj.content.thePage[]) -> CreateGlobalGroup;
+   #);

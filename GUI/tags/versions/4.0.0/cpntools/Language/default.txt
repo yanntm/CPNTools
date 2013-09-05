@@ -1,0 +1,431 @@
+#This file is read on startup, and should contain ALL constant strings
+#Since texts are referenced by their number, PLEASE do not change the
+#numbering, use NEW numbers for new strings, and consider creating a
+#constant pattern in the relevant file, included form texts.bet, so
+#there are no 'magic' numbers in the main body of code.
+#
+#Some notes on the format:
+#These strings appear as they would be in the BETA source code, except
+# without the surrounding ' to mark strings.
+#A newline is written as \n.
+#Important: %s is used for stringmanipulation, and the tool will crash,
+# if %s is deleted from strings where it is expected, and it is replaced
+# at runtime with the proper text, as commented in this file.
+#And just to make it clear, # as the FIRST character denotes a comment.
+
+#This is used to return a useful error if the wrong number is used
+1:THERE IS NO STRING WITH THIS NUMBER
+
+#This is the texts for the markingmenues
+1001:Move\nDecl Up
+1002:New\nDecl
+#1003:Prepend\nDecl
+1003:New\nBlock
+1004:Delete\nDecl
+1005:Close\nBinder
+1006:Delete\nBinder
+1007:Delete
+1008:Clone\nGroup
+1009:New\nGroup
+1010:Delete\nGroup
+1011:Repeat
+1012:Clear     
+1013:Delete\nInscription
+1014:Evaluate\nML
+1015:Show\nSuperPage
+1016:Show\nSubPage
+1017:Delete\nPage
+1018:Clone\nPage
+1019:Save\nNet
+1020:Save\nNet As
+1113:Save Net\nAs PNML
+1021:Close\nNet
+1022:New\nPage
+1023:    New\nTransition
+1024:New\nPlace
+1025:New\nGroup
+1026:New\nPage
+1027:Delete\n%s
+1028:Clone\n%s
+#The %s in the last two entries is used for the proper name
+#of the pageelement these menues are used on.
+1029:Toggle\nGroup
+1030:New\nArc
+1031:Change\nDirection
+1032:Arc
+1112:Constraint
+1033:Transition
+1034:Place
+1035:Aux
+1036:Element
+1037:Show\nPage
+1038:Show\nReport
+1039:Evaluate\nSurveillance
+1040:Delete\nSurveillance
+1041:Show\nFunction
+1042:Delete\nPage
+1043:Clone\nPage
+1044:Close\nPage
+1045:Clone\nPalette
+1046:Close\nPalette
+1047:Delete\nPalette
+1100:Close\ndecl
+1048:Help
+1049:Clone\nCell
+1050:Delete\nCell
+1051:Help
+1052:Load Net
+1053:New Net
+1054:Add \nPalette
+1055:Undo
+#1056:Append\nBlock
+1056:Redo
+1057:Drop\nTool
+1058:Primary\n  Hand
+1059:Delete\nGuideline
+1060:Delete\nBendpoint
+1061:Fire\nTransition
+1062:Bring\nTo Front
+1063:Inscription
+1064:PorttypeTag
+1111:PlaceKindTag
+1065:FusionSetTag
+1066:SubpageTag
+1067:Show\nMarking
+1068:Move to\nsubpage
+1069:Clone\nElements
+1070:Close\nindex
+1071:Bind\nmanually
+1072:Fire and\nclose
+1073:Abort\nbinding
+1074:New group\n   with all
+1075:    Create\nglobal group
+1076:New\nblock
+1077:Delete\nmonitor
+1078:Disable
+1079:Add surrounding\n       places
+1080:Remove\n  place
+1081:Add surrounding\n     transitions
+1082:Enable
+1083:Output directory
+1084:Choose\n  folder
+1085:Model\n path
+1086:Clone\nmonitor
+1087:Create\ngroup
+1088:Remove\ntransition
+1089:Remove\n  page
+1090:Generate\ntemplate\n  code
+1091:Fire and\nshow
+1092:Re-evaluate\n    decl 
+1093:Assign to\n  socket
+1094:Assign to\n   port
+1095:Delete current\n    marking
+1096:Replace by\n subpage
+1097:Create aux\n     text
+1098:Save all\n    nets
+1099:    Close\nall nets
+1101:   Set\noptions
+1102:Close\noptions
+1103:Display Pre-\n   decessors
+1104:Display Suc-\n   cessors
+1105:Toggle\nDescriptor
+1106:SSNode
+1107:SSArc
+1108:Real Timestamp
+1109:Binding Element Fairness
+1110:Global BE Fairness
+
+#These texts are used in instruments
+2001:New
+2002:Put predicate here;
+2003:Put observation here;
+2004:Put data collector code here;
+#note, these are from survaillance instruments, and thus not in
+#the tool at this time.
+2005:Save Net As
+2006:Load Net
+2007:New Net
+2008:New
+2009:Print page
+2010:Open PNG
+2011:Group %i
+#the %i is replaced at runtime with the number of the new group
+2012:Move To\nSubpage
+2013:Assign\nPort\nSocket
+2014:Set\nSubpage
+2015:Select\nTab
+
+#These texts are used in the index
+3001:Step: 
+3002:Time: 
+#Note the trailing spaces on the last two entries.
+3003:Declarations
+3004:History
+3005:Nodes
+3006:Page:
+3007:Predicate
+3008:Predicate function
+3009:Observation
+3010:Observation function
+3011:Surveillance
+3012:Index
+3013:Binders
+3014:Binder
+3015:Help
+3016:What's new
+3017:Homepage
+3018:Report bug
+3019:License
+3082:Support info
+3042:About
+3020:Data Collector
+#The names of the palettes
+3021:Style
+3022:Auxiliary
+3023:Create
+3083:Declare
+3024:Simulation
+3025:Hierarchy
+3026:View
+3027:Surveillance
+3028:Net
+3029:Print
+3030:Tool box
+#The name of the tool
+3031:CPN Tools
+3032:unknown toolbox
+3033:Loading net
+#Statespace
+3034:State space
+3045:State-space
+#Default names
+3035:New net
+3036:New Page
+3037:Options
+3038:Consistency check
+3039:History based
+3040:Commands between autosave
+3041:Now
+3042:About
+3043:Save Bindings
+3044:Simulation Report
+3046:New monitor block
+3047:Data\nColl
+3048:Mark\nSize
+3049:Stop
+3050:Init
+3051:Action
+3052:Observer
+3053:Predicate
+3054:Nodes ordered by pages
+3055:Break\npoint
+3056:User\ndef
+3057:Data collection
+3058:Marking size
+3059:Break point
+3060:User defined
+3061:Unknown monitor type
+3062:Monitoring
+3063:Timed
+3064:Logging
+3065:Init function
+3066:New Monitor
+3067:Write\nin file
+3068:Write in file
+3069:File extension
+3070:txt
+3071:LL\nDC
+3072:Coun\nTran
+3073:Place\nCont
+3074:Tran\nEnab
+3075:List length data collection
+3076:Count transition occurrence data collector
+3077:Place content break point
+3078:Transition enabled break point
+3079:If is empty
+3080:If is enabled
+3081:Monitors
+
+#This is the tooltips
+#These texts are used to indicate functions of the userinterface, and to
+#show additional info.
+4001:This is version 
+4002:\n\nError: 
+#Used if errors are found, content of declaration always shown
+#Note the trailing space on the last two entries.
+4003:Creates a PNG image.
+4004:Creates a text.
+4005:Creates a rectangle.
+4006:Creates a line.
+4007:Creates an ellipse.
+4008:Creates a place.
+4009:Creates a transition.
+4010:Creates an arc.
+4081:Creates a reset arc.
+4082:Creates an inhibitor arc.
+4011:Creates a new page.
+4012:Creates a horizontal\nmagnetic guideline.
+4013:Creates a vertical\nmagnetic guideline.
+4089:Creates a magnetic\nguide grid.
+4014:Clones an element.
+4015:Copies a style\nfrom a node and uses\nthis as default\nfor new nodes.
+4016:Deletes an element.
+4017:Toggles whether\nan element belongs\nto a group.
+4018:Creates a new group.
+4019:Clones a group.
+4020:Sets the port type\nto %s.
+#%s is replaced by the porttype (in/out/inout) at runtime
+4021:In
+4022:Out
+4023:In/Out
+4087:Makes the place have\n%s behavior.
+4083:FIFO
+4084:LIFO
+4085:PQueue
+4086:Bounded
+4088:New %s\nconstraint.
+#The porttypes used above.
+4024:Assigns subpage for\na substitution transition.
+4025:Assigns a port\nto a socket.
+4026:Moves a transition\nto a subpage.
+4027:Zooms %s on\na page.
+#%s is replaced by the direction of the zoom (in/out)
+#These are entries number 4054 and 4055
+4072: Zooms on a page to \nmake it fit the binder.
+4028:Closes a net.
+4029:Creates a new page.
+4030:Goes to the initial\nstate.
+4031:Stops an ongoing\nsimulation.
+4032:Evaluates a text\nas ML code.
+4033:Executes a transition.
+4034:Executes the specified\nnumber of transitions,\nshowing the intermediate\nmarkings.
+4035:Executes the specified\nnumber of transitions\nwithout showing the\nintermediate markings.
+4073: Executes a transition with\na chosen binding.
+4036:Sets the colour\nof elements.
+4037:Sets the linewidth\nof elements to the\nspecified number.
+4038:Cycles between the\ndifferent linepatterns.
+4039:Toggles whether an\nelement is filled\nor not.
+4040:Cycles between the\npossible directions\nof arcs.
+4041:Cycles between the\ndifferent sizes of\narc heads.
+4042:Applies the current\nstyle to elements.
+4043:Copies a style\nfrom an element\nfor future use.
+4075:Clones the chosen style attributes.
+4044:Saves a net\nwith a new name.
+4045:Saves a net.
+4076:Saves all nets.
+4046:Loads in a net.
+4047:Creates a new net.
+4048:Prints a net\nin %s,\n%sshowing\ncurrent marking.
+#the first %s is replaced by colour or black/white and the second %s
+#is used to indicate wether current marking is printed (if it is used,
+#a trailing space is expected, to avoid double space when it is not used).
+4049:black/white
+4050:colour
+4051:not 
+#Note, trailing space.
+4052:
+#I know it's just the empty string, but since one of the ideas in doing this
+#is easy translation, I'm trying (some times anyway) to keep this general
+4053:Shows help.
+4054:in
+4055:out
+4056:Fuses places into\na single fusion set.
+4074:Replaces a substitution tran-\nsition with its subpage
+
+#StatusBubble texts
+4057: loaded successfully.
+4058: saved successfully.
+
+#Tooltips for occgraph instruments
+4059: Enter
+4060: Calculate State Space
+4061: Save Report
+4062: Calculate SCC graph
+4063: State Space To Sim
+4064: Sim To State Space
+4065:Deletes a group.
+4077:Displays the node\nwith the specified number
+4078:Display the predecessors\nto this node
+4079:Display the succcessors\nto this node
+4080:Displays a partial SS\ngraph according to the\nexpression specified in\nthe target AUX
+
+4066: could not read the net. 
+4067:\nTry using the converter tool supplied with 
+4068:The net was created by an unknown tool.
+4069:\'s format is not known.
+4070:The format version is wrong
+
+4071:Save net and the\nsimulator state
+
+#Filter strings for file dialogs
+#Note: The pipes ar required by the filedialog api
+5000:CPN Tools Files (*.cpn)|*.cpn|XML Files (*.xml)|*.xml|PNML Files (*.pnml)|*.pnml|All Files (*.*)|*.*|
+5001:Encapsulated postscript (*.eps)|*.eps|All Files (*.*)|*.*|
+5002:All Files (*.*)|*.*|
+5003:Text file (*.txt)|*.txt|All Files (*.*)|*.*|
+
+# Error Messages
+6001:Error in current marking
+6002:Cannot enter state space:
+6003:Currently it is not possible to calculate the state space\nof a net with fusion places
+6004:A page, place, or transition exist with an invalid name
+6005:More than one transition is named "%s".\nCheck transitions with red halos
+6006:More than one place is named "%s".\nCheck places with red halos
+6007:All nodes must have names before entering state space tool
+6008:Page names must be unique to enter state space tool
+6009:%s name "%s" is not a valid ML identifier
+6010:Net must contain compiled transitions to enter state space tool
+6011:Error setting state space path:
+6012:Entering state space tool
+6013:ML Error entering state space tool:
+6014:State space tool entered
+6015:Nodes in the net is being compiled
+6016:Syntax error in action inscription
+6017:Port place is unassigned
+6018:Page names cannot contain only whitespace
+
+6101:No OpenGL support found!
+6102:Please check http://www.daimi.au.dk/CPNTools/faq.html for more information.
+
+6201:Parsing the file failed!\nThe parser reported:\n\'%s\'.
+#%s is replaced by the parser error message
+6202:Cannot load net with name containing extended ASCII. Please rename your file.
+6203:Cannot load the net %s because it is already open.
+6204:Cannot save a net with a name containing extended ASCII.\nPlease choose another name and save your file again.
+6205:Cannot the load the net because more than\none element has the id "%s".
+
+6301:Error setting stop options for state space calculation:\n
+6302:Error setting branching options for state space calculation:\n
+6303:Stop criteria satisfied:\n
+6304:A partial state space has been calculated.\nApply the Calculate State Space tool again to calculate more of the state space.
+6305:Error calculating state space:\n
+6306:State space calculated
+6307:Calculating state space
+
+6401:Group cannot be moved to subpage.\n  1) The group must be a closed net with transitions on the border\n  2) Fusion places outside the group must not be connected to transitions on the border\n  3) The group must not contain port places.\n  4) No elements in the group may be monitored.
+6402:The substitution transition "%s" cannot be\nflattened since more than one socket is assigned\nto the port "%s"
+6403:Move to subpage cannot be performed since\nthe transition "%s" is used by a monitor.
+
+6501:The transition cannot be bound manully.\n 1) The net must have completed syntax check.\n 2) The net must be done running any interactive simulation.
+6502:No variables\nto bind
+6503:The transition cannot be bound manually. The reason is:\n
+
+6601:An error occured when setting the order of monitors in the simulator. The error was:
+6602:An error occured when generating template code for a monitor. The error was:
+6603:An error occured when syntax checking and generating a monitor. The error was:
+6604:An error occured when creating a marking size data collector. The error was:
+6605:An error occured while setting model name, model directory and model output
+6606:An error occured when remove a monitor from the simulator. The error was:
+6607:An error occured when toggling the enabling of a monitor in the simulator. The error was:
+6608:An error occured when creating a list length data collector. The error was:
+6609:An error occured when creating a count occurrence data collector. The error was:
+6610:An error occured when creating a place content break point monitor. The error was:
+6611:An error occured when creating a transition enabled break point monitor. The error was:
+
+6612:Monitor overwrites another monitor
+6613:Monitor is overwritten by another monitor
+6614:Monitor overwrites a declaration
+6615:Declaration is overwritten by a monitor
+6616:Depends on monitor defined after this monitor
+6617:The monitoring facilities cannot be used before the net has been saved.
+6618:Monitor name "%s" is not a valid ML name.

@@ -1,0 +1,2188 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE workspaceElements SYSTEM "cpnet.dtd">
+<workspaceElements>
+<cpnet>
+<generator tool="Design/CPN" version="4.0.5"/>
+<!-- File /users/wells/DesignCPN/models/examples/ProtocolWithTimer/ProtocolWithTimer.xml -->
+<!-- Verbose_Level = 2 -->
+<!-- 2 page(s) were found -->
+
+<!-- Page 1 of the net -->
+<hierpage id="id441">
+  <pageattr name="Hierarchy" number="10010" visbor="false" palette="false"/>
+  <winattr open="true" width="212" height="129" xpos="406" ypos="198"/>
+  <lineattr type="solid" thick="0" colour="black"/>
+  <fillattr pattern="none" colour="black"/>
+  <posattr x="0.00000" y="-0.00000"/>
+  <box h="274.10833" w="188.38333"/>
+  <!-- 2 node(s) were found -->
+
+  <!-- Node 1 of page -->
+  <pagenode pageref="id520" id="id519">
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="dotdashed" thick="2" colour="red"/>
+    <fillattr pattern="solid" colour="white"/>
+    <posattr x="-76.72917" y="121.17916"/>
+    <textattr font="helvetica" size="10" just="centered" colour="red" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+    <rbox h="6.35000" w="26.45833" curv="15"/>
+    <layering type="copy"/>
+    <!-- 1 regions(s) were found -->
+
+    <!-- Region 1 of node -->
+    <pgmodkey id="id527">
+      <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+      <lineattr type="solid" thick="0" colour="teal"/>
+      <fillattr pattern="none" colour="teal"/>
+      <posattr x="-56.97361" y="121.17916"/>
+      <textattr font="helvetica" size="9" just="centered" colour="teal" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <box h="4.93889" w="4.93889"/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1483.00532" voffset="-180.67928"/>
+      <!-- 1 regions(s) were found -->
+
+      <!-- Region 1 of region -->
+      <pagemode id="id528">
+        <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+        <lineattr type="solid" thick="0" colour="teal"/>
+        <fillattr pattern="solid" colour="white"/>
+        <posattr x="-44.62639" y="121.17916"/>
+        <textattr font="helvetica" size="9" just="left" colour="teal" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+        <box h="4.93889" w="17.63889"/>
+        <layering type="copy"/>
+        <regattr colorap="true" sizewp="true" hoffset="1483.00532" voffset="-180.68109"/>
+        <!-- 0 regions(s) were found -->
+        <text>Prime</text>
+      </pagemode>
+      <text>M</text>
+    </pgmodkey>
+    <text>Top#1</text>
+  </pagenode>
+
+
+  <!-- Node 2 of page -->
+  <pagenode pageref="id441" id="id523">
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="2" colour="red"/>
+    <fillattr pattern="solid" colour="white"/>
+    <posattr x="-77.43472" y="130.35139"/>
+    <textattr font="helvetica" size="10" just="centered" colour="red" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+    <rbox h="6.35000" w="26.45833" curv="15"/>
+    <layering type="copy"/>
+    <!-- 0 regions(s) were found -->
+    <text>Hierarchy#10010</text>
+  </pagenode>
+
+  <!-- 0 connector(s) were found -->
+</hierpage>
+
+
+<!-- Page 2 of the net -->
+<page id="id520">
+  <pageattr name="Top" number="1" visbor="true" palette="false"/>
+  <mult insts="1"/>
+  <modeattr siminc="false" observe="false" propocc="false" interact="false" execcode="false"/>
+  <winattr open="true" width="819" height="576" xpos="311" ypos="183"/>
+  <lineattr type="solid" thick="0" colour="black"/>
+  <fillattr pattern="none" colour="black"/>
+  <posattr x="0.00000" y="-0.00000"/>
+  <box h="188.38333" w="274.10833"/>
+  <!-- 28 node(s) were found -->
+
+  <!-- Node 1 of page -->
+  <globdecl id="id509">
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="1" colour="blue"/>
+    <fillattr pattern="solid" colour="white"/>
+    <posattr x="-97.45486" y="-50.27083"/>
+    <textattr font="helvetica" size="9" just="left" colour="blue" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+    <box h="50.06235" w="66.13144"/>
+    <layering type="copy"/>
+    <!-- 0 regions(s) were found -->
+    <text>color INT = int;
+color DATA = string; 
+color INTxDATA = product INT * DATA;
+var n, k : INT;
+var p,str : DATA;
+val stop = &quot;########&quot;;
+
+color Ten0 = int with 0..10;
+color Ten1 = int with 1..10;
+var s : Ten0;  var r : Ten1;
+fun Ok(s:Ten0,r:Ten1) = (r&lt;=s);
+</text>
+  </globdecl>
+
+
+  <!-- Node 2 of page -->
+  <trans id="id518">
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="2" colour="navy"/>
+    <fillattr pattern="none" colour="navy"/>
+    <posattr x="-29.80972" y="46.56667"/>
+    <textattr font="helvetica" size="12" just="centered" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+    <box h="13.40496" w="21.87130"/>
+    <layering type="copy"/>
+    <!-- 2 regions(s) were found -->
+
+    <!-- Region 1 of node -->
+    <aux-enab id="id516">
+      <flags mask="true" omit="false" nobound="false" nosizing="false" visible="true"/>
+      <lineattr type="solid" thick="4" colour="lime"/>
+      <fillattr pattern="none" colour="lime"/>
+      <posattr x="-29.80972" y="46.56667"/>
+      <textattr font="unknown" size="8216" just="unknown" colour="lime" bold="false" italic="false" underlin="true" outline="true" shadow="false" condense="true" extend="true" scbar="true"/>
+      <box h="14.14971" w="22.57684"/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1484.09742" voffset="-180.67928"/>
+      <!-- 0 regions(s) were found -->
+      <!-- no text was found -->
+    </aux-enab>
+
+    <!-- Region 2 of node -->
+    <name id="id515">
+      <flags mask="false" omit="true" nobound="true" nosizing="true" visible="false"/>
+      <lineattr type="solid" thick="0" colour="black"/>
+      <fillattr pattern="none" colour="black"/>
+      <posattr x="-18.91771" y="56.04757"/>
+      <textattr font="helvetica" size="9" just="left" colour="black" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1484.09742" voffset="-180.67928"/>
+      <!-- 0 regions(s) were found -->
+      <text>SendPack</text>
+    </name>
+    <text>Send
+Packet</text>
+  </trans>
+
+
+  <!-- Node 3 of page -->
+  <trans id="id510">
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="2" colour="teal"/>
+    <fillattr pattern="solid" colour="white"/>
+    <posattr x="37.04167" y="46.56667"/>
+    <textattr font="helvetica" size="12" just="centered" colour="teal" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+    <box h="13.40496" w="21.87130"/>
+    <layering type="copy"/>
+    <!-- 2 regions(s) were found -->
+
+    <!-- Region 1 of node -->
+    <aux-enab id="id512">
+      <flags mask="true" omit="true" nobound="false" nosizing="false" visible="false"/>
+      <lineattr type="solid" thick="4" colour="lime"/>
+      <fillattr pattern="none" colour="lime"/>
+      <posattr x="37.04167" y="46.56667"/>
+      <textattr font="unknown" size="8216" just="unknown" colour="lime" bold="false" italic="false" underlin="true" outline="true" shadow="false" condense="true" extend="true" scbar="true"/>
+      <box h="14.14971" w="22.57684"/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1484.09742" voffset="-180.67928"/>
+      <!-- 0 regions(s) were found -->
+      <!-- no text was found -->
+    </aux-enab>
+
+    <!-- Region 2 of node -->
+    <name id="id513">
+      <flags mask="false" omit="true" nobound="true" nosizing="true" visible="false"/>
+      <lineattr type="solid" thick="0" colour="black"/>
+      <fillattr pattern="none" colour="black"/>
+      <posattr x="36.46840" y="56.04757"/>
+      <textattr font="helvetica" size="9" just="left" colour="black" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1484.09742" voffset="-180.67928"/>
+      <!-- 0 regions(s) were found -->
+      <text>TranPack</text>
+    </name>
+    <text>Transmit
+Packet</text>
+  </trans>
+
+
+  <!-- Node 4 of page -->
+  <trans id="id514">
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="2" colour="navy"/>
+    <fillattr pattern="solid" colour="white"/>
+    <posattr x="105.48055" y="15.16944"/>
+    <textattr font="helvetica" size="12" just="centered" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+    <box h="13.40514" w="21.87163"/>
+    <layering type="copy"/>
+    <!-- 6 regions(s) were found -->
+
+    <!-- Region 1 of node -->
+    <aux-endp id="id328">
+      <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+      <lineattr type="none" thick="0" colour="black"/>
+      <fillattr pattern="none" colour="black"/>
+      <posattr x="103.01111" y="21.87201"/>
+      <box h="1.86189" w="1.76389"/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1484.09742" voffset="-180.67928"/>
+      <!-- 0 regions(s) were found -->
+      <!-- no text was found -->
+    </aux-endp>
+
+    <!-- Region 2 of node -->
+    <aux-endp id="id506">
+      <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+      <lineattr type="none" thick="0" colour="black"/>
+      <fillattr pattern="none" colour="black"/>
+      <posattr x="111.83055" y="21.12725"/>
+      <box h="1.86189" w="1.76389"/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1484.09742" voffset="-180.67928"/>
+      <!-- 0 regions(s) were found -->
+      <!-- no text was found -->
+    </aux-endp>
+
+    <!-- Region 3 of node -->
+    <aux-endp id="id460">
+      <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+      <lineattr type="none" thick="0" colour="black"/>
+      <fillattr pattern="none" colour="black"/>
+      <posattr x="103.01111" y="9.58402"/>
+      <box h="1.86189" w="1.76389"/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1484.09742" voffset="-180.67928"/>
+      <!-- 0 regions(s) were found -->
+      <!-- no text was found -->
+    </aux-endp>
+
+    <!-- Region 4 of node -->
+    <aux-enab id="id500">
+      <flags mask="true" omit="true" nobound="false" nosizing="false" visible="false"/>
+      <lineattr type="solid" thick="4" colour="lime"/>
+      <fillattr pattern="none" colour="lime"/>
+      <posattr x="105.48055" y="15.16944"/>
+      <textattr font="unknown" size="8216" just="unknown" colour="lime" bold="false" italic="false" underlin="true" outline="true" shadow="false" condense="true" extend="true" scbar="true"/>
+      <box h="14.14989" w="22.57719"/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1484.09742" voffset="-180.67928"/>
+      <!-- 0 regions(s) were found -->
+      <!-- no text was found -->
+    </aux-enab>
+
+    <!-- Region 5 of node -->
+    <name id="id501">
+      <flags mask="false" omit="true" nobound="true" nosizing="true" visible="false"/>
+      <lineattr type="solid" thick="0" colour="black"/>
+      <fillattr pattern="none" colour="black"/>
+      <posattr x="112.62430" y="5.42396"/>
+      <textattr font="helvetica" size="9" just="left" colour="black" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1484.09742" voffset="-180.67928"/>
+      <!-- 0 regions(s) were found -->
+      <text>RecPack</text>
+    </name>
+
+    <!-- Region 6 of node -->
+    <aux-endp id="id503">
+      <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+      <lineattr type="none" thick="0" colour="black"/>
+      <fillattr pattern="none" colour="black"/>
+      <posattr x="108.50308" y="21.51924"/>
+      <box h="1.76389" w="1.76389"/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1484.09742" voffset="-180.67928"/>
+      <!-- 0 regions(s) were found -->
+      <!-- no text was found -->
+    </aux-endp>
+    <text>Receive
+Packet</text>
+  </trans>
+
+
+  <!-- Node 5 of page -->
+  <trans id="id504">
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="2" colour="navy"/>
+    <fillattr pattern="solid" colour="white"/>
+    <posattr x="-29.80972" y="-14.11111"/>
+    <textattr font="helvetica" size="12" just="centered" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+    <box h="13.40514" w="21.87163"/>
+    <layering type="copy"/>
+    <!-- 2 regions(s) were found -->
+
+    <!-- Region 1 of node -->
+    <aux-enab id="id502">
+      <flags mask="true" omit="true" nobound="false" nosizing="false" visible="false"/>
+      <lineattr type="solid" thick="4" colour="lime"/>
+      <fillattr pattern="none" colour="lime"/>
+      <posattr x="-29.80972" y="-14.11111"/>
+      <textattr font="unknown" size="8216" just="unknown" colour="lime" bold="false" italic="false" underlin="true" outline="true" shadow="false" condense="true" extend="true" scbar="true"/>
+      <box h="14.14989" w="22.57719"/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1484.09742" voffset="-180.67928"/>
+      <!-- 0 regions(s) were found -->
+      <!-- no text was found -->
+    </aux-enab>
+
+    <!-- Region 2 of node -->
+    <name id="id494">
+      <flags mask="false" omit="true" nobound="true" nosizing="true" visible="false"/>
+      <lineattr type="solid" thick="0" colour="black"/>
+      <fillattr pattern="none" colour="black"/>
+      <posattr x="-29.45694" y="-23.50382"/>
+      <textattr font="helvetica" size="9" just="left" colour="black" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1484.09742" voffset="-180.67928"/>
+      <!-- 0 regions(s) were found -->
+      <text>RecAck</text>
+    </name>
+    <text>Receive
+Acknow.</text>
+  </trans>
+
+
+  <!-- Node 6 of page -->
+  <trans id="id495">
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="2" colour="teal"/>
+    <fillattr pattern="solid" colour="white"/>
+    <posattr x="37.04167" y="-14.11111"/>
+    <textattr font="helvetica" size="12" just="centered" colour="teal" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+    <box h="13.40514" w="21.87163"/>
+    <layering type="copy"/>
+    <!-- 2 regions(s) were found -->
+
+    <!-- Region 1 of node -->
+    <aux-enab id="id498">
+      <flags mask="true" omit="true" nobound="false" nosizing="false" visible="false"/>
+      <lineattr type="solid" thick="4" colour="lime"/>
+      <fillattr pattern="none" colour="lime"/>
+      <posattr x="37.04167" y="-14.11111"/>
+      <textattr font="unknown" size="8216" just="unknown" colour="lime" bold="false" italic="false" underlin="true" outline="true" shadow="false" condense="true" extend="true" scbar="true"/>
+      <box h="14.14989" w="22.57719"/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1484.09742" voffset="-180.67928"/>
+      <!-- 0 regions(s) were found -->
+      <!-- no text was found -->
+    </aux-enab>
+
+    <!-- Region 2 of node -->
+    <name id="id499">
+      <flags mask="false" omit="true" nobound="true" nosizing="true" visible="false"/>
+      <lineattr type="solid" thick="0" colour="black"/>
+      <fillattr pattern="none" colour="black"/>
+      <posattr x="40.34896" y="-23.32743"/>
+      <textattr font="helvetica" size="9" just="left" colour="black" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1484.09742" voffset="-180.67928"/>
+      <!-- 0 regions(s) were found -->
+      <text>TranAck</text>
+    </name>
+    <text>Transmit
+Acknow.</text>
+  </trans>
+
+
+  <!-- Node 7 of page -->
+  <aux id="id496">
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="0" colour="blue"/>
+    <fillattr pattern="none" colour="blue"/>
+    <posattr x="2.46944" y="10.05417"/>
+    <line  points="(2.46944,59.26667)(2.46944,-39.15833)"/>
+    <layering type="copy"/>
+    <!-- 0 regions(s) were found -->
+    <!-- no text was found -->
+  </aux>
+
+
+  <!-- Node 8 of page -->
+  <place id="id488">
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="1" colour="navy"/>
+    <fillattr pattern="solid" colour="white"/>
+    <posattr x="-29.80972" y="77.61111"/>
+    <textattr font="helvetica" size="12" just="centered" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+    <ellipse h="8.46659" w="19.40276"/>
+    <layering type="copy"/>
+    <!-- 3 regions(s) were found -->
+
+    <!-- Region 1 of node -->
+    <type id="id491">
+      <flags mask="true" omit="true" nobound="true" nosizing="true" visible="false"/>
+      <lineattr type="solid" thick="0" colour="navy"/>
+      <fillattr pattern="none" colour="navy"/>
+      <posattr x="-37.59288" y="85.32812"/>
+      <textattr font="helvetica" size="9" just="left" colour="navy" bold="false" italic="true" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1484.09742" voffset="-180.67928"/>
+      <!-- 0 regions(s) were found -->
+      <text>INTxDATA</text>
+    </type>
+
+    <!-- Region 2 of node -->
+    <initmark id="id492">
+      <flags mask="true" omit="true" nobound="true" nosizing="true" visible="false"/>
+      <lineattr type="solid" thick="0" colour="navy"/>
+      <fillattr pattern="none" colour="navy"/>
+      <posattr x="-1.16858" y="72.84861"/>
+      <textattr font="helvetica" size="9" just="left" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1484.09742" voffset="-180.67928"/>
+      <!-- 0 regions(s) were found -->
+      <text>1`(1,&quot;Modellin&quot;)++
+1`(2,&quot;g and An&quot;)++
+1`(3,&quot;alysis b&quot;)++
+1`(4,&quot;y Means &quot;)++
+1`(5,&quot;of Colou&quot;)++
+1`(6,&quot;red Petr&quot;)++
+1`(7,&quot;i Nets##&quot;)++
+1`(8,&quot;########&quot;)</text>
+    </initmark>
+
+    <!-- Region 3 of node -->
+    <mark-key id="id493">
+      <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+      <lineattr type="solid" thick="0" colour="red"/>
+      <fillattr pattern="none" colour="red"/>
+      <posattr x="-15.69861" y="86.78333"/>
+      <textattr font="helvetica" size="9" just="centered" colour="red" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <ellipse h="5.64444" w="5.64444"/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1484.09742" voffset="-180.67928"/>
+      <!-- 1 regions(s) were found -->
+
+      <!-- Region 1 of region -->
+      <mark id="id482">
+        <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+        <lineattr type="none" thick="0" colour="red"/>
+        <fillattr pattern="none" colour="red"/>
+        <posattr x="4.23333" y="73.28958"/>
+        <textattr font="helvetica" size="9" just="left" colour="red" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+        <box h="32.63114" w="34.21837"/>
+        <layering type="copy"/>
+        <regattr colorap="true" sizewp="true" hoffset="1483.77203" voffset="-180.68109"/>
+        <!-- 0 regions(s) were found -->
+        <text>1`(1,&quot;Modellin&quot;)++ 1`(2,&quot;g and An&quot;)++ 1`(3,&quot;alysis b&quot;)++ 1`(4,&quot;y Means &quot;)++ 1`(5,&quot;of Colou&quot;)++ 1`(6,&quot;red Petr&quot;)++ 1`(7,&quot;i Nets##&quot;)++ 1`(8,&quot;########&quot;)</text>
+      </mark>
+      <text>8</text>
+    </mark-key>
+    <text>Send</text>
+  </place>
+
+
+  <!-- Node 9 of page -->
+  <place id="id483">
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="1" colour="navy"/>
+    <fillattr pattern="none" colour="navy"/>
+    <posattr x="-29.80972" y="16.22778"/>
+    <textattr font="helvetica" size="12" just="centered" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+    <ellipse h="8.46659" w="26.10526"/>
+    <layering type="copy"/>
+    <!-- 3 regions(s) were found -->
+
+    <!-- Region 1 of node -->
+    <type id="id486">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="navy"/>
+      <fillattr pattern="none" colour="navy"/>
+      <posattr x="-42.13220" y="11.77396"/>
+      <textattr font="helvetica" size="9" just="left" colour="navy" bold="false" italic="true" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1484.09742" voffset="-180.67928"/>
+      <!-- 0 regions(s) were found -->
+      <text>INT</text>
+    </type>
+
+    <!-- Region 2 of node -->
+    <initmark id="id487">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="navy"/>
+      <fillattr pattern="none" colour="navy"/>
+      <posattr x="-42.34436" y="20.76979"/>
+      <textattr font="helvetica" size="9" just="left" colour="navy" bold="false" italic="false" underlin="true" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1484.09742" voffset="-180.67928"/>
+      <!-- 0 regions(s) were found -->
+      <text>1</text>
+    </initmark>
+
+    <!-- Region 3 of node -->
+    <mark-key id="id484">
+      <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+      <lineattr type="solid" thick="0" colour="red"/>
+      <fillattr pattern="none" colour="red"/>
+      <posattr x="-21.87222" y="7.58472"/>
+      <textattr font="helvetica" size="9" just="centered" colour="red" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <ellipse h="5.64444" w="5.64444"/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1484.09742" voffset="-180.67928"/>
+      <!-- 1 regions(s) were found -->
+
+      <!-- Region 1 of region -->
+      <mark id="id477">
+        <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+        <lineattr type="none" thick="0" colour="red"/>
+        <fillattr pattern="none" colour="red"/>
+        <posattr x="-14.28750" y="7.76111"/>
+        <textattr font="helvetica" size="9" just="left" colour="red" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+        <box h="5.29159" w="9.52490"/>
+        <layering type="copy"/>
+        <regattr colorap="true" sizewp="true" hoffset="1483.77203" voffset="-180.68109"/>
+        <!-- 0 regions(s) were found -->
+        <text>1`1</text>
+      </mark>
+      <text>1</text>
+    </mark-key>
+    <text>NextSend</text>
+  </place>
+
+
+  <!-- Node 10 of page -->
+  <place id="id479">
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="2" colour="navy"/>
+    <fillattr pattern="solid" colour="white"/>
+    <posattr x="2.64583" y="-14.11111"/>
+    <textattr font="helvetica" size="12" just="centered" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+    <ellipse h="8.46662" w="8.46665"/>
+    <layering type="copy"/>
+    <!-- 2 regions(s) were found -->
+
+    <!-- Region 1 of node -->
+    <type id="id481">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="navy"/>
+      <fillattr pattern="solid" colour="white"/>
+      <posattr x="1.96113" y="-20.68162"/>
+      <textattr font="helvetica" size="9" just="left" colour="navy" bold="false" italic="true" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1484.09742" voffset="-180.67928"/>
+      <!-- 0 regions(s) were found -->
+      <text>INT</text>
+    </type>
+
+    <!-- Region 2 of node -->
+    <mark-key id="id478">
+      <flags mask="true" omit="true" nobound="false" nosizing="false" visible="false"/>
+      <lineattr type="solid" thick="0" colour="red"/>
+      <fillattr pattern="none" colour="red"/>
+      <posattr x="-8.64306" y="-29.10417"/>
+      <textattr font="helvetica" size="9" just="centered" colour="red" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <ellipse h="5.64444" w="5.64444"/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1484.09742" voffset="-180.67928"/>
+      <!-- 1 regions(s) were found -->
+
+      <!-- Region 1 of region -->
+      <mark id="id471">
+        <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+        <lineattr type="none" thick="0" colour="red"/>
+        <fillattr pattern="none" colour="red"/>
+        <posattr x="5.90903" y="-31.83819"/>
+        <textattr font="helvetica" size="12" just="centered" colour="red" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+        <box h="11.11205" w="23.45932"/>
+        <layering type="copy"/>
+        <regattr colorap="true" sizewp="true" hoffset="1483.77203" voffset="-180.68109"/>
+        <!-- 0 regions(s) were found -->
+        <!-- no text was found -->
+      </mark>
+      <text>0</text>
+    </mark-key>
+    <text>D</text>
+  </place>
+
+
+  <!-- Node 11 of page -->
+  <place id="id473">
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="2" colour="navy"/>
+    <fillattr pattern="solid" colour="white"/>
+    <posattr x="2.64583" y="46.56667"/>
+    <textattr font="helvetica" size="12" just="centered" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+    <ellipse h="8.46662" w="8.46665"/>
+    <layering type="copy"/>
+    <!-- 2 regions(s) were found -->
+
+    <!-- Region 1 of node -->
+    <type id="id475">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="navy"/>
+      <fillattr pattern="solid" colour="white"/>
+      <posattr x="3.08561" y="53.40171"/>
+      <textattr font="helvetica" size="9" just="left" colour="navy" bold="false" italic="true" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1484.09742" voffset="-180.67928"/>
+      <!-- 0 regions(s) were found -->
+      <text>INTxDATA</text>
+    </type>
+
+    <!-- Region 2 of node -->
+    <mark-key id="id472">
+      <flags mask="true" omit="true" nobound="false" nosizing="false" visible="false"/>
+      <lineattr type="solid" thick="0" colour="red"/>
+      <fillattr pattern="none" colour="red"/>
+      <posattr x="-8.11389" y="35.27778"/>
+      <textattr font="helvetica" size="9" just="centered" colour="red" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <ellipse h="5.64444" w="5.64444"/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1484.09742" voffset="-180.67928"/>
+      <!-- 1 regions(s) were found -->
+
+      <!-- Region 1 of region -->
+      <mark id="id462">
+        <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+        <lineattr type="none" thick="0" colour="red"/>
+        <fillattr pattern="none" colour="red"/>
+        <posattr x="10.23056" y="31.04444"/>
+        <textattr font="helvetica" size="12" just="centered" colour="red" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+        <box h="14.11111" w="31.04413"/>
+        <layering type="copy"/>
+        <regattr colorap="true" sizewp="true" hoffset="1483.77203" voffset="-180.68109"/>
+        <!-- 0 regions(s) were found -->
+        <!-- no text was found -->
+      </mark>
+      <text>0</text>
+    </mark-key>
+    <text>A</text>
+  </place>
+
+
+  <!-- Node 12 of page -->
+  <aux id="id467">
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="0" colour="blue"/>
+    <fillattr pattern="none" colour="blue"/>
+    <posattr x="68.52708" y="10.05417"/>
+    <line  points="(81.66805,59.26667)(81.66805,33.69028)(55.38611,26.98750)(55.38611,5.64444)(81.66805,-2.46944)(81.66805,-39.15833)"/>
+    <layering type="copy"/>
+    <!-- 0 regions(s) were found -->
+    <!-- no text was found -->
+  </aux>
+
+
+  <!-- Node 13 of page -->
+  <place id="id468">
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="1" colour="navy"/>
+    <fillattr pattern="solid" colour="white"/>
+    <posattr x="105.12778" y="77.61111"/>
+    <textattr font="helvetica" size="12" just="centered" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+    <ellipse h="8.46659" w="22.22483"/>
+    <layering type="copy"/>
+    <!-- 5 regions(s) were found -->
+
+    <!-- Region 1 of node -->
+    <type id="id464">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="navy"/>
+      <fillattr pattern="none" colour="navy"/>
+      <posattr x="95.50425" y="71.74618"/>
+      <textattr font="helvetica" size="9" just="left" colour="navy" bold="false" italic="true" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1484.09742" voffset="-180.67928"/>
+      <!-- 0 regions(s) were found -->
+      <text>DATA</text>
+    </type>
+
+    <!-- Region 2 of node -->
+    <aux-endp id="id465">
+      <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+      <lineattr type="none" thick="0" colour="black"/>
+      <fillattr pattern="none" colour="black"/>
+      <posattr x="111.83055" y="74.96685"/>
+      <box h="1.76389" w="1.76389"/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1484.09742" voffset="-180.67928"/>
+      <!-- 0 regions(s) were found -->
+      <!-- no text was found -->
+    </aux-endp>
+
+    <!-- Region 3 of node -->
+    <mark-key id="id466">
+      <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+      <lineattr type="solid" thick="0" colour="red"/>
+      <fillattr pattern="none" colour="red"/>
+      <posattr x="53.79861" y="86.78333"/>
+      <textattr font="helvetica" size="9" just="centered" colour="red" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <ellipse h="5.64444" w="5.64444"/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1484.09742" voffset="-180.67928"/>
+      <!-- 1 regions(s) were found -->
+
+      <!-- Region 1 of region -->
+      <mark id="id338">
+        <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+        <lineattr type="none" thick="0" colour="red"/>
+        <fillattr pattern="none" colour="red"/>
+        <posattr x="72.49583" y="73.28958"/>
+        <textattr font="helvetica" size="9" just="left" colour="red" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+        <box h="32.63123" w="31.74979"/>
+        <layering type="copy"/>
+        <regattr colorap="true" sizewp="true" hoffset="1483.00532" voffset="-180.68109"/>
+        <!-- 0 regions(s) were found -->
+        <text>1`&quot;&quot;</text>
+      </mark>
+      <text>1</text>
+    </mark-key>
+
+    <!-- Region 4 of node -->
+    <aux-endp id="id451">
+      <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+      <lineattr type="none" thick="0" colour="black"/>
+      <fillattr pattern="none" colour="black"/>
+      <posattr x="108.50308" y="74.43616"/>
+      <box h="1.76389" w="1.76389"/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1484.09742" voffset="-180.67928"/>
+      <!-- 0 regions(s) were found -->
+      <!-- no text was found -->
+    </aux-endp>
+
+    <!-- Region 5 of node -->
+    <initmark id="id452">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="navy"/>
+      <fillattr pattern="none" colour="navy"/>
+      <posattr x="92.38368" y="81.27118"/>
+      <textattr font="helvetica" size="9" just="left" colour="navy" bold="false" italic="false" underlin="true" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1484.09742" voffset="-180.67928"/>
+      <!-- 0 regions(s) were found -->
+      <text>&quot;&quot;</text>
+    </initmark>
+    <text>Received</text>
+  </place>
+
+
+  <!-- Node 14 of page -->
+  <place id="id457">
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="1" colour="navy"/>
+    <fillattr pattern="solid" colour="white"/>
+    <posattr x="72.84861" y="16.22778"/>
+    <textattr font="helvetica" size="12" just="centered" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+    <ellipse h="8.46659" w="23.63590"/>
+    <layering type="copy"/>
+    <!-- 3 regions(s) were found -->
+
+    <!-- Region 1 of node -->
+    <type id="id459">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="navy"/>
+      <fillattr pattern="none" colour="navy"/>
+      <posattr x="63.82158" y="10.53924"/>
+      <textattr font="helvetica" size="9" just="left" colour="navy" bold="false" italic="true" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1484.09742" voffset="-180.67928"/>
+      <!-- 0 regions(s) were found -->
+      <text>INT</text>
+    </type>
+
+    <!-- Region 2 of node -->
+    <initmark id="id454">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="navy"/>
+      <fillattr pattern="none" colour="navy"/>
+      <posattr x="62.81162" y="21.65174"/>
+      <textattr font="helvetica" size="9" just="left" colour="navy" bold="false" italic="false" underlin="true" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1484.09742" voffset="-180.67928"/>
+      <!-- 0 regions(s) were found -->
+      <text>1</text>
+    </initmark>
+
+    <!-- Region 3 of node -->
+    <mark-key id="id455">
+      <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+      <lineattr type="solid" thick="0" colour="red"/>
+      <fillattr pattern="none" colour="red"/>
+      <posattr x="70.20278" y="7.58472"/>
+      <textattr font="helvetica" size="9" just="centered" colour="red" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <ellipse h="5.64444" w="5.64444"/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1484.09742" voffset="-180.67928"/>
+      <!-- 1 regions(s) were found -->
+
+      <!-- Region 1 of region -->
+      <mark id="id453">
+        <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+        <lineattr type="none" thick="0" colour="red"/>
+        <fillattr pattern="none" colour="red"/>
+        <posattr x="77.87569" y="7.67292"/>
+        <textattr font="helvetica" size="9" just="left" colour="red" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+        <box h="5.46803" w="9.70112"/>
+        <layering type="copy"/>
+        <regattr colorap="true" sizewp="true" hoffset="1483.77203" voffset="-180.68109"/>
+        <!-- 0 regions(s) were found -->
+        <text>1`1</text>
+      </mark>
+      <text>1</text>
+    </mark-key>
+    <text>NextRec</text>
+  </place>
+
+
+  <!-- Node 15 of page -->
+  <place id="id126">
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="2" colour="navy"/>
+    <fillattr pattern="solid" colour="white"/>
+    <posattr x="81.84444" y="46.56667"/>
+    <textattr font="helvetica" size="12" just="centered" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+    <ellipse h="8.46662" w="8.46665"/>
+    <layering type="copy"/>
+    <!-- 2 regions(s) were found -->
+
+    <!-- Region 1 of node -->
+    <type id="id448">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="navy"/>
+      <fillattr pattern="solid" colour="white"/>
+      <posattr x="82.10783" y="53.40171"/>
+      <textattr font="helvetica" size="9" just="left" colour="navy" bold="false" italic="true" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1484.09742" voffset="-180.67928"/>
+      <!-- 0 regions(s) were found -->
+      <text>INTxDATA</text>
+    </type>
+
+    <!-- Region 2 of node -->
+    <mark-key id="id449">
+      <flags mask="true" omit="true" nobound="false" nosizing="false" visible="false"/>
+      <lineattr type="solid" thick="0" colour="red"/>
+      <fillattr pattern="none" colour="red"/>
+      <posattr x="62.26528" y="35.27778"/>
+      <textattr font="helvetica" size="9" just="centered" colour="red" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <ellipse h="5.64444" w="5.64444"/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1484.09742" voffset="-180.67928"/>
+      <!-- 1 regions(s) were found -->
+
+      <!-- Region 1 of region -->
+      <mark id="id445">
+        <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+        <lineattr type="none" thick="0" colour="red"/>
+        <fillattr pattern="none" colour="red"/>
+        <posattr x="81.40347" y="29.19236"/>
+        <textattr font="helvetica" size="12" just="centered" colour="red" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+        <box h="17.81501" w="32.63179"/>
+        <layering type="copy"/>
+        <regattr colorap="true" sizewp="true" hoffset="1483.77203" voffset="-180.68109"/>
+        <!-- 0 regions(s) were found -->
+        <!-- no text was found -->
+      </mark>
+      <text>0</text>
+    </mark-key>
+    <text>B</text>
+  </place>
+
+
+  <!-- Node 16 of page -->
+  <place id="id446">
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="2" colour="navy"/>
+    <fillattr pattern="solid" colour="white"/>
+    <posattr x="81.84444" y="-14.11111"/>
+    <textattr font="helvetica" size="12" just="centered" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+    <ellipse h="8.46662" w="8.46665"/>
+    <layering type="copy"/>
+    <!-- 2 regions(s) were found -->
+
+    <!-- Region 1 of node -->
+    <type id="id444">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="navy"/>
+      <fillattr pattern="solid" colour="white"/>
+      <posattr x="80.80696" y="-20.68162"/>
+      <textattr font="helvetica" size="9" just="left" colour="navy" bold="false" italic="true" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1484.09742" voffset="-180.67928"/>
+      <!-- 0 regions(s) were found -->
+      <text>INT</text>
+    </type>
+
+    <!-- Region 2 of node -->
+    <mark-key id="id310">
+      <flags mask="true" omit="true" nobound="false" nosizing="false" visible="false"/>
+      <lineattr type="solid" thick="0" colour="red"/>
+      <fillattr pattern="none" colour="red"/>
+      <posattr x="70.73194" y="-29.10417"/>
+      <textattr font="helvetica" size="9" just="centered" colour="red" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <ellipse h="5.64444" w="5.64444"/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1484.09742" voffset="-180.67928"/>
+      <!-- 1 regions(s) were found -->
+
+      <!-- Region 1 of region -->
+      <mark id="id307">
+        <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+        <lineattr type="none" thick="0" colour="red"/>
+        <fillattr pattern="none" colour="red"/>
+        <posattr x="87.04792" y="-31.92639"/>
+        <textattr font="helvetica" size="12" just="centered" colour="red" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+        <box h="11.28847" w="26.98737"/>
+        <layering type="copy"/>
+        <regattr colorap="true" sizewp="true" hoffset="1483.77203" voffset="-180.68109"/>
+        <!-- 0 regions(s) were found -->
+        <!-- no text was found -->
+      </mark>
+      <text>0</text>
+    </mark-key>
+    <text>C</text>
+  </place>
+
+
+  <!-- Node 17 of page -->
+  <aux id="id305">
+    <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+    <lineattr type="solid" thick="0" colour="navy"/>
+    <fillattr pattern="none" colour="navy"/>
+    <posattr x="-28.75139" y="-37.57083"/>
+    <textattr font="helvetica" size="14" just="left" colour="navy" bold="true" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+    <label/>
+    <layering type="copy"/>
+    <!-- 0 regions(s) were found -->
+    <text>Sender</text>
+  </aux>
+
+
+  <!-- Node 18 of page -->
+  <aux id="id308">
+    <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+    <lineattr type="solid" thick="0" colour="teal"/>
+    <fillattr pattern="none" colour="teal"/>
+    <posattr x="44.80278" y="-37.57083"/>
+    <textattr font="helvetica" size="14" just="left" colour="teal" bold="true" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+    <label/>
+    <layering type="copy"/>
+    <!-- 0 regions(s) were found -->
+    <text>Network</text>
+  </aux>
+
+
+  <!-- Node 19 of page -->
+  <aux id="id304">
+    <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+    <lineattr type="solid" thick="0" colour="navy"/>
+    <fillattr pattern="none" colour="navy"/>
+    <posattr x="106.36250" y="-37.57083"/>
+    <textattr font="helvetica" size="14" just="left" colour="navy" bold="true" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+    <label/>
+    <layering type="copy"/>
+    <!-- 0 regions(s) were found -->
+    <text>Receiver</text>
+  </aux>
+
+
+  <!-- Node 20 of page -->
+  <place id="id315">
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="1" colour="teal"/>
+    <fillattr pattern="solid" colour="white"/>
+    <posattr x="37.04167" y="24.34167"/>
+    <textattr font="helvetica" size="12" just="centered" colour="teal" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+    <ellipse h="8.46662" w="8.46665"/>
+    <layering type="copy"/>
+    <!-- 3 regions(s) were found -->
+
+    <!-- Region 1 of node -->
+    <initmark id="id312">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="teal"/>
+      <fillattr pattern="none" colour="teal"/>
+      <posattr x="31.91536" y="27.47257"/>
+      <textattr font="helvetica" size="9" just="left" colour="teal" bold="false" italic="false" underlin="true" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1484.09742" voffset="-180.67928"/>
+      <!-- 0 regions(s) were found -->
+      <text>8</text>
+    </initmark>
+
+    <!-- Region 2 of node -->
+    <type id="id318">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="teal"/>
+      <fillattr pattern="none" colour="teal"/>
+      <posattr x="29.34551" y="20.59338"/>
+      <textattr font="helvetica" size="9" just="left" colour="teal" bold="false" italic="true" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1484.09742" voffset="-180.67928"/>
+      <!-- 0 regions(s) were found -->
+      <text>Ten0</text>
+    </type>
+
+    <!-- Region 3 of node -->
+    <mark-key id="id320">
+      <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+      <lineattr type="solid" thick="0" colour="red"/>
+      <fillattr pattern="solid" colour="white"/>
+      <posattr x="37.21805" y="19.57917"/>
+      <textattr font="helvetica" size="9" just="centered" colour="red" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <ellipse h="5.64444" w="5.64444"/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1484.09742" voffset="-180.67928"/>
+      <!-- 1 regions(s) were found -->
+
+      <!-- Region 1 of region -->
+      <mark id="id316">
+        <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+        <lineattr type="none" thick="0" colour="red"/>
+        <fillattr pattern="none" colour="red"/>
+        <posattr x="48.15417" y="19.57917"/>
+        <textattr font="helvetica" size="9" just="left" colour="red" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+        <box h="4.93876" w="15.16929"/>
+        <layering type="copy"/>
+        <regattr colorap="true" sizewp="true" hoffset="1483.77203" voffset="-180.68109"/>
+        <!-- 0 regions(s) were found -->
+        <text>1`8</text>
+      </mark>
+      <text>1</text>
+    </mark-key>
+    <text>SP</text>
+  </place>
+
+
+  <!-- Node 21 of page -->
+  <place id="id333">
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="1" colour="teal"/>
+    <fillattr pattern="solid" colour="white"/>
+    <posattr x="37.04167" y="8.11389"/>
+    <textattr font="helvetica" size="12" just="centered" colour="teal" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+    <ellipse h="8.46662" w="8.46665"/>
+    <layering type="copy"/>
+    <!-- 3 regions(s) were found -->
+
+    <!-- Region 1 of node -->
+    <mark-key id="id321">
+      <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+      <lineattr type="solid" thick="0" colour="red"/>
+      <fillattr pattern="solid" colour="white"/>
+      <posattr x="37.04167" y="12.52361"/>
+      <textattr font="helvetica" size="9" just="centered" colour="red" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <ellipse h="5.64444" w="5.64444"/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1484.09742" voffset="-180.67928"/>
+      <!-- 1 regions(s) were found -->
+
+      <!-- Region 1 of region -->
+      <mark id="id317">
+        <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+        <lineattr type="none" thick="0" colour="red"/>
+        <fillattr pattern="none" colour="red"/>
+        <posattr x="47.71319" y="12.87639"/>
+        <textattr font="helvetica" size="9" just="left" colour="red" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+        <box h="4.58607" w="14.28724"/>
+        <layering type="copy"/>
+        <regattr colorap="true" sizewp="true" hoffset="1483.77203" voffset="-180.68109"/>
+        <!-- 0 regions(s) were found -->
+        <text>1`8</text>
+      </mark>
+      <text>1</text>
+    </mark-key>
+
+    <!-- Region 2 of node -->
+    <type id="id339">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="teal"/>
+      <fillattr pattern="none" colour="teal"/>
+      <posattr x="30.05106" y="4.36560"/>
+      <textattr font="helvetica" size="9" just="left" colour="teal" bold="false" italic="true" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1484.09742" voffset="-180.67928"/>
+      <!-- 0 regions(s) were found -->
+      <text>Ten0</text>
+    </type>
+
+    <!-- Region 3 of node -->
+    <initmark id="id325">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="teal"/>
+      <fillattr pattern="none" colour="teal"/>
+      <posattr x="31.73898" y="11.59757"/>
+      <textattr font="helvetica" size="9" just="left" colour="teal" bold="false" italic="false" underlin="true" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1484.09742" voffset="-180.67928"/>
+      <!-- 0 regions(s) were found -->
+      <text>8</text>
+    </initmark>
+    <text>SA</text>
+  </place>
+
+
+  <!-- Node 22 of page -->
+  <aux id="id322">
+    <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+    <lineattr type="solid" thick="0" colour="navy"/>
+    <fillattr pattern="none" colour="navy"/>
+    <posattr x="4.82126" y="-67.38055"/>
+    <textattr font="helvetica" size="32" just="left" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+    <label/>
+    <layering type="copy"/>
+    <!-- 0 regions(s) were found -->
+    <text>Protocol with Timer</text>
+  </aux>
+
+
+  <!-- Node 23 of page -->
+  <aux id="id323">
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="0" colour="black"/>
+    <fillattr pattern="none" colour="black"/>
+    <posattr x="-88.90000" y="152.84097"/>
+    <textattr font="helvetica" size="9" just="left" colour="black" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+    <box h="96.30831" w="75.49442"/>
+    <layering type="copy"/>
+    <!-- 0 regions(s) were found -->
+    <text>&lt;&lt;No errors>></text>
+  </aux>
+
+
+  <!-- Node 24 of page -->
+  <trans id="id330">
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="2" colour="fucia"/>
+    <fillattr pattern="none" colour="fucia"/>
+    <posattr x="-117.47500" y="46.56667"/>
+    <textattr font="helvetica" size="12" just="centered" colour="fucia" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+    <box h="12.69940" w="15.34532"/>
+    <layering type="copy"/>
+    <!-- 2 regions(s) were found -->
+
+    <!-- Region 1 of node -->
+    <aux-enab id="id329">
+      <flags mask="true" omit="true" nobound="false" nosizing="false" visible="false"/>
+      <lineattr type="solid" thick="4" colour="lime"/>
+      <fillattr pattern="none" colour="lime"/>
+      <posattr x="-117.47500" y="46.56667"/>
+      <textattr font="unknown" size="8216" just="unknown" colour="lime" bold="false" italic="false" underlin="true" outline="true" shadow="false" condense="true" extend="true" scbar="true"/>
+      <box h="13.40494" w="15.84011"/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1484.09742" voffset="-180.67928"/>
+      <!-- 0 regions(s) were found -->
+      <!-- no text was found -->
+    </aux-enab>
+
+    <!-- Region 2 of node -->
+    <cond id="id182">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="fucia"/>
+      <fillattr pattern="none" colour="fucia"/>
+      <posattr x="-117.26764" y="57.15000"/>
+      <textattr font="helvetica" size="12" just="left" colour="fucia" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1484.09742" voffset="-180.67928"/>
+      <!-- 0 regions(s) were found -->
+      <text>[n&lt;k]</text>
+    </cond>
+    <text>Clock
+Tick</text>
+  </trans>
+
+
+  <!-- Node 25 of page -->
+  <place id="id324">
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="1" colour="fucia"/>
+    <fillattr pattern="none" colour="fucia"/>
+    <posattr x="-78.84583" y="46.56667"/>
+    <textattr font="helvetica" size="12" just="centered" colour="fucia" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+    <ellipse h="8.46659" w="18.34411"/>
+    <layering type="copy"/>
+    <!-- 2 regions(s) were found -->
+
+    <!-- Region 1 of node -->
+    <type id="id331">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="fucia"/>
+      <fillattr pattern="none" colour="fucia"/>
+      <posattr x="-90.38663" y="41.76007"/>
+      <textattr font="helvetica" size="9" just="left" colour="fucia" bold="false" italic="true" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1484.09742" voffset="-180.67928"/>
+      <!-- 0 regions(s) were found -->
+      <text>INT</text>
+    </type>
+
+    <!-- Region 2 of node -->
+    <mark-key id="id336">
+      <flags mask="true" omit="true" nobound="false" nosizing="false" visible="false"/>
+      <lineattr type="solid" thick="0" colour="red"/>
+      <fillattr pattern="none" colour="red"/>
+      <posattr x="-84.13750" y="55.38611"/>
+      <textattr font="helvetica" size="9" just="centered" colour="red" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <ellipse h="5.64444" w="5.64444"/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1484.09742" voffset="-180.67928"/>
+      <!-- 1 regions(s) were found -->
+
+      <!-- Region 1 of region -->
+      <mark id="id251">
+        <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+        <lineattr type="none" thick="0" colour="red"/>
+        <fillattr pattern="none" colour="red"/>
+        <posattr x="-76.20000" y="55.03333"/>
+        <textattr font="helvetica" size="12" just="centered" colour="red" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+        <box h="6.34996" w="10.23032"/>
+        <layering type="copy"/>
+        <regattr colorap="true" sizewp="true" hoffset="1483.77203" voffset="-180.68109"/>
+        <!-- 0 regions(s) were found -->
+        <!-- no text was found -->
+      </mark>
+      <text>0</text>
+    </mark-key>
+    <text>Count</text>
+  </place>
+
+
+  <!-- Node 26 of page -->
+  <trans id="id246">
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="2" colour="fucia"/>
+    <fillattr pattern="none" colour="fucia"/>
+    <posattr x="-78.84583" y="15.87500"/>
+    <textattr font="helvetica" size="12" just="centered" colour="fucia" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+    <box h="7.76053" w="19.75475"/>
+    <layering type="copy"/>
+    <!-- 1 regions(s) were found -->
+
+    <!-- Region 1 of node -->
+    <aux-enab id="id335">
+      <flags mask="true" omit="true" nobound="false" nosizing="false" visible="false"/>
+      <lineattr type="solid" thick="4" colour="lime"/>
+      <fillattr pattern="none" colour="lime"/>
+      <posattr x="-78.84583" y="15.87500"/>
+      <textattr font="unknown" size="8216" just="unknown" colour="lime" bold="false" italic="false" underlin="true" outline="true" shadow="false" condense="true" extend="true" scbar="true"/>
+      <box h="8.19168" w="20.39202"/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1483.00532" voffset="-180.67928"/>
+      <!-- 0 regions(s) were found -->
+      <!-- no text was found -->
+    </aux-enab>
+    <text>Alarm</text>
+  </trans>
+
+
+  <!-- Node 27 of page -->
+  <place id="id337">
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="1" colour="fucia"/>
+    <fillattr pattern="none" colour="fucia"/>
+    <posattr x="-117.47500" y="15.87500"/>
+    <textattr font="helvetica" size="12" just="centered" colour="fucia" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+    <ellipse h="8.46659" w="18.34411"/>
+    <layering type="copy"/>
+    <!-- 3 regions(s) were found -->
+
+    <!-- Region 1 of node -->
+    <type id="id255">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="fucia"/>
+      <fillattr pattern="none" colour="fucia"/>
+      <posattr x="-128.31024" y="11.06840"/>
+      <textattr font="helvetica" size="9" just="left" colour="fucia" bold="false" italic="true" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1484.09742" voffset="-180.67928"/>
+      <!-- 0 regions(s) were found -->
+      <text>INT</text>
+    </type>
+
+    <!-- Region 2 of node -->
+    <initmark id="id253">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="fucia"/>
+      <fillattr pattern="none" colour="fucia"/>
+      <posattr x="-127.41886" y="20.46111"/>
+      <textattr font="helvetica" size="12" just="left" colour="fucia" bold="false" italic="false" underlin="true" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1484.09742" voffset="-180.67928"/>
+      <!-- 0 regions(s) were found -->
+      <text>8</text>
+    </initmark>
+
+    <!-- Region 3 of node -->
+    <mark-key id="id268">
+      <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+      <lineattr type="solid" thick="0" colour="red"/>
+      <fillattr pattern="none" colour="red"/>
+      <posattr x="-118.18055" y="7.40833"/>
+      <textattr font="helvetica" size="9" just="centered" colour="red" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <ellipse h="5.64444" w="5.64444"/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1484.09742" voffset="-180.67928"/>
+      <!-- 1 regions(s) were found -->
+
+      <!-- Region 1 of region -->
+      <mark id="id258">
+        <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+        <lineattr type="none" thick="0" colour="red"/>
+        <fillattr pattern="none" colour="red"/>
+        <posattr x="-109.53750" y="7.23194"/>
+        <textattr font="helvetica" size="9" just="left" colour="red" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+        <box h="5.99705" w="11.64141"/>
+        <layering type="copy"/>
+        <regattr colorap="true" sizewp="true" hoffset="1483.77203" voffset="-180.68109"/>
+        <!-- 0 regions(s) were found -->
+        <text>1`8</text>
+      </mark>
+      <text>1</text>
+    </mark-key>
+    <text>Limit</text>
+  </place>
+
+
+  <!-- Node 28 of page -->
+  <aux id="id254">
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="2" colour="fucia"/>
+    <fillattr pattern="none" colour="fucia"/>
+    <posattr x="-98.77778" y="34.57222"/>
+    <box h="69.84678" w="68.78582"/>
+    <layering type="copy"/>
+    <!-- 1 regions(s) were found -->
+
+    <!-- Region 1 of node -->
+    <aux-std id="id249">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="fucia"/>
+      <fillattr pattern="none" colour="fucia"/>
+      <posattr x="-123.17627" y="65.44028"/>
+      <textattr font="helvetica" size="14" just="left" colour="fucia" bold="true" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="1483.00532" voffset="-180.67928"/>
+      <!-- 0 regions(s) were found -->
+      <text>Timer</text>
+    </aux-std>
+    <!-- no text was found -->
+  </aux>
+
+  <!-- 26 connector(s) were found -->
+
+  <!-- Connector 1 of page -->
+  <arc id="id266" orientation="ttop">
+    <connattr hdwidth="4" hdheight="8" txtwidth="64" txtheight="32"/>
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="2" colour="navy"/>
+    <fillattr pattern="solid" colour="navy"/>
+    <seg-conn curv="20" points=""/>
+    <layering type="copy"/>
+    <transend idref="id518"/>
+    <placeend idref="id473"/>
+
+    <!-- Region 1 of connector -->
+    <annot id="id267">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="navy"/>
+      <fillattr pattern="none" colour="navy"/>
+      <posattr x="-9.83368" y="49.56528"/>
+      <textattr font="helvetica" size="9" just="left" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="-180.67958" voffset="0.00000"/>
+      <!-- 0 regions(s) were found -->
+      <text>(n,p)</text>
+    </annot>
+
+    <!-- Region 2 of connector -->
+    <!-- no text was found -->
+  </arc>
+
+
+  <!-- Connector 2 of page -->
+  <arc id="id263" orientation="ptot">
+    <connattr hdwidth="4" hdheight="8" txtwidth="64" txtheight="32"/>
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="2" colour="teal"/>
+    <fillattr pattern="solid" colour="teal"/>
+    <seg-conn curv="20" points=""/>
+    <layering type="copy"/>
+    <placeend idref="id473"/>
+    <transend idref="id510"/>
+
+    <!-- Region 1 of connector -->
+    <annot id="id265">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="teal"/>
+      <fillattr pattern="none" colour="teal"/>
+      <posattr x="15.47812" y="49.56528"/>
+      <textattr font="helvetica" size="9" just="left" colour="teal" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="-180.67958" voffset="0.00000"/>
+      <!-- 0 regions(s) were found -->
+      <text>(n,p)</text>
+    </annot>
+
+    <!-- Region 2 of connector -->
+    <!-- no text was found -->
+  </arc>
+
+
+  <!-- Connector 3 of page -->
+  <arc id="id274" orientation="ttop">
+    <connattr hdwidth="4" hdheight="8" txtwidth="64" txtheight="32"/>
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="2" colour="teal"/>
+    <fillattr pattern="solid" colour="teal"/>
+    <seg-conn curv="20" points=""/>
+    <layering type="copy"/>
+    <transend idref="id510"/>
+    <placeend idref="id126"/>
+
+    <!-- Region 1 of connector -->
+    <annot id="id259">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="teal"/>
+      <fillattr pattern="none" colour="teal"/>
+      <posattr x="62.72830" y="53.35764"/>
+      <textattr font="helvetica" size="9" just="left" colour="teal" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="-180.67958" voffset="0.00000"/>
+      <!-- 0 regions(s) were found -->
+      <text>if Ok(s,r)
+then 1`(n,p)
+else empty</text>
+    </annot>
+
+    <!-- Region 2 of connector -->
+    <!-- no text was found -->
+  </arc>
+
+
+  <!-- Connector 4 of page -->
+  <arc id="id130" orientation="bothdir">
+    <connattr hdwidth="4" hdheight="12" txtwidth="64" txtheight="32"/>
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="0" colour="navy"/>
+    <fillattr pattern="solid" colour="navy"/>
+    <seg-conn curv="20" points=""/>
+    <layering type="copy"/>
+    <placeend idref="id488"/>
+    <transend idref="id518"/>
+
+    <!-- Region 1 of connector -->
+    <annot id="id133">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="navy"/>
+      <fillattr pattern="none" colour="navy"/>
+      <posattr x="-32.94062" y="64.02917"/>
+      <textattr font="helvetica" size="9" just="left" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="-180.67958" voffset="0.00000"/>
+      <!-- 0 regions(s) were found -->
+      <text>(n,p)</text>
+    </annot>
+
+    <!-- Region 2 of connector -->
+
+    <!-- Region 3 of connector -->
+    <!-- no text was found -->
+  </arc>
+
+
+  <!-- Connector 5 of page -->
+  <arc id="id129" orientation="ptot">
+    <connattr hdwidth="4" hdheight="8" txtwidth="64" txtheight="32"/>
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="2" colour="navy"/>
+    <fillattr pattern="solid" colour="navy"/>
+    <seg-conn curv="20" points="(103.01111,46.56667)"/>
+    <layering type="copy"/>
+    <placeend idref="id126"/>
+    <transend idref="id514" endpoint="id328"/>
+
+    <!-- Region 1 of connector -->
+    <annot id="id136">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="navy"/>
+      <fillattr pattern="none" colour="navy"/>
+      <posattr x="94.94132" y="49.56517"/>
+      <textattr font="helvetica" size="9" just="left" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="-180.67958" voffset="0.00000"/>
+      <!-- 0 regions(s) were found -->
+      <text>(n,p)</text>
+    </annot>
+
+    <!-- Region 2 of connector -->
+    <!-- no text was found -->
+  </arc>
+
+
+  <!-- Connector 6 of page -->
+  <arc id="id143" orientation="ttop">
+    <connattr hdwidth="4" hdheight="8" txtwidth="64" txtheight="32"/>
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="0" colour="navy"/>
+    <fillattr pattern="solid" colour="navy"/>
+    <seg-conn curv="20" points=""/>
+    <layering type="copy"/>
+    <transend idref="id514" endpoint="id506"/>
+    <placeend idref="id468" endpoint="id465"/>
+
+    <!-- Region 1 of connector -->
+    <annot id="id159">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="navy"/>
+      <fillattr pattern="none" colour="navy"/>
+      <posattr x="121.15712" y="52.63317"/>
+      <textattr font="helvetica" size="9" just="left" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="-180.67958" voffset="0.00000"/>
+      <!-- 0 regions(s) were found -->
+      <text>if n=k
+andalso
+p&lt;>stop
+then str^p
+else str</text>
+    </annot>
+
+    <!-- Region 2 of connector -->
+    <!-- no text was found -->
+  </arc>
+
+
+  <!-- Connector 7 of page -->
+  <arc id="id148" orientation="ttop">
+    <connattr hdwidth="4" hdheight="8" txtwidth="64" txtheight="32"/>
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="2" colour="navy"/>
+    <fillattr pattern="solid" colour="navy"/>
+    <seg-conn curv="20" points="(103.01111,-14.11111)"/>
+    <layering type="copy"/>
+    <transend idref="id514" endpoint="id460"/>
+    <placeend idref="id446"/>
+
+    <!-- Region 1 of connector -->
+    <annot id="id156">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="navy"/>
+      <fillattr pattern="none" colour="navy"/>
+      <posattr x="117.10017" y="-6.98195"/>
+      <textattr font="helvetica" size="9" just="left" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="-180.67958" voffset="0.00000"/>
+      <!-- 0 regions(s) were found -->
+      <text>if p=stop
+   andalso n&lt;=k
+then 1`0
+else empty</text>
+    </annot>
+
+    <!-- Region 2 of connector -->
+    <!-- no text was found -->
+  </arc>
+
+
+  <!-- Connector 8 of page -->
+  <arc id="id161" orientation="ptot">
+    <connattr hdwidth="4" hdheight="8" txtwidth="64" txtheight="32"/>
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="2" colour="teal"/>
+    <fillattr pattern="solid" colour="teal"/>
+    <seg-conn curv="20" points=""/>
+    <layering type="copy"/>
+    <placeend idref="id446"/>
+    <transend idref="id495"/>
+
+    <!-- Region 1 of connector -->
+    <annot id="id144">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="teal"/>
+      <fillattr pattern="none" colour="teal"/>
+      <posattr x="64.66858" y="-16.75694"/>
+      <textattr font="helvetica" size="9" just="left" colour="teal" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="-180.67958" voffset="0.00000"/>
+      <!-- 0 regions(s) were found -->
+      <text>n</text>
+    </annot>
+
+    <!-- Region 2 of connector -->
+    <!-- no text was found -->
+  </arc>
+
+
+  <!-- Connector 9 of page -->
+  <arc id="id171" orientation="ptot">
+    <connattr hdwidth="4" hdheight="8" txtwidth="64" txtheight="32"/>
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="0" colour="navy"/>
+    <fillattr pattern="solid" colour="navy"/>
+    <seg-conn curv="20" points="(86.60694,21.87222)"/>
+    <layering type="copy"/>
+    <placeend idref="id457"/>
+    <transend idref="id514"/>
+
+    <!-- Region 1 of connector -->
+    <annot id="id168">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="navy"/>
+      <fillattr pattern="none" colour="navy"/>
+      <posattr x="87.13611" y="24.87083"/>
+      <textattr font="helvetica" size="9" just="left" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="-180.67958" voffset="0.00000"/>
+      <!-- 0 regions(s) were found -->
+      <text>k</text>
+    </annot>
+
+    <!-- Region 2 of connector -->
+    <!-- no text was found -->
+  </arc>
+
+
+  <!-- Connector 10 of page -->
+  <arc id="id164" orientation="ttop">
+    <connattr hdwidth="4" hdheight="8" txtwidth="64" txtheight="32"/>
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="0" colour="navy"/>
+    <fillattr pattern="solid" colour="navy"/>
+    <seg-conn curv="20" points="(87.31250,11.64167)"/>
+    <layering type="copy"/>
+    <transend idref="id514"/>
+    <placeend idref="id457"/>
+
+    <!-- Region 1 of connector -->
+    <annot id="id166">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="navy"/>
+      <fillattr pattern="none" colour="navy"/>
+      <posattr x="91.30330" y="5.20347"/>
+      <textattr font="helvetica" size="9" just="left" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="-180.67958" voffset="0.00000"/>
+      <!-- 0 regions(s) were found -->
+      <text>if n=k
+then k+1
+else k</text>
+    </annot>
+
+    <!-- Region 2 of connector -->
+    <!-- no text was found -->
+  </arc>
+
+
+  <!-- Connector 11 of page -->
+  <arc id="id173" orientation="ttop">
+    <connattr hdwidth="4" hdheight="8" txtwidth="64" txtheight="32"/>
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="2" colour="teal"/>
+    <fillattr pattern="solid" colour="teal"/>
+    <seg-conn curv="20" points=""/>
+    <layering type="copy"/>
+    <transend idref="id495"/>
+    <placeend idref="id479"/>
+
+    <!-- Region 1 of connector -->
+    <annot id="id178">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="teal"/>
+      <fillattr pattern="none" colour="teal"/>
+      <posattr x="20.15243" y="-21.25486"/>
+      <textattr font="helvetica" size="9" just="left" colour="teal" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="-180.67958" voffset="0.00000"/>
+      <!-- 0 regions(s) were found -->
+      <text>if Ok(s,r)
+then 1`n
+else empty</text>
+    </annot>
+
+    <!-- Region 2 of connector -->
+    <!-- no text was found -->
+  </arc>
+
+
+  <!-- Connector 12 of page -->
+  <arc id="id181" orientation="ptot">
+    <connattr hdwidth="4" hdheight="8" txtwidth="64" txtheight="32"/>
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="2" colour="navy"/>
+    <fillattr pattern="solid" colour="navy"/>
+    <seg-conn curv="20" points=""/>
+    <layering type="copy"/>
+    <placeend idref="id479"/>
+    <transend idref="id504"/>
+
+    <!-- Region 1 of connector -->
+    <annot id="id176">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="navy"/>
+      <fillattr pattern="none" colour="navy"/>
+      <posattr x="-8.35642" y="-16.75694"/>
+      <textattr font="helvetica" size="9" just="left" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="-180.67958" voffset="0.00000"/>
+      <!-- 0 regions(s) were found -->
+      <text>n</text>
+    </annot>
+
+    <!-- Region 2 of connector -->
+    <!-- no text was found -->
+  </arc>
+
+
+  <!-- Connector 13 of page -->
+  <arc id="id189" orientation="ptot">
+    <connattr hdwidth="4" hdheight="8" txtwidth="64" txtheight="32"/>
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="0" colour="navy"/>
+    <fillattr pattern="solid" colour="navy"/>
+    <seg-conn curv="20" points=""/>
+    <layering type="copy"/>
+    <placeend idref="id483"/>
+    <transend idref="id504"/>
+
+    <!-- Region 1 of connector -->
+    <annot id="id188">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="navy"/>
+      <fillattr pattern="none" colour="navy"/>
+      <posattr x="-32.19097" y="2.64583"/>
+      <textattr font="helvetica" size="9" just="left" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="-180.67958" voffset="0.00000"/>
+      <!-- 0 regions(s) were found -->
+      <text>k</text>
+    </annot>
+
+    <!-- Region 2 of connector -->
+    <!-- no text was found -->
+  </arc>
+
+
+  <!-- Connector 14 of page -->
+  <arc id="id194" orientation="ptot">
+    <connattr hdwidth="4" hdheight="8" txtwidth="64" txtheight="32"/>
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="0" colour="navy"/>
+    <fillattr pattern="solid" colour="navy"/>
+    <seg-conn curv="20" points="(-33.86667,29.80972)"/>
+    <layering type="copy"/>
+    <placeend idref="id483"/>
+    <transend idref="id518"/>
+
+    <!-- Region 1 of connector -->
+    <annot id="id201">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="navy"/>
+      <fillattr pattern="none" colour="navy"/>
+      <posattr x="-34.81476" y="30.86806"/>
+      <textattr font="helvetica" size="9" just="left" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="-180.67958" voffset="0.00000"/>
+      <!-- 0 regions(s) were found -->
+      <text>n</text>
+    </annot>
+
+    <!-- Region 2 of connector -->
+    <!-- no text was found -->
+  </arc>
+
+
+  <!-- Connector 15 of page -->
+  <arc id="id199" orientation="ttop">
+    <connattr hdwidth="4" hdheight="8" txtwidth="64" txtheight="32"/>
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="0" colour="navy"/>
+    <fillattr pattern="solid" colour="navy"/>
+    <seg-conn curv="20" points="(-26.28194,29.80972)"/>
+    <layering type="copy"/>
+    <transend idref="id518"/>
+    <placeend idref="id483"/>
+
+    <!-- Region 1 of connector -->
+    <annot id="id204">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="navy"/>
+      <fillattr pattern="none" colour="navy"/>
+      <posattr x="-21.71788" y="30.86806"/>
+      <textattr font="helvetica" size="9" just="left" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="-180.67958" voffset="0.00000"/>
+      <!-- 0 regions(s) were found -->
+      <text>n+1</text>
+    </annot>
+
+    <!-- Region 2 of connector -->
+    <!-- no text was found -->
+  </arc>
+
+
+  <!-- Connector 16 of page -->
+  <arc id="id206" orientation="ptot">
+    <connattr hdwidth="4" hdheight="8" txtwidth="64" txtheight="32"/>
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="0" colour="navy"/>
+    <fillattr pattern="solid" colour="navy"/>
+    <seg-conn curv="20" points=""/>
+    <layering type="copy"/>
+    <placeend idref="id468" endpoint="id451"/>
+    <transend idref="id514" endpoint="id503"/>
+
+    <!-- Region 1 of connector -->
+    <annot id="id195">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="navy"/>
+      <fillattr pattern="none" colour="navy"/>
+      <posattr x="106.25412" y="52.91659"/>
+      <textattr font="helvetica" size="9" just="left" colour="navy" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="-180.67958" voffset="0.00000"/>
+      <!-- 0 regions(s) were found -->
+      <text>str</text>
+    </annot>
+
+    <!-- Region 2 of connector -->
+    <!-- no text was found -->
+  </arc>
+
+
+  <!-- Connector 17 of page -->
+  <arc id="id213" orientation="bothdir">
+    <connattr hdwidth="4" hdheight="10" txtwidth="64" txtheight="32"/>
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="0" colour="teal"/>
+    <fillattr pattern="solid" colour="teal"/>
+    <seg-conn curv="20" points=""/>
+    <layering type="copy"/>
+    <transend idref="id495"/>
+    <placeend idref="id333"/>
+
+    <!-- Region 1 of connector -->
+    <annot id="id216">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="teal"/>
+      <fillattr pattern="none" colour="teal"/>
+      <posattr x="39.42292" y="-1.58750"/>
+      <textattr font="helvetica" size="9" just="left" colour="teal" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="-180.67958" voffset="0.00000"/>
+      <!-- 0 regions(s) were found -->
+      <text>s</text>
+    </annot>
+
+    <!-- Region 2 of connector -->
+
+    <!-- Region 3 of connector -->
+    <!-- no text was found -->
+  </arc>
+
+
+  <!-- Connector 18 of page -->
+  <arc id="id232" orientation="bothdir">
+    <connattr hdwidth="4" hdheight="10" txtwidth="64" txtheight="32"/>
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="0" colour="teal"/>
+    <fillattr pattern="solid" colour="teal"/>
+    <seg-conn curv="20" points=""/>
+    <layering type="copy"/>
+    <placeend idref="id315"/>
+    <transend idref="id510"/>
+
+    <!-- Region 1 of connector -->
+    <annot id="id223">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="teal"/>
+      <fillattr pattern="none" colour="teal"/>
+      <posattr x="39.95208" y="34.57222"/>
+      <textattr font="helvetica" size="9" just="left" colour="teal" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="-180.67958" voffset="0.00000"/>
+      <!-- 0 regions(s) were found -->
+      <text>s</text>
+    </annot>
+
+    <!-- Region 2 of connector -->
+
+    <!-- Region 3 of connector -->
+    <!-- no text was found -->
+  </arc>
+
+
+  <!-- Connector 19 of page -->
+  <arc id="id227" orientation="bothdir">
+    <connattr hdwidth="4" hdheight="12" txtwidth="64" txtheight="32"/>
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="0" colour="fucia"/>
+    <fillattr pattern="solid" colour="fucia"/>
+    <seg-conn curv="20" points=""/>
+    <layering type="copy"/>
+    <transend idref="id330"/>
+    <placeend idref="id337"/>
+
+    <!-- Region 1 of connector -->
+    <annot id="id241">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="fucia"/>
+      <fillattr pattern="none" colour="fucia"/>
+      <posattr x="-114.30000" y="30.20660"/>
+      <textattr font="helvetica" size="12" just="left" colour="fucia" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="-180.67958" voffset="0.00000"/>
+      <!-- 0 regions(s) were found -->
+      <text>k</text>
+    </annot>
+
+    <!-- Region 2 of connector -->
+
+    <!-- Region 3 of connector -->
+    <!-- no text was found -->
+  </arc>
+
+
+  <!-- Connector 20 of page -->
+  <arc id="id237" orientation="ptot">
+    <connattr hdwidth="4" hdheight="8" txtwidth="64" txtheight="32"/>
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="0" colour="fucia"/>
+    <fillattr pattern="solid" colour="fucia"/>
+    <seg-conn curv="20" points="(-99.65972,48.33055)"/>
+    <layering type="copy"/>
+    <placeend idref="id324"/>
+    <transend idref="id330"/>
+
+    <!-- Region 1 of connector -->
+    <annot id="id226">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="fucia"/>
+      <fillattr pattern="none" colour="fucia"/>
+      <posattr x="-99.21875" y="51.90243"/>
+      <textattr font="helvetica" size="12" just="left" colour="fucia" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="-180.67958" voffset="0.00000"/>
+      <!-- 0 regions(s) were found -->
+      <text>n</text>
+    </annot>
+
+    <!-- Region 2 of connector -->
+    <!-- no text was found -->
+  </arc>
+
+
+  <!-- Connector 21 of page -->
+  <arc id="id239" orientation="ttop">
+    <connattr hdwidth="4" hdheight="8" txtwidth="64" txtheight="32"/>
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="0" colour="fucia"/>
+    <fillattr pattern="solid" colour="fucia"/>
+    <seg-conn curv="20" points="(-100.01250,44.45000)"/>
+    <layering type="copy"/>
+    <transend idref="id330"/>
+    <placeend idref="id324"/>
+
+    <!-- Region 1 of connector -->
+    <annot id="id275">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="fucia"/>
+      <fillattr pattern="none" colour="fucia"/>
+      <posattr x="-99.21875" y="42.02465"/>
+      <textattr font="helvetica" size="12" just="left" colour="fucia" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="-180.67958" voffset="0.00000"/>
+      <!-- 0 regions(s) were found -->
+      <text>n+1</text>
+    </annot>
+
+    <!-- Region 2 of connector -->
+    <!-- no text was found -->
+  </arc>
+
+
+  <!-- Connector 22 of page -->
+  <arc id="id228" orientation="ptot">
+    <connattr hdwidth="4" hdheight="8" txtwidth="64" txtheight="32"/>
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="0" colour="fucia"/>
+    <fillattr pattern="solid" colour="fucia"/>
+    <seg-conn curv="20" points=""/>
+    <layering type="copy"/>
+    <placeend idref="id324"/>
+    <transend idref="id246"/>
+
+    <!-- Region 1 of connector -->
+    <annot id="id272">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="fucia"/>
+      <fillattr pattern="none" colour="fucia"/>
+      <posattr x="-81.49167" y="32.67604"/>
+      <textattr font="helvetica" size="12" just="left" colour="fucia" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="-180.67958" voffset="0.00000"/>
+      <!-- 0 regions(s) were found -->
+      <text>n</text>
+    </annot>
+
+    <!-- Region 2 of connector -->
+    <!-- no text was found -->
+  </arc>
+
+
+  <!-- Connector 23 of page -->
+  <arc id="id278" orientation="bothdir">
+    <connattr hdwidth="4" hdheight="12" txtwidth="64" txtheight="32"/>
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="0" colour="fucia"/>
+    <fillattr pattern="solid" colour="fucia"/>
+    <seg-conn curv="20" points=""/>
+    <layering type="copy"/>
+    <transend idref="id246"/>
+    <placeend idref="id337"/>
+
+    <!-- Region 1 of connector -->
+    <annot id="id291">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="fucia"/>
+      <fillattr pattern="none" colour="fucia"/>
+      <posattr x="-97.63125" y="19.09410"/>
+      <textattr font="helvetica" size="12" just="left" colour="fucia" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="-180.67958" voffset="0.00000"/>
+      <!-- 0 regions(s) were found -->
+      <text>n</text>
+    </annot>
+
+    <!-- Region 2 of connector -->
+
+    <!-- Region 3 of connector -->
+    <!-- no text was found -->
+  </arc>
+
+
+  <!-- Connector 24 of page -->
+  <arc id="id297" orientation="ttop">
+    <connattr hdwidth="4" hdheight="8" txtwidth="64" txtheight="32"/>
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="0" colour="green"/>
+    <fillattr pattern="solid" colour="green"/>
+    <seg-conn curv="20" points=""/>
+    <layering type="copy"/>
+    <transend idref="id518"/>
+    <placeend idref="id324"/>
+
+    <!-- Region 1 of connector -->
+    <annot id="id295">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="green"/>
+      <fillattr pattern="none" colour="green"/>
+      <posattr x="-53.79861" y="54.19549"/>
+      <textattr font="helvetica" size="10" just="left" colour="green" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="-180.67958" voffset="0.00000"/>
+      <!-- 0 regions(s) were found -->
+      <text>if p=stop
+then 1`0
+else empty</text>
+    </annot>
+
+    <!-- Region 2 of connector -->
+    <!-- no text was found -->
+  </arc>
+
+
+  <!-- Connector 25 of page -->
+  <arc id="id302" orientation="ttop">
+    <connattr hdwidth="4" hdheight="8" txtwidth="64" txtheight="32"/>
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="0" colour="green"/>
+    <fillattr pattern="solid" colour="green"/>
+    <seg-conn curv="20" points="(-57.50278,11.99444)"/>
+    <layering type="copy"/>
+    <transend idref="id246"/>
+    <placeend idref="id483"/>
+
+    <!-- Region 1 of connector -->
+    <annot id="id299">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="green"/>
+      <fillattr pattern="none" colour="green"/>
+      <posattr x="-56.62083" y="10.09826"/>
+      <textattr font="helvetica" size="12" just="left" colour="green" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="-180.67958" voffset="0.00000"/>
+      <!-- 0 regions(s) were found -->
+      <text>1</text>
+    </annot>
+
+    <!-- Region 2 of connector -->
+    <!-- no text was found -->
+  </arc>
+
+
+  <!-- Connector 26 of page -->
+  <arc id="id154" orientation="ptot">
+    <connattr hdwidth="4" hdheight="8" txtwidth="64" txtheight="32"/>
+    <flags mask="false" omit="false" nobound="false" nosizing="false" visible="true"/>
+    <lineattr type="solid" thick="0" colour="green"/>
+    <fillattr pattern="solid" colour="green"/>
+    <seg-conn curv="20" points="(-57.15000,18.34444)"/>
+    <layering type="copy"/>
+    <placeend idref="id483"/>
+    <transend idref="id246"/>
+
+    <!-- Region 1 of connector -->
+    <annot id="id270">
+      <flags mask="false" omit="false" nobound="true" nosizing="true" visible="true"/>
+      <lineattr type="solid" thick="0" colour="green"/>
+      <fillattr pattern="none" colour="green"/>
+      <posattr x="-56.79722" y="21.73993"/>
+      <textattr font="helvetica" size="12" just="left" colour="green" bold="false" italic="false" underlin="false" outline="false" shadow="false" condense="false" extend="false" scbar="true"/>
+      <label/>
+      <layering type="copy"/>
+      <regattr colorap="true" sizewp="true" hoffset="-180.67958" voffset="0.00000"/>
+      <!-- 0 regions(s) were found -->
+      <text>k</text>
+    </annot>
+
+    <!-- Region 2 of connector -->
+    <!-- no text was found -->
+  </arc>
+
+</page>
+
+</cpnet>
+</workspaceElements>

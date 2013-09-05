@@ -1,0 +1,858 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../cpnet';
+INCLUDE '../descriptordialog';
+
+
+-- SSNodeLib:Attributes --
+
+computePoints:
+  (# points: ^PointList;
+     segments: ^SegmentList;
+     curve: ^PointList;
+     x, y: @real;
+  do position -> (x, y);
+     &PointList[] -> points[];
+     (x, y -height/2) -> makePoint -> points.append;
+     (x + width/2,y - height/2) -> makePoint -> points.append;
+     (x + width/2, y + height/2) -> makePoint -> points.append;
+     (x, y + height/2) -> makePoint -> points.append;
+     (x - width/2, y + height/2) -> makePoint -> points.append;
+     (x - width/2, y - height/2) -> makePoint -> points.append;
+     (x, y - height/2) -> makePoint -> points.append;
+     (points[], 15.0) -> smoothenCurve -> segments[];
+     &PointList[] -> curve[];
+     1 -> points.get -> curve.append;
+     segments.scan
+     (# 
+     do curve[] -> current.calculate;
+     #);
+  exit curve[]
+  #);
+-- PlaceMarkingListenerScrollUp:DoPart --
+do (if ti.topline > 0 then
+       ti.topline - 1 -> ti.topline;
+       ti.changed;
+   if);
+   
+-- PlaceMarkingListenerScrollDown:DoPart --
+do (# lines: @integer;
+      lineheight: (# exit arial.ascent + arial.descent #);
+   do (ti.textheight - (box.height - (2*10 + 4)))  div lineheight -> lines;
+      (if ti.topline < lines then
+          ti.topline + 1 -> ti.topline;
+          ti.changed;
+      if);
+   #);
+
+-- PlaceMarkinginit: doPart --
+do boxshadow.init;
+   box.init;
+   ti.init; 
+   black[] -> StrokeStyle -> ti.theStyle[];
+   &CompositeStyle[] -> cs[] -> boxshadow.theStyle[];
+   (black[], NONE, 0) -> &BasicStyle -> cs.add;
+   4 -> &ShadowStyle -> cs.add;
+   (NONE, (1.0, 0.5, 2.0) -> (sim_color).AdjustHSV, 1) 
+     -> &BasicStyle -> box.theStyle[];
+   
+   
+-- PlaceMarkingdelete: doPart --
+do (if presentation[] <> NONE then
+       ti[] -> presentation.remove;
+       box[] -> presentation.remove;
+       boxshadow[] -> presentation.remove;
+   if);
+   
+-- PlaceMarkingupdate: doPart --
+do (# wrap1:
+        (# input: ^Text;
+           output: ^Text;
+           ch: @char;
+           EOS: (# exit 0 #);
+           next:
+             (#
+             do (if input.eos then
+                    EOS -> ch;
+                 else
+                    input.get -> ch;
+                if);
+             #);
+        enter input[]
+        do &Text[] -> output[];
+           input.reset;
+           next;
+           loop:
+             (if ch
+              //EOS then
+                 (*** done ***)
+              //'+' then
+                 ch -> output.put;
+                 next;
+                 (if ch
+                  //'+' then
+                     ch -> output.put;
+                     output.newline;
+                     next;
+                     restart loop;
+                  //EOS then
+                     (*** done ***)
+                  else
+                     restart loop;
+                 if);
+              else
+                 ch -> output.put;
+                 next;
+                 restart loop;
+             if);
+        exit output[]
+        #);
+      wrap2:
+        (# width: (# exit 150 #);
+           
+           currentWidth: @integer;
+           wrapRequest: @boolean;;
+           
+           input: ^Text;
+           output: ^Text;
+           ch: @char;
+           EOS: (# exit 0 #);
+           next:
+             (#
+             do skip:
+                  (if input.eos then
+                      EOS -> ch;
+                   else
+                      input.get -> ch;
+                      (if ch = ascii.newline then
+                          restart skip;
+                      if);
+                  if);
+             #);
+           put:
+             (# ch: @char;
+                s: @Text;
+                w: @integer;
+             enter ch
+             do ch -> output.put;
+                ch -> s.put;
+                s[] -> arial.MeasureString -> w;
+                currentWidth + w -> currentWidth;
+                (if currentWidth > width then
+                    true -> wrapRequest;
+                if);
+             #);
+        enter input[]
+        do &Text[] -> output[];
+           input.reset;
+           next;
+           loop:
+             (if ch
+              //EOS then
+                 (*** done ***)
+              //'+' then
+                 ch -> put;
+                 next;
+                 (if wrapRequest then
+                     handle:
+                       (if ch
+                        //'+' then
+                           ch -> put;
+                           next;
+                           (if ch = '+' then
+                               restart handle;
+                           if);
+                           output.newline;
+                           0 -> currentWidth;
+                           false -> wrapRequest;
+                           restart loop;
+                        //EOS then
+                           (*** done ***)
+                        else
+                           restart loop;
+                       if);
+                  else
+                     ch -> put;
+                     next;
+                     restart loop;
+                 if);
+              else
+                 ch -> put;
+                 next;
+                 restart loop;
+             if);
+        exit output[]
+        #);
+      wrap3:
+        (# input: ^Text;
+           output: ^Text;
+           ch: @char;
+           width: (# exit 60 #);
+           currentWidth: @integer;
+           EOS: (# exit 0 #);
+           next:
+             (#
+             do (if input.eos then
+                    EOS -> ch;
+                 else
+                    input.get -> ch;
+                if);
+             #);
+           put:
+             (# ch: @char;
+                s: @Text;
+                w: @integer;
+             enter ch
+             do ch -> s.put;
+                s[] -> arial.MeasureString -> w;
+                currentWidth + w -> currentWidth;
+                (if currentWidth > width then
+                    output.newline;
+                    w -> currentWidth;
+                if);
+                ch -> output.put;
+             #);
+        enter input[]
+        do input.reset;
+           &Text[] -> output[];
+           next;
+           loop:
+             (if ch
+              //EOS then
+                 (*** DONE ***)
+              else
+                 ch -> put;
+                 next;
+                 restart loop;
+             if);
+        exit output[]
+        #);
+      
+      wrap:
+        (# in, out: ^Text;
+        enter in[]
+        do (if false then
+               in[] -> wrap2 -> out[];
+            else
+               in[] -> out[];
+           if);
+        exit out[]
+        #);
+      
+      present_frame:
+        (# frame: ^Rect;
+        do &Rect[] -> frame[];
+           frame.init;
+           ((1.0, 0.5, 2.0) -> (sim_color).AdjustHSV, NONE, 1) 
+             -> &BasicStyle -> frame.theStyle[];
+           60 -> frame.width;
+           80 -> frame.height;
+           frame.width div 2 -> frame.x;
+           -frame.height div 2 -> frame.y;
+           frame[] -> holder.add;
+        #);
+      
+      tWidth, tHeight: @integer;
+      margin: @real;
+      
+      makeUpperTriangle:
+        (# tri: ^UpperTriangle;
+           x, y: @real;
+        enter (x, y)
+        do &UpperTriangle[] -> tri[];
+           tri.init;
+           listener[] -> tri.listener[];
+           x -> tri.x;
+           y -> tri.y;
+        exit tri[]
+        #);
+     makeLowerTriangle:
+        (# tri: ^LowerTriangle;
+           x, y: @real;
+        enter (x, y)
+        do &LowerTriangle[] -> tri[];
+           tri.init;
+           listener[] -> tri.listener[];
+           x -> tri.x;
+           y -> tri.y;
+        exit tri[]
+        #);
+     
+      scrolling: @boolean;
+      wrapping: @boolean;
+      lines: @integer;
+      lineheight: (# exit arial.ascent + arial.descent #);
+      
+      MajorWidth: (# exit 240 #);
+      MajorHeight: (# exit 322 #);
+      
+      present_position:
+        (# 
+        do (0, 0, redish[]) -> present_mark -> presentation.add;
+        #);
+      present_mark:
+        (# handle: ^Rect;
+           bs: ^BasicStyle;
+           x, y: @real;
+           c: ^Color;
+        enter (x, y, c[])
+        do &Rect[] -> handle[];
+           handle.init;
+           &BasicStyle[] -> bs[] -> handle.theStyle[];
+           c[] -> bs.fill[];
+           4 -> handle.width;
+           4 -> handle.height;
+           x -> handle.x;
+           y -> handle.y;
+           IGNORE -> handle.status;
+        exit handle[]
+        #);
+      
+      holder: ^Composite;
+      textbox: ^Composite;
+   do (if instance[] <> NONE then
+          (if instance.markingVisible then
+              &Composite[] -> holder[];
+              holder.init;
+              &Composite[] -> textbox[];
+              textbox.init;
+              
+              boxshadow[] -> holder.add;
+              box[] -> holder.add;
+              NONE -> ti.father[];
+              ti[] -> textbox.add;
+              textbox[] -> holder.add;
+              
+              (if NOT ti.editActive then
+	          instance.theMarking[] -> wrap -> ti.content[];
+              if);
+              
+              ti.content[] -> arial.measureText -> (tWidth, tHeight);
+              
+              
+              (if tWidth >= MajorWidth then
+                  true -> ti.box;
+                  MajorWidth -> ti.width;
+                  ti.bounds;
+                  ti.textheight -> tHeight;
+                  MajorWidth -> tWidth;
+               else
+                  tWidth -> ti.width;
+              if);
+              
+              
+              (*
+               * ti.box er sat op.
+               * 
+               * tWidth er sat op
+               * tHeight er sat op
+               *)
+              
+              (if (tHeight <= MajorHeight) OR (ti.editactive) then
+                  false -> scrolling;
+                  0 -> margin;
+                  tHeight -> ti.height;
+               else
+                  true -> scrolling;
+                  10 -> margin;
+                  MajorHeight -> ti.height;
+                  true -> ti.box;
+              if);
+              
+              (*
+               * scrolling er sat op
+               * margin er sat op.
+               *)
+              
+              
+              ti.bounds -> (xmin, xmax, ymin, ymax);
+              (xmax-xmin, ymax-ymin) -> (w, h);
+              (w+4, h+4)
+                -> (box.width, box.height);
+              
+              box.height + 2*margin -> box.height;
+              
+              (*
+               * box.height er sat op
+               * box.width er sat op
+               *)
+              
+              (if scrolling then
+                  (ti.textheight - (box.height - (2*margin + 4)))  div lineheight
+                    -> lines;
+                  (if ti.topline > lines then
+                      (if lines > 0 then
+                          lines -> ti.topline;
+                      if);
+                  if);
+               else
+                  0 -> ti.topline;
+              if);
+              
+              
+              box.width - 2 -> boxshadow.width;
+              box.height - 2 -> boxshadow.height;
+              
+              -(tWidth div 2) -> ti.x;
+              -(ti.height div 2) + arial.ascent -> ti.y;
+              
+              (if false then
+                  (ti.x, ti.y, redish[]) -> present_mark -> textbox.add;
+              if);
+              
+              0 -> box.x;
+              0 -> box.y;
+              
+              box.x -> textbox.x;
+              box.y -> textbox.y;
+              
+              (if false then
+                  (box.x, box.y, green[]) -> present_mark -> holder.add;
+              if);
+              
+              box.x + 1 -> boxshadow.x;
+              box.y + 1 -> boxshadow.y;
+              instance.thePlace[] -> thePlace[];
+              (if instance.theToken.tok[] <> NONE then 
+                  instance.theToken.tok.tw -> w;
+               else
+                  0 -> w;
+              if);
+              
+              
+              
+              (if true then
+                  (# xmin, xmax, ymin, ymax: @real;
+                     ii: @integer;
+                  do 0 -> holder.x;
+                     0 -> holder.y;
+                     holder.bounds -> (xmin, xmax, ymin, ymax);
+
+                     (if anchorHorizontal
+                      //LeftJustify then
+                         -xmin -> ii -> holder.x;
+                      //CenterJustify then
+                         -xmin - (xmax - xmin)  / 2 -> ii -> holder.x;
+                      //RightJustify then
+                         -xmax -> ii -> holder.x;
+                     if);
+                     (if anchorVertical
+                      //TopJustify then
+                         -ymin -> ii -> holder.y;
+                      //CenterJustify then
+                         -ymin - (ymax - ymin) / 2 -> ii -> holder.y;
+                      //BottomJustify then
+                         -ymax -> ii -> holder.y;
+                     if);
+                  #);
+              else
+                  box.width div 2 -> holder.x;
+              if);
+              
+              
+              (if normal_delta then
+                  instance.theToken.x + dx -> THIS(Snapable).x;
+                  instance.theToken.y + dy -> THIS(Snapable).y;
+               else
+                  (if (snap_id <> 0) and ((instance.theToken.getAnchors).size >= snap_id) then
+                      (# anchor: ^Point2d;
+                      do snap_id -> (instance.theToken.getAnchors).get -> anchor[];
+                         (if anchor[] <> NONE then
+                             anchor.XY -> (THIS(Snapable).x, THIS(Snapable).y);
+                         if);
+                      #);
+                   else
+                      instance.theToken.x + w div 2 + 5 + dx -> THIS(Snapable).x;
+                      instance.theToken.y - dy -> THIS(Snapable).y;
+                  if);
+              if);
+              x -> presentation.x;
+              y -> presentation.y;
+              
+              
+              scrolling -> ti.scrolling;
+              (if scrolling then
+                  (0, -box.height/2 + 1) -> makeUpperTriangle -> holder.add;
+                  (0, box.height/2 - 1) -> makeLowerTriangle -> holder.add;
+              if);
+              holder[] -> presentation.add;
+          if);
+      if);
+      (if false then
+          present_frame;
+      if);
+      (if false then
+          present_position;
+      if);
+   #);
+   
+   
+-- PlaceMarkingonChanged: doPart --
+do (if (instance[] <> NONE) and 
+       (instance.thePlace[] <> NONE) then
+       delta -> instance.thePlace.markingDelta;
+       (if (instance.thePlace.getCPNPage <> NONE) then
+           (instance.thePlace.getCPNPage).scanInstances
+           (# pi: ^PlaceInstance;
+           do instance.thePlace.id[] -> current.lookupPlaceInstance -> pi[];
+              (if pi[] <> instance[] then
+                  (if pi.thePlaceMarking[] <> NONE then
+                      delta -> pi.thePlaceMarking.delta;
+                  if);
+              if);
+           #);
+       if);
+   if);
+   
+-- PlaceMarkingPositionToDelta:doPart --
+do (# w: @real;
+   do instance.theToken.tok.tw -> w;
+      THIS(Snapable).x - (instance.theToken.x + w div 2 + 5) -> dx;
+      instance.theToken.y - THIS(Snapable).y -> dy;
+   #);
+   
+-- PlaceMarkingOnTextUpdated:doPart --
+do true -> whiteSpace;
+   ti.content.scanAll
+   (# 
+   do whiteSpace and (ch = ' ') -> whiteSpace;
+   #);
+   (if whiteSpace then
+       'empty' -> ti.content[];
+   if);
+   ti.content[] -> instance.changeCurrentMarking;
+   
+   
+-- PlaceMarkingBounds: doPart --
+do (if presentation[] <> NONE then
+       presentation.bounds -> (xmin, xmax, ymin, ymax);
+   if);
+   
+-- PlaceMarkingSnap: doPart --
+do THIS(PlaceMarking)[] -> instance.theToken.snapTo -> (dx, dy);
+   snap_id -> instance.thePlace.markingSnapId;
+   anchorVertical -> instance.thePlace.markingAnchorVertical;
+   anchorHorizontal -> instance.thePlace.markingAnchorHorizontal;
+   
+-- TokenGetAnchors:doPart --   
+do (# width: @real;
+      height: @real;
+      a, b: @real;
+      add: 
+        (# degree: @Real;
+           ix, iy: @integer;
+        enter degree
+        do (x + (degree -> cose) * a, y + (degree -> sine)*b)
+             -> (ix, iy)
+             -> MakePoint
+             -> anchors.append;
+        #);
+   do (if tok[] <> NONE then
+          tok.tw -> width;
+          tok.th -> height;
+          width / 2 + 4 -> a;
+          height / 2 + 4 -> b;
+          (x, y) -> MakePoint -> anchors.append;
+          (x + a, y) -> MakePoint -> anchors.append;
+          (x, y - b) -> MakePoint -> anchors.append;
+          (x - a, y) -> MakePoint -> anchors.append;
+          (x, y + b) -> MakePoint -> anchors.append;
+          7*45 -> add;
+          5*45 -> add;
+          3*45 -> add;
+          45 -> add;
+      if);
+   #);
+   
+-- TokenSnap: doPart --
+do (# anchors: ^PointList;
+      pos: @Point2d;
+      to: ^Point2d;
+   do (x, y) -> pos;
+      thePlace.getAnchors -> anchors[];
+      0 -> snap_id;
+      search: anchors.scan
+        (# dist: @real;
+           inx: @integer;
+        do (current[], pos[]) -> PointDist -> dist;
+           inx + 1 -> inx;
+           (if dist < 10 then
+               current[] -> to[];
+               inx -> snap_id;
+               leave search;
+           if);
+        #);
+      snap_id -> thePlace.tokenSnapId;
+      (if to[] <> NONE then
+          to -> changePosition;
+      if);
+   #);
+   
+-- PlaceMarkingonFocusLost:doPart --
+do (# thePcre: @Pcre;      
+   do false -> instance.allwaysShowMarking;      
+      instance.update;
+      (* onTextUpdated; *)
+   #);
+      
+-- SimulationItemInit:DoPart --
+do 0.1 -> &AlphaStyle -> loliteStyle[];
+   1.0 -> &AlphaStyle -> hiliteStyle[];
+   INNER;
+   
+-- SimulationItemUpdate:doPart --
+do (if instance.thePlace.isLolited then
+       loliteStyle[] -> presentation.theStyle[];
+    else 
+       hiliteStyle[] -> presentation.theStyle[];
+   if);
+   INNER;
+   
+-- TokenInit: doPart --
+do &CpnToken[] -> tok[];
+   THIS(Token)[] -> tok.owner[];
+   tok.init;
+   
+-- TokenonClicked: doPart --
+do (not instance.hidemarkings) -> instance.hidemarkings;
+   
+-- Tokendelete: doPart --
+do (if (tok[] <> NONE) and (presentation[] <> NONE) then
+       tok[] -> presentation.remove;
+       NONE -> tok[];
+   if);
+   
+-- TokenDeltaToPosition: doPart --
+do (if normal_delta then
+       instance.x + dx -> x;
+       instance.y + dy -> y;
+   
+    else
+       instance.x + (thePlace.width div 2) + 5 + (tok.tw div 2) + dx -> x;
+       instance.y - dy -> y;
+   if);
+   
+-- TokenPositionToDelta: doPart --
+do (if normal_delta then
+       x - instance.x -> dx;
+       y - instance.y -> dy;
+   else
+       x - (instance.x + (thePlace.width div 2) + 5 + (tok.tw div 2)) -> dx;
+       (instance.y - y) -> dy;
+   if);
+   
+-- TokenChangePosition: doPart --
+do positionToDelta;
+   changed;
+
+-- Tokenupdate: doPart --
+do (if tok[] <> NONE then
+       instance.numTokens -> tok.update;
+       deltaToPosition;
+       x -> presentation.x;
+       y -> presentation.y;
+       (if (instance.numTokens>0) or instance.allwaysShowMarking then
+           tok[] -> presentation.add;
+       if);
+   if);
+   
+-- TokenonChanged: doPart --
+do (if (instance[] <> NONE) and 
+       (instance.thePlace[] <> NONE) then
+       delta -> instance.thePlace.tokenDelta;
+       (if (instance.thePlace.getCPNPage <> NONE) then
+           (instance.thePlace.getCPNPage).scanInstances
+           (# pi: ^PlaceInstance;
+           do instance.thePlace.id[] -> current.lookupPlaceInstance -> pi[];
+              (if pi[] <> instance[] then
+                  (if pi.theToken[] <> NONE then
+                      delta -> pi.theToken.delta;
+                  if);
+              if);
+           #);
+       if);
+   if);
+   
+-- SSNodemakeShape:doPart --
+do 
+   (# points: ^PointList;
+      theLine: ^Line;
+      showHalo:
+        (# theColor: ^Color;
+           halo: ^Line;
+           theStyle: ^CompositeStyle;
+        enter theColor[]
+        do (if theColor[] <> NONE then
+               (if theLine.points[] <> NONE then
+                   &Line[] -> halo[];
+                   &CompositeStyle[] -> theStyle[];
+                   halo.init;
+                   theStyle[] -> halo.theStyle[];
+                   theLine.points[] -> halo.points[];
+                   (halo_width+strokeWidth-1,theColor[]) -> &HaloStyle -> theStyle.add;
+                   15 -> &CurvatureStyle -> theStyle.add;
+                   (if presentation[]<>NONE then
+                       halo[] -> theItem.add;
+                   if);
+               if);
+           if);
+        #);
+   do 
+      
+      &PointList[] -> points[];
+      (0, -height/2) -> makePoint -> points.append;
+      (width/2, -height/2) -> makePoint -> points.append;
+      (width/2, height/2) -> makePoint -> points.append;
+      (0, height/2) -> makePoint -> points.append;
+      (-width/2, height/2) -> makePoint -> points.append;
+      (-width/2, -height/2) -> makePoint -> points.append;
+      (0, -height/2) -> makePoint -> points.append;
+      &Line[] -> theLine[];
+      theLine.init;
+      15.0 -> &CurvatureStyle -> theLine.theStyle[];
+      points[] -> theLine.points[];
+      theLine[] -> theItem.add;
+      
+      
+      
+      (if theName[] = NONE then
+          &Text[] -> theName[];
+      if);
+      theName.clear;
+      
+      number -> theName.putint;
+      theName.newline;
+      pred -> theName.putint;
+      ':' -> theName.puttext;
+      suc -> theName.putint;
+      
+      COMPILED -> status;
+      getCurrentHighlight -> showHalo;
+   #);
+   
+-- SSNodeGetIntersect:doPart --
+do (# points: ^PointList;
+      previous: ^Point2d;
+   do computePoints -> points[];
+      search: points.scan
+      (# segment: ^GeomLine;
+      do (if previous[] <> NONE then
+             (previous[], current[]) -> createFiniteLine -> segment[];
+             line[] -> segment.intersect -> intersect[];
+             (if intersect[] <> NONE then
+                 leave search;
+             if);
+         if);
+         current[] -> previous[];
+      #);
+   #);
+   
+   
+-- SSNodeUpdate:doPart --
+do (# theDescriptorDialog: ^SSNodeDescriptorDialog;
+   do (if dialog[] = NONE then
+          &SSNodeDescriptorDialog[] -> theDescriptorDialog[] -> dialog[];
+          theDescriptorDialog.init;
+          THIS(SSNode)[] -> theDescriptorDialog.theSSNode[];
+          (if visible then
+              theDescriptorDialog.showIndex;
+          if);
+      if);
+      (-width/2+5, height/2-5)
+        -> (dialog.x,dialog.y);
+      dialog.update;
+      dialog.present -> presentation.add;
+   #);
+
+-- SSNodeClone:doPart --
+do number -> new.number;
+   MLXPos -> new.MLXPos;
+   MLYPos -> new.MLYPos;
+   pred -> new.pred;
+   suc -> new.suc;
+   processed -> new.processed;
+   fullyProcessed -> new.fullyProcessed;
+   completeSS -> new.completeSS;
+   descriptor[] -> new.descriptor[];
+   delta -> new.delta;
+   visible -> new.visible;
+   dead -> new.dead;
+
+-- SSNodeGetElementsToAddToGroupWithThisElement:dopart --
+do (if theGroup[]<>NONE then
+       scanArcs
+	 (# 
+	 do (if ((current.transEnd[] -> theGroup.isMember) OR
+		(current.transEnd[] = THIS(SSNode)[]))
+		AND
+		((current.placeEnd[] -> theGroup.isMember) OR
+		(current.placeEnd[] = THIS(SSNode)[]))
+	    then
+		current[] -> theElements.append;
+		(current.getInscriptions).scan
+		  (# 
+		  do current[] -> theElements.append;
+		  #);
+	    if);
+	 #);
+   if);
+
+-- SSNodeMenuName:doPart --
+do NamesPageMenuSSNode -> getGlobalNames -> txt[];
+   INNER;
+
+-- SSArcUpdate: doPart --
+do (# theDescriptorDialog: ^SSArcDescriptorDialog;
+      theAnnotation: ^Annotation;
+      
+   do (if dialog[] = NONE then
+          &SSArcDescriptorDialog[] -> theDescriptorDialog[] -> dialog[];
+          theDescriptorDialog.init;
+          THIS(SSArc)[] -> theDescriptorDialog.theSSArc[];
+          true -> theDescriptorDialog.hideProxy;
+          (if visible then
+              theDescriptorDialog.showIndex;
+          if);
+      if);
+      getAnnotation -> theAnnotation[];
+      theAnnotation.computePosition;
+      theAnnotation.x -> dialog.x;
+      theAnnotation.y -> dialog.y;
+      dialog.update;
+      dialog.present -> presentation.add;
+   #);
+   
+-- SSArcToggle:doPart --
+do (# theDescriptorDialog: ^SSArcDescriptorDialog;
+   do dialog[] -> theDescriptorDialog[];
+      (if theDescriptorDialog[] <> NONE then
+          theDescriptorDialog.toggle;
+      if);
+   #);
+
+-- SSArcMenuName:doPart --
+do NamesPageMenuSSArc -> getGlobalNames -> txt[];
+   INNER;

@@ -1,0 +1,178 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '~beta/postwimp/workspace';
+INCLUDE 'highlightable';
+
+BODY 'private/snapablebody';
+
+-- Workspacelib: Attributes --
+trace_anchors: (# exit false #);
+
+SnapableList: List
+  (# Element:: Snapable;
+  #);
+
+Snapable: Highlightable
+  (# editable:< booleanValue;
+     dx, dy: @Real;
+     anchorHorizontal: @Integer;
+     anchorVertical: @Integer;
+     snap_id: @integer;
+     
+     
+     delta:
+       (#
+       enter (# enter (dx, dy) do changed; #)
+       exit (dx, dy)
+       #);
+     snap:< (* snap to adjacent nodes/bendpoints *)
+       (# excludeBendpoints: @boolean;
+          dx, dy: @Real;
+       enter excludeBendpoints
+       do INNER;
+       exit (dx, dy)
+       #);
+     positionToDelta:<
+       (# do INNER #);
+     
+     getAnchors:< 
+       (# anchors: ^PointList;
+       do &PointList[] -> anchors[];
+          INNER;
+       exit anchors[]
+       #);
+
+     snapTo:< (* snaps an inscription/region to the Node *)
+       (# target: ^TargetType;
+          TargetType:< Snapable;
+          dx, dy: @Real;
+          getWidth:<
+            (# value: @real;
+            do INNER;
+            exit value
+            #);
+          getHeight:<
+            (# value: @real;
+            do INNER;
+            exit value
+            #);
+       enter target[]
+       <<SLOT SnapableSnapTo:doPart>>
+       exit (dx, dy)
+       #);
+     update::<
+       (#
+          
+       do INNER;
+          (# present_position:
+               (# handle: ^Rect;
+                  bs: ^BasicStyle;
+               do &Rect[] -> handle[];
+                  handle.init;
+                  &BasicStyle[] -> bs[] -> handle.theStyle[];
+                  redish[] -> bs.fill[];
+                  4 -> handle.width;
+                  4 -> handle.height;
+                  handle[] -> presentation.add;
+                  IGNORE -> handle.status;
+               #);
+             present_anchors:
+               (# anchors: ^PointList;
+               do getAnchors -> anchors[];
+                  anchors.scan
+                  (# handle: ^Rect;
+                  do &Rect[] -> handle[];
+                     handle.init;
+                     current.x - presentation.x -> handle.x;
+                     current.y - presentation.y -> handle.y;
+                     4 -> handle.width;
+                     4 -> handle.height;
+                     green[] -> &FillStyle -> handle.theStyle[];
+                     handle[] -> presentation.add;
+                  #);
+               #);
+          do (if trace_anchors then
+                 present_position;
+                 present_anchors;
+             if);
+          #)
+       #);
+     changeAnchorHorizontal: 
+       (# newAnchor: @integer;
+          dx: @Real;
+       enter newAnchor
+       <<SLOT SnapableChangeAnchorHorizontal:doPart>>
+       exit dx
+       #);
+     
+     changeAnchorVertical: 
+       (# newAnchor: @integer;
+          dy: @Real;
+       enter newAnchor
+       <<SLOT SnapableChangeAnchorVertical:doPart>>
+       exit dy
+       #);
+     
+     defaultSnapToElement:<
+       (# elm: ^Snapable;
+       do INNER
+       exit elm[]
+       #); 
+     
+     defaultSnap:<
+       (# xmin, xmax, ymin, ymax: @Real;
+          anchors: ^PointList;
+          snappoint: ^Point2D;
+
+          (* Think
+           * 7 3 6
+           * 4 1 2
+           * 8 5 9
+           *)
+          N: (# exit 3 #);
+          S: (# exit 5 #);
+          E: (# exit 4 #);
+          W: (# exit 2 #);
+          NE: (# exit 7 #);
+          NW: (# exit 6 #);
+          SE: (# exit 8 #);
+          SW: (# exit 9 #);
+          CENTER: (# exit 1 #);
+          
+          target: ^Snapable;
+       <<SLOT SnapableDefaultSnap:doPart>>
+       #);
+     getRegions:<
+       (# theList: ^SnapableList;
+       <<SLOT SnapableGetRegions:doPart>>
+       exit theList[]
+       #);
+     formatRegions:
+       (#
+       <<SLOT SnapableFormatRegions:doPart>>
+       #);
+     clone::< (# type::< Snapable; <<SLOT SnapableClone:doPart>> #);
+  #);

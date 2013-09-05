@@ -1,0 +1,105 @@
+ORIGIN '~beta/basiclib/betaenv';
+INCLUDE '~beta/sysutils/objinterface'
+        '~beta/containers/seqContainers';
+-- program: Descriptor --
+(#
+   Test:
+     (#
+        suite: ^AbstractSuite;
+        name: ^Text;
+        fullName:
+          (# n: ^Text; 
+          enter n[]
+          do
+             name[]->n.putText;
+             (if suite[] <> none then
+                 ' / '->n.putText; n[]->suite.fullName->n[]
+             if);
+             
+          exit n[]
+          #);
+        init:<
+          (# 
+          enter name[]
+          do
+             (if name[] = none then THIS(Test)[]->getPatternName->name[] if);
+             setUp;
+             INNER
+          #);
+        setUp:< Object;
+        commonAssert: BooleanObject
+          (#
+             assertDesc: @Text;
+             reportError:<
+               (# msg: @Text
+               do
+                  'Assertion '->msg.putText;
+                  assertDesc[]->msg.putText;
+                  ' failed in '->msg.putText;
+                  ''->fullName->msg.putLine;
+                  INNER ;
+                  msg[]->putLine
+               #)
+          do INNER ; (if not value then reportError; true->errors if)
+          #);
+        assert:< commonAssert;
+        assertStringEqual:
+          (# res,expected: ^Text; 
+          enter (res[],expected[])
+          do
+             res[]->expected.equal
+               ->commonAssert
+                 (#
+                    reportError:: 
+                      (# 
+                      do
+                         '     Expected: '->msg.putText;
+                         expected[]->msg.putText;
+                         ' got: '->msg.putText;
+                         res[]->msg.putText
+                      #)
+                 #);
+             
+          #)
+     do INNER
+     #);
+   AbstractSuite: Test
+     (#
+        tests: @Queue (# element:: Test #);
+        TestCase: Test
+          (#
+             assCount: @integer;
+             assert:: 
+               (#  do assCount+1->assCount->assertDesc.putInt; INNER #);
+             init::< 
+               (# 
+               do
+                  THIS(TestCase)[]->addTest;
+                  THIS(AbstractSuite)[]->suite[];
+                  INNER
+               #)
+          do 0->assCount; INNER
+          #);
+        addTest: (# t: ^Test;  enter t[] do t[]->tests.insert #)
+     do tests.scan (#  do current #)
+     #);
+   GlobalTestSuite: AbstractSuite
+     (#
+        mySelf: (#  exit THIS(GlobalTestSuite)[] #);
+        TestSuite: GlobalTestSuite
+          (#
+             init::< 
+               (# 
+               do origin.origin[]->suite[]; mySelf->suite.addTest; INNER
+               #)
+          #)
+     #);
+   tests: @GlobalTestSuite <<SLOT testProgram:MainPart>>;
+   errors: @boolean;
+   
+do
+   1->arguments->tests.init;
+   false->errors;
+   tests;
+#)  
+

@@ -1,0 +1,485 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../cpnworkspace';
+
+INCLUDE 'cpninstrument';
+INCLUDE 'clipping';
+
+BODY 'private/binderinstrumentsbody';
+
+-- CPNWorkspaceLib: Attributes --
+
+(*
+ * Global methods
+ *)
+
+ShowSheet: 
+  (# theSheet: ^Sheet;
+     theName: ^Text;
+     posX, posY: @integer;
+  enter (theSheet[], theName[], posX, posY)
+  do (# destination: ^Folder;
+        theClipping: ^TabClipping;
+        theOpenTabCommand: ^OpenTabCommand;
+        theTab: ^Tab;
+        theNet: ^CPNet;
+        oldSheetOnTop: ^Sheet;
+        initializeSheet: 
+          (# 
+          do theName[] -> theSheet.toptab.label[];
+             theSheet.toptab.changed;
+             (0, 0)  -> theSheet.position;  
+             (if theSheet## <= HighlightableSheet## then
+                 (* HighlightableSheets are opened in CpnBinders.
+                  * CpnBinders must belong to a single net.
+                  * The following codes takes care of this 
+                  *)
+                 (# theHighlightableSheet: ^HighlightableSheet;
+                    theCpnBinder: ^CpnBinder;
+                    createCpnBinder:
+                      (# theHighlightableSheet: ^HighlightableSheet;
+                         x, y: @integer;
+                         theCpnBinder: ^CpnBinder;
+                      enter (theHighlightableSheet[], x, y)
+                      do (theHighlightableSheet[], x, y) -> folderManager.createFolder -> theCpnBinder[];
+                      exit theCpnBinder[]
+                      #);
+                 do theSheet[] -> theHighlightableSheet[];
+                    (theHighlightableSheet[], posX, posY) -> folderManager.getFolder -> theCpnBinder[];
+                    (if theCpnBinder[] = NONE then
+                        (theHighlightableSheet[], posX, posY) -> createCpnBinder -> theCpnBinder[];
+                     else
+                        (if theCpnBinder.theNet[] = theHighlightableSheet.getCPNet then
+                            theHighlightableSheet[] -> theCpnBinder.add;
+                         else
+                            (theHighlightableSheet[], posX, posY) -> createCpnBinder -> theCpnBinder[];
+                        if);
+                    if);
+                    theCpnBinder[] -> destination[];
+                    theHighlightableSheet.getCPNet -> theNet[];
+                 #);
+              else 
+                 (theSheet[], posX, posY) -> folderManager.drop -> destination[];
+             if);
+          #);
+     do initializeSheet;
+        
+        &TabClipping[] -> theClipping[];
+        (theSheet[], theSheet.father.father[]) -> theClipping.init;
+        
+        (if theNet[] <> NONE then
+            &OpenTabCommand[] -> theOpenTabCommand[];
+            theClipping[] -> theOpenTabCommand.init;
+            destination[] -> theOpenTabCommand.prepare;
+            (theNet[], theOpenTabCommand[]) -> registerCommand;
+        if);
+     #);
+  #);
+
+DeleteBinder: 
+  (# theBinder: ^Folder;
+  enter theBinder[]
+  do (# theClipping: ^BinderClipping;
+        theCommand: ^DeleteBinderCommand;
+        theNet: ^CPNet;
+     do &CreateDeleteBinderClipping[] -> theClipping[];
+        theBinder[] -> theClipping.init;
+        (if theBinder## <= CPNBinder## then
+            (# theCPNBinder: ^CPNBinder;
+            do theBinder[] -> theCPNBinder[];
+               theCPNBinder.theNet[] -> theNet[];
+            #);
+        if);
+        &DeleteBinderCommand[] -> theCommand[];
+        theBinder.father[] -> theCommand.prepare;  
+        theClipping[] -> theCommand.apply;
+        (if theNet[] <> NONE then
+            (theNet[], theCommand[]) -> registerCommand;
+        if);
+        
+     #);
+  #);
+
+OpenBinder: 
+  (# theBinder: ^Folder;
+  enter theBinder[]
+  do (# theClipping: ^BinderClipping;
+        theCommand: ^OpenBinderCommand;
+     do &OpenCloseBinderClipping[] -> theClipping[];
+        theBinder[] -> theClipping.init;
+        
+        &OpenBinderCommand[] -> theCommand[];
+        FolderManager.theStandardLayer[] -> theCommand.prepare;  
+        theClipping[] -> theCommand.apply;
+        (if theBinder## <= CPNBinder## then
+            (# theCPNBinder: ^CPNBinder;
+            do theBinder[] -> theCPNBinder[];
+               (if theCPNBinder.theNet[] <> NONE then
+                   (theCPNBinder.theNet[],theCommand[]) -> registerCommand;
+               if);
+            #);
+        if);
+     #);     
+  #);
+
+CloseBinder: 
+  (# theBinder: ^Folder;
+  enter theBinder[]
+  do (# theClipping: ^BinderClipping;
+        theCommand: ^CloseBinderCommand;
+     do theBinder.sheets.scan
+        (# 
+        do (if current##<=ToolSheet## then
+               current[] -> closeOptionIndexes;
+           if);
+        #);
+        
+        &OpenCloseBinderClipping[] -> theClipping[];
+        theBinder[] -> theClipping.init;
+        
+        &CloseBinderCommand[] -> theCommand[];
+        theBinder.father[] -> theCommand.prepare;  
+        theClipping[] -> theCommand.apply;
+        (if theBinder## <= CPNBinder## then
+            (# theCPNBinder: ^CPNBinder;
+            do theBinder[] -> theCPNBinder[];
+               (if theCPNBinder.theNet[] <> NONE then
+                   (theCPNBinder.theNet[],theCommand[]) -> registerCommand;
+               if);
+            #);
+        if);
+     #);          
+  #);
+
+
+CloseTab:
+  (# theTab: ^Tab;
+  enter theTab[]
+  do (# theClipping: ^TabClipping;
+        theCommand: ^CloseTabCommand;
+        theFolder: ^Folder;
+        theNet: ^CPNet;
+        theSheet: ^Sheet;
+     do &TabClipping[] -> theClipping[];
+        theTab.theSheet[] -> theSheet[];
+        (theSheet[], theSheet.father.father[]) -> theClipping.init;
+        
+        &CloseTabCommand[] -> theCommand[];
+        theCommand.init;
+        (if theSheet## <= HighlightableSheet## then
+            (# theHighlightableSheet: ^HighlightableSheet;
+            do theSheet[] -> theHighlightableSheet[];
+               theHighlightableSheet.getCPNet -> theNet[];
+            #);
+         else
+            (if theSheet## <= ToolSheet## then
+                theSheet[] -> closeOptionIndexes;
+            if);
+        if);
+        theTab.theSheet.father[] -> theCommand.prepare;
+        theClipping[] -> theCommand.apply;
+        (if theNet[] <> NONE then
+            (theNet[],theCommand[]) -> registerCommand;
+        if);
+     #);
+  #);
+
+MoveTab:
+  (# theSheet: ^Sheet;
+     source, destination: ^Folder;
+     theMoveTabCommand: ^MoveTabCommand;
+  enter (theSheet[], source[], destination[])
+  do (* Create a MoveTabCommand and add it to the appropriate history *)
+     (if theSheet## <= HighlightableSheet## then
+         (# theHighlightableSheet: ^HighlightableSheet;
+         do &MoveTabCommand[] -> theMoveTabCommand[];
+            (theSheet[], source[], destination[], destination.father[]) -> theMoveTabCommand.init;
+            theSheet[] -> theHighlightableSheet[];
+            (theHighlightableSheet.getCPNet, theMoveTabCommand[]) -> registerCommand;
+         #);
+     if);
+  #);
+
+(*
+ * Commands
+ *)
+
+MoveTabCommand: Command
+  (# theSheet: ^Sheet;
+     source, destination: ^Folder;
+     theFolderLayer: ^FolderLayer;
+     
+     init::
+       (# 
+       enter (theSheet[], source[], destination[], theFolderLayer[])
+       #);
+     apply::
+       (# 
+       do redo
+       #);
+     getName::
+       (#
+       do 'Move Page' -> name[];
+       #);
+     swap:
+       (# source, destination: ^Folder;
+       enter (source[], destination[])
+       do theSheet[] -> source.remove;
+          theSheet[] -> destination.add;
+          (if source.sheets.size = 0 then
+              source[] -> source.onRemoved;
+          if);
+          (if destination.sheets.size = 1 then
+              destination[] -> theFolderLayer.add;
+          if);
+       #);
+     undo::
+       (# 
+       do (destination[], source[]) -> swap;
+       #);
+     redo::
+       (# 
+       do (source[], destination[]) -> swap;
+       #);     
+  #);
+
+DeleteBinderCommand: StandardRemoveCommand
+  (# TargetType:: FolderLayer;
+     ClippingType:: CreateDeleteBinderClipping;
+     getName::
+       (#
+       do 'Delete Binder' -> name[]
+       #);
+  #);
+
+OpenBinderCommand: StandardInsertCommand
+  (# TargetType:: FolderLayer;
+     ClippingType:: OpenCloseBinderClipping;
+     getName::
+       (#
+       do 'Open Binder' -> name[];
+       #);
+  #);
+
+CloseBinderCommand: StandardRemoveCommand
+  (# TargetType:: FolderLayer;
+     ClippingType:: OpenCloseBinderClipping;
+     getName::
+       (#
+       do 'Close Binder' -> name[];
+       #);
+  #);
+
+OpenTabCommand: StandardInsertCommand
+  (# TargetType:: Folder;
+     ClippingType:: TabClipping;
+     init::
+       (# 
+       enter clip[]
+       #);
+     getName::
+       (#
+       do 'Open Page' -> name[];
+       #);
+  #);
+
+CloseTabCommand: StandardRemoveCommand
+  (# TargetType:: Folder;
+     ClippingType:: TabClipping;
+     getName::
+       (#
+       do 'Close Page' -> name[];
+       #);
+  #);
+
+RaiseTabCommand: Command
+  (# TargetType:: CPNBinder;
+     prevRaised: ^Sheet;
+     getName:: (# do 'Select sheet' -> name[]; #);
+     init:
+       (# 
+       enter (target[], prevRaised[])
+       #);
+     undo::
+       (# tmp: ^Sheet;
+       do target.topSheet -> tmp[];
+          prevRaised[] -> target.raise;
+          tmp[] -> prevRaised[];
+       #);
+     
+     redo::
+       (#
+       do undo;
+       #);
+     
+  #);
+
+buildCloseTabCommand:
+  (# theSheet: ^Sheet;
+     theBinder: ^Folder;
+     theCommand: ^StandardRemoveCommand;
+     theClipping: ^TabClipping;              
+  enter (theSheet[], theBinder[])
+  do &TabClipping[] -> theClipping[];
+     (theSheet[], theBinder.father[]) -> theClipping.init;
+     &CloseTabCommand[] -> theCommand[];
+     theCommand.init;
+     theBinder[] -> theCommand.prepare;
+     theClipping[] -> theCommand.clip[];
+  exit theCommand[]
+  #);          
+
+(*
+ * Instruments
+ *)
+
+
+CloseBinderInstrument: CPNGenericInstrument
+  (# CloseBinderOnWorkspaceInstrument: @Instrument
+       (# TargetType:: Folder;
+          apply::
+            (# 
+            do target[] -> CloseBinder;
+               finish;
+            #);
+       #);
+     init::
+       (# 
+       do CloseBinderOnWorkspaceInstrument[] -> register;
+       #);
+  #);
+
+CloseTabInstrument: CPNGenericInstrument
+  (# CloseTabOnWorkspaceInstrument: @Instrument
+       (# TargetType:: Tab;
+          apply::
+            (# 
+            do target[] -> CloseTab;
+               finish;
+            #);
+       #);
+     CloseTabInIndex: @Instrument
+       (# TargetType:: theIndex.TabNode;
+          apply::
+            (# 
+            do target.theTab[] -> CloseTab;
+               finish;
+            #);
+       #);
+     init::
+       (# 
+       do CloseTabOnWorkspaceInstrument[] -> register;
+          CloseTabInIndex[] -> register;
+       #);
+  #);
+
+(*
+ * Clippings
+ *)
+
+BinderClipping: Clipping
+  (# Element:: CPNBinder;
+     ContextType:: FolderLayer;
+     DeleteNotClose:< BooleanObject; 
+     highlightableSheets: @HighlightableSheetList;
+     attached: @boolean;     
+     init:: (# <<SLOT BinderClippingInit:DoPart>> #);
+     insert:: (# <<SLOT BinderClippingInsert:DoPart>> #);
+     remove:: (# <<SLOT BinderClippingRemove:DoPart>> #);
+  #);
+
+OpenCloseBinderClipping: BinderClipping
+  (# DeleteNotClose:: FalseObject #);
+
+CreateDeleteBinderClipping: BinderClipping
+  (# DeleteNotClose:: TrueObject #);
+
+TabClipping: Clipping
+  (# Element:: Sheet;
+     ContextType:: CPNBinder;
+     attached, isHighlightable: @boolean;
+     theFolderLayer: ^FolderLayer;     
+     init::
+       (# 
+       enter theFolderLayer[]
+       <<SLOT TabClippingInit:DoPart>>
+       #);     
+     insert:: (# <<SLOT TabClippingInsert:DoPart>> #);
+     remove:: (# <<SLOT TabClippingRemove:DoPart>> #);
+  #);
+
+
+-- MoveBinderCommand: descriptor --
+Command
+  (# oldX, oldY, oldWidth, oldHeight: @integer;
+     TargetType:: Folder;
+     
+     setStart:
+       (# theFolder: ^Folder;
+       enter theFolder[]
+       do theFolder[] -> target[];
+          theFolder.x -> oldX;
+          theFolder.y -> oldY;
+          theFolder.width -> oldWidth;
+          theFolder.height -> oldHeight;
+       #);
+     
+     getName::
+       (#
+       do 'Move/resize binder' -> name[];
+       #);
+     
+     undo::
+       (# tmp1, tmp2: @integer;
+       do 
+          target.position -> (tmp1,tmp2);
+          (oldX,oldY) -> target.position;
+          (tmp1,tmp2) -> (oldX,oldY);
+          (target.width,target.height) -> (tmp1,tmp2);
+          (oldWidth,oldHeight) -> target.size;
+          (tmp1,tmp2) -> (oldWidth,oldHeight);
+       #);
+     
+     redo::
+       (#
+       do undo;
+       #);
+  #)
+
+-- onStartMoveFolder: doPart --
+do &MoveBinderCommand[] -> currentMoveBinderCommand[];
+   theFolder[] -> currentMoveBinderCommand.setStart;
+   
+-- onEndMoveFolder: doPart --
+do theFolder[] -> 
+   QUA
+   (# as:: CPNBinder;
+   do (if thisObj.theNet[] <> NONE then
+          (thisObj.theNet[],currentMoveBinderCommand[]) -> registerCommand;
+      if);
+      none -> currentMoveBinderCommand[];
+   #);    
+

@@ -1,0 +1,782 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../cpnworkspace';
+
+INCLUDE '../../cpnet/cpnet';
+INCLUDE '../cursors/stdcursors';
+INCLUDE '../resources/texts/texts';
+INCLUDE '../resources/figures/createfigures';
+INCLUDE '../resources/figures/standardfigures';
+INCLUDE '../instruments/cpninstrument';
+INCLUDE 'deletioninstruments';
+
+BODY 'private/userinterfaceinstrumentsbody';
+
+-- CPNWorkSpaceLib: Attributes --
+
+(* CursorIDs can be found in cpntools.rc.
+ *)
+panCursorID: (# exit 20002 #);
+
+SimpleSelectGroupInstrument: Instrument
+  (# TargetType:: GroupTab; 
+     apply:: (# <<SLOT SimpleSelectGroupInstrumentApply:DoPart>> #);       
+  #);
+
+SelectGroupCommand: Command
+  (# TargetType:: GroupTab;
+     getName:: (# do 'Select group' -> name[]; #);
+     oldselected: ^GroupTab;
+     
+     apply:: (# <<SLOT SelectGroupCommandApply:DoPart>> #);     
+     redo::
+       (# 
+       do target.father[] ->
+          QUA
+          (# as:: CPNSheet;
+          do target.getGroup -> thisObj.content.thePage.setSelectedGroup;
+             thisobj.content.thePage[] -> (target.getGroup).onSelect;
+          #);
+       #);
+     
+     undo::
+       (# 
+       do oldselected.father[] ->
+          QUA
+          (# as:: CPNSheet;
+          do oldSelected.getGroup -> thisObj.content.thePage.setSelectedGroup;
+             thisobj.content.thePage[] -> (oldselected.getGroup).onSelect;
+          #);
+       #);
+  #);
+
+MoveTextAdapter: Instrument 
+  (# TargetType:: TextSheet;
+     
+     apply:: 
+       (# 
+       do target.adapter[] -> makeTextEditor; 
+          finish;
+       #);
+  #);
+
+MoveMLCodeOptionAdapter: Instrument 
+  (# TargetType:: MLCodeOptionSheet;
+     
+     apply:: 
+       (# 
+       do target.adapter[] -> makeTextEditor; 
+          finish;
+       #);
+  #);
+
+MoveStatusBubbleInstrument: CPNInstrument (# CommandType::< MoveStatusBubbleCommand; #);
+
+MoveStatusBubbleCommand: CPNCommand
+  (# targetType::StatusBubble;
+     notUndoable:: (# do true -> value #);
+     apply::
+       (# 
+       do target.onClick;
+       #);
+  #);
+
+ClickZoomInInstrument: ClickZoomInstrument
+  (# FigureT:: ZoomInFigure;
+     
+     init::
+       (# 
+       do ('zoomfactor', 'zoomin.factor') -> options.setAddOptionWithDefault(# OptionType:: RealOption(# dname::(# do 'Factor' -> value[]; #); #); #);
+       #);
+  #);
+
+ClickZoomOutInstrument: ClickZoomInstrument
+  (# FigureT:: ZoomOutFigure;
+     
+     init::
+       (# 
+       do ('zoomfactor', 'zoomout.factor') -> options.setAddOptionWithDefault(# OptionType:: RealOption(# dname::(# do 'Factor' -> value[]; #); #); #);
+       #);
+  #);
+
+ClickZoomInstrument: CPNInstrument
+  (# CommandType:: ClickZoomCommand;
+     
+     init::<
+       (# 
+       do INNER;
+          'zoom' -> helpname[];
+       #);
+     
+     ToolTip::
+       (# factor: @RealObject;
+       do 'zoomfactor' -> options.lookupReal -> factor;
+          ''->theTip[];
+          NamesZoom -> getGlobalNames -> theTip.putFormat
+          (#
+          do
+             (if factor<1 then
+                 NamesZoomOut -> getGlobalNames -> s;
+              else
+                 NamesZoomIn -> getGlobalNames -> s;
+             if);
+          #);   
+       #);
+  #);
+
+ClickZoomCommand: CPNCommand
+  (# TargetType:: HighlightableSheet;
+     cx, cy: @Real;
+     newZoom,oldZoom: @Real;
+     oldPan: @Point2D;
+     
+     notUndoable:: (# do false -> value #);
+     
+     prepare::
+       (# factor: @RealObject;          
+       do (theHand.x, theHand.y) -> target.globalToLocal -> (cx, cy);
+          (if  target## <= TextSheet## then
+              (0,0) -> (cx,cy);
+              target.pan -> oldPan;
+          if);          
+          'zoomfactor' -> options.lookupReal -> factor;
+          target.theZoom -> oldZoom;
+          factor*oldZoom -> newZoom;
+       #);
+     
+     apply::
+       (#
+       do redo;
+          ((target.getCPNet),THIS(ClickZoomCommand)[]) -> registerCommand;
+       #);  
+     
+     undo::
+       (# 
+       do 'undoing clickzoom' -> debugInstrument;
+          (oldZoom, (cx, cy) -> MakePoint) -> target.zoomToAround;
+          (if  target## <= TextSheet## then
+              oldPan -> target.pan;
+          if);        
+       #);
+     
+     redo::
+       (# 
+       do 'redoing clickzoom' -> debugInstrument;
+          (newZoom, (cx, cy) -> MakePoint) -> target.zoomToAround;
+          (if  target## <= TextSheet## then
+              target.centerContent;
+          if); 
+       #);
+  #);
+
+ClickZoomFitInstrument: CPNGenericInstrument
+  (# theClickZoomFitSheetInstrument: @ClickZoomFitSheetInstrument;
+     theClickZoomFitBinderInstrument: @ClickZoomFitBinderInstrument;
+     
+     FigureT:: ZoomFitFigure;
+     
+     init::<
+       (# 
+       do 'zoom_to_fit' -> helpname[];
+          
+          theClickZoomFitSheetInstrument.init;
+          theClickZoomFitSheetInstrument[] -> register;
+          
+          theClickZoomFitBinderInstrument.init;
+          theClickZoomFitBinderInstrument[] -> register;
+       #);
+     
+     ToolTip::
+       (# 
+       do NamesZoomFit -> getGlobalNames -> theTip.putFormat;
+       #);
+  #);
+
+ClickZoomFitBinderInstrument: CPNInstrument
+  (# 
+     CommandType:: ClickZoomFitBinderCommand;
+  #);
+
+ClickZoomFitBinderCommand: CPNCommand
+  (# theClickZoomFitSheetCommand: ^ClickZoomFitSheetCommand;
+     TargetType:: CPNBinder;
+     commandsToExecute: @List(# element:: ClickZoomFitSheetCommand; #);
+     
+     relevant::
+       (# 
+       do (value and (target.notIsToolBinder)) -> value;
+       #);
+     
+     notUndoable:: (# do false -> value #);
+     
+     prepare::
+       (# 
+       do
+          commandsToExecute.init;
+          prepareToZoomAllSheets: target.scanHighlightableSheets
+            (# 
+            do
+               &ClickZoomFitSheetCommand[] -> theClickZoomFitSheetCommand[];
+               (current[],theHand[]) -> theClickZoomFitSheetCommand.prepare;
+               theClickZoomFitSheetCommand[] -> commandsToExecute.append;
+            #);
+       #);
+     
+     apply::
+       (# 
+       do redo;
+          (target.theNet[],THIS(ClickZoomFitBinderCommand)[])->registerCommand;
+       #);
+     
+     undo::
+       (# 
+       do undoZoomAllSheets: commandsToExecute.scan
+            (# 
+            do current.undo;               
+            #);
+       #);
+     
+     redo::
+       (# 
+       do redoZoomAllSheets: commandsToExecute.scan
+            (# 
+            do current.redo;
+            #);
+       #);
+  #);
+
+
+ClickZoomFitSheetInstrument: CPNInstrument
+  (# 
+     CommandType:: ClickZoomFitSheetCommand;
+  #);
+
+
+(*Zooms to fit binder centering the content*)
+ClickZoomFitSheetCommand: CPNCommand
+  (# TargetType:: HighlightableSheet;
+     oldzoom, newzoom: @Real;
+     oldPan: @Point2D;
+               
+     notUndoable:: (# do false -> value #);
+     
+     prepare::
+       (# 
+       do 
+          target.theZoom -> oldZoom; 
+          target.pan -> oldPan;
+          target.calculateZoomFactor -> newZoom;
+          (if newZoom<0.33 then 0.33 -> newZoom if);
+          (if newZoom>10 then 10 -> newZoom if);
+       #);
+     
+     apply::
+       (#
+       do redo;
+          ((target.getCPNet),THIS(ClickZoomFitSheetCommand)[]) -> registerCommand;
+       #);  
+     
+     undo::
+       (# 
+       do 'undoing clickzoom' -> debugInstrument;
+          oldZoom -> target.theZoom;
+          oldPan -> target.pan;
+          target.changed;
+       #);
+     
+     redo::
+       (# 
+       do 'redoing clickzoom' -> debugInstrument;
+          newZoom -> target.theZoom;
+          target.centerContent;
+          target.changed;
+       #)
+  #);
+
+
+Observer: TextEditorObserver
+  (# com: ^TextCommand;
+     mlEvaluateObject:
+        (# theObject: ^Object;           
+        enter theObject[]
+        <<SLOT ObserverMLEvaluateObject:DoPart>>        
+        #);
+     onStart:: (# <<SLOT ObserverOnStart:doPart>> #);
+     onStop:: (# <<SLOT ObserverOnStop:DoPart>> #);       
+     onKeyDown:: (# <<SLOT ObserverOnKeyDown:DoPart>> #);
+     onAltKeyDown:: (# <<SLOT ObserverOnAltKeyDown:DoPart>> #);
+     onControlKeyDown:: (# <<SLOT ObserverOnControlKeyDown:DoPart>> #);
+  #);
+
+initTextObserver:
+  (# theTextEditor: ^TextEditor;     
+  do getTextEditor -> theTextEditor[];
+     &Observer[] -> theTextEditor.observer[];
+  #);
+
+TextCommand: Command
+  (# getname::
+       (#
+       do 'Change text of ' -> name[];
+          target[] -> getPatternName -> name.puttext;
+       #);
+     TargetType::< Entity;
+     getNet:<
+       (# theNet: ^CPNet;
+       do none -> theNet[];
+          INNER;
+       exit theNet[]
+       #);
+     before: ^Text;
+     after: ^Text;
+     prepare:<
+       (#
+       enter target[]
+       do (# theTextItem: ^TextItem;
+          do target.getTextItem -> theTextItem[];
+             theTextItem.content.copy -> before[];
+          #);
+          INNER;
+       #);
+     apply::<
+       (# theTextItem: ^TextItem;
+       do target.getTextItem -> theTextItem[];
+          theTextItem.content.copy -> after[];
+          INNER;
+          (if (getNet <> none) and (not notUndoable) then
+              (getNet,this(TextCommand)[]) -> registerCommand;
+          if);
+       #);
+     
+     applyText:<
+       (# string: ^Text;
+       enter string[]
+       do INNER;
+       #);
+     undo::<
+       (#
+       do before[] -> applyText;
+          INNER;
+       #);
+     redo::<
+       (#
+       do after[] -> applyText;
+          INNER;
+       #);
+  #);
+GeneralTextCommand: TextCommand
+  (# TargetType::< Entity;
+     applyText::<
+       (# theTextItem: ^TextItem;
+       do stopTextEditor;
+          inner;
+          target.getTextItem -> theTextItem[];
+          (if theTextItem.content[] = NONE then
+              string[] -> theTextItem.content[];
+           else
+              string -> theTextItem.content;
+          if);
+          target.onTextUpdated;
+          target.changed;
+       #);
+  #);
+
+RestrictiveTextCommand: GeneralTextCommand
+  (# illegalText: @boolean;
+     notUndoable:: (# do illegalText -> value #);
+     apply::<
+       (# textShouldNotBeAllowed: @boolean; 
+          errorMessage: ^Text;
+       do INNER;
+          (if textShouldNotBeAllowed then
+              true -> illegalText;
+              (if errorMessage[]<>none then
+                  errorMessage[] -> status.error;
+              if);
+              before.copy -> after[];
+              before -> theTextItem.content;
+          if);
+       #)
+  #);
+
+LegalMLIdentifierTextCommand: RestrictiveTextCommand
+  (# TargetType::theIndex.MonitorNode;
+     apply::<
+       (# 
+       do not after.isLegalMLName -> textShouldNotBeAllowed;
+          &Text[] -> errorMessage[];
+          ErrorMonitorMustBeMLName -> getGlobalNames -> errorMessage.putFormat
+          (# 
+          do after[] -> s;
+          #);
+       #);
+     getNet::
+       (# 
+       do target.getNet -> theNet[];
+       #);
+  #);
+
+NonEmptyTextCommand: RestrictiveTextCommand
+  (# apply::<
+       (# 
+       do (after[] = NONE) OR ('' -> after.equal) -> textShouldNotBeAllowed;
+          INNER;
+       #);
+  #);
+NonOnlyWhiteSpaceCommand: NonEmptyTextCommand
+  (# apply::<
+       (# 
+       do textShouldNotBeAllowed or (((after.copy).trim).empty)-> textShouldNotBeAllowed;
+          INNER;
+       #);     
+  #);
+
+MonitorBlockTextCommand: NonOnlyWhiteSpaceCommand
+  (# TargetType:: theIndex.MonitorBlockNode;
+     getNet::
+       (# 
+       do target.getNet -> theNet[];
+       #);
+  #);
+
+DeclarationTextAdapterTextCommand: generalTextCommand
+  (# TargetType::DeclarationTextAdapter;
+     getNet::(# do target.content.getCPNet -> theNet[]; #);
+  #);
+
+InscriptionTextCommand: TextCommand
+  (# TargetType:: Inscription;
+     inscriptionShouldBeDeletedInstead: @boolean;
+     notUndoable:: (# do inscriptionShouldBeDeletedInstead -> value #);
+     apply::
+       (# applyOldInscriptionSoUndoIsCorrect:
+            (# 
+            do before[] -> (target.getTextItem).content[];
+               target.onTextUpdated;
+               target.onFocusLost;
+            #);
+       do (if (after.trim).empty then
+              true -> inscriptionShouldBeDeletedInstead;
+              applyOldInscriptionSoUndoIsCorrect;
+              target[] -> deleteInscription;
+          if);
+       #);
+     applyText::
+       (# 
+       do stopTextEditor;          
+          string[] -> (target.getTextItem).content[];
+          target.onTextUpdated;
+          target.onFocusLost; (* simulate a normal text change *)
+          target.changed;
+          
+          (if target.isDefaultInscription then 
+              target.clearTextItem;
+          if);
+       #);
+     getNet:: (# do target.net -> theNet[]; #);
+  #);
+
+PlaceTextCommand: GeneralTextCommand
+  (# TargetType:: Place;
+     getNet:: (# do target.net -> theNet[]; #);
+  #);
+
+TransitionTextCommand: GeneralTextCommand
+  (# TargetType::Transition;
+     getNet:: (# do target.net -> theNet[]; #);
+  #);
+
+AuxTextCommand: NonOnlyWhiteSpaceCommand
+  (# TargetType::Aux;
+     getNet:: (# do target.net -> theNet[]; #);
+  #);
+
+FusionInfoTextCommand: TextCommand
+  (# TargetType:: FusionInfo;
+     fusionSetBefore, fusionSetAfter: ^FusionSet;
+     thePlace: ^Place;
+     mergedPlaces: ^PlaceList;
+     init:: (# <<SLOT FusionInfoTextCommandInit:doPart>> #);
+     apply:: (# <<SLOT FusionInfoTextCommandApply:doPart>> #);     
+     applyText:: (# <<SLOT FusionInfoTextCommandApplyText:doPart>> #);
+     getNet:: (# do thePlace.net -> theNet[]; #);
+  #);
+
+DeclarationTextCommand: TextCommand
+  (#
+     TargetType:: theIndex.DeclarationNode;
+     getNet::(# do target.content.getCPNet -> theNet[]; #);
+     prepare::
+       (# 
+       do before.clear;
+          (if (target.content[] <> none) and (target.content.mldecl[] <> none) then
+              before[] -> target.content.mldecl.print;
+          if);
+       #);
+     
+     applyText::
+       (# 
+       do stopTextEditor;
+          string.copy -> target.data[];
+          target.onTextUpdated;
+          target.changed;
+       #);
+     
+     undo::
+       (#
+       do true -> target.expanded;
+          target.changed;
+       #);
+     
+     redo::
+       (#
+       do true -> target.expanded;
+          target.changed;
+       #);
+  #);
+
+DeclBlockCommand: GeneralTextCommand
+  (# TargetType::theIndex.DeclBlockNode;
+     getNet::(# do target.content.getCPNet -> theNet[]; #);
+  #);
+
+InstanceNodeTextCommand: NonOnlyWhiteSpaceCommand
+  (#
+     TargetType:: theIndex.InstanceNode;
+     apply::
+       (# 
+       do theTextItem.content.trim -> after[];
+          after -> theTextItem.content;
+          PageNamesCannotContaionJustWhitespace -> getGlobalNames -> errorMessage[];
+       #);
+     getNet:: (# do (target.instance).thePage.net[] -> theNet[]; #);
+  #);
+
+SheetTabTextCommand: NonOnlyWhiteSpaceCommand
+  (# TargetType:: CpnTab;
+     apply::
+       (# 
+       do theTextItem.content.trim -> after[];
+          after -> theTextItem.content;
+          PageNamesCannotContaionJustWhitespace -> getGlobalNames -> errorMessage[];   
+       #);
+     getNet:: (# do target.theSheet.getCPNet -> theNet[]; #);
+  #);
+
+GroupTextCommand: GeneralTextCommand
+  (#
+     TargetType::Group;
+     getNet::(# do (target.getCPNPage).net[] -> theNet[]; #);
+  #);
+
+GroupTabTextCommand: GeneralTextCommand
+  (# TargetType:: GroupTab;
+     getNet::(# do (target.getCPNPage).net[] -> theNet[]; #);
+  #);
+
+TwoHandZoomInstrument: Instrument
+  (# TargetType:: CPNSheet;
+     theCursor: ^Surface.Cursor; 
+     otherHand: ^Hand; 
+     otherInstrument: ^TwoHandZoomInstrument;
+     orgDist,orgX,orgY: @Real;
+     NumberOfHands: @Integer;
+     targetZoom, targetPanX, targetPanY: @Real;
+     newZoom, newPanx,newPany: @Real;
+     oldZoom, oldPanx,oldPany: @Real;
+     around: ^Point2d;
+     moving: @boolean;
+     
+     UpdateData:
+       (# dx, dy: @Real;
+          cx, cy: @Real;
+       do 'UpdateData' -> debugpansheet;
+          theHand.x -> orgX;
+          theHand.y -> orgY;
+          (if otherHand[] <> NONE then
+              theHand.x - otherHand.x -> dx;
+              theHand.y - otherHand.y -> dy;
+              dx*dx + dy*dy -> sqrt -> orgDist;
+              (* Calculate center for zoom: *)
+              (theHand.x + otherHand.x)/NumberOfHands -> cx;
+              (theHand.y + otherHand.y)/NumberOfHands -> cy;
+              (cx, cy) -> target.globalToLocal -> MakePoint -> around[];
+           else
+              0 -> orgDist;
+              (orgX,orgY) -> target.globalToLocal -> MakePoint -> around[];
+          if);
+          (* Copy pan and zoom from target *)
+          target.panx -> targetPanX;
+          target.pany -> targetPanY;
+          target.theZoom -> targetZoom;
+       #);
+     
+     apply::<
+       (# theInstrument: ^Instrument;
+       do 'apply' -> debugpansheet;
+          target.theZoom -> oldZoom;
+          target.pan -> (oldPanx,oldPany);
+          theCursor[] -> theHand.setTemporaryCursor;
+          (if other[] <> NONE then
+              other[] -> otherHand[];
+              otherHand.active.getCurrentInstrument -> theInstrument[];
+              (if theInstrument## <= TwoHandZoomInstrument## then
+                  theInstrument[] -> otherInstrument[];
+                  (if otherInstrument[] // THIS(TwoHandZoomInstrument)[] then 'Ups...' -> debugpansheet; if);
+                  theHand[] -> otherInstrument.otherHand[];
+                  THIS(TwoHandZoomInstrument)[] -> otherInstrument.otherInstrument[];
+                  2 -> NumberOfHands -> otherInstrument.NumberOfHands;
+                  otherInstrument.UpdateData;
+               else
+                  NONE -> otherHand[];
+              if);
+          if);
+          UpdateData;
+          false -> moving;
+          INNER;
+       #);
+     
+     Finish::<
+       (#
+       do 'Finish'->debugpansheet;
+          (if otherHand[] <> NONE then
+              NONE -> otherInstrument.otherInstrument[];
+              NONE -> otherInstrument.otherHand[];
+              1 -> NumberOfHands -> otherInstrument.NumberOfHands;
+              otherInstrument.UpdateData;
+          if);
+          NONE -> otherHand[];
+          NONE -> theHand.setTemporaryCursor;
+          INNER;
+       #);
+     
+     onMouseMove::<
+       (# dx, dy: @real;
+          dDist: @real;
+          factor: @real;
+          sumX,sumY: @real;
+       do (if (target[] <> none) and (theHand.distance > 2) then
+              true -> moving;
+              (* Calculate a zoom factor: *)
+              (if otherHand[] <> NONE then
+                  theHand.x - otherHand.x -> dx;
+                  theHand.y - otherHand.y -> dy;
+                  dx*dx + dy*dy -> sqrt -> dDist;
+                  dDist/orgDist -> factor;
+               else
+                  1 -> factor;
+              if);
+              targetZoom -> target.theZoom;
+              (* apply new zoom and pan *)
+              (if otherHand[] <> NONE then
+                  sumX + otherHand.x - otherInstrument.orgX -> sumX;
+                  sumY + otherHand.y - otherInstrument.orgY -> sumY;
+              if);
+              ((theHand.x-orgX+sumX)/NumberOfHands+targetPanX,
+              (theHand.y-orgY+sumY)/NumberOfHands+targetPanY) -> target.pan;
+              (factor, around[]) -> target.zoomByAround;
+          if);              
+       #);
+  
+     onMouseUp::<
+       (# dontDublicateHistoryEntry:
+            (# 
+            do (if otherInstrument[]<>NONE then
+                   false -> otherInstrument.moving;
+                   (if otherInstrument.theHand[]<>NONE then
+                       (otherInstrument.theHand.x,otherInstrument.theHand.y) 
+                         -> otherInstrument.theHand.anchor;
+                   if);
+                   newZoom -> otherInstrument.oldZoom;
+                   (newPanx,newPany)->(otherInstrument.oldPanx,otherInstrument.oldPany)
+               if);
+            #);
+       do 'onMouseUp' -> debugpansheet;
+          INNER;
+          (if moving or ((otherInstrument[]<>NONE) and otherInstrument.moving) then
+              target.theZoom -> newZoom;
+              target.pan -> (newPanx,newPany);
+              dontDublicateHistoryEntry;
+              (target[],oldPanx,oldPany,newPanx,newPany,oldZoom,newZoom) 
+                -> registerPanOrTwoHandZoom;
+          if);
+          finish;
+       #);
+     
+     init::<
+       (#
+       do 'init' -> debugpansheet;
+          1->NumberOfHands;
+          widget.cursors.pan[] -> theCursor[];
+          INNER;
+       #);
+  #);
+registerPanOrTwoHandZoom:
+  (# target: ^CPNSheet;
+     oldPanx,oldPany,newPanx,newPany: @Real;
+     oldZoom,newZoom: @Real;
+     com: ^MakePanAndTwoHandZoomUndoableCommand;
+  enter (target[],oldPanx,oldPany,newPanx,newPany,oldZoom,newZoom)
+  do &MakePanAndTwoHandZoomUndoableCommand[] -> com[];
+     (target[],oldPanx,oldPany,newPanx,newPany,oldZoom,newZoom)->com.prepare;
+     ((target.getCPNet),com[]) -> registerCommand;
+  #);
+
+
+MakePanAndTwoHandZoomUndoableCommand: Command
+  (# TargetType:: CPNSheet;
+     oldPanx,oldPany,newPanx,newPany: @Real;
+     oldZoom,newZoom: @Real;
+     prepare::
+       (# 
+       enter (oldPanx,oldPany,newPanx,newPany,oldZoom,newZoom)
+       #);
+     undo::
+       (# 
+       do oldzoom -> target.zoom;
+          (oldPanx,oldPany) -> target.pan;
+          target.changed;          
+       #);
+     redo::
+       (# 
+       do newzoom -> target.zoom;
+          (newPanx,newPany) -> target.pan;
+          target.changed;
+       #);
+     getName::
+       (# 
+       do (if oldzoom=newzoom then
+              'Pan sheet' -> name[];
+           else
+              'Twohand zoom' -> name[];
+          if);
+       #);
+  #);
+
+  
+ 
+
+

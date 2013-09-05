@@ -1,0 +1,848 @@
+(************************************************************************)
+(* CPN Tools                                                            *)
+(* Copyright 2010-2011 AIS Group, Eindhoven University of Technology    *)
+(*                                                                      *)
+(* CPN Tools is originally developed by the CPN Group at Aarhus         *)
+(* University from 2000 to 2010. The main architects behind the tool    *)
+(* are Kurt Jensen, Soren Christensen, Lars M. Kristensen, and Michael  *)
+(* Westergaard.  From the autumn of 2010, CPN Tools is transferred to   *)
+(* the AIS group, Eindhoven University of Technology, The Netherlands.  *)
+(*                                                                      *)
+(* This file is part of CPN Tools.                                      *)
+(*                                                                      *)
+(* CPN Tools is free software: you can redistribute it and/or modify    *)
+(* it under the terms of the GNU General Public License as published by *)
+(* the Free Software Foundation, either version 2 of the License, or    *)
+(* (at your option) any later version.                                  *)
+(*                                                                      *)
+(* CPN Tools is distributed in the hope that it will be useful,         *)
+(* but WITHOUT ANY WARRANTY; without even the implied warranty of       *)
+(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *)
+(* GNU General Public License for more details.                         *)
+(*                                                                      *)
+(* You should have received a copy of the GNU General Public License    *)
+(* along with CPN Tools.  If not, see <http://www.gnu.org/licenses/>.   *)
+(************************************************************************)
+ORIGIN '../../cpnet/cpnet';
+INCLUDE 'cpnoption';
+INCLUDE '../wselements/cpnbinder';
+
+-- workspacelib: attributes --
+
+HistoryCommandManager: 
+  (# execute:
+       (# theCommand: ^CPNCommand;
+          theNet: ^CPNet;
+       enter (theNet[],theCommand[])
+       do theCommand.apply;
+          (if not theCommand.HiddenCommand then
+              theCommand.options.clone -> theCommand.setOptions;
+              (if theNet[] <> NONE then
+                 (theNet[],theCommand[]) -> registerCommand;
+               else
+              if);
+         if);
+       #);
+  #);
+
+StackCommandManager:
+  (# undoStack: @stack (# element:: CPNCommand; #);
+     redoStack: @stack (# element:: CPNCommand; #);
+
+     init:
+       (#
+       do undoStack.init;
+          redoStack.init;
+       #);
+
+     execute:
+       (# theCommand: ^CPNCommand;
+       enter theCommand[]
+       do theCommand.apply;
+          (if not theCommand.HiddenCommand then
+              theCommand[] -> undoStack.push;
+              theCommand.options.clone -> theCommand.setOptions;
+	  if);
+       #);
+
+     undo:
+       (#
+       do loop
+          (# while:: (# do NOT undoStack.empty -> value; #);
+	  do (undoStack.top) -> redoStack.push;
+	     (undoStack.pop).undo;
+	  #);
+       #);
+
+     redo:
+       (#
+       do loop
+          (# while:: (# do NOT redoStack.empty -> value; #);
+	  do (redoStack.top) -> undoStack.push;
+	     (redoStack.pop).redo;
+	  #);
+       #);
+  #);
+
+
+
+InstrumentObserver: Notifier
+  (# storage: @ElementDeque
+       (# Element:: InstrumentObserver;
+       #);
+       
+     onMouseMove:<
+       (# 
+       do INNER;
+          storage.scan
+          (#
+          do current.onMouseMove;
+          #);
+       #);
+     onMouseFloat:<
+       (# 
+       do INNER;
+          storage.scan
+          (#
+          do current.onMouseFloat;
+          #);
+       #);
+     init:<
+       (# 
+       do INNER;
+       #);
+  #);
+
+CPNcommand: Command
+  (# state: @integer;
+     
+     (* Apply/Undo
+      * exactly one target
+      * Doesn't know history
+      *)
+     HiddenCommand:< BooleanObject;
+
+     (* You should implement
+      *   - float [optional] for effects before application. This should satisfy
+      *     float1; float2 = float2, and must not change the enviromnent
+      *   - prepare for gathering information for which the theHand is needed, before application.
+      *     This must only affect the command itself (and the associated options)
+      *   - preview [optional, movable] to preview the action after clicking down, but before
+      *     releasing the mouse button. This should satisfy
+      *     preview1; preview2 = preview2
+      *   - cancel [movable] to undo everything done by preview, i.e. preview; cancel does not
+      *     affect anything but the command and it's options
+      *   - apply to actually execute the command
+      *   - drop [optional] if you must do anything special when dropping the instrument. This
+      *     must satisfy that
+      *     (prepare; preview^n; drop)_1; (prepare; preview^m; drop)_2 = (prepare; preview^m; drop)_2
+      *     i.e. it does not affect anything
+      *
+      * Furthermore if not notUndoable, you must implement
+      *   - undo to undo the application
+      *   - redo to undo the undo
+      * satisfying undo; redo = redo; undo = I
+      *)
+
+     options: ^OptionList;
+     posX, posY: @real;
+
+     thePath: ^Text;
+     path:
+       (# 
+       enter thePath[]
+       exit (# do (if (thePath[] = NONE) or ('' -> thePath.equal) then '#' -> thePath[] if) exit thePath[] #)
+       #);
+
+     float:<
+       (# theHand: ^Hand;
+       enter theHand[]
+       do (if internal then
+              ('state = InactiveState', (state = InactiveState)) -> assert(# #);
+          if);
+
+          INNER;
+       #);
+     
+     apply::<
+       (# position: ^PositionOption;
+       do (if internal then
+              ('state = ActiveState', (state = ActiveState)) -> assert(# #);
+          if);
+
+          'position' -> options.find -> position[];
+          (if position[] <> none then
+              (position.value).XY -> (posX, posY);
+          if);
+          INNER;
+          InactiveState -> state;
+       #);
+     
+
+     drop:< object;
+
+     prepare::<
+       (# theHand: ^Hand;
+       enter theHand[]
+       do (if internal then
+              ('state = InactiveState', (state = InactiveState)) -> assert(# #);
+          if);
+
+          INNER;
+          ActiveState -> state;
+       #);
+     
+     init:<
+       (# enter options[]
+       do INNER;
+       #);
+
+     setOptions:<
+       (# enter options[]
+       do INNER;
+       #);
+     
+     (* automatic previewing has been deleted, is in cvs before 26.11.02 *)
+     preview:< 
+       (# theHand: ^Hand
+       enter theHand[]
+       do (if internal then
+              ('state = ActiveState', (state = ActiveState)) -> assert(# #);
+          if);
+          INNER
+       #);
+     
+     cancel:<
+       (#
+       do (if internal then
+              ('state = ActiveState', (state = ActiveState)) -> assert(# #);
+          if);
+          INNER;
+          InactiveState -> state;
+       #);
+     
+     relevant:< booleanValue
+       (# candidate: ^Object; target: ^TargetType;
+       enter candidate[]
+       do (if internal then
+              ('state = InactiveState', (state = InactiveState)) -> assert(# #);
+          if);
+
+          (if (candidate## <= TargetType##) then
+              candidate[] -> target[];
+              true -> value;
+              INNER;
+          if);
+       #);     
+  #);
+
+Implementation:
+  (# theCommand: ^CPNPairCommand;
+     (* We get access to target, options, posX, and posY from theCommand *)
+
+     init:
+       (#
+       enter theCommand[]
+       #);
+
+     doIt1:< object;
+     doIt2:< object;
+  #);
+
+CPNPairCommand: CPNCommand
+  (# ImplementationType:< Implementation;
+     theImplementation: ^ImplementationType;
+     inverse:< booleanValue;
+
+     notUndoable:: (# do false -> value; #);
+
+     (* You should implement
+      *   - float [optional] for effects before application. This should satisfy
+      *     float1; float2 = float2, and must not change the enviromnent
+      *   - prepare for gathering information for which the theHand is needed, before application.
+      *     This must only affect the command itself (and the associated options).  It should
+      *     gather enough information so apply can be implemented by redo
+      *   - preview [optional, movable] to preview the action after clicking down, but before
+      *     releasing the mouse button. This should satisfy
+      *     preview1; preview2 = preview2
+      *   - cancel [movable] to undo everything done by preview, i.e. preview; cancel does not
+      *     affect anything but the command and it's options
+      *   - drop [optional] if you must do anything special when dropping the instrument. This
+      *     must satisfy that
+      *     (prepare; preview^n; drop)_1; (prepare; preview^m; drop)_2 = (prepare; preview^m; drop)_2
+      *     i.e. it does not affect anything
+      *
+      * Furthermore theImplementation must be set, so
+      *   - undo to undo the application
+      *   - redo to undo the undo or to do the actual application
+      * satisfying undo; redo = redo; undo = I
+      *
+      * theImplementation should be written so that putting it into another command, interchanging
+      * doIt1 and doIt2, makes sense.
+      *)
+
+
+     apply::
+       (#
+       do (if NOT inverse then
+              theImplementation.doIt1;
+           else
+              theImplementation.doIt2;
+          if);
+       #);
+
+     undo::
+       (#
+       do (if NOT inverse then
+              theImplementation.doIt2;
+           else
+              theImplementation.doIt1;
+          if);
+       #);
+
+     redo::
+       (#
+       do (if NOT inverse then
+              theImplementation.doIt1;
+           else
+              theImplementation.doIt2;
+          if);
+       #);
+     
+     init::<
+       (#
+       do &ImplementationType[] -> theImplementation[];
+          THIS(CPNPairCommand)[] -> theImplementation.init;
+          INNER
+       #);
+  #);
+
+
+CompositeCommand: CPNcommand
+  (# ChildType:< CPNCommand;
+     children: @List(# Element:: ChildType; #);
+     theCommand: ^ChildType;
+     
+     HiddenCommand::
+       (# 
+       do (if theCommand[] <> NONE then
+              theCommand.HiddenCommand -> value;
+          if);
+       #);
+     
+     drop::<
+       (#
+       do (if state = ActiveState then
+              cancel;
+          if);
+          scan
+          (#
+          do current.drop;
+          #);
+          INNER;
+       #);
+
+     prepare::<
+       (#
+       do INNER;
+          (if internal then
+              ('theCommand[] <> NONE', (theCommand[] <> NONE)) -> assert(# #);
+          if);
+
+          (target[], theHand[]) -> theCommand.prepare;
+       #);
+
+     float::
+       (#
+       do (if theCommand[] <> NONE then
+              theHand[] -> theCommand.float;
+           else
+              scan (# do theHand[] -> current.float; #);
+          if);
+       #);
+
+     preview:: 
+       (#
+       do (if internal then
+              ('theCommand[] <> NONE', (theCommand[] <> NONE)) -> assert(# #);
+          if);
+          theHand[] -> theCommand.preview;
+       #);
+
+     setOptions::<
+       (#
+       do scan (# do options[] -> current.setOptions; #)
+       #);
+
+     scan: children.scan
+       (# Type:< CPNCommand;
+       do (if current## <= Type## then
+              INNER scan;
+          if);
+       #);
+     
+     childnumber: @Integer;
+     add:<
+       (# child: ^ChildType;
+          tmp: ^Text;
+       enter child[]
+       do &Text[] -> tmp[];
+          '%s.%i' -> tmp.putformat(# do path -> s; childnumber -> i; #);
+          tmp[] -> child.path;
+          childnumber + 1 -> childnumber;
+          
+          child[] -> children.append;
+          options[] -> child.init;
+          THIS(CompositeCommand)[] -> child.father[];
+          
+          INNER;
+       #);
+     
+     cancel::<
+       (# 
+       do (if internal then
+              ('theCommand[] <> NONE', (theCommand[] <> NONE)) -> assert(# #);
+          if);
+          (if theCommand[] <> NONE then
+              theCommand.cancel;
+          if);
+          INNER;
+       #);
+     
+     relevant::<
+       (# 
+       do NONE -> theCommand[];
+          INNER;
+          (theCommand[] <> NONE) -> value;
+       #);
+     
+     apply::<
+       (# 
+       do (if internal then
+              ('theCommand[] <> NONE', (theCommand[] <> NONE)) -> assert(# #);
+          if);
+
+          theCommand.apply;
+          INNER;
+       #);
+
+     undo::<
+       (# 
+       do (if internal then
+              ('theCommand[] <> NONE', (theCommand[] <> NONE)) -> assert(# #);
+          if);
+
+          theCommand.undo;
+          INNER;
+       #);
+     
+     redo::<
+       (# 
+       do (if internal then
+              ('theCommand[] <> NONE', (theCommand[] <> NONE)) -> assert(# #);
+          if);
+
+          theCommand.redo;
+          INNER;
+       #);     
+     
+     getName::<
+       (# 
+       do (if theCommand[] <> NONE then
+              theCommand.getName -> name[];
+              INNER;
+          if);
+       #);
+     
+     init::<
+       (# 
+       do children.init;
+          0 -> childnumber;
+          INNER;
+       #);
+     
+     lookup:
+       (# pos,i: @Integer;
+          elm: ^ChildType;
+       enter pos
+       do search: scan
+            (# 
+            do (if i = pos then
+                   current[] -> elm[];
+                   leave search;
+                else
+                   i + 1 -> i;
+               if);
+            #);
+       exit elm[]
+       #);
+     
+  #);
+
+
+SetCommand: CompositeCommand
+  (# 
+     relevant::<
+       (# 
+       do NONE -> theCommand[];
+          search: scan
+            (# 
+            do (if (target[] -> current.relevant) then
+                   current[] -> theCommand[];
+                   leave search;
+               if);
+            #);
+          INNER;
+       #);
+     
+     apply::<
+       (# 
+       do (if debugging then
+              'Applying [%s]' -> debugSetCommand
+              (#
+              do theCommand[] -> getpatternname -> s;
+              #);
+          if);
+          INNER;
+       #);
+  #);
+
+CPNCycleCommand: CPNCommand
+  (#
+     isDone:< booleanValue
+       (# theTarget: ^targetType;
+       enter theTarget[]
+       do INNER
+       #);
+  #);
+
+CycleCommand: CompositeCommand
+  (# ChildType::<CPNCycleCommand;
+     
+     chosenchild: ^IntegerObject;
+     chosenchildnumber: @Integer;
+     optionname: ^Text;
+
+     (*max one isDone should be true, 
+      * if NONE is then the first,if any, relevant is chosen
+      *)
+     relevant::<
+       (#
+          foundDone: @Boolean;
+       do true -> value;
+          INNER;
+          (if value then
+              false -> value;
+              false -> foundDone;
+              NONE -> theCommand[];
+              (if chosenchild[] = NONE then
+                  'path' -> optionname[];
+                  path -> optionname.puttext;
+                  optionname[] -> options.lookupIntegerObject -> chosenchild[];
+              if);
+              (if chosenchild[] <> NONE then
+                  (* choose the right child again *)
+                  0 -> chosenchildnumber;
+                  L: scan
+                    (# 
+                    do (if chosenchild = chosenchildnumber then
+                           (if (target[] -> current.relevant) then
+                               (if target[] -> current.isDone then
+                                   false -> value;
+                                else
+                                   true -> value;
+                                   current[] -> theCommand[];
+                               if);
+                            else
+                               false -> value;
+                           if);
+                           leave L;
+                       if);
+                       chosenchildnumber + 1 -> chosenchildnumber;
+                    #);
+               else
+                  0 -> chosenchildnumber;
+                  L: scan
+                    (#
+                    do (if target[] -> current.relevant then
+                           true -> value;
+                           (if foundDone then 
+                               current[] -> theCommand[];
+                               leave L;
+                           if);
+                           
+                           (if target[] -> current.isDone then
+                               true -> foundDone;
+                           if);
+                       if);
+                       chosenchildnumber + 1 -> chosenchildnumber;
+                    #);
+                  
+                  (*find next relevant, if not already found*)
+                  (if (theCommand[] = NONE) then
+                      false -> value;
+                      0 -> chosenchildnumber;
+                      L: scan
+                        (#
+                        do (if target[] -> current.relevant then
+                               (if not (target[] -> current.isDone) then
+                                   true -> value;
+                                   current[] -> theCommand[];
+                                   leave L;
+                               if);
+                           if);
+                           chosenchildnumber + 1 -> chosenchildnumber;
+                        #);
+                  if);
+              if);
+          if);
+       #);
+     
+     apply::
+       (# 
+       do 
+          (if theCommand[] <> NONE then
+              theCommand.apply;
+              (* if we do not have an object for the chosen child, THIS must be
+               * the first application, so we save it in options *)
+              (if chosenchild[] = NONE then
+                  &IntegerObject[] -> chosenchild[];
+                  chosenchildnumber -> chosenchild;
+                  (optionname[],chosenchild[])->options.setAddOption(# OptionType:: IntegerOption(# temporary:: trueObject; #); #);
+              if);
+          if);
+       #);
+     
+  #);
+
+LazyMultipleTargetCommand: CPNCommand
+  (# 
+     CommandType:< CPNCommand;
+     theCommand: ^CommandType;
+
+     manager: @StackCommandManager;
+
+     commands: @list (# element:: CommandType; #);
+     
+     notUndoable::<
+       (#
+       do (if theCommand[] <> NONE then
+              theCommand.notUndoable -> value;
+          if);
+          INNER;
+       #);
+     init::<
+       (# 
+       do manager.init;
+          INNER;
+       #);
+     
+     prepare::<
+       (#
+          prepareSingleCommand:
+	    (# target: ^Entity;
+	    enter target[]
+	    do (if target[] -> theCommand.relevant then
+	           (target[], theHand[]) -> theCommand.prepare;
+	           theCommand[] -> commands.append;
+	           &CommandType[] -> theCommand[];
+	           options[] -> theCommand.init;
+	       if);
+	    #);
+       do INNER;
+       #);
+     
+     drop::<
+       (#
+       do commands.scan
+          (#
+          do current.drop;
+          #);
+          INNER;
+       #);
+     
+     preview::
+       (#
+       do commands.scan
+          (#
+          do theHand[] -> current.preview;
+          #);
+       #);
+     
+     
+     cancel::
+       (#
+       do commands.scan
+          (#
+          do current.cancel;
+          #);
+       #);
+     
+     undo:: (# do manager.undo; #);
+     
+     redo:: (# do manager.redo; #);
+
+     apply::<
+       (#
+       do commands.scan
+          (#
+          do current[] -> manager.execute;
+          #);          
+          INNER;
+          commands.clear;
+       #);
+     
+  #);
+
+MultipleTargetCommand: LazyMultipleTargetCommand
+  (# 
+     init::<
+       (# 
+       do &CommandType[] -> theCommand[];
+          options[] -> theCommand.init;
+          INNER;
+       #);
+  #);
+
+_GuidelineCommand: MultipleTargetCommand
+  (# targettype:: guideline;
+     
+     prepare::
+       (#
+       do target.scanGuideElements
+          (#
+	  do current[] -> prepareSingleCommand;
+	  #);
+       #);
+  #);
+
+GroupCommand: MultipleTargetCommand
+  (# 
+     targetType::< PageElement;
+     isGroup: @boolean;
+     bottomUpOrder:< BooleanValue
+       (# 
+       do false -> value;
+          INNER;
+          (if (target.getCPNPage).getSelectedGroup <> NONE then
+              ((target.getCPNPage).getSelectedGroup).isGlobal and value -> value;
+           else
+              false -> value;
+          if);
+       #);
+     
+     getname::<
+       (# 
+       do (if theCommand[] <> NONE then
+              (if isGroup then
+                  '[' -> name[];
+                  theCommand.getName -> name.puttext;
+                  ']' -> name.puttext;
+               else
+                  theCommand.getName -> name[];
+              if);
+           else
+              'Group Command' -> name[];
+          if);
+          INNER;
+       #);
+     
+     relevant::
+       (# 
+       do target[] -> theCommand.relevant -> value;
+       #);
+     
+     prepare::
+       (# thePage: ^CPNPage;
+          pageElementSequence: @sequence(# element:: PageElementList #);
+          maxPriority: @integer;
+       do target.getCPNPage -> thePage[];
+          (if internal then
+              ('thePage[] <> NONE', thePage[] <> NONE) -> Assert (# #);
+          if);
+          
+          (if bottomUpOrder then
+              true -> isGroup;
+              pageElementSequence.clear;
+              1->maxPriority;
+              getDepthOfHierarchy: (thePage.getSelectedGroup).scanElements
+                (# currentPriority: @integer;
+                do (current.getCPNPage).calculateMaxNoOfSuperPages+1->currentPriority;
+                   (if currentPriority>maxPriority then currentPriority->maxPriority if);
+                #);
+              initDataStructure:(for i:maxPriority repeat
+                   &PageElementList[] -> pageElementSequence.append;
+              for);
+              addElementsToPriorityQue: (thePage.getSelectedGroup).scanElements
+                (# currentPriority: @integer;
+                do (current.getCPNPage).calculateMaxNoOfSuperPages+1->currentPriority;
+                   current[] -> (currentPriority->pageElementSequence.get).append;
+                #);
+              applyCommandBottomUp: pageElementSequence.scanReverse
+                (# 
+                do current.scan
+                   (# 
+                      do current[] -> prepareSingleCommand;
+                   #);
+                #);
+           else
+              target[] -> prepareSingleCommand;              
+	      (if (thePage.getSelectedGroup <> NONE) AND (target[] -> (thePage.getSelectedGroup).isMember) then
+	          true -> isGroup;
+                  (thePage.getSelectedGroup).scanElements
+                  (# tempPos: ^Text;
+                  do (if current[] <> target[] then
+                         current[] -> prepareSingleCommand;
+                     if);    
+                  #); 
+	      if);
+          if);
+       #);
+     
+     apply::
+       (# anyUndoable: @boolean;
+       do false -> anyUndoable;
+          commands.scan
+          (# 
+          do anyUndoable or (not current.notUndoable) -> anyUndoable;
+          #);          
+          (if anyUndoable then
+              ((target.getCPNPage).net[],THIS(GroupCommand)[]) -> registerCommand;
+          if);
+       #);
+  #);
+GroupBottomUpCommand: GroupCommand
+  (# 
+     bottomUpOrder:: (# do true -> value; #);
+  #);
+
+
+CPNPageCommand: CPNCommand
+  (# TargetType:: CPNSheet;
+     CommandType:< CPNCommand;
+     theCommand: ^CommandType;     
+     
+     prepare:: (# do (target[], theHand[]) -> theCommand.prepare; #);
+     
+     cancel:: (# do theCommand.cancel; #);
+     
+     drop:: (# do theCommand.drop; #);
+     
+     preview::
+       (#
+       do theHand[] -> theCommand.preview;
+       #);
+     
+     init::
+       (#
+       do &CommandType[] -> theCommand[];
+          options[] -> theCommand.init;
+       #);
+     
+     undo:: (# do theCommand.undo; #);    
+     
+     relevant:: (# do target.content.thePage[] -> theCommand.relevant -> value; #);
+     
+     apply:: (# do theCommand.apply; #);
+  #);
+
