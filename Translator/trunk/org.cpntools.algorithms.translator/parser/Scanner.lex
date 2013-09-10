@@ -1,4 +1,4 @@
-package org.cpntools.algorithms.translator;
+package org.cpntools.algorithms.translator; 
 
 import java_cup.runtime.*;
 import static org.cpntools.algorithms.translator.ParserSym.*;
