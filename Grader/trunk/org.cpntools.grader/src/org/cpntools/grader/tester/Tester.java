@@ -9,10 +9,16 @@ import org.cpntools.accesscpn.engine.highlevel.HighLevelSimulator;
 import org.cpntools.accesscpn.engine.highlevel.checker.Checker;
 import org.cpntools.accesscpn.engine.highlevel.checker.ErrorInitializingSMLInterface;
 import org.cpntools.accesscpn.model.PetriNet;
+import org.cpntools.grader.gui.BTLTester;
+import org.cpntools.grader.model.DeclarationSubset;
 import org.cpntools.grader.model.Grader;
+import org.cpntools.grader.model.InterfacePreservation;
 import org.cpntools.grader.model.Message;
+import org.cpntools.grader.model.MonitoringGrader;
+import org.cpntools.grader.model.NameCategorizer;
 import org.cpntools.grader.model.StudentID;
 import org.cpntools.grader.model.TestSuite;
+import org.cpntools.grader.model.btl.BTLGrader;
 
 /**
  * @author michael
@@ -63,11 +69,18 @@ public class Tester extends Observable {
 		notifyObservers(message);
 	}
 
-	public List<Report> test(final PetriNet model, final File modelPath) throws Exception {
+	/**
+	 * 
+	 * @param model the model to test
+	 * @param modelDirectory the directory containing all other models (to check for fraud)
+	 * @return
+	 * @throws Exception
+	 */
+	public List<Report> test(final PetriNet model, final File modelDirectory) throws Exception {
 		StudentID studentid = null;
 		final List<Report> result = new ArrayList<Report>();
 		if (ids != null) {
-			notify("Categorizing");
+			notify("Categorizing and checking for fraud");
 			for (final StudentID sid : ids) {
 				final Message message = suite.getMatcher().grade(sid, base, model, null);
 				if (message.getPoints() > suite.getMatcher().getMinPoints()) {
@@ -99,10 +112,10 @@ public class Tester extends Observable {
 
 		notify("Adding enabling control to " + model.getName().getText());
 		EnablingControlAdapterFactory.instance.adapt(model, EnablingControl.class);
-		notify("Checking " + model.getName().getText());
+		notify("Syntax checking " + model.getName().getText());
 		HighLevelSimulator simulator = null;
 		try {
-			simulator = Tester.checkModel(model, output, modelPath, studentid);
+			simulator = Tester.checkModel(model, output, modelDirectory, studentid);
 		} catch (final Exception e) {
 			notify("Error checking model " + e.getMessage());
 			e.printStackTrace();
@@ -113,8 +126,25 @@ public class Tester extends Observable {
 			if (simulator == null) {
 				r.addError("Could not syntax check model; simulation based tests will fail.");
 			}
+			int count=0;
 			for (final Grader grader : suite.getGraders()) {
+				count++;
 				try {
+					if (grader instanceof InterfacePreservation) {
+						notify(count+"/"+suite.getGraders().size()+": checking interface preservation");
+					}
+					if (grader instanceof DeclarationSubset) {
+						notify(count+"/"+suite.getGraders().size()+": checking declaration preservation");
+					}
+					if (grader instanceof NameCategorizer) {
+						notify(count+"/"+suite.getGraders().size()+": checking file name for proper student id");
+					}
+					if (grader instanceof MonitoringGrader) {
+						notify(count+"/"+suite.getGraders().size()+": creating performance report");
+					}
+					if (grader instanceof BTLGrader) {
+						notify(count+"/"+suite.getGraders().size()+": "+((BTLGrader)grader).getName());
+					}
 					final Message message = grader.grade(r.getStudentId(), base, model, simulator);
 					r.addReport(grader, message);
 				} catch (final Exception e) {

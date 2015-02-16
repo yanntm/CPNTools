@@ -114,7 +114,12 @@ public class MonitoringGrader extends AbstractGrader {
 		do {
 			repsDir = new File(simulator.getOutputDir(), "reps_" + ++number);
 		} while (repsDir.exists() && repsDir.isDirectory());
-		repsDir = new File(simulator.getOutputDir(), "reps_" + --number);
+		
+		String simulatorOutputDir = simulator.getOutputDir();
+		System.out.println("original dir: "+simulatorOutputDir);
+		// drop cygwin path handles
+		simulatorOutputDir = simulatorOutputDir.replaceFirst("^/cygdrive/([A-Za-z])/(.*)", "$1:\\\\$2").replace('/', '\\');
+		repsDir = new File(simulatorOutputDir, "reps_" + --number);
 		System.out.println("reading report from "+repsDir.getAbsolutePath());
 		return new Detail[] {
 		        new Detail("Monitoring Results " + values, extractAndCleanTable(new Scanner(new File(repsDir,

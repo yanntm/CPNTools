@@ -18,6 +18,8 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Observable;
+import java.util.Observer;
 import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.prefs.Preferences;
@@ -69,8 +71,17 @@ public class GraderCmd {
 		resultDialog.setProgress(++GraderCmd.progress);
 	}
 	
+	/**
+	 * print help message for using commandline parameters
+	 */
 	public static void printUsage() {
-		System.out.println("command line parameters: <baseFile> <modelDirectory> <idFile> <configFile> <secret> <noThreads>");
+		System.out.println("GraderCmd requires 6 command line parameters (in the given order): \n"
+						+"     <baseFile>       - the .cpn base file\n"
+						+"     <studentIdFile>  - a text file with all student IDs (one per line)\n"
+						+"     <secret>         - the secret with which all IDs in the student files were hashed\n"
+						+"     <numThreads>     - number of grader threads to use (suggested: 1)\n"
+						+"     <configFile>     - the .cfg file used for grading\n"
+						+"     <modelDirectory> - directory with all student submissions\n");
 	}
 
 	/**
@@ -84,11 +95,11 @@ public class GraderCmd {
 		}
 
 		final String baseFile = args[0];
-		final File modelDirectory = new File(args[1]); 
-		final String idFileName = args[2];
-		final File configFile = new File(args[3]); 
-		final String secret = args[4];
-		final String noThreads = args[5];
+		final String idFileName = args[1];
+		final String secret = args[2];
+		final String noThreads = args[3];
+		final File configFile = new File(args[4]); 
+		final File modelDirectory = new File(args[5]); 
 
 		if (baseFile != null) {
 
@@ -221,7 +232,14 @@ public class GraderCmd {
 						final Date d = new Date();
 						
 						File fDoneEarlier = new File(f.getAbsolutePath()+".done");
-						if (!fDoneEarlier.exists()) {
+						System.out.println(fDoneEarlier+" exists? "+fDoneEarlier.exists());
+						
+						String studentID = f.getName().substring(2, 9);
+						File reportsDir = new File(modelDirectory, "reports");
+						File fReportEarlier = new File(reportsDir, "S"+studentID+"_report.pdf");
+						System.out.println(fReportEarlier+" exists? "+fReportEarlier.exists());
+						
+						if (!fDoneEarlier.exists() || !fReportEarlier.exists()) {
 							resultDialog.update(null, "Loading " + f);
 							try {
 								final PetriNet net = DOMParser.parse(new FileInputStream(f),
@@ -244,13 +262,38 @@ public class GraderCmd {
 	//							errorList.add(errorReport);
 	//							result.add(new ResultData(f, errorList));
 							}
-							GraderCmd.incrementProgress(resultDialog);
 							final long end = new Date().getTime() - d.getTime();
 							resultDialog.update(null, "Checking took " + end / 1000.0 + " seconds.");
 							writeDoneFile(f.getAbsolutePath()+".done");
-						} else {
 							GraderCmd.incrementProgress(resultDialog);
+							
+							HashSet<File> recursed = new HashSet<File>();
+							
+							// clear the simout directory for this model, recursively
+							File simOutDir = new File(modelDirectory.getAbsolutePath(), "simout");
+							simOutDir = new File(simOutDir, studentID.toString()); 
+							System.out.println("cleaning "+simOutDir);
+							if (simOutDir.exists()) {
+								LinkedList<File> deleteTree = new LinkedList<File>();
+								deleteTree.addFirst(simOutDir);
+								while (!deleteTree.isEmpty()) {
+									File toDelete = deleteTree.getFirst();
+									if (!toDelete.isDirectory() || toDelete.listFiles().length == 0) {
+										toDelete.delete();
+										deleteTree.removeFirst();
+									} else if (!recursed.contains(toDelete)) {
+										recursed.add(toDelete);
+										for (File toDeleteChild : toDelete.listFiles()) {
+											deleteTree.addFirst(toDeleteChild);
+										}									
+									} else {
+										deleteTree.removeFirst();
+									}
+								}
+							}
+						} else {
 							resultDialog.update(null, "Skipping "+f);
+							GraderCmd.incrementProgress(resultDialog);
 						}
 						running.decrementAndGet();
 					}
@@ -346,4 +389,5 @@ public class GraderCmd {
 		        + f.getName().replaceAll("[.]cpn$", "")));
 		r.addError("User has submitted another model as well!  Likely cheating is taking place.");
 	}
+
 }
