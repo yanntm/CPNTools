@@ -2,6 +2,7 @@ package org.cpntools.grader.model;
 
 import java.util.BitSet;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
@@ -128,7 +129,8 @@ public class DeclarationSubset extends AbstractGrader {
 		final Map<String, String> baseDeclCopy = new HashMap<String, String>(baseDecl);
 		remove(baseDecl, modelDecl);
 		remove(modelDecl, baseDeclCopy);
-		final Detail addedDetail = new Detail("Added declarations", modelDecl.values());
+		final Set<String> addedDeclarations = new HashSet<String>(modelDecl.values());
+		final Detail addedDetail = new Detail("Added declarations", addedDeclarations);
 		if (!baseDecl.isEmpty()) { return new Message(getMinPoints(),
 		        "Some declarations were removed from the original model.", new Detail("Removed declarations",
 		                baseDecl.values()), addedDetail); }

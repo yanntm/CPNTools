@@ -31,6 +31,7 @@ public class ResultDialogCmd implements Observer {
 	private int count;
 
 	public ResultDialogCmd(final Observable o, final int count, final File reportDirectoy) {
+		o.addObserver(this);
 		this.reportDirectory = reportDirectoy;
 		this.reportDirectory.mkdirs();
 		this.count = count;
