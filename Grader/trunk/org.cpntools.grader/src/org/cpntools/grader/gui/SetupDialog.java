@@ -13,6 +13,7 @@ import java.util.List;
 
 import javax.swing.JButton;
 import javax.swing.JDialog;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextArea;
@@ -43,7 +44,8 @@ public class SetupDialog extends JDialog {
 
 	protected String secret = null;
 
-	public SetupDialog(final String modelFile, final String modelDirectory, final String studentIds) {
+	public SetupDialog(JFrame grader, final String modelFile, final String modelDirectory, final String studentIds) {
+		super(grader);
 		setModal(true);
 		setTitle("Setup Grading");
 		setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);

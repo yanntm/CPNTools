@@ -22,6 +22,7 @@ import java.util.Observer;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JDialog;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
@@ -31,6 +32,7 @@ import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingConstants;
+import javax.swing.WindowConstants;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 
@@ -44,7 +46,7 @@ import org.cpntools.grader.utils.TextUtils;
 /**
  * @author michael
  */
-public class ResultDialog extends JDialog implements Observer {
+public class ResultDialog extends JPanel implements Observer {
 	private static final String ERRORS = "Errors";
 	private static final String FILE = "File";
 	private static final String SCORE = "Score";
@@ -68,11 +70,12 @@ public class ResultDialog extends JDialog implements Observer {
 	private File reportDirectory;
 
 	public ResultDialog(final Observable o, final int count, final File reportDirectoy) {
+
 		this.reportDirectory = reportDirectoy;
 		this.reportDirectory.mkdirs();
 		
-		setTitle("Results");
 		setLayout(new BorderLayout());
+		
 		log = new JTextArea();
 		log.setEditable(false);
 		tableModel = new DefaultTableModel(new Object[] { ResultDialog.FILE, ResultDialog.STUDENT_ID,
@@ -283,7 +286,7 @@ public class ResultDialog extends JDialog implements Observer {
 			}
 		});
 
-		pack();
+		//pack();
 		o.addObserver(this);
 		setVisible(true);
 	}
