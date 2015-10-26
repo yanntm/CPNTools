@@ -17,6 +17,7 @@ import org.cpntools.grader.model.Message;
 import org.cpntools.grader.model.MonitoringGrader;
 import org.cpntools.grader.model.NameCategorizer;
 import org.cpntools.grader.model.StudentID;
+import org.cpntools.grader.model.TerminationGrader;
 import org.cpntools.grader.model.TestSuite;
 import org.cpntools.grader.model.btl.BTLGrader;
 
@@ -144,6 +145,9 @@ public class Tester extends Observable {
 					}
 					if (grader instanceof BTLGrader) {
 						notify(count+"/"+suite.getGraders().size()+": "+((BTLGrader)grader).getName());
+					}
+					if (grader instanceof TerminationGrader) {
+						notify(count+"/"+suite.getGraders().size()+": simulating to final marking");
 					}
 					final Message message = grader.grade(r.getStudentId(), base, model, simulator);
 					r.addReport(grader, message);
