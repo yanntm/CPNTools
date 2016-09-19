@@ -12,7 +12,9 @@ import java.util.regex.Pattern;
 import org.cpntools.accesscpn.engine.highlevel.HighLevelSimulator;
 import org.cpntools.accesscpn.engine.highlevel.instance.Binding;
 import org.cpntools.accesscpn.engine.highlevel.instance.Instance;
+import org.cpntools.accesscpn.engine.highlevel.instance.InstanceFactory;
 import org.cpntools.accesscpn.engine.highlevel.instance.State;
+import org.cpntools.accesscpn.engine.highlevel.instance.ValueAssignment;
 import org.cpntools.accesscpn.engine.highlevel.instance.adapter.ModelInstance;
 import org.cpntools.accesscpn.engine.highlevel.instance.adapter.ModelInstanceAdapterFactory;
 import org.cpntools.accesscpn.model.PetriNet;
@@ -276,8 +278,19 @@ public class BTLGrader extends AbstractGrader {
 				for (final Instance<Transition> ti : allowed) {
 					decisionTree.addChild(node, ti);
 				}
-				final Binding binding = simulator.executeAndGet(strategy.getOne(decisionTree, node, new ArrayList(
-				        allowed)));
+				
+				Instance<Transition> ti = strategy.getOne(decisionTree, node, new ArrayList(allowed));
+				Binding binding = simulator.executeAndGet(ti);
+				if (binding == null) {
+					// trying to bind a transition where the binding is defined by a random function
+					// in this case, the simulator cannot manually set the binding defined externally
+					// but has to compute one autonomously for this transition, in this case no binding
+					// will be known
+					simulator.execute(ti);
+					final List<ValueAssignment> valueAssignments = new ArrayList<ValueAssignment>();
+					binding = InstanceFactory.INSTANCE.createBinding(ti, valueAssignments);
+				}
+				
 				node = decisionTree.addChild(node, binding.getTransitionInstance());
 				bindings.add(binding);
 				toSatisfy = toSatisfy.progress(binding.getTransitionInstance(), model, simulator, names,

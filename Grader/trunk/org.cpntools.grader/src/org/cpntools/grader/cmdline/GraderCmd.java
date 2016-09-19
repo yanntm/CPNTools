@@ -28,11 +28,13 @@ import org.cpntools.accesscpn.model.PetriNet;
 import org.cpntools.accesscpn.model.importer.DOMParser;
 import org.cpntools.grader.cmdline.ResultDialogCmd;
 import org.cpntools.grader.gui.Grader;
+import org.cpntools.grader.gui.Grader.GraderProgressBar;
 import org.cpntools.grader.model.ConfigurationTestSuite;
 import org.cpntools.grader.model.ParserException;
 import org.cpntools.grader.model.StudentID;
 import org.cpntools.grader.model.TestSuite;
 import org.cpntools.grader.signer.gui.FileChooser;
+import org.cpntools.grader.tester.ProgressReporter;
 import org.cpntools.grader.tester.Report;
 import org.cpntools.grader.tester.Tester;
 
@@ -70,6 +72,20 @@ public class GraderCmd {
 	public static void incrementProgress(final ResultDialogCmd resultDialog) {
 		resultDialog.setProgress(++GraderCmd.progress);
 	}
+	
+	@SuppressWarnings("javadoc")
+	public static class GraderProgressBar implements ProgressReporter {
+
+		@Override
+		public int getRemainingProgress() {
+			return 100;
+		}
+
+		@Override
+		public void addProgress(int amount) {
+		}
+	}
+	private static GraderProgressBar graderProgressBar = new GraderProgressBar();
 	
 	/**
 	 * print help message for using commandline parameters
@@ -246,7 +262,7 @@ public class GraderCmd {
 								        f.getName().replace("[.]cpn$", ""));
 								try {
 	
-									final List<Report> test = tester.test(net, modelDirectory);
+									final List<Report> test = tester.test(net, modelDirectory, graderProgressBar);
 									result.add(new ResultData(f, test));
 								} catch (final Throwable e2) {
 									e2.printStackTrace();

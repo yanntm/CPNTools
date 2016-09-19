@@ -52,7 +52,7 @@ public class Signer extends JFrame {
 
 	protected Signer() {
 		setTitle("Sign Base Models");
-		addWindowListener(new org.cpntools.grader.gui.BasicWindowMonitor());
+		addWindowListener(new org.cpntools.grader.gui.BasicWindowMonitor(null));
 		setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
 		setLayout(new BorderLayout());
 		final JPanel buttons = new JPanel(new FlowLayout(FlowLayout.CENTER));

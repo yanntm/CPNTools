@@ -38,6 +38,7 @@ import org.cpntools.grader.model.ParserException;
 import org.cpntools.grader.model.StudentID;
 import org.cpntools.grader.model.TestSuite;
 import org.cpntools.grader.signer.gui.FileChooser;
+import org.cpntools.grader.tester.ProgressReporter;
 import org.cpntools.grader.tester.Report;
 import org.cpntools.grader.tester.Tester;
 
@@ -75,6 +76,19 @@ public class Grader extends JFrame {
 	public static void incrementProgress(final ResultDialog resultDialog) {
 		resultDialog.setProgress(++Grader.progress);
 	}
+	
+	public class GraderProgressBar implements ProgressReporter {
+
+		@Override
+		public int getRemainingProgress() {
+			return 100;
+		}
+
+		@Override
+		public void addProgress(int amount) {
+		}
+	}
+	private GraderProgressBar graderProgressBar = new GraderProgressBar();
 
 	private void showFrame() {
         setLayout(new BorderLayout());
@@ -291,7 +305,7 @@ public class Grader extends JFrame {
 							        f.getName().replace("[.]cpn$", ""));
 							try {
 
-								final List<Report> test = tester.test(net, setup.getModels());
+								final List<Report> test = tester.test(net, setup.getModels(), graderProgressBar);
 								result.add(new ResultData(f, test));
 							} catch (final Exception e2) {
 								e2.printStackTrace();

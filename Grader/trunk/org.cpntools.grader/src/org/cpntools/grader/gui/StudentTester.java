@@ -1,7 +1,9 @@
 package org.cpntools.grader.gui;
 
 import java.awt.BorderLayout;
+import java.awt.Dialog;
 import java.awt.Dimension;
+import java.awt.FileDialog;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -23,6 +25,7 @@ import javax.swing.DefaultListModel;
 import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
+import javax.swing.JFrame;
 import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -38,13 +41,14 @@ import org.cpntools.grader.model.Grader;
 import org.cpntools.grader.model.Message;
 import org.cpntools.grader.model.TestSuite;
 import org.cpntools.grader.model.btl.BTLGrader;
+import org.cpntools.grader.tester.ProgressReporter;
 import org.cpntools.grader.tester.Report;
 import org.cpntools.grader.tester.Tester;
 
 /**
  * @author michael
  */
-public class StudentTester extends JDialog implements Observer {
+public class StudentTester extends JFrame implements Observer {
 	public static class TestError {
 
 		private final BTLGrader grader;
@@ -64,7 +68,8 @@ public class StudentTester extends JDialog implements Observer {
 
 	}
 
-	private static final int PROGRESS_MAX = 10;
+	private static final int PROGRESS_MAX = 100;
+	private static final int PROGRESS_STEP = 5;
 
 	/**
 	 * 
@@ -72,7 +77,7 @@ public class StudentTester extends JDialog implements Observer {
 	private static final long serialVersionUID = 1L;
 
 	public static void main(final String... args) {
-		final InputStream baseStream = StudentTester.getResource("/base.cpn");
+		final InputStream baseStream = StudentTester.getResource("/baseModel_ID.cpn");
 		if (baseStream == null) {
 			JOptionPane
 			        .showMessageDialog(
@@ -90,16 +95,21 @@ public class StudentTester extends JDialog implements Observer {
 			                "Error", JOptionPane.ERROR_MESSAGE);
 			System.exit(1);
 		}
-		final JFileChooser load = new JFileChooser();
-		final int result = load.showOpenDialog(null);
-		if (result == JFileChooser.APPROVE_OPTION) {
-			final File model = load.getSelectedFile();
+		System.out.println("loading model to check");
+		final FileDialog fileDialog = new FileDialog((Dialog) null);
+		fileDialog.setMode(FileDialog.LOAD);
+		fileDialog.setVisible(true);
+		
+		String selectedDirectory = fileDialog.getDirectory(); 
+		String selectedFile = fileDialog.getFile();
+		if (selectedDirectory != null && selectedFile != null) {
+			final File model = new File(selectedDirectory, selectedFile);
 			if (!model.isFile()) {
 				JOptionPane.showMessageDialog(null, "Selected file could no be found or is not a file.", "Error",
 				        JOptionPane.ERROR_MESSAGE);
 				System.exit(1);
 			}
-			final StudentTester studentTester = new StudentTester(baseStream, configStream, load.getSelectedFile());
+			final StudentTester studentTester = new StudentTester(baseStream, configStream, model);
 			studentTester.setup();
 			studentTester.runTest();
 			studentTester.finish();
@@ -109,7 +119,10 @@ public class StudentTester extends JDialog implements Observer {
 	}
 
 	private static InputStream getResource(final String resource) {
+		System.out.println("loading "+resource);
 		InputStream result = StudentTester.class.getResourceAsStream(resource);
+		if (result != null) { return result; }
+		result = StudentTester.class.getResourceAsStream("resources" + resource);
 		if (result != null) { return result; }
 		result = StudentTester.class.getResourceAsStream("../../../.." + resource);
 		if (result != null) { return result; }
@@ -129,10 +142,29 @@ public class StudentTester extends JDialog implements Observer {
 	private final JTextArea log;
 	private final File model;
 	private PetriNet petriNet;
-	private int progress = 0;
 	private final JProgressBar progressBar;
 	private TestSuite suite;
+	
+	@SuppressWarnings("javadoc")
+	public class ProgressUpdater implements ProgressReporter {
+		
+		private JProgressBar bar;
+		public ProgressUpdater(JProgressBar bar) {
+			this.bar = bar;
+		}
+		
+		@Override
+		public int getRemainingProgress() {
+			return bar.getMaximum();
+		}
+		
+		@Override
+		public void addProgress(int step) {
+			bar.setValue(bar.getValue()+step);
+		}
+	}
 
+	private ProgressUpdater progress;
 	private Tester tester;
 
 	List<Report> testResult;
@@ -141,6 +173,7 @@ public class StudentTester extends JDialog implements Observer {
 		this.baseStream = baseStream;
 		this.configStream = configStream;
 		this.model = model;
+		addWindowListener(new BasicWindowMonitor(null));
 		setTitle("Grade/CPN Student Tester - " + model.getName().replaceAll("[.][cC][pP][nN]$", ""));
 		setLayout(new BorderLayout());
 
@@ -199,6 +232,7 @@ public class StudentTester extends JDialog implements Observer {
 		progressBar = new JProgressBar(0, StudentTester.PROGRESS_MAX);
 		progressBar.setStringPainted(true);
 		add(progressBar, BorderLayout.NORTH);
+		progress = new ProgressUpdater(progressBar);
 
 		errorPanel = new JPanel(new BorderLayout());
 		errors = new DefaultListModel();
@@ -211,7 +245,7 @@ public class StudentTester extends JDialog implements Observer {
 					final int index = list.locationToIndex(evt.getPoint());
 					final TestError testError = (TestError) errors.get(index);
 					try {
-						new BTLTester(petriNet, model.getParentFile(), testError.getGrader().getGuide());
+						new BTLTester(petriNet, model.getParentFile(), testError.getGrader().getGuide(), (JFrame)StudentTester.this);
 					} catch (final Exception e) {
 						e.printStackTrace();
 					}
@@ -233,7 +267,10 @@ public class StudentTester extends JDialog implements Observer {
 		log.setCaretPosition(log.getText().length());
 	}
 
-	public void setup() {
+	/**
+	 * Parse model & configuration and prepare the different tests.
+	 */
+	private void setup() {
 		log("Loading base model");
 		PetriNet baseModel;
 		try {
@@ -243,7 +280,7 @@ public class StudentTester extends JDialog implements Observer {
 			        .showMessageDialog(this, "Error loading base model!", "Error Loading", JOptionPane.ERROR_MESSAGE);
 			return;
 		}
-		progressBar.setValue(++progress);
+		progress.addProgress(PROGRESS_STEP);
 
 		log("Loading your model");
 		try {
@@ -253,7 +290,7 @@ public class StudentTester extends JDialog implements Observer {
 			        .showMessageDialog(this, "Error loading your model!", "Error Loading", JOptionPane.ERROR_MESSAGE);
 			return;
 		}
-		progressBar.setValue(++progress);
+		progress.addProgress(PROGRESS_STEP);
 
 		log("Loading configuration file");
 		try {
@@ -263,11 +300,11 @@ public class StudentTester extends JDialog implements Observer {
 			        "Error loading configuration!", JOptionPane.ERROR_MESSAGE);
 			return;
 		}
-		progressBar.setValue(++progress);
+		progress.addProgress(PROGRESS_STEP);
 
 		tester = new Tester(suite, null, baseModel, new File(model.getParentFile(), "outputs"));
 		tester.addObserver(this);
-		progressBar.setValue(++progress);
+		progress.addProgress(PROGRESS_STEP);
 	}
 
 	@Override
@@ -304,7 +341,7 @@ public class StudentTester extends JDialog implements Observer {
 		if (tester != null) {
 			progressBar.setIndeterminate(true);
 			try {
-				testResult = tester.test(petriNet, model.getParentFile());
+				testResult = tester.test(petriNet, model.getParentFile(), progress);
 			} catch (final Exception e) {
 				JOptionPane.showMessageDialog(null, "Grading failed with message: " + e, "Error",
 				        JOptionPane.ERROR_MESSAGE);
@@ -318,7 +355,6 @@ public class StudentTester extends JDialog implements Observer {
 			}
 
 			progressBar.setIndeterminate(false);
-			progressBar.setValue(progress += 5);
 		}
 	}
 

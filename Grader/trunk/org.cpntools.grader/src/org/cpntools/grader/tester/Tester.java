@@ -74,10 +74,15 @@ public class Tester extends Observable {
 	 * 
 	 * @param model the model to test
 	 * @param modelDirectory the directory containing all other models (to check for fraud)
+	 * @param progress report progress of grading
 	 * @return
 	 * @throws Exception
 	 */
-	public List<Report> test(final PetriNet model, final File modelDirectory) throws Exception {
+	public List<Report> test(final PetriNet model, final File modelDirectory, ProgressReporter progress) throws Exception {
+		
+		int totalWork = suite.getGraders().size() + 4;
+		int stepSize = progress.getRemainingProgress() / totalWork;
+		
 		StudentID studentid = null;
 		final List<Report> result = new ArrayList<Report>();
 		if (ids != null) {
@@ -92,6 +97,7 @@ public class Tester extends Observable {
 					result.add(report);
 				}
 			}
+			progress.addProgress(stepSize);
 			if (result.size() > 1) {
 				for (final Report report : result) {
 					report.addError("This model matches multiple students");
@@ -106,13 +112,17 @@ public class Tester extends Observable {
 				report.addReport(suite.getMatcher(), suite.getMatcher().grade(sid, base, model, null));
 				result.add(report);
 			}
+			progress.addProgress(stepSize);
 		} else {
 			studentid = new StudentID(model.getName().getText());
 			result.add(new Report(studentid));
+			progress.addProgress(2*stepSize);
 		}
 
 		notify("Adding enabling control to " + model.getName().getText());
 		EnablingControlAdapterFactory.instance.adapt(model, EnablingControl.class);
+		progress.addProgress(stepSize);
+		
 		notify("Syntax checking " + model.getName().getText());
 		HighLevelSimulator simulator = null;
 		try {
@@ -121,6 +131,7 @@ public class Tester extends Observable {
 			notify("Error checking model " + e.getMessage());
 			e.printStackTrace();
 		}
+		progress.addProgress(stepSize);
 
 		notify("Grading");
 		for (final Report r : result) {
@@ -155,6 +166,7 @@ public class Tester extends Observable {
 					r.addError("Grader " + grader.getClass().getCanonicalName() + " failed with exception " + e);
 					e.printStackTrace();
 				}
+				progress.addProgress(stepSize);
 			}
 		}
 		return result;

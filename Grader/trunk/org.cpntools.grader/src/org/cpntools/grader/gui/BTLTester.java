@@ -156,13 +156,13 @@ public class BTLTester extends JFrame {
 	public BTLTester(final File selectedFile) throws FileNotFoundException, NetCheckException, SAXException,
 	        IOException, ParserConfigurationException {
 		this(DOMParser.parse(new FileInputStream(selectedFile),
-		        selectedFile.getName().replaceFirst("[.][cC][pP][nN]$", "")), selectedFile.getParentFile(), false);
+		        selectedFile.getName().replaceFirst("[.][cC][pP][nN]$", "")), selectedFile.getParentFile(), false, null);
 	}
 
-	public BTLTester(final PetriNet net, final File parentFile, final boolean light) throws FileNotFoundException,
+	public BTLTester(final PetriNet net, final File parentFile, final boolean light, JFrame parent) throws FileNotFoundException,
 	        NetCheckException, SAXException, IOException, ParserConfigurationException {
 		petriNet = net;
-		addWindowListener(new BasicWindowMonitor());
+		addWindowListener(new BasicWindowMonitor(parent));
 		setTitle("BTL Tester - " + petriNet.getName().getText());
 		setLayout(new BorderLayout());
 		final JPanel buttons = new JPanel();
@@ -364,9 +364,9 @@ public class BTLTester extends JFrame {
 		}
 	}
 
-	public BTLTester(final PetriNet net, final File parentFile, final Guide g) throws FileNotFoundException,
+	public BTLTester(final PetriNet net, final File parentFile, final Guide g, JFrame parent) throws FileNotFoundException,
 	        NetCheckException, SAXException, IOException, ParserConfigurationException {
-		this(net, parentFile, true);
+		this(net, parentFile, true, parent);
 		setFormula(g);
 		initial();
 	}
