@@ -19,8 +19,35 @@ public class Report implements Comparable<Report> {
 	protected final List<String> errors = new ArrayList<String>();
 	private final List<String> errors_u = Collections.unmodifiableList(errors);
 	private double total = 0.0;
-	protected final Map<Grader, Message> reports = new TreeMap<Grader, Message>();
+	protected final List<Entry<Grader, Message>> reports = new ArrayList<Entry<Grader, Message>>();
 	protected StudentID sid;
+	
+	public static class ReportEntry implements Entry<Grader, Message> {
+		
+		private Grader grader;
+		private Message message;
+		
+		public ReportEntry(Grader grader, Message message) {
+			this.grader = grader;
+			this.message = message;
+		}
+
+		@Override
+		public Grader getKey() {
+			return grader;
+		}
+
+		@Override
+		public Message getValue() {
+			return message;
+		}
+
+		@Override
+		public Message setValue(Message value) {
+			this.message = message;
+			return getValue();
+		}
+	}
 
 	/**
 	 * @param sid
@@ -46,8 +73,8 @@ public class Report implements Comparable<Report> {
 		return errors_u;
 	}
 
-	public Set<Entry<Grader, Message>> getReports() {
-		return Collections.unmodifiableSet(reports.entrySet());
+	public List<Entry<Grader, Message>> getReports() {
+		return Collections.unmodifiableList(reports);
 	}
 
 	public double getResult() {
@@ -68,7 +95,7 @@ public class Report implements Comparable<Report> {
 	}
 
 	void addReport(final Grader grader, final Message result) {
-		reports.put(grader, result);
+		reports.add(new ReportEntry(grader, result));
 		total += result.getPoints();
 	}
 }
