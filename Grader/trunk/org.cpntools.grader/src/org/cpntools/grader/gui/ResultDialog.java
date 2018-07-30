@@ -49,7 +49,7 @@ import org.cpntools.grader.utils.TextUtils;
 public class ResultDialog extends JPanel implements Observer {
 	private static final String ERRORS = "Errors";
 	private static final String FILE = "File";
-	private static final String SCORE = "Score";
+	private static final String SCORE = "Points | Deductions";
 	/**
      * 
      */
@@ -165,12 +165,12 @@ public class ResultDialog extends JPanel implements Observer {
 			        final boolean isSelected, final boolean hasFocus, final int row, final int column) {
 				if (o instanceof Report) {
 					final Report r = (Report) o;
-					final Component component = super.getTableCellRendererComponent(table, r.getResult(), isSelected,
+					final Component component = super.getTableCellRendererComponent(table, r.getPoints()+" / "+r.getDeductions(), isSelected,
 					        hasFocus, row, column);
-					if (r.getResult() < 0) {
+					if (r.getDeductions() < 0) {
 						component.setBackground(isSelected ? ResultDialog.ERROR_DARKER : ResultDialog.COLOR_ERROR);
 						component.setForeground(Color.BLACK);
-					} else if (r.getResult() > 0) {
+					} else if (r.getPoints() > 0) {
 						component.setBackground(isSelected ? ResultDialog.OK_DARKER : ResultDialog.COLOR_OK);
 						component.setForeground(Color.BLACK);
 					} else if (!isSelected) {
@@ -293,27 +293,27 @@ public class ResultDialog extends JPanel implements Observer {
 
 	public synchronized void addError(final File f, final String error) {
 		tableModel.addRow(new Object[] { f.getName(), "<none>", 0.0, Collections.singletonList(error) });
-		writeReport( f.getName(), null, new StudentID("<none>"), Collections.singletonList(error), 0.0);
+		writeReport( f.getName(), null, new StudentID("<none>"), Collections.singletonList(error), 0.0, 0.0);
 	}
 
 	public synchronized void addError(final StudentID s) {
 		tableModel.addRow(new Object[] { "<none>", s, 0.0, Collections.singletonList("No model found for S" + s) });
-		writeReport("<none>", null, s, Collections.singletonList("No model found for " + s), 0.0);
+		writeReport("<none>", null, s, Collections.singletonList("No model found for " + s), 0.0, 0.0);
 	}
 
 	public synchronized void addReport(final File f, final Report r) {
 		tableModel.addRow(new Object[] { f.getName(), r.getStudentId(), r, r.getErrors() });
-		writeReport(f.getName(), r, r.getStudentId(), r.getErrors(), r.getResult());
+		writeReport(f.getName(), r, r.getStudentId(), r.getErrors(), r.getPoints(), r.getDeductions());
 	}
 
-	public synchronized void writeReport(final String fileName, final Report r, final StudentID studentID, final List<String> errors, final double result) {
+	public synchronized void writeReport(final String fileName, final Report r, final StudentID studentID, final List<String> errors, final double points, final double deductions) {
 		
 		PDFExport.ReportItem report;
 		try {
 			// file, id, score, errors
 			report = new PDFExport.ReportItem(r, studentID, fileName, errors, null);
 		} catch (final ClassCastException _) {
-			report = new PDFExport.ReportItem(null, studentID, fileName, errors, result);
+			report = new PDFExport.ReportItem(null, studentID, fileName, errors, points+" | "+deductions);
 		}
 		
 		List<PDFExport.ReportItem> reports = new LinkedList<PDFExport.ReportItem>();
@@ -321,6 +321,7 @@ public class ResultDialog extends JPanel implements Observer {
 		
 		try {
 			PDFExport.exportReports(reportDirectory, reports);
+			CSVExport.appendCSVLine(reportDirectory, r);
 		} catch (FileNotFoundException e) {
 			System.err.println("Could not find report directory!\n"+e);
 			e.printStackTrace();

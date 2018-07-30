@@ -1,15 +1,22 @@
 package org.cpntools.grader.cmdline;
 
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Observable;
 import java.util.Observer;
+import java.util.Map.Entry;
 
+import org.cpntools.grader.gui.CSVExport;
 import org.cpntools.grader.gui.PDFExport;
+import org.cpntools.grader.model.Grader;
+import org.cpntools.grader.model.Message;
 import org.cpntools.grader.model.StudentID;
 import org.cpntools.grader.tester.Report;
 
@@ -17,9 +24,7 @@ import org.cpntools.grader.tester.Report;
  * @author michael
  */
 public class ResultDialogCmd implements Observer {
-	private static final String ERRORS = "Errors";
-	private static final String FILE = "File";
-	private static final String SCORE = "Score";
+
 	/**
      * 
      */
@@ -38,28 +43,28 @@ public class ResultDialogCmd implements Observer {
 	}
 
 	public synchronized void addError(final File f, final String error) {
-		writeReport( f.getName(), null, new StudentID("<none>"), Collections.singletonList(error), 0.0);
+		writeReport(f, null, new StudentID("<none>"), Collections.singletonList(error), 0.0, 0.0);
 		System.out.println("Error: "+f.getName()+": "+error);
 	}
 
 	public synchronized void addError(final StudentID s) {
-		writeReport("<none>", null, s, Collections.singletonList("No model found for " + s), 0.0);
+		writeReport(null, null, s, Collections.singletonList("No model found for " + s), 0.0, 0.0);
 		System.out.println("No model found for " + s);
 	}
 
 	public synchronized void addReport(final File f, final Report r) {
-		writeReport(f.getName(), r, r.getStudentId(), r.getErrors(), r.getResult());
-		System.out.println("Graded: "+f.getName()+": "+r.getResult());
+		writeReport(f, r, r.getStudentId(), r.getErrors(), r.getPoints(), r.getDeductions());
+		System.out.println("Graded: "+f.getName()+": "+(r.getPoints()+r.getDeductions())+" = "+r.getPoints()+"+"+r.getDeductions());
 	}
 		
-	public synchronized void writeReport(final String fileName, final Report r, final StudentID studentID, final List<String> errors, final double result) {
+	public synchronized void writeReport(final File modelFile, final Report r, final StudentID studentID, final List<String> errors, final double points, final double deductions) {
 	
 		PDFExport.ReportItem report;
 		try {
 			// file, id, score, errors
-			report = new PDFExport.ReportItem(r, studentID, fileName, errors, null);
+			report = new PDFExport.ReportItem(r, studentID, modelFile, errors, null);
 		} catch (final ClassCastException _) {
-			report = new PDFExport.ReportItem(null, studentID, fileName, errors, result);
+			report = new PDFExport.ReportItem(null, studentID, modelFile, errors, points+" / "+deductions);
 		}
 		
 		List<PDFExport.ReportItem> reports = new LinkedList<PDFExport.ReportItem>();
@@ -67,6 +72,7 @@ public class ResultDialogCmd implements Observer {
 		
 		try {
 			PDFExport.exportReports(reportDirectory, reports);
+			CSVExport.appendCSVLine(reportDirectory, r);
 		} catch (FileNotFoundException e) {
 			System.err.println("Could not find report directory!\n"+e);
 			e.printStackTrace();
@@ -75,6 +81,8 @@ public class ResultDialogCmd implements Observer {
 			e.printStackTrace();
 		}
 	}
+	
+
 
 	public boolean isCancelled() {
 		return cancelled;

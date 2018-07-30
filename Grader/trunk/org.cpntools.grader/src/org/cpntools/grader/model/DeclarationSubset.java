@@ -1,9 +1,11 @@
 package org.cpntools.grader.model;
 
+import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
@@ -84,22 +86,28 @@ public class DeclarationSubset extends AbstractGrader {
 		}
 	}
 
-	public static final Grader INSTANCE = new DeclarationSubset(0, false, 0, false);
+	public static final Grader INSTANCE = new DeclarationSubset(0, false, 0, false, new ArrayList<String>());
 	private final boolean globref;
 
 	private final boolean subset;
 
 	private final double subsetPoints;
+	
+	private final List<String> exclude;
 
-	Pattern p = Pattern.compile("^declaration-preservation(, *subset(=(-?[0-9.]+))?)?(, *globref(=(true|false))?)?$",
+	// subset = points to deduce for subset of declarations changed
+	// globref = true/false whehter globref declarations may (not) be changed
+	// ignore = list of declarations that will be ignored in the check
+	Pattern p = Pattern.compile("^declaration-preservation(, *subset(=(-?[0-9.]+))?)?(, *globref(=(true|false))?)?(, *ignore=([a-z0-9. _']+(; *[a-z0-9. _']+)*))?$",
 	        Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
 
 	public DeclarationSubset(final double maxPoints, final boolean subset, final double subsetPoints,
-	        final boolean globref) {
+	        final boolean globref, final List<String> exclude) {
 		super(maxPoints);
 		this.subset = subset;
 		this.subsetPoints = subsetPoints;
 		this.globref = globref;
+		this.exclude = exclude;
 	}
 
 	@Override
@@ -116,9 +124,30 @@ public class DeclarationSubset extends AbstractGrader {
 			if (m.group(4) != null && m.group(4).length() > 0) {
 				globref = m.group(6) == null || Boolean.parseBoolean(m.group(6));
 			}
-			return new DeclarationSubset(maxPoints, subset, subsetPoints, globref);
+			List<String> exclude = null;
+			if (m.group(7) != null && m.group(7).length() > 0) {
+				exclude = tokenize(m.group(8));
+			} else {
+				exclude = new ArrayList<String>();
+			}
+			return new DeclarationSubset(maxPoints, subset, subsetPoints, globref, exclude);
 		}
 		return null;
+	}
+	
+	private List<String> tokenize(final String group) {
+		final List<String> result = new ArrayList<String>();
+		if (group != null) {
+			for (final String child : group.split(";")) {
+				if (child != null) {
+					final String token = child.trim();
+					if (!token.isEmpty()) {
+						result.add(token);
+					}
+				}
+			}
+		}
+		return result;
 	}
 
 	@Override
@@ -131,9 +160,25 @@ public class DeclarationSubset extends AbstractGrader {
 		remove(modelDecl, baseDeclCopy);
 		final Set<String> addedDeclarations = new HashSet<String>(modelDecl.values());
 		final Detail addedDetail = new Detail("Added declarations", addedDeclarations);
+		
+		// remove all declarations from the remaining ones in the base model that are allowed to be changed
+		List<String> baseExcluded = new ArrayList<String>();
+		for (String baseD : baseDecl.keySet()) {
+			for (String excl : exclude) {
+				if (baseD.indexOf(excl) >= 0) {
+					baseExcluded.add(baseD);
+					break;
+				}
+			}
+		}
+		for (String excl : baseExcluded) {
+			baseDecl.remove(excl);
+		} // baseDecl now contains the declarations removed from the model that were not allowed to be changed
+		
 		if (!baseDecl.isEmpty()) { return new Message(getMinPoints(),
 		        "Some declarations were removed from the original model.", new Detail("Removed declarations",
 		                baseDecl.values()), addedDetail); }
+		
 		if (modelDecl.isEmpty()) { return new Message(getMaxPoints(), "Declarations were preserved."); }
 		if (subset) { return new Message(getMaxPoints(),
 		        "Declarations were preserved and new ones were added (that is ok).", addedDetail); }

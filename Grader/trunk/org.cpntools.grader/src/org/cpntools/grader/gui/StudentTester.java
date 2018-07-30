@@ -69,7 +69,7 @@ public class StudentTester extends JFrame implements Observer {
 	}
 
 	private static final int PROGRESS_MAX = 100;
-	private static final int PROGRESS_STEP = 5;
+	private static final int PROGRESS_STEP = 2;
 
 	/**
 	 * 
@@ -348,7 +348,7 @@ public class StudentTester extends JFrame implements Observer {
 			}
 
 			for (final Report r : testResult) {
-				log("Result: " + r.getResult());
+				log("Result: "+(r.getPoints()+r.getDeductions())+" = "+r.getPoints()+"+"+r.getDeductions());
 				for (final Entry<Grader, Message> entry : r.getReports()) {
 					log(entry.getValue().getPoints() + ": " + entry.getValue().getMessage());
 				}
