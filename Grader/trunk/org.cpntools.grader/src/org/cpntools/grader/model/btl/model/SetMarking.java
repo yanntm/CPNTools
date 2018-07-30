@@ -20,7 +20,7 @@ public class SetMarking implements Guide {
 
 	public SetMarking(final String name, final String value) {
 		this.value = value;
-		this.name = NameHelper.cleanup(name);
+		this.name = name;// NameHelper.cleanup(name);
 
 	}
 
@@ -84,7 +84,7 @@ public class SetMarking implements Guide {
 	public void prestep(final PetriNet model, final HighLevelSimulator simulator, final NameHelper names,
 	        final Environment environment) {
 		try {
-			final Instance<PlaceNode> place = names.getPlaceInstance(name);
+			final Instance<PlaceNode> place = names.getPlaceInstance(NameHelper.cleanup(name));
 			if (place != null) {
 				simulator.setMarking(place, value);
 			} else {

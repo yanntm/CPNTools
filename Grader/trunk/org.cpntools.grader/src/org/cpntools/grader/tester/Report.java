@@ -19,6 +19,7 @@ public class Report implements Comparable<Report> {
 	protected final List<String> errors = new ArrayList<String>();
 	private final List<String> errors_u = Collections.unmodifiableList(errors);
 	private double total = 0.0;
+	private double deductions = 0.0;
 	protected final List<Entry<Grader, Message>> reports = new ArrayList<Entry<Grader, Message>>();
 	protected StudentID sid;
 	
@@ -66,7 +67,7 @@ public class Report implements Comparable<Report> {
 
 	@Override
 	public int compareTo(final Report o) {
-		return Double.compare(getResult(), o.getResult());
+		return Double.compare(getPoints()+getDeductions(), (o.getPoints()+o.getDeductions()));
 	}
 
 	public List<String> getErrors() {
@@ -77,8 +78,12 @@ public class Report implements Comparable<Report> {
 		return Collections.unmodifiableList(reports);
 	}
 
-	public double getResult() {
+	public double getPoints() {
 		return total;
+	}
+	
+	public double getDeductions() {
+		return deductions;
 	}
 
 	public StudentID getStudentId() {
@@ -96,6 +101,9 @@ public class Report implements Comparable<Report> {
 
 	void addReport(final Grader grader, final Message result) {
 		reports.add(new ReportEntry(grader, result));
-		total += result.getPoints();
+		if (result.getPoints() > 0)
+			total += result.getPoints();
+		else
+			deductions += result.getPoints();
 	}
 }

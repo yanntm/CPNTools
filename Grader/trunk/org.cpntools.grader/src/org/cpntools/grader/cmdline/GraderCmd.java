@@ -247,21 +247,28 @@ public class GraderCmd {
 					public void run() {
 						final Date d = new Date();
 						
+						File fLock = new File(f.getAbsolutePath()+".lock");
+						System.out.println(fLock+" exists? "+fLock.exists());
+						
 						File fDoneEarlier = new File(f.getAbsolutePath()+".done");
 						System.out.println(fDoneEarlier+" exists? "+fDoneEarlier.exists());
 						
-						String studentID = f.getName().substring(2, 9);
-						File reportsDir = new File(modelDirectory, "reports");
-						File fReportEarlier = new File(reportsDir, "S"+studentID+"_report.pdf");
-						System.out.println(fReportEarlier+" exists? "+fReportEarlier.exists());
+//						String studentID = f.getName().substring(2, 9);
+//						File reportsDir = new File(modelDirectory, "reports");
+//						File fReportEarlier = new File(reportsDir, f.getName()+"_report.pdf");
+//						System.out.println(fReportEarlier+" exists? "+fReportEarlier.exists());
 						
-						if (!fDoneEarlier.exists() || !fReportEarlier.exists()) {
+						if (!fLock.exists() && !fDoneEarlier.exists()) {
+							
+							writeLockFile(fLock.getAbsolutePath());
+							
 							resultDialog.update(null, "Loading " + f);
 							try {
 								final PetriNet net = DOMParser.parse(new FileInputStream(f),
 								        f.getName().replace("[.]cpn$", ""));
 								try {
 	
+									tester.setTimeOut(System.currentTimeMillis() + (15 * 60 * 1000));
 									final List<Report> test = tester.test(net, modelDirectory, graderProgressBar);
 									result.add(new ResultData(f, test));
 								} catch (final Throwable e2) {
@@ -280,14 +287,14 @@ public class GraderCmd {
 							}
 							final long end = new Date().getTime() - d.getTime();
 							resultDialog.update(null, "Checking took " + end / 1000.0 + " seconds.");
-							writeDoneFile(f.getAbsolutePath()+".done");
+							writeDoneFile(fDoneEarlier.getAbsolutePath());
 							GraderCmd.incrementProgress(resultDialog);
 							
 							HashSet<File> recursed = new HashSet<File>();
 							
 							// clear the simout directory for this model, recursively
 							File simOutDir = new File(modelDirectory.getAbsolutePath(), "simout");
-							simOutDir = new File(simOutDir, studentID.toString()); 
+							simOutDir = new File(simOutDir, tester.getStudentid().toString()); 
 							System.out.println("cleaning "+simOutDir);
 							if (simOutDir.exists()) {
 								LinkedList<File> deleteTree = new LinkedList<File>();
@@ -307,8 +314,11 @@ public class GraderCmd {
 									}
 								}
 							}
+							
+							fLock.delete(); // release lock
 						} else {
 							resultDialog.update(null, "Skipping "+f);
+							unused.remove(new StudentID(f.getName()));
 							GraderCmd.incrementProgress(resultDialog);
 						}
 						running.decrementAndGet();
@@ -380,6 +390,18 @@ public class GraderCmd {
 			fstream = new FileWriter(file);
 			BufferedWriter out = new BufferedWriter(fstream);
 			out.write("done");
+			out.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	static void writeLockFile(String file) {
+		FileWriter fstream;
+		try {
+			fstream = new FileWriter(file);
+			BufferedWriter out = new BufferedWriter(fstream);
+			out.write("locked");
 			out.close();
 		} catch (IOException e) {
 			e.printStackTrace();

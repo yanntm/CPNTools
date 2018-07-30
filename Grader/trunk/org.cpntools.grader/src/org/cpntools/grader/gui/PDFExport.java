@@ -63,12 +63,21 @@ public class PDFExport {
 
 	public static void exportReports(final File directory, final Collection<ReportItem> reports)
 	        throws FileNotFoundException, IOException {
-		final StringBuilder error = new StringBuilder();
 		final ITextRenderer errorRenderer = new ITextRenderer();
 		final ImageUserAgent errorAgent = new ImageUserAgent(errorRenderer.getOutputDevice());
 		errorRenderer.getSharedContext().setUserAgentCallback(errorAgent);
-		error.append("<html><head><title>Errors</title><style type=\"text/css\">tr.topBorder td, tr.topBorder th { border-top: 1px solid black; }</style></head><body>");
 		for (final ReportItem ri : reports) {
+
+			String reportNamePrefix;
+			if (ri.getFile() != null && ri.getFile() instanceof File) {
+				reportNamePrefix = ((File)ri.getFile()).getName();
+			} else {
+				reportNamePrefix = "ID" + ri.getStudent().toString();
+			}
+			
+			final StringBuilder error = new StringBuilder();
+			error.append("<html><head><title>Errors</title><style type=\"text/css\">tr.topBorder td, tr.topBorder th { border-top: 1px solid black; }</style></head><body>");
+			
 			final Report r = ri.getReport();
 			StringBuilder writer = error;
 			ITextRenderer renderer = errorRenderer;
@@ -90,8 +99,8 @@ public class PDFExport {
 				writer.append("" + ri.getFile());
 				writer.append("</h3>");
 
-				writer.append("<h2>Points: ");
-				writer.append(String.format("%.2f", r.getResult()));
+				writer.append("<h2>");
+				writer.append("Points: "+String.format("%.2f = %.2f + %.2f", (r.getPoints()+r.getDeductions()), r.getPoints(), r.getDeductions()) );
 				writer.append("</h2><table style=\"border-top: 3px solid black; border-bottom: 3px solid black\">");
 				writer.append("<thead><tr><th>Point range</th><th>Points</th><th>Reason</th><th>Grader</th></tr></thead><tbody style=\"border-top: 2px solid black\">");
 				boolean odd = false;
@@ -133,7 +142,7 @@ public class PDFExport {
 						details.append("</h3>");
 						details.append("<ul>");
 						for (final String s : d.getStrings()) {
-							details.append("<li>");
+							details.append("<li style=\"font-size:8pt\">");
 							if (s.toLowerCase().indexOf("<html>") >= 0) {
 								details.append(s.replaceFirst("^.*<[hH][tT][mM][lL][^>]*>", "")
 								        .replaceFirst("</[hH][tT][mM][lM]>.*$", "")
@@ -168,7 +177,7 @@ public class PDFExport {
 				if (r == null) {
 					writer.append(" for ");
 					writer.append("" + TextUtils.stringToHTMLString(ri.getStudent().toString()));
-					writer.append(" / " + TextUtils.stringToHTMLString(ri.getFile().toString()));
+					if (ri.getFile() != null) writer.append(" / " + TextUtils.stringToHTMLString(ri.getFile().toString()));
 				}
 				writer.append("</h2><table>");
 				writer.append("<tbody>");
@@ -196,25 +205,26 @@ public class PDFExport {
 					System.err.println(writer.toString());
 				}
 				renderer.layout();
-				final FileOutputStream os = new FileOutputStream(new File(directory, "S" + r.getStudentId()
-				        + "_report.pdf"));
+
+				final FileOutputStream os = new FileOutputStream(new File(directory, reportNamePrefix+"_report.pdf"));
 				try {
 					renderer.createPDF(os);
 				} catch (final DocumentException e) {
 				}
 				os.close();
+			} else {
+				error.append("</body>");
+				error.append("</html>");
+				errorRenderer.setDocumentFromString(error.toString());
+				errorRenderer.layout();
+				final FileOutputStream os = new FileOutputStream(new File(directory, reportNamePrefix+"_errors.pdf"));
+				try {
+					errorRenderer.createPDF(os);
+				} catch (final DocumentException e) {
+				}
+				os.close();
 			}
 		}
-		error.append("</body>");
-		error.append("</html>");
-		errorRenderer.setDocumentFromString(error.toString());
-		errorRenderer.layout();
-		final FileOutputStream os = new FileOutputStream(new File(directory, "errors.pdf"));
-		try {
-			errorRenderer.createPDF(os);
-		} catch (final DocumentException e) {
-		}
-		os.close();
 	}
 
 }

@@ -57,6 +57,7 @@ public class Parser {
 
 				// Include next line if this ends on \ or if next starts with +
 				line = reader.readLine();
+				
 				lineNumber++;
 				Matcher m2 = line == null ? null : Parser.nextLine.matcher(line);
 				boolean backslash = configuration.endsWith("\\");
@@ -69,6 +70,7 @@ public class Parser {
 					}
 
 					line = reader.readLine();
+					
 					lineNumber = lineNumber++;
 					m2 = line == null ? null : Parser.nextLine.matcher(line);
 					backslash = configuration.endsWith("\\");
@@ -85,6 +87,7 @@ public class Parser {
 				if (grader != null && grader != NullGrader.INSTANCE) {
 					result.add(grader);
 				} else {
+					System.err.println(line);
 					throw new ParserException(firstLineNumber, "Found no matching grader for this line"
 					        + (lineNumber - firstLineNumber > 2 ? " (and the " + (lineNumber - firstLineNumber - 1)
 					                + " following line(s))" : ""), firstLine, exception);

@@ -47,7 +47,7 @@ public class BTLGrader extends AbstractGrader {
 		return (List) enabled;
 	}
 
-	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@SuppressWarnings({ "unchecked", "rawtypes", "javadoc" })
 	public static List<Instance<Transition>> getEnabledAndAllowed(final PetriNet model,
 	        final HighLevelSimulator simulator, final NameHelper names,
 	        final List<Instance<Transition>> allTransitionInstances, final EnablingControl ec,
@@ -148,7 +148,7 @@ public class BTLGrader extends AbstractGrader {
 			if (m.group(5) != null && !"".equals(m.group(5))) {
 				maxSteps = Integer.parseInt(m.group(5));
 			}
-			int threshold = repeats;
+			int threshold = repeats;//(anti) ? 0 : repeats; // if an anti-test, then it has to fail every time
 			if (m.group(7) != null && !"".equals(m.group(7))) {
 				threshold = Integer.parseInt(m.group(7));
 			}
@@ -203,35 +203,33 @@ public class BTLGrader extends AbstractGrader {
 			}
 		}
 		Message m;
-		if (error == 0) {
-			if (anti) {
+		if (anti) {
+			if (error == 0) {
 				m = new Message(getMinPoints(), getName() + " was executed successfully " + repeats + " time"
 				        + (repeats == 1 ? "" : "s") + " (it was expected to fail!)");
-			} else {
-				m = new Message(getMaxPoints(), getName() + " was executed successfully " + repeats + " time"
-				        + (repeats == 1 ? "" : "s"));
-			}
-		} else if (repeats - error >= threshold) {
-			if (anti) {
+			} else if (repeats - error >= threshold) {
 				m = new Message(getMinPoints(), getName() + " failed " + error + " time" + (error == 1 ? "" : "s")
-				        + ", but this is under the threshold");
-			}
-			m = new Message(getMaxPoints(), getName() + " failed " + error + " time" + (error == 1 ? "" : "s")
-			        + ", but this is under the threshold");
-		} else if (repeats > error) {
-			if (anti) {
+				        + " (it was expected to fail "+threshold+" times)");
+			} else if (repeats > error) {
 				m = new Message(getMaxPoints(), getName() + " failed " + error + " time"
-				        + (error == 1 ? "" : "s (and this is above the threshold of expected failures)."));
+				        + (error == 1 ? "" : "s")+" (it was allowed to fail "+threshold+" times)");
 			} else {
-				m = new Message(getMinPoints(), getName() + " failed " + error + " time" + (error == 1 ? "" : "s"));
+				m = new Message(getMaxPoints(), getName() + " failed every time. This is expected behavior.");
 			}
 		} else {
-			if (anti) {
-				m = new Message(getMaxPoints(), getName() + " failed every time. This is expected behavior.");
+			if (error == 0) {
+				m = new Message(getMaxPoints(), getName() + " was executed successfully " + repeats + " time"
+				        + (repeats == 1 ? "" : "s"));
+			} else if (repeats - error >= threshold) {
+				m = new Message(getMaxPoints(), getName() + " failed " + error + " time" + (error == 1 ? "" : "s")
+				        + ", but this is below the threshold of "+threshold+" allowed failures");
+			} else if (repeats > error) {
+				m = new Message(getMinPoints(), getName() + " failed " + error + " time" + (error == 1 ? "" : "s"));
 			} else {
 				m = new Message(getMinPoints(), getName() + " failed every time.");
 			}
 		}
+		
 		if (!anti) {
 			if (!markings.isEmpty()) {
 				final String[] markingDescriptors = new String[markings.size()];
@@ -239,13 +237,13 @@ public class BTLGrader extends AbstractGrader {
 				for (final State s : markings) {
 					markingDescriptors[i++] = s.toString();
 				}
-				m.addDetail(new Detail("Final Markings for " + getName(), markingDescriptors));
+				//m.addDetail(new Detail("Final Markings for " + getName(), markingDescriptors));
 			}
 			for (final Detail d : details) {
 				m.addDetail(d);
 			}
 		}
-		m.addDetail(new Detail("Coverage", decisionTree.toString()));
+		//m.addDetail(new Detail("Coverage", decisionTree.toString()));
 		return m;
 	}
 
@@ -257,7 +255,9 @@ public class BTLGrader extends AbstractGrader {
 			simulator.initialiseSimulationScheduler();
 			simulator.initialState();
 			Condition toSatisfy = getGuide();
-			final List<Binding> bindings = new ArrayList<Binding>();
+			final List<Binding> trace_bindings = new ArrayList<Binding>();
+			final List<String> trace_timeStamps = new ArrayList<String>(); // keep in sync with bindings
+			
 			Node<Instance<Transition>> node = decisionTree.getRoot();
 			for (int i = 0; maxSteps < 0 || i < maxSteps; i++) {
 				final Set<Instance<Transition>> allowed = new HashSet<Instance<Transition>>();
@@ -271,7 +271,7 @@ public class BTLGrader extends AbstractGrader {
 					}
 					node.invalidate();
 					return new Detail("No Allowed Transtions for " + getName(), "Enabled Transitions:\n"
-					        + toString(enabled), "Executed Trace:\n" + toString(bindings), "Initial Formula:\n"
+					        + toString(enabled), "Executed Trace:\n" + toString(trace_timeStamps, trace_bindings), "Initial Formula:\n"
 					        + unparsed, "Parsed Formula:\n" + getGuide(), "Formula at error:\n" + toSatisfy,
 					        "Marking at error:\n" + simulator.getMarking(false));
 				}
@@ -290,15 +290,19 @@ public class BTLGrader extends AbstractGrader {
 					final List<ValueAssignment> valueAssignments = new ArrayList<ValueAssignment>();
 					binding = InstanceFactory.INSTANCE.createBinding(ti, valueAssignments);
 				}
+				String time = simulator.getTime();
 				
 				node = decisionTree.addChild(node, binding.getTransitionInstance());
-				bindings.add(binding);
+				
+				trace_bindings.add(binding); // extend trace
+				trace_timeStamps.add(time);
+				
 				toSatisfy = toSatisfy.progress(binding.getTransitionInstance(), model, simulator, names,
 				        EmptyEnvironment.INSTANCE);
 				if (toSatisfy == Failure.INSTANCE) {
 					node.invalidate();
 					return new Detail("Assertion Failed", "Enabled Transitions:\n" + toString(enabled),
-					        "Executed Trace:\n" + toString(bindings), "Initial Formula:\n" + unparsed,
+					        "Executed Trace:\n" + toString(trace_timeStamps, trace_bindings), "Initial Formula:\n" + unparsed,
 					        "Parsed Formula:\n" + getGuide(), "Formula at error:\n" + toSatisfy, "Marking at error:\n"
 					                + simulator.getMarking(false));
 				}
@@ -329,6 +333,15 @@ public class BTLGrader extends AbstractGrader {
 			sb.append(o);
 		}
 		return sb.toString();
+	}
+	
+	private String toString(final List<String> times, final List<Binding> bindings) {
+		final StringBuilder sb = new StringBuilder();
+		for (int i=0; i<times.size(); i++) {
+			if (i > 0) sb.append('\n');
+			sb.append(times.get(i)+" "+bindings.get(i));
+		}
+ 		return sb.toString();
 	}
 
 }

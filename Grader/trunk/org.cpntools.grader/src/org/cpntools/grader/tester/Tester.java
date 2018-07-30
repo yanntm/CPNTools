@@ -52,14 +52,21 @@ public class Tester extends Observable {
 	private final PetriNet base;
 	private final List<StudentID> ids;
 	private final File output;
+	private StudentID studentid = null;
 
 	private final TestSuite suite;
+	
+	private long timeOut = -1;
 
 	public Tester(final TestSuite suite, final List<StudentID> ids, final PetriNet base, final File output) {
 		this.suite = suite;
 		this.ids = ids;
 		this.base = base;
 		this.output = output;
+	}
+	
+	public void setTimeOut(long timeOut) {
+		this.timeOut = timeOut;
 	}
 
 	/**
@@ -83,7 +90,6 @@ public class Tester extends Observable {
 		int totalWork = suite.getGraders().size() + 4;
 		int stepSize = progress.getRemainingProgress() / totalWork;
 		
-		StudentID studentid = null;
 		final List<Report> result = new ArrayList<Report>();
 		if (ids != null) {
 			notify("Categorizing and checking for fraud");
@@ -104,7 +110,8 @@ public class Tester extends Observable {
 				}
 			}
 			if (result.size() == 0) {
-				final String id = model.getName().getText().trim();
+				String id = model.getName().getText().trim();
+				if (id.endsWith(".cpn")) id = id.substring(0, id.length()-4);
 				notify("Model doesn't match anybody - using generated id `generated_" + id + "'");
 				final StudentID sid = new StudentID("generated_" + id);
 				studentid = sid;
@@ -114,7 +121,9 @@ public class Tester extends Observable {
 			}
 			progress.addProgress(stepSize);
 		} else {
-			studentid = new StudentID(model.getName().getText());
+			String modelName = model.getName().getText();
+			if (modelName.endsWith(".cpn")) modelName = modelName.substring(0, modelName.length()-4);
+			studentid = new StudentID(modelName);
 			result.add(new Report(studentid));
 			progress.addProgress(2*stepSize);
 		}
@@ -160,7 +169,13 @@ public class Tester extends Observable {
 					if (grader instanceof TerminationGrader) {
 						notify(count+"/"+suite.getGraders().size()+": simulating to final marking");
 					}
-					final Message message = grader.grade(r.getStudentId(), base, model, simulator);
+					
+					Message message;
+					if (timeOut > 0 && System.currentTimeMillis() > timeOut) {
+						message = new Message(0.0, "Skipped (time out)");
+					} else {
+						message = grader.grade(r.getStudentId(), base, model, simulator);
+					}
 					r.addReport(grader, message);
 				} catch (final Exception e) {
 					r.addError("Grader " + grader.getClass().getCanonicalName() + " failed with exception " + e);
@@ -170,5 +185,12 @@ public class Tester extends Observable {
 			}
 		}
 		return result;
+	}
+	
+	/**
+	 * @return studentID used by the tester
+	 */
+	public StudentID getStudentid() {
+		return studentid;
 	}
 }
