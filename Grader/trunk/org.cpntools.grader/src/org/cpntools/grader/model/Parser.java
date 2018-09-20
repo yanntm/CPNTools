@@ -84,10 +84,12 @@ public class Parser {
 				} catch (final Exception e) {
 					exception = e;
 				}
+
 				if (grader != null && grader != NullGrader.INSTANCE) {
 					result.add(grader);
 				} else {
-					System.err.println(line);
+					System.err.println(configuration);
+					System.err.println(exception);
 					throw new ParserException(firstLineNumber, "Found no matching grader for this line"
 					        + (lineNumber - firstLineNumber > 2 ? " (and the " + (lineNumber - firstLineNumber - 1)
 					                + " following line(s))" : ""), firstLine, exception);

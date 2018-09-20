@@ -253,6 +253,7 @@ public class BTLTester extends JFrame {
 		trace = new DefaultTableModel(new Object[] { "Time", "Binding Element" }, 0);
 		final JTable traceTable = new JTable(trace);
 		traceTable.setEnabled(false);
+		traceTable.setRowSelectionAllowed(true);
 		final JScrollPane traceScroller = new JScrollPane(traceTable);
 		traceScroller.setBorder(BorderFactory.createTitledBorder("Execution Trace"));
 		if (!light) {
@@ -501,6 +502,7 @@ public class BTLTester extends JFrame {
 	}
 
 	protected void check() {
+		
 		initial();
 		runs++;
 
@@ -518,10 +520,13 @@ public class BTLTester extends JFrame {
 				if (allowed.isEmpty()) {
 					if (current.canTerminate(petriNet, simulator, nameHelper, EmptyEnvironment.INSTANCE)) {
 						node.validate();
+						refreshFormula(true);
+						refreshDecision();
 					} else {
 						node.invalidate();
+						refreshFormula(false);
+						refreshDecision();
 					}
-					refreshDecision();
 					break;
 				} else {
 					for (final Instance<Transition> ti : allowed) {
@@ -535,9 +540,11 @@ public class BTLTester extends JFrame {
 					addToTrace(simulator.getTime(), binding, current);
 					if (current == Failure.INSTANCE) {
 						node.invalidate();
+						refreshFormula(false);
 						refreshDecision();
 					} else if (current == null) {
 						node.validate();
+						refreshFormula(true);
 						refreshDecision();
 					}
 				}
@@ -569,8 +576,11 @@ public class BTLTester extends JFrame {
 
 	}
 
+	protected void refreshFormula(boolean satisfied) {
+		setColor(currentFormula, ((satisfied) ? 1.0 : 0.0));
+	}
+	
 	protected void refreshDecision() {
-		setColor(currentFormula, decisionTree.getSatisfactionProbability());
 		setColor(decision, decisionTree.getCoverage());
 		decision.setText(decisionTree.toString());
 		decision.setCaretPosition(0);
@@ -578,6 +588,9 @@ public class BTLTester extends JFrame {
 	}
 
 	void initial() {
+		
+		if (current != null) current.prestep(petriNet, simulator, nameHelper, EmptyEnvironment.INSTANCE);
+		
 		clearTrace();
 		reparse();
 		try {

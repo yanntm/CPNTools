@@ -202,6 +202,7 @@ public class BTLGrader extends AbstractGrader {
 				}
 			}
 		}
+		
 		Message m;
 		if (anti) {
 			if (error == 0) {
@@ -266,6 +267,7 @@ public class BTLGrader extends AbstractGrader {
 // System.out.println(enabled);
 				if (allowed.isEmpty()) {
 					if (toSatisfy.canTerminate(model, simulator, names, EmptyEnvironment.INSTANCE)) {
+//System.out.println("can terminate "+toSatisfy);
 						node.validate();
 						return null;
 					}
@@ -299,6 +301,9 @@ public class BTLGrader extends AbstractGrader {
 				
 				toSatisfy = toSatisfy.progress(binding.getTransitionInstance(), model, simulator, names,
 				        EmptyEnvironment.INSTANCE);
+				
+//System.out.println("to satisfy "+toSatisfy);
+				
 				if (toSatisfy == Failure.INSTANCE) {
 					node.invalidate();
 					return new Detail("Assertion Failed", "Enabled Transitions:\n" + toString(enabled),
