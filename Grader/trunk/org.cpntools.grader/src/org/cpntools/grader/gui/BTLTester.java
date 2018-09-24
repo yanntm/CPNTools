@@ -589,15 +589,18 @@ public class BTLTester extends JFrame {
 
 	void initial() {
 		
-		if (current != null) current.prestep(petriNet, simulator, nameHelper, EmptyEnvironment.INSTANCE);
-		
 		clearTrace();
 		reparse();
 		try {
 			simulator.initialState();
+			if (current != null) current.prestep(petriNet, simulator, nameHelper, EmptyEnvironment.INSTANCE);
+			simulator.evaluate("CPN'Sim.init_all()");
 			addToTrace(simulator.getTime(), null, current);
 		} catch (final IOException e) {
 			marking.setText("Could not go to the initial state. " + e);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 		refresh();
 	}
