@@ -22,6 +22,7 @@ public class GraderFactory {
 		GraderFactory.INSTANCE.register(BTLGrader.INSTANCE);
 		GraderFactory.INSTANCE.register(MonitoringGrader.INSTANCE);
 		GraderFactory.INSTANCE.register(TerminationGrader.INSTANCE);
+		GraderFactory.INSTANCE.register(ReversibleModelGrader.INSTANCE);
 	}
 
 	protected List<Grader> graders = new ArrayList<Grader>();

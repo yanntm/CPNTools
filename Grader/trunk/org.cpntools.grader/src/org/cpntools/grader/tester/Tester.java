@@ -16,6 +16,7 @@ import org.cpntools.grader.model.InterfacePreservation;
 import org.cpntools.grader.model.Message;
 import org.cpntools.grader.model.MonitoringGrader;
 import org.cpntools.grader.model.NameCategorizer;
+import org.cpntools.grader.model.ReversibleModelGrader;
 import org.cpntools.grader.model.StudentID;
 import org.cpntools.grader.model.TerminationGrader;
 import org.cpntools.grader.model.TestSuite;
@@ -169,6 +170,10 @@ public class Tester extends Observable {
 					if (grader instanceof TerminationGrader) {
 						notify(count+"/"+suite.getGraders().size()+": simulating to final marking");
 					}
+					if (grader instanceof ReversibleModelGrader) {
+						notify(count+"/"+suite.getGraders().size()+": checking reversibility of model");
+					}
+
 					
 					Message message;
 					if (timeOut > 0 && System.currentTimeMillis() > timeOut) {
