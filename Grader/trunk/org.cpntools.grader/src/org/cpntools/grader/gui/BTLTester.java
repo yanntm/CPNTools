@@ -519,8 +519,22 @@ public class BTLTester extends JFrame {
 				        allowed);
 				if (allowed.isEmpty()) {
 					if (current.canTerminate(petriNet, simulator, nameHelper, EmptyEnvironment.INSTANCE)) {
-						node.validate();
-						refreshFormula(true);
+						boolean stillHolds = true;
+						try {
+							current = current.progress(null, petriNet, simulator, nameHelper, EmptyEnvironment.INSTANCE);
+							if (current == Failure.INSTANCE) {
+								stillHolds = false;
+							}
+						} catch (Exception e) {
+							// do nothing
+						}
+						if (stillHolds) {
+							node.validate();
+							refreshFormula(true);
+						} else {
+							node.invalidate();
+							refreshFormula(false);
+						}
 						refreshDecision();
 					} else {
 						node.invalidate();
