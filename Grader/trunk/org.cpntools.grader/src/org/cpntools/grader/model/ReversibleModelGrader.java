@@ -67,6 +67,7 @@ public class ReversibleModelGrader extends AbstractGrader {
 			        "ModelTime.fromInt 0");
 			
 			simulator.initialState();
+			simulator.execute(200);
 			State m = simulator.getMarking();
 			simulator.execute(steps);
 			State m2 = simulator.getMarking();
@@ -80,7 +81,7 @@ public class ReversibleModelGrader extends AbstractGrader {
 				m2_tokens += place.getTokenCount();
 			}
 			
-			if (m2_tokens <= m_tokens*2) {
+			if (m2_tokens <= m_tokens) {
 				Detail d = new Detail("Reversible Model", "Had "+m_tokens+" in initial marking and "+m2_tokens+" in the final marking/after "+steps+" steps. This is ok.");  
 				return new Message(getMaxPoints(), "Tokens are properly cleaned up in the model.", d);
 			} else {
