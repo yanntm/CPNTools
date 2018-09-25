@@ -41,7 +41,7 @@ public class Tester extends Observable {
 			checker.generateSerializers();
 			checker.checkPages();
 			checker.generatePlaceInstances();
-			checker.checkMonitors();
+			//checker.checkMonitors();
 			simulator.setConfidenceIntervals(95);
 			checker.generateNonPlaceInstances();
 			checker.initialiseSimulationScheduler();
