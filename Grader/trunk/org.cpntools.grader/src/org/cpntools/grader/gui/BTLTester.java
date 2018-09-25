@@ -519,26 +519,26 @@ public class BTLTester extends JFrame {
 				        allowed);
 				if (allowed.isEmpty()) {
 					if (current.canTerminate(petriNet, simulator, nameHelper, EmptyEnvironment.INSTANCE)) {
-						boolean stillHolds = true;
-						try {
-							current = current.progress(null, petriNet, simulator, nameHelper, EmptyEnvironment.INSTANCE);
-							if (current == Failure.INSTANCE) {
-								stillHolds = false;
-							}
-						} catch (Exception e) {
-							// do nothing
-						}
-						if (stillHolds) {
+//						boolean stillHolds = true;
+//						try {
+//							current = current.progress(null, petriNet, simulator, nameHelper, EmptyEnvironment.INSTANCE);
+//							if (current == Failure.INSTANCE) {
+//								stillHolds = false;
+//							}
+//						} catch (Exception e) {
+//							// do nothing
+//						}
+//						if (stillHolds) {
 							node.validate();
-							refreshFormula(true);
-						} else {
-							node.invalidate();
-							refreshFormula(false);
-						}
+//							refreshFormula(true);
+//						} else {
+//							node.invalidate();
+//							refreshFormula(false);
+//						}
 						refreshDecision();
 					} else {
 						node.invalidate();
-						refreshFormula(false);
+//						refreshFormula(false);
 						refreshDecision();
 					}
 					break;
@@ -554,11 +554,11 @@ public class BTLTester extends JFrame {
 					addToTrace(simulator.getTime(), binding, current);
 					if (current == Failure.INSTANCE) {
 						node.invalidate();
-						refreshFormula(false);
+//						refreshFormula(false);
 						refreshDecision();
 					} else if (current == null) {
 						node.validate();
-						refreshFormula(true);
+//						refreshFormula(true);
 						refreshDecision();
 					}
 				}

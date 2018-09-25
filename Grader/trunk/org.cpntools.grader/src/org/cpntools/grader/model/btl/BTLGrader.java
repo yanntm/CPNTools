@@ -268,18 +268,18 @@ public class BTLGrader extends AbstractGrader {
 				if (allowed.isEmpty()) {
 					if (toSatisfy.canTerminate(model, simulator, names, EmptyEnvironment.INSTANCE)) {
 //System.out.println("can terminate "+toSatisfy);
-						try {
-							toSatisfy = toSatisfy.progress(null, model, simulator, names, EmptyEnvironment.INSTANCE);
-							if (toSatisfy == Failure.INSTANCE) {
-								node.invalidate();
-								return new Detail("Assertion Failed", "Enabled Transitions:\n" + toString(enabled),
-								        "Executed Trace:\n" + toString(trace_timeStamps, trace_bindings), "Initial Formula:\n" + unparsed,
-								        "Parsed Formula:\n" + getGuide(), "Formula at error:\n" + toSatisfy, "Marking at error:\n"
-								                + simulator.getMarking(false));
-							}
-						} catch (Exception e) {
-							// do nothing
-						}
+//						try {
+//							toSatisfy = toSatisfy.progress(null, model, simulator, names, EmptyEnvironment.INSTANCE);
+//							if (toSatisfy == Failure.INSTANCE) {
+//								node.invalidate();
+//								return new Detail("Assertion Failed", "Enabled Transitions:\n" + toString(enabled),
+//								        "Executed Trace:\n" + toString(trace_timeStamps, trace_bindings), "Initial Formula:\n" + unparsed,
+//								        "Parsed Formula:\n" + getGuide(), "Formula at error:\n" + toSatisfy, "Marking at error:\n"
+//								                + simulator.getMarking(false));
+//							}
+//						} catch (Exception e) {
+//							// do nothing
+//						}
 						node.validate();
 						return null;
 					}
