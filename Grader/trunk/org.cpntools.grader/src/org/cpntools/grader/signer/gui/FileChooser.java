@@ -1,21 +1,21 @@
 package org.cpntools.grader.signer.gui;
 
 import java.awt.BorderLayout;
-import java.awt.Dialog;
-import java.awt.FileDialog;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 
 import javax.swing.JButton;
+import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
 public class FileChooser extends JPanel {
 	/**
-     * 
-     */
+	 * 
+	 */
 	private static final long serialVersionUID = 1021409666534371348L;
 	private final JButton browse;
 	final JTextField fileName;
@@ -25,7 +25,7 @@ public class FileChooser extends JPanel {
 	}
 
 	public FileChooser(final String labelText, final boolean load, final boolean file) {
-		this(labelText, "", load, true);
+		this(labelText, "", load, file);
 	}
 
 	public FileChooser(final String labelText, final String defaultText, final boolean load) {
@@ -49,31 +49,50 @@ public class FileChooser extends JPanel {
 		browse.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(final ActionEvent arg0) {
-				System.setProperty("apple.awt.fileDialogForDirectories", "" + !file);
-				final FileDialog fileDialog = new FileDialog((Dialog) null);
+
+				JFileChooser fileChooser = new JFileChooser(new File(fileName.getText()));
+				if (!file) {
+					fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+				} else {
+					fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+					fileChooser.setFileFilter(new FileNameExtensionFilter("CPN Files", "cpn"));
+				}
 				if (load) {
-					fileDialog.setMode(FileDialog.LOAD);
+					fileChooser.setDialogTitle("Load file ...");
 				} else {
-					fileDialog.setMode(FileDialog.SAVE);
+					fileChooser.setDialogTitle("Save files to ...");
 				}
-				if (file) {
-					fileDialog.setFile(fileName.getText());
-				} else {
-					fileDialog.setDirectory(fileName.getText());
+				int returnVal = fileChooser.showOpenDialog(FileChooser.this.getTopLevelAncestor());
+				if (returnVal == JFileChooser.APPROVE_OPTION) {
+					fileName.setText(fileChooser.getSelectedFile().getAbsoluteFile().toString());
+					updated();
 				}
-				fileDialog.setVisible(true);
-// if (file) {
-// if (fileDialog.getFile() != null) {
-// fileName.setText(fileDialog.getFile());
-// }
-// } else {
-// if (fileDialog.getDirectory() != null) {
-// fileName.setText(fileDialog.getDirectory());
-// }
-// }
-				fileName.setText(new File(fileDialog.getDirectory(), fileDialog.getFile()).getAbsolutePath());
-				System.setProperty("apple.awt.fileDialogForDirectories", "false");
-				updated();
+
+				// System.setProperty("apple.awt.fileDialogForDirectories", "" + !file);
+				// final FileDialog fileDialog = new FileDialog((Dialog) null);
+				// if (load) {
+				// fileDialog.setMode(FileDialog.LOAD);
+				// } else {
+				// fileDialog.setMode(FileDialog.SAVE);
+				// }
+				// if (file) {
+				// fileDialog.setFile(fileName.getText());
+				// } else {
+				// fileDialog.setDirectory(fileName.getText());
+				// }
+				// fileDialog.setVisible(true);
+				//// if (file) {
+				//// if (fileDialog.getFile() != null) {
+				//// fileName.setText(fileDialog.getFile());
+				//// }
+				//// } else {
+				//// if (fileDialog.getDirectory() != null) {
+				//// fileName.setText(fileDialog.getDirectory());
+				//// }
+				//// }
+				// fileName.setText(new File(fileDialog.getDirectory(),
+				// fileDialog.getFile()).getAbsolutePath());
+				// System.setProperty("apple.awt.fileDialogForDirectories", "false");
 			}
 		});
 	}
