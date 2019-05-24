@@ -269,14 +269,22 @@ public class HighLevelSimulator extends AdapterImpl {
 	public void checkDeclaration(final HLDeclaration decl) throws IOException, DeclarationCheckerException {
 		getSimulator().lock();
 		Packet p = null;
+		String id;
+		String errorMessage;
 		try {
 			final Packet q = PacketGenerator.instance.constructCheckDeclaration(decl);
 			p = send(q);
+			
+			id = p.getString(); 
+			errorMessage = p.getString();
+		} catch (Exception e) {
+			
+			id = decl.getId(); // not sure what correct ID is
+			errorMessage = "Error. Could not parse declaration "+decl.getText()+".";
+			
 		} finally {
 			getSimulator().release();
 		}
-		final String id = p.getString();
-		final String errorMessage = p.getString();
 		if (!"".equals(errorMessage)) { throw new DeclarationCheckerException(id, errorMessage); }
 	}
 
@@ -875,7 +883,7 @@ public class HighLevelSimulator extends AdapterImpl {
 		}
 		return null;
 	}
-
+	
 	/**
 	 * @param tis
 	 *            the list of transition instance to execute
