@@ -32,6 +32,7 @@ import org.cpntools.accesscpn.model.Page;
 import org.cpntools.accesscpn.model.PetriNet;
 import org.cpntools.accesscpn.model.PlaceNode;
 import org.cpntools.accesscpn.model.TransitionNode;
+import org.cpntools.accesscpn.model.auxgraphics.Text;
 
 
 /**
@@ -135,6 +136,7 @@ public class LocalChecker {
 					+ page.getName().getText() + "')");
 		for (final Object object : page.getObject()) {
 			// System.out.println(object);
+			if (object instanceof Text) continue; // don't check texts for names
 			if ("".equals(getName(object)))
 				throw new LocalCheckFailed(object.getId(), "Object on page `" + getName(page)
 						+ "' has no or illegal name (name is `" + object.getName().getText() + "')");

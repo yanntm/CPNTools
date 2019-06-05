@@ -189,10 +189,10 @@ public class Checker {
 		generateNonPlaceInstances();
 		initialiseSimulationScheduler();
 		instantiateSMLInterface();
+		System.out.println("checked!");
 	}
 
 	/**
-	 * @param b
 	 * @throws SyntaxCheckerException
 	 * @throws IOException
 	 */
@@ -205,6 +205,22 @@ public class Checker {
 			s.checkMonitor(m);
 		}
 
+	}
+	
+	/**
+	 * @param m
+	 * @throws SyntaxCheckerException
+	 * @throws IOException
+	 */
+	public void checkMonitor(final Monitor m) throws SyntaxCheckerException, IOException {
+		s.setPerformanceReportOptions(true, false, true, false, false, true, true, false, false, false, false, false,
+		        false, false, false, true, false, true, false, false, true, true, false, false, false, true, false);
+		s.setReplicationReportOptions(true, true, false, false, false, true, true, false, false, false, false, false);
+		s.setMonitorOrder(petriNet.getMonitors());
+		
+		assert (petriNet.getMonitors().contains(m));
+		
+		s.checkMonitor(m);
 	}
 
 	/**
