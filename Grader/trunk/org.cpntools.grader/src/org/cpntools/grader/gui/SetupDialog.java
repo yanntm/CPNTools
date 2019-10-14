@@ -109,6 +109,7 @@ public class SetupDialog extends JDialog {
 		add(top, BorderLayout.NORTH);
 
 		final JPanel ids = new JPanel(new BorderLayout());
+		ids.setMaximumSize(new Dimension(400,200));
 		ids.add(new JLabel("Student ids"), BorderLayout.NORTH);
 		final JTextArea idField = new JTextArea(studentIds);
 		ids.add(idField);
